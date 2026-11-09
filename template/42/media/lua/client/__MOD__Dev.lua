@@ -3,6 +3,7 @@
 if not isDebugEnabled() then return end
 
 local M = __MOD__
+local Weather = require "__MOD__/Core/Weather"
 __SHORT__ = {}
 
 local RECIPE_NAME = "__MOD__.ProcessBatch"
@@ -45,8 +46,7 @@ function __SHORT__.fast(hours)
         return say(string.format("Back to the sandbox time: %.1f hours.", M.PROCESS_HOURS))
     end
     M.PROCESS_HOURS = hours
-    local recipe = ScriptManager.instance:getCraftRecipe(RECIPE_NAME)
-    if recipe then recipe:Load(RECIPE_NAME, "{ time = " .. tostring(math.floor(hours * 3600)) .. ", }") end
+    Weather.setRecipeHours(RECIPE_NAME, hours, "__MOD__")
     say(string.format("Test timer on: a batch takes %s hours at full speed.", tostring(hours)))
 end
 

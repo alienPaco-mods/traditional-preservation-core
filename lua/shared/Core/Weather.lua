@@ -142,6 +142,17 @@ function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now)
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
 end
 
+-- Sets a craft recipe's time from the sandbox, so the bar's full length matches the hours of work it stands for.
+-- tag names the mod in the log when the recipe is missing (a renamed or removed script).
+function Weather.setRecipeHours(fullName, hours, tag)
+    local recipe = ScriptManager.instance:getCraftRecipe(fullName)
+    if not recipe then
+        print("[" .. tag .. "] Could not find " .. fullName)
+        return
+    end
+    recipe:Load(fullName, "{ time = " .. tostring(math.floor(hours * SECONDS_PER_HOUR)) .. ", }")
+end
+
 -- Work that goes by the clock alone (Fish's press, Salt's leaching) needs no ledger, only the hour it began.
 -- The engine pools recipe data without clearing its ModData, so every run's OnStart must call startClock.
 function Weather.startClock(craftRecipeData, key, now)

@@ -11,7 +11,6 @@ M.PROCESS_HOURS = 72  -- TEMPLATE: hours at the best temperature
 -- Save keys: never rename these once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
 M.MOD_DATA_KEY = "__MOD__"
 local RECIPE_NAME = "__MOD__.ProcessBatch"
-local SECONDS_PER_HOUR = 3600
 -- The ledger's totals are "<kind><place>", e.g. "processOpen".
 local KIND = "process"
 
@@ -80,13 +79,7 @@ end
 
 function M.applyProcessTime()
     M.applySandbox()
-    local recipe = ScriptManager.instance:getCraftRecipe(RECIPE_NAME)
-    if not recipe then
-        print("[__MOD__] Could not find " .. RECIPE_NAME)
-        return
-    end
-    local seconds = math.floor(M.PROCESS_HOURS * SECONDS_PER_HOUR)
-    recipe:Load(RECIPE_NAME, "{ time = " .. tostring(seconds) .. ", }")
+    Weather.setRecipeHours(RECIPE_NAME, M.PROCESS_HOURS, "__MOD__")
 end
 
 Events.OnInitGlobalModData.Add(M.applyProcessTime)

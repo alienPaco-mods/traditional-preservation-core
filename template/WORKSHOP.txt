@@ -1,0 +1,21 @@
+[h1]Traditional Preservation (__NAME__)[/h1]
+
+TEMPLATE: one paragraph on the real technique and what the mod adds.
+
+[b]Build 42 only (42.20 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
+
+[h2]Features[/h2]
+[list]
+[*]A buildable __STATION__ with its own art
+[*]Temperature matters: where the station stands sets how fast it works
+[*]Keeps working while you are away
+[/list]
+
+[h2]How it works[/h2]
+[olist]
+[*][b]Build a __STATION__[/b] (Build menu, Furniture).
+[*]TEMPLATE
+[/olist]
+
+[h2]Part of Traditional Preservation[/h2]
+By alienPaco.

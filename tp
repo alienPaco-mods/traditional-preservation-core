@@ -10,11 +10,16 @@
   tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
   tp sync [MOD...] [--force]    copy the shared core (lua/) into each mod under its own path. With no MOD, the mods
                                 that already have it. Refuses to overwrite a copy edited by hand (--force overrides)
+  tp new Name [--station "Two Words"] [--short TPX]
+                                a new mod TraditionalPreservation<Name> from template/: core synced, art built, golden
+                                season report recorded, guide stub in guides/, git initialised, tests run
 
 MOD is a folder name or its short form: Salt, Fish, Yeast, Vinegar, SaltLTP, FuelBarrel.
 """
+import datetime
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,6 +32,7 @@ INSTALLED = Path(os.environ.get("TP_INSTALLED", Path.home() / "Zomboid" / "mods"
 GUIDES = MODS / "guides"
 COLLECTION = GUIDES / "TraditionalPreservationCollectionGuides"
 GOLDEN = CORE / "golden"
+GOLDEN_CONFIG = GOLDEN / "golden.json"
 PREFIX = "TraditionalPreservation"
 # Never shipped: version control and Python caches.
 SKIP_NAMES = {".git", "__pycache__", ".gitignore"}
@@ -144,7 +150,25 @@ def guide_pairs():
     return pairs
 
 
+def tiledefs():
+    """{tiledef number: [mods using it]} from every mod.info in ~/MODS and the installed mods, each mod once."""
+    numbers = {}
+    for root in (MODS, INSTALLED):
+        for info in sorted(root.glob("*/42/mod.info")):
+            mod = info.parent.parent.name
+            if mod.startswith("_") or mod.endswith("-old"):
+                continue
+            for match in re.finditer(r"^tiledef=\S+\s+(\d+)", info.read_text(errors="replace"), re.M):
+                users = numbers.setdefault(int(match.group(1)), [])
+                if mod not in users:
+                    users.append(mod)
+    return numbers
+
+
 def cmd_status(_args):
+    for number, users in sorted(tiledefs().items()):
+        if len(users) > 1:
+            print(f"WARNING: tiledef {number} is used by {', '.join(users)}")
     pairs = {copy.parent.name: (src, copy) for src, copy in guide_pairs()}
     for mod in all_mods():
         compared = compare_install(mod)
@@ -193,7 +217,7 @@ def run_tests(mod):
 
 
 def golden_config():
-    path = GOLDEN / "golden.json"
+    path = GOLDEN_CONFIG
     return json.loads(path.read_text()) if path.exists() else {}
 
 
@@ -337,8 +361,111 @@ def cmd_sync(args):
     return 0
 
 
+TEMPLATE = CORE / "template"
+
+
+def console_names():
+    """The Dev console tables the mods already use (TPS, TPF, ...)."""
+    names = set()
+    for dev in MODS.glob("*/42/media/lua/client/*Dev.lua"):
+        names.update(re.findall(r"^(TP[A-Z]+) = ", dev.read_text(errors="replace"), re.M))
+    return names
+
+
+def render(text, tokens):
+    for token, value in tokens:  # longest first, so __STATION__ can't eat __STATION_ID__
+        text = text.replace(token, value)
+    return text
+
+
+def cmd_new(args):
+    options, names = {}, []
+    rest = iter(args)
+    for arg in rest:
+        if arg in ("--station", "--short"):
+            options[arg] = next(rest, None) or sys.exit(f"tp new: {arg} needs a value")
+        else:
+            names.append(arg)
+    if len(names) != 1 or not re.fullmatch(r"[A-Z][A-Za-z0-9]+", names[0]):
+        sys.exit("tp new: give one name in CamelCase, e.g. tp new Dairy")
+    name = names[0]
+    mod = PREFIX + name
+    if (MODS / mod).exists():
+        sys.exit(f"tp new: ~/MODS/{mod} already exists")
+
+    station = options.get("--station", f"{name} Workbench")
+    words = station.split()
+    if len(words) < 2 or not all(re.fullmatch(r"[A-Z][A-Za-z]*", word) for word in words):
+        sys.exit("tp new: the station needs two or more capitalised words, e.g. --station \"Cheese Press\" "
+                 "(the engine names a moveable by its GroupName and CustomName)")
+
+    taken = console_names()
+    short_name = options.get("--short")
+    if short_name is None:
+        short_name = next((c for c in ("TP" + name[0].upper(), "TP" + name[:2].upper()) if c not in taken), None)
+        if short_name is None:
+            sys.exit("tp new: no free console name, pass --short TPX")
+    if not re.fullmatch(r"TP[A-Z]+", short_name) or short_name in taken:
+        sys.exit(f"tp new: console name {short_name} is taken or not TP<CAPITALS>. Taken: {', '.join(sorted(taken))}")
+
+    tiledef = max(tiledefs(), default=5126) + 1
+    numbers = [int(g.name.split("_", 1)[0]) for g in COLLECTION.glob("*_*_Guide.md") if g.name.split("_", 1)[0].isdigit()]
+    guide = COLLECTION / f"{max(numbers, default=0) + 1}_{name}_Guide.md"
+
+    tokens = [
+        ("__STATION_TAG__", "".join(words)),
+        ("__STATION_ID__", "_".join(words)),
+        ("__STATION__", station),
+        ("__GROUP__", " ".join(words[:-1])),
+        ("__CUSTOM__", words[-1]),
+        ("__TILEDEF__", str(tiledef)),
+        ("__LOWER__", mod.lower()),
+        ("__UPPER__", name.upper()),
+        ("__SHORT__", short_name),
+        ("__DATE__", datetime.date.today().isoformat()),
+        ("__MOD__", mod),
+        ("__NAME__", name),
+    ]
+    root = MODS / mod
+    for source in sorted(TEMPLATE.rglob("*")):
+        rel = source.relative_to(TEMPLATE)
+        # .gitignore goes into the new repo; only caches are left behind.
+        if not source.is_file() or rel.parts[0] == "guide" or "__pycache__" in rel.parts or source.suffix in SKIP_SUFFIXES:
+            continue
+        target = root / render(str(rel), tokens)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(render(source.read_text(), tokens))
+    for script in (root / "tools").glob("*.py"):
+        script.chmod(0o755)
+    print(f"created ~/MODS/{mod}: station {station}, console {short_name}, tiledef {tiledef}")
+
+    cmd_sync([mod])
+    env = dict(os.environ, TPCORE=str(CORE))
+    subprocess.run([sys.executable, "tools/build_tileset.py"], cwd=root, env=env, check=True)
+
+    guide.parent.mkdir(parents=True, exist_ok=True)
+    guide.write_text(render((TEMPLATE / "guide" / "Guide.md").read_text(), tokens))
+    shutil.copy2(guide, root / guide.name)
+    print(f"  guide stub {guide.relative_to(MODS)}, copied into the mod")
+
+    config = golden_config()
+    config[mod] = ["tools/season_report.lua"]
+    GOLDEN_CONFIG.write_text(json.dumps(dict(sorted(config.items())), indent=2) + "\n")
+    run_golden(mod)
+
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    ok = run_tests(mod)
+    print(f"""
+next:
+  1. Settle the design questions in _tpcore/SERIES.md, then replace every TEMPLATE mark (grep -rn TEMPLATE {mod}).
+  2. tp install {short(mod)}, restart the game, build the {station}, {short_name}.batches(4), Craft, {short_name}.age(72).
+  3. Commit: the new repo ({mod}), and _tpcore (golden.json, golden/{mod}) and guides/.
+  4. Add the mod to SERIES.md's table.""")
+    return 0 if ok else 1
+
+
 COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "guides": cmd_guides,
-            "sync": cmd_sync}
+            "sync": cmd_sync, "new": cmd_new}
 
 
 def main():

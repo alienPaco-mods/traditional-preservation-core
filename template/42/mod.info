@@ -1,0 +1,9 @@
+name=Traditional Preservation (__NAME__)
+id=__MOD__
+author=alienPaco
+modversion=0.0.1
+versionMin=42.20
+description=Traditional Preservation (__NAME__). B42 prototype.
+icon=icon.png
+pack=__LOWER__
+tiledef=__LOWER__ __TILEDEF__

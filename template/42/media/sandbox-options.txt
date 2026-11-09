@@ -1,0 +1,19 @@
+VERSION = 1,
+
+option __MOD__.ProcessDays {
+    type = double,
+    min = 0.5,
+    max = 30.0,
+    default = 3.0,
+    page = __MOD__,
+    translation = __MOD___ProcessDays,
+}
+
+option __MOD__.TemperatureSensitivity {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = __MOD__,
+    translation = __MOD___TemperatureSensitivity,
+    valueTranslation = __MOD___TemperatureSensitivity,
+}

@@ -1,0 +1,12 @@
+module Base
+{
+    xuiSkin default
+    {
+        entity ES___STATION_TAG__
+        {
+            LuaWindowClass = ISEntityWindow,
+            DisplayName = __STATION_TAG__,
+            Icon = Item___STATION_TAG__,
+        }
+    }
+}

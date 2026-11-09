@@ -1,0 +1,37 @@
+module __MOD__
+{
+    /* TEMPLATE: placeholder items. Prefer vanilla items in and out where they fit (SERIES.md). */
+    item RawBatch
+    {
+        ItemType = base:normal,
+        Weight = 0.5,
+        Icon = GlassJar,
+        WorldStaticModel = JarGlass_Ground,
+    }
+
+    item FinishedBatch
+    {
+        ItemType = base:normal,
+        Weight = 0.5,
+        Icon = GlassJar,
+        WorldStaticModel = JarGlass_Ground,
+    }
+
+    /* time is overwritten from PROCESS_HOURS in __MOD__.lua */
+    craftRecipe ProcessBatch
+    {
+        time = 259200,
+        Tags = __STATION_TAG__,
+        category = Cooking,
+        OnStart = __MOD__.onProcessStart,
+        OnUpdate = __MOD__.onProcessUpdate,
+        inputs
+        {
+            item variable[1:4] [__MOD__.RawBatch] flags[ItemCount] mode:destroy,
+        }
+        outputs
+        {
+            item variable[1:4] __MOD__.FinishedBatch,
+        }
+    }
+}

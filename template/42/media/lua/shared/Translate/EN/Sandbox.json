@@ -1,0 +1,11 @@
+{
+  "Sandbox___MOD__": "Traditional Preservation (__NAME__)",
+  "Sandbox___MOD___ProcessDays": "Processing time (days)",
+  "Sandbox___MOD___ProcessDays_tooltip": "How many in-game days a batch takes on the __STATION__ at the best temperature.",
+  "Sandbox___MOD___TemperatureSensitivity": "Temperature sensitivity",
+  "Sandbox___MOD___TemperatureSensitivity_tooltip": "How much the cold or heat slows a batch. Off makes every batch take the same time, whatever the weather.",
+  "Sandbox___MOD___TemperatureSensitivity_option1": "Off",
+  "Sandbox___MOD___TemperatureSensitivity_option2": "Forgiving",
+  "Sandbox___MOD___TemperatureSensitivity_option3": "Normal",
+  "Sandbox___MOD___TemperatureSensitivity_option4": "Harsh"
+}

@@ -1,0 +1,67 @@
+module __MOD__
+{
+    entity __STATION_ID__
+    {
+        component UiConfig
+        {
+            xuiSkin = default,
+            entityStyle = ES___STATION_TAG__,
+            uiEnabled = true,
+        }
+        component Resources
+        {
+            group craft_inputs
+            {
+                Item@Input@4,
+            }
+            group craft_outputs
+            {
+                Item@Output@4,
+            }
+        }
+        /* CraftLogic, not DryingCraftLogic: drying scales with temperature and stalls in rain, which would break the timer. */
+        component CraftLogic
+        {
+            Recipes = __STATION_TAG__,
+            StartMode = Manual,
+            inputGroup = craft_inputs,
+            outputGroup = craft_outputs,
+            actionAnim = Untie_Mid,
+        }
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face S
+            {
+                layer
+                {
+                    row = __LOWER___01_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = __LOWER___01_1,
+                }
+            }
+        }
+        /* TEMPLATE: skill and materials */
+        component CraftRecipe
+        {
+            timedAction = BuildWoodenStructureSmall,
+            time = 100,
+            SkillRequired = Woodwork:2,
+            xpAward = Woodwork:5,
+            category = Furniture,
+            Tags = Carpentry;Furniture,
+            Tooltip = Tooltip_craft___STATION_TAG__Desc,
+            inputs
+            {
+                item 1 tags[base:hammer] mode:keep flags[Prop1;MayDegradeVeryLight],
+                item 4 [Base.Plank],
+                item 8 [Base.Nails],
+            }
+        }
+    }
+}

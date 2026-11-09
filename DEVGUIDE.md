@@ -126,13 +126,33 @@ overlays, stages, styles, hangers.
 - **No literal `%` in translation text**, and no `%` followed by a letter in a value passed to `getText`. The game's
   formatter throws on both. Write "percent", or pass plain tokens and swap the values in with `gsub` (the `say`
   pattern).
-- **Unique `tiledef` numbers:** Yeast 5127, FuelBarrel 5128, Fish 5129, Vinegar 5130, Salt 5171. A new mod takes a
-  free one. A tileset holds at most 512 tiles.
+- **Unique `tiledef` numbers.** mod.info is the record: `tp new` takes the next number above every mod.info in
+  `~/MODS` and the installed mods, and `tp status` warns on a duplicate. A tileset holds at most 512 tiles.
 - **Every workstation needs its own sprite**, or the world won't load. Style names can't contain `_`.
 - **A station tracked from Lua must check it is really loaded.** `getSquare()` and `getObjectIndex()` aren't enough:
   an unloaded object passes both until its chunk has been saved. Compare `getCell():getGridSquare(x, y, z)` with its
   square (see ENGINE_NOTES, "Chunk unload and generators").
 - `mod.info`: `author=alienPaco`.
+
+## Starting a new mod
+
+Settle the design questions in `SERIES.md` first, then:
+
+```
+tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name
+```
+
+It renders `_tpcore/template/` into `~/MODS/TraditionalPreservationDairy`: one floor station (S and E faces, a
+placeholder crate painted by `tools/build_tileset.py`), a placeholder item in and out, a weather-weighted timer on the
+core, the popup, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
+`test_process.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
+recorded), README, DEVHELP, WORKSHOP, and a guide stub as the next number in `guides/`. It picks the tiledef, syncs
+the core, builds the art, runs `git init` and the tests. Nothing is committed or installed.
+
+The station name needs two or more words: the engine names a moveable by GroupName (all but the last word) and
+CustomName (the last). Every placeholder is marked `TEMPLATE`; `grep -rn TEMPLATE <Mod>` lists what is left.
+When a pattern in the mods changes, change the template too (it is not tested on its own: try `tp new` with
+`TP_MODS` and `TP_INSTALLED` pointing at a scratch folder, then put `golden/golden.json` back).
 
 ## Guides and Workshop pages
 

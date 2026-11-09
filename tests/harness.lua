@@ -150,4 +150,37 @@ function H.installGetText(texts)
     end
 end
 
+-- Checks a mod's generated Tiles.lua against its entity scripts: every sprite a script names is a tile the
+-- builder made, and every station sprite has a script. Run from the mod folder.
+function H.checkTiles(Tiles)
+    local sheets = {}
+    for _, sheet in ipairs(Tiles.SHEETS) do sheets[sheet.prefix] = sheet.tiles end
+    local function exists(name)
+        local prefix, index = string.match(name, "^(.-_%d%d_)(%d+)$")
+        return prefix ~= nil and sheets[prefix] ~= nil and tonumber(index) < sheets[prefix]
+    end
+    local named, bad = {}, {}
+    local files = io.popen("find 42/media/scripts -name '*.txt' | sort")
+    for path in files:lines() do
+        for line in io.lines(path) do
+            for prefix in pairs(sheets) do
+                for name in string.gmatch(line, prefix:gsub("%p", "%%%0") .. "%d+") do
+                    named[name] = true
+                    if not exists(name) then table.insert(bad, path .. ": " .. name) end
+                end
+            end
+        end
+    end
+    files:close()
+    H.check("every sprite the scripts name is a tile the builder made" .. (bad[1] and " (" .. table.concat(bad, ", ") .. ")" or ""), #bad == 0)
+    local missing = {}
+    for _, name in ipairs(Tiles.STATIONS) do
+        if not named[name] then table.insert(missing, name) end
+    end
+    H.check("every station sprite has a script" .. (missing[1] and " (" .. table.concat(missing, ", ") .. ")" or ""), #missing == 0)
+    local outdoor = true
+    for name in pairs(Tiles.OUTDOOR or {}) do outdoor = outdoor and exists(name) end
+    H.check("the outdoor-only sprites are tiles", outdoor)
+end
+
 return H

@@ -137,8 +137,11 @@ def extract_sprites(pack_path, wanted):
 
 
 def extract_old_sprite(pack_path, wanted):
-    """Returns one full-size sprite from a pack in the older format, which has no magic or page sizes."""
+    """Returns one full-size sprite from a pack in the older format, which has no magic or page sizes. 42.22 moved
+    UI.pack to the PZPK format, so a pack that starts with the magic goes to extract_sprites instead."""
     data = Path(pack_path).read_bytes()
+    if data[:4] == b"PZPK":
+        return extract_sprites(pack_path, {wanted})[wanted]
     position = 0
 
     def read_int():

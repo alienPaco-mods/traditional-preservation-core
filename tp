@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Development tool for the Traditional Preservation mods (and FuelBarrel).
+
+  tp status                     every mod: git, installed copy, guide copy
+  tp test [MOD...]              run each mod's tests, then its golden checks (with no MOD, the core's too)
+  tp golden [MOD...] [--update] compare the season and simulation tools with their recorded output
+  tp install MOD [--force] [--skip-tests]
+                                test, then copy the mod to ~/Zomboid/mods. Refuses if the installed copy has
+                                edits newer than the source, or files the source doesn't have (--force overrides)
+  tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
+
+MOD is a folder name or its short form: Salt, Fish, Yeast, Vinegar, SaltLTP, FuelBarrel.
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
+
+MODS = Path.home() / "MODS"
+CORE = MODS / "_tpcore"
+INSTALLED = Path(os.environ.get("TP_INSTALLED", Path.home() / "Zomboid" / "mods"))  # tests point it elsewhere
+GUIDES = MODS / "guides"
+COLLECTION = GUIDES / "TraditionalPreservationCollectionGuides"
+GOLDEN = CORE / "golden"
+PREFIX = "TraditionalPreservation"
+# Never shipped: version control and Python caches.
+SKIP_NAMES = {".git", "__pycache__", ".gitignore"}
+SKIP_SUFFIXES = {".pyc"}
+
+
+def all_mods():
+    """Every folder in ~/MODS with a 42/mod.info, except old copies and tooling."""
+    return sorted(p.name for p in MODS.iterdir()
+                  if p.is_dir() and (p / "42" / "mod.info").exists()
+                  and not p.name.startswith("_") and not p.name.endswith("-old"))
+
+
+def resolve(names):
+    mods = all_mods()
+    if not names:
+        return mods
+    found = []
+    for name in names:
+        for candidate in (name, PREFIX + name):
+            if candidate in mods:
+                found.append(candidate)
+                break
+        else:
+            sys.exit(f"tp: no mod called {name}. Known: {', '.join(short(m) for m in mods)}")
+    return found
+
+
+def short(mod):
+    return mod[len(PREFIX):] if mod.startswith(PREFIX) and mod != PREFIX else mod
+
+
+def shipped_files(root):
+    """Relative paths of the files that belong in an installed copy."""
+    files = {}
+    for path in root.rglob("*"):
+        rel = path.relative_to(root)
+        if any(part in SKIP_NAMES for part in rel.parts) or path.suffix in SKIP_SUFFIXES or not path.is_file():
+            continue
+        files[rel] = path
+    return files
+
+
+def compare_install(mod):
+    """What differs between the source and the installed copy: (differ, newer_installed, only_installed, missing)."""
+    source = shipped_files(MODS / mod)
+    target_root = INSTALLED / mod
+    if not target_root.exists():
+        return None
+    target = shipped_files(target_root)
+    differ, newer, extra = [], [], []
+    for rel, path in source.items():
+        other = target.get(rel)
+        if other is None:
+            differ.append(rel)
+        elif path.read_bytes() != other.read_bytes():
+            differ.append(rel)
+            if other.stat().st_mtime > path.stat().st_mtime:
+                newer.append(rel)
+    for rel in target:
+        if rel not in source:
+            extra.append(rel)
+    return differ, newer, extra
+
+
+def git_state(mod):
+    root = MODS / mod
+    if not (root / ".git").exists():
+        return "no git"
+    changed = subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True).stdout
+    last = subprocess.run(["git", "log", "-1", "--format=%cd %s", "--date=short"], cwd=root,
+                          capture_output=True, text=True).stdout.strip()
+    count = len([line for line in changed.splitlines() if line.strip()])
+    return (f"{count} uncommitted" if count else "clean") + f", last: {last}"
+
+
+def guide_pairs():
+    """(source guide, copy inside a mod) for every guide whose name matches a mod folder."""
+    pairs = []
+    for guide in sorted(list(COLLECTION.glob("*_Guide.md")) + list(GUIDES.glob("*_Guide.md"))):
+        name = guide.stem[:-len("_Guide")].split("_", 1)[-1]
+        for mod in (PREFIX + name, name):
+            if (MODS / mod / "42" / "mod.info").exists():
+                pairs.append((guide, MODS / mod / guide.name))
+                break
+    return pairs
+
+
+def cmd_status(_args):
+    pairs = {copy.parent.name: (src, copy) for src, copy in guide_pairs()}
+    for mod in all_mods():
+        compared = compare_install(mod)
+        if compared is None:
+            installed = "not installed"
+        else:
+            differ, newer, extra = compared
+            installed = "same" if not (differ or extra) else f"{len(differ)} differ"
+            if newer:
+                installed += f", {len(newer)} NEWER in the installed copy"
+            if extra:
+                installed += f", {len(extra)} only in the installed copy"
+        guide = ""
+        if mod in pairs:
+            src, copy = pairs[mod]
+            guide = "guide same" if copy.exists() and copy.read_bytes() == src.read_bytes() else "guide differs (tp guides)"
+        print(f"{short(mod):<11} git: {git_state(mod)}\n{'':<11} installed: {installed}" + (f"; {guide}" if guide else ""))
+
+
+def run_tests(mod):
+    """Runs tests/*.lua from the mod folder. Returns True if every one passed."""
+    root = MODS / mod
+    tests = sorted((root / "tests").glob("*.lua"))
+    env = dict(os.environ, TPCORE=str(CORE))
+    ok = True
+    for test in tests:
+        result = subprocess.run(["luajit", str(test.relative_to(root))], cwd=root, env=env,
+                                capture_output=True, text=True, timeout=600)
+        out = result.stdout + result.stderr
+        passed = result.returncode == 0 and "all passed" in out
+        checks = out.count("\nok ") + out.startswith("ok ")
+        print(f"  {'ok  ' if passed else 'FAIL'} {short(mod)}/{test.name} ({checks} checks)")
+        if not passed:
+            ok = False
+            print("\n".join("       " + line for line in out.strip().splitlines()[-8:]))
+    if not tests:
+        print(f"  --   {short(mod)}: no tests")
+    return ok
+
+
+def golden_config():
+    path = GOLDEN / "golden.json"
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def run_golden(mod, update=False):
+    """Runs the mod's recorded tools and compares their output. Returns True if all match."""
+    ok = True
+    for tool in golden_config().get(mod, []):
+        root = MODS / mod
+        record = GOLDEN / mod / (Path(tool).stem + ".txt")
+        result = subprocess.run(["luajit", tool], cwd=root, capture_output=True, text=True, timeout=1800,
+                                env=dict(os.environ, TPCORE=str(CORE)))
+        out = result.stdout + result.stderr + f"exit={result.returncode}\n"
+        if update or not record.exists():
+            record.parent.mkdir(parents=True, exist_ok=True)
+            record.write_text(out)
+            print(f"  rec  {short(mod)}/{tool}")
+        elif record.read_text() == out:
+            print(f"  ok   {short(mod)}/{tool} matches its golden output")
+        else:
+            ok = False
+            old, new = record.read_text().splitlines(), out.splitlines()
+            changed = sum(1 for a, b in zip(old, new) if a != b) + abs(len(old) - len(new))
+            print(f"  FAIL {short(mod)}/{tool}: {changed} lines differ from {record.relative_to(CORE)}")
+    return ok
+
+
+def run_core_tests():
+    """The harness's own tests, run from _tpcore."""
+    ok = True
+    for test in sorted((CORE / "tests").glob("test_*.lua")):
+        result = subprocess.run(["luajit", f"tests/{test.name}"], cwd=CORE, capture_output=True, text=True, timeout=600)
+        out = result.stdout + result.stderr
+        passed = result.returncode == 0 and "all passed" in out
+        print(f"  {'ok  ' if passed else 'FAIL'} core/{test.name}")
+        if not passed:
+            ok = False
+            print("\n".join("       " + line for line in out.strip().splitlines()[-8:]))
+    return ok
+
+
+def cmd_test(args):
+    ok = run_core_tests() if not args else True
+    for mod in resolve(args):
+        ok = run_tests(mod) and ok
+        ok = run_golden(mod) and ok
+    print("all passed" if ok else "SOME FAILED")
+    return 0 if ok else 1
+
+
+def cmd_golden(args):
+    update = "--update" in args
+    ok = True
+    for mod in resolve([a for a in args if not a.startswith("--")]):
+        ok = run_golden(mod, update) and ok
+    return 0 if ok else 1
+
+
+def cmd_install(args):
+    force, skip_tests = "--force" in args, "--skip-tests" in args
+    names = [a for a in args if not a.startswith("--")]
+    if not names:
+        sys.exit("tp install: name a mod")
+    for mod in resolve(names):
+        if not skip_tests and not (run_tests(mod) and run_golden(mod)):
+            sys.exit(f"tp install: {short(mod)} has failing tests, nothing installed")
+        compared = compare_install(mod)
+        if compared and not force:
+            _, newer, extra = compared
+            if newer or extra:
+                for rel in newer:
+                    print(f"  installed copy is newer: {rel}")
+                for rel in extra:
+                    print(f"  only in the installed copy: {rel}")
+                sys.exit(f"tp install: {short(mod)} not installed. Bring those edits into ~/MODS/{mod} first, "
+                         "or pass --force to overwrite them")
+        target = INSTALLED / mod
+        staging = INSTALLED / f".{mod}.new"
+        if staging.exists():
+            shutil.rmtree(staging)
+        for rel, path in shipped_files(MODS / mod).items():
+            (staging / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, staging / rel)  # keeps the time, so a later edit to the copy shows as newer
+        if target.is_symlink():
+            target.unlink()
+        elif target.exists():
+            shutil.rmtree(target)
+        staging.rename(target)
+        differ, newer, extra = compare_install(mod)
+        if differ or extra:
+            sys.exit(f"tp install: {short(mod)} copied but still differs: {len(differ)} files")
+        print(f"installed {short(mod)} to {target}")
+    return 0
+
+
+def cmd_guides(args):
+    force = "--force" in args
+    blocked = []
+    for src, copy in guide_pairs():
+        if copy.exists() and copy.read_bytes() != src.read_bytes() and copy.stat().st_mtime > src.stat().st_mtime:
+            blocked.append(copy)
+    if blocked and not force:
+        for copy in blocked:
+            print(f"  edited inside the mod, newer than guides/: {copy.relative_to(MODS)}")
+        sys.exit("tp guides: nothing copied. Move those edits into ~/MODS/guides first, or pass --force")
+    for src, copy in guide_pairs():
+        if not copy.exists() or copy.read_bytes() != src.read_bytes():
+            shutil.copy2(src, copy)
+            print(f"  copied {src.name} into {copy.parent.name}")
+    archive = GUIDES / (COLLECTION.name + ".zip")
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as out:
+        out.write(COLLECTION, COLLECTION.name)
+        for guide in sorted(COLLECTION.glob("*.md")):
+            out.write(guide, f"{COLLECTION.name}/{guide.name}")
+    print(f"rebuilt {archive.relative_to(MODS)}")
+    return 0
+
+
+COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "guides": cmd_guides}
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        print(__doc__)
+        return 1
+    return COMMANDS[sys.argv[1]](sys.argv[2:]) or 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -101,6 +101,22 @@ local Weather = require "TraditionalPreservationYeast/Core/Weather"
 
 Core modules return a local table and never set a global, and never require each other.
 
+## Tile numbers: the generated Tiles.lua
+
+Each mod's art builder (`tools/build_tileset.py`, Yeast's `tools/build_shelf_tileset.py`) is the one place tile
+numbers live. Every run writes `42/media/lua/shared/<Mod>/Tiles.lua` (header: generated, don't edit), and the Lua
+reads it: `local Tiles = require "<Mod>/Tiles"`. Every Tiles.lua has `SHEETS` (prefix and tile count of each
+tileset), `STATIONS` (the sprite names of every workstation face, which the station tracker registers), and where they
+apply `PREFIX`, `FACE_COUNT` and `OUTDOOR` (a set for `UI.outdoorOnly`); the rest is the mod's own: station bases,
+overlays, stages, styles, hangers.
+
+1. To renumber or add tiles, change the builder's constants (and its `lua_tiles()` if a new name is needed) and
+   rerun it. Never edit Tiles.lua.
+2. Entity scripts stay hand written. `tests/test_tiles.lua` (`H.checkTiles`) fails if a script names a tile the
+   builder didn't make, or a station sprite has no script.
+3. The writer is `pzart.write_lua_tiles` in `_tpcore/tools/pzart.py`; builders import it from `_tpcore` (or
+   `TPCORE`). Builders are deterministic: a rerun with no change gives byte-identical art.
+
 ## Rules that keep saves and the game happy
 
 - **Never rename a save key.** Ledger fields and object modData keys stay as they are, and old-save migrations stay in.

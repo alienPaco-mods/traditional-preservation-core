@@ -171,6 +171,61 @@ local inside = { isOutside = function() return false end }
 check("outdoorOnly: refuses an indoor square", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "beam_0" }, nil, inside) == false and not placed)
 check("outdoorOnly: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, inside) and placed)
 
+-- slotRules, twice as two mods would: each mod's stations go to its own rules, the rest on to vanilla.
+ResourceIO = { Input = "in", Output = "out" }
+local vanillaAdds, vanillaUps, halos, queuedActions = 0, 0, {}, {}
+ISCraftLogicPanel = { ItemSlotAddItems = function() vanillaAdds = vanillaAdds + 1 end }
+ISItemSlot = { defaultVerifyItem = function() return true end, onMouseUp = function() vanillaUps = vanillaUps + 1 end }
+HaloTextHelper = { addBadText = function(_, text) table.insert(halos, text) end }
+ISEntityUI = { WalkToEntity = function() return true end }
+ISItemSlotAddAction = { new = function(_, _, _, item) return { item = item } end }
+ISTimedActionQueue = { add = function(action) table.insert(queuedActions, action) end }
+ISMouseDrag = {}
+ISInventoryPane = { getActualItems = function(dragging) return dragging end }
+function getPlayer() return "player" end
+local function station(name, free)
+    local entity = { name = name, component = { free = free } }
+    local resource = { getIO = function() return ResourceIO.Input end, getGameEntity = function() return entity end }
+    return { resource = resource }, entity
+end
+local tracked = {}
+local function rulesFor(name, refusalKey)
+    UI.slotRules{
+        station = function(entity) if entity and entity.name == name then return entity.component, name end end,
+        refusal = function(s, item, queued)
+            if item == "wrong" then return refusalKey end
+            if #queued >= s.component.free then return "T_Full" end
+        end,
+        added = function(entity) tracked[entity] = true end,
+    }
+end
+rulesFor("cask", "T_NotCask")
+rulesFor("shelf", "T_NotShelf")
+local caskSlot, cask = station("cask", 2)
+ISCraftLogicPanel.ItemSlotAddItems("player", cask, caskSlot, { "a", "b", "c" }, cask.component)
+check("slotRules: adds until the refusal, then says why", #queuedActions == 2 and halos[1] == getText("T_Full") and tracked[cask])
+check("slotRules: each queued action asks again", queuedActions[1].tpSlot.extra == "cask" and queuedActions[1].canAddItem(queuedActions[1]))
+halos, queuedActions = {}, {}
+local shelfSlot, shelf = station("shelf", 5)
+ISCraftLogicPanel.ItemSlotAddItems("player", shelf, shelfSlot, { "wrong" }, shelf.component)
+check("slotRules: the other mod's station gets its own rules", #queuedActions == 0 and halos[1] == getText("T_NotShelf"))
+local otherSlot, other = station("barrel", 5)
+ISCraftLogicPanel.ItemSlotAddItems("player", other, otherSlot, { "a" }, {})
+check("slotRules: anything else goes to vanilla", vanillaAdds == 1)
+check("slotRules: green border follows the refusal", ISItemSlot.defaultVerifyItem({}, caskSlot, "a") and not ISItemSlot.defaultVerifyItem({}, caskSlot, "wrong"))
+local outSlot = station("cask", 2)
+outSlot.resource.getIO = function() return ResourceIO.Output end
+check("slotRules: output slots are left alone", ISItemSlot.defaultVerifyItem({}, outSlot, "wrong"))
+halos = {}
+ISMouseDrag.dragging = { "wrong" }
+ISItemSlot.onMouseUp(caskSlot, 0, 0)
+check("slotRules: a refused drop says why, and vanilla still runs", halos[1] == getText("T_NotCask") and vanillaUps == 1)
+halos = {}
+ISMouseDrag.dragging = { "wrong", "a" }
+ISItemSlot.onMouseUp(caskSlot, 0, 0)
+check("slotRules: a drag that can partly go in says nothing", #halos == 0 and vanillaUps == 2)
+ISMouseDrag.dragging = nil
+
 -- Yeast, Fish and Vinegar were checked here against their old code when each moved onto the core (2026-11-09).
 -- Their golden outputs and their own tests keep them in step now.
 

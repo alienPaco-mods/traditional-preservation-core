@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+ROADMAP.md
+SERIES.md
+POST_REFACTOR_TESTS.md
+MultiplayerIntegration.md

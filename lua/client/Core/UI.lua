@@ -1,5 +1,7 @@
 -- Traditional Preservation core: text and popups for the station windows.
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
+require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
+require "Entity/ISUI/Controls/ISItemSlot"
 require "Moveables/ISMoveableSpriteProps"
 
 local UI = {}
@@ -100,6 +102,89 @@ function UI.progressTooltips(draws)
             if data and data:getRecipe() then draw(itemSlot, tooltip, name, entity) end
         end
     end)
+end
+
+-- A station's own input rules in place of vanilla's free-slot limit. One refusal decides adding (each queued
+-- action asks again when it runs, as the slot may have filled since), the slot's green border while dragging,
+-- and the halo when a drop is refused, so the border never promises what adding then refuses.
+--   station(entity)              the entity's crafting component and anything the refusal needs, or nil for an
+--                                entity that isn't the mod's
+--   refusal(slot, item, queued)  a translation key, or nil if item may go in. slot = { entity, component,
+--                                resource, extra }; queued lists the items already on their way in this add
+--   added(entity)                optional, before an add: start tracking a station built this session
+-- Wraps ISCraftLogicPanel.ItemSlotAddItems (its add loop is copied here), ISItemSlot.defaultVerifyItem and
+-- ISItemSlot.onMouseUp: compare them with vanilla after a game update. Each mod's call wraps the last, so
+-- other entities pass through every mod to vanilla.
+function UI.slotRules(rules)
+    local vanillaAddItems = ISCraftLogicPanel.ItemSlotAddItems
+    local vanillaVerifyItem = ISItemSlot.defaultVerifyItem
+    local vanillaMouseUp = ISItemSlot.onMouseUp
+
+    local function canAdd(action)
+        return not rules.refusal(action.tpSlot, action.item, {})
+    end
+
+    function ISCraftLogicPanel.ItemSlotAddItems(player, entity, itemSlot, itemList, component)
+        local ours, extra = rules.station(entity)
+        if not ours then return vanillaAddItems(player, entity, itemSlot, itemList, component) end
+        if rules.added then rules.added(entity) end
+
+        local slot = { entity = entity, component = component, resource = itemSlot.resource, extra = extra }
+        local queued = {}
+        for index, item in ipairs(itemList) do
+            local reason = rules.refusal(slot, item, queued)
+            if reason then
+                HaloTextHelper.addBadText(player, getText(reason))
+                return
+            end
+            if index == 1 and not ISEntityUI.WalkToEntity(player, entity) then return end
+
+            local action = ISItemSlotAddAction:new(player, entity, item, itemSlot.resource, itemSlot)
+            action.component = component
+            action.tpSlot = slot
+            action.canAddItem = canAdd
+            ISTimedActionQueue.add(action)
+            table.insert(queued, item)
+        end
+    end
+
+    -- The mod's input slot an item slot shows, or nil for any other slot.
+    local function slotOf(itemSlot)
+        local resource = itemSlot and itemSlot.resource
+        if not resource or resource:getIO() ~= ResourceIO.Input then return nil end
+        local entity = resource:getGameEntity()
+        local component, extra = rules.station(entity)
+        if not component then return nil end
+        return { entity = entity, component = component, resource = resource, extra = extra }
+    end
+
+    function ISItemSlot:defaultVerifyItem(itemSlot, item)
+        if not vanillaVerifyItem(self, itemSlot, item) then return false end
+        local slot = slotOf(itemSlot)
+        return not slot or not rules.refusal(slot, item, {})
+    end
+
+    -- The reason to show when nothing being dragged can go in this slot.
+    local function dropRefusal(itemSlot)
+        if not ISMouseDrag.dragging or ISMouseDrag.draggingFocus == itemSlot then return nil end
+        local slot = slotOf(itemSlot)
+        if not slot then return nil end
+
+        local reason
+        for _, item in ipairs(ISInventoryPane.getActualItems(ISMouseDrag.dragging)) do
+            local itemReason = rules.refusal(slot, item, {})
+            if not itemReason then return nil end
+            reason = reason or itemReason
+        end
+        return reason
+    end
+
+    -- A refused drop does nothing in vanilla, so this says why.
+    function ISItemSlot:onMouseUp(x, y)
+        local reason = dropRefusal(self)
+        if reason then HaloTextHelper.addBadText(getPlayer(), getText(reason)) end
+        return vanillaMouseUp(self, x, y)
+    end
 end
 
 -- Stations built for the open refuse an indoor square, and this stops one being picked up and carried in,

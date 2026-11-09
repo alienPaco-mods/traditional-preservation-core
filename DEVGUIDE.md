@@ -169,8 +169,8 @@ Vanilla's progress popup goes by the recipe's time and its own temperature curve
 for a weather timer. Ours shows progress, real time left at today's rate, the temperature, the place and the rate.
 Vanilla's slots take any item and only limit by free slots, so a wrong item leaves Craft greyed with no reason, and a
 station that limits by weight or by stacks can't be expressed. Our slot rules check before the item goes in, and the
-same check sets the slot's green border, so it never promises what adding then refuses. The add loop is a copy of
-vanilla's and must be compared with it after a game update.
+same check sets the slot's green border, so it never promises what adding then refuses. It is one core function,
+`UI.slotRules`, whose add loop is a copy of vanilla's: compare that one copy with vanilla after a game update.
 
 **Why is the core copied into each mod instead of being one shared mod?**
 Every mod stays standalone: a player can subscribe to one without a dependency. PZ loads only one file per Lua path,

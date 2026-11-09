@@ -1,6 +1,8 @@
 {
   "IGUI_CraftingWindow___STATION_TAG__": "__STATION__",
   "IGUI___MOD___Progress": "Progress",
+  "IGUI___MOD___InUse": "This batch is already working",
+  "IGUI___MOD___Full": "That slot is full",
   "IGUI___MOD___TimeLeft": "Time Remaining",
   "IGUI___MOD___Time": "%1d %2h, if the temperature holds",
   "IGUI___MOD___Temperature": "Temperature",

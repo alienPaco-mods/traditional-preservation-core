@@ -1,7 +1,7 @@
 # Traditional Preservation: development guide
 
-How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. The plan for the shared
-core is in `ROADMAP.md`. Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
+How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. What the mods are and
+how they fit together: `SERIES.md`. The plan for the shared core is in `ROADMAP.md`. Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
 
 Tip: `alias tp=~/MODS/_tpcore/tp` (the examples below use it).
 
@@ -116,6 +116,9 @@ overlays, stages, styles, hangers.
    builder didn't make, or a station sprite has no script.
 3. The writer is `pzart.write_lua_tiles` in `_tpcore/tools/pzart.py`; builders import it from `_tpcore` (or
    `TPCORE`). Builders are deterministic: a rerun with no change gives byte-identical art.
+4. `pzart.py` also holds everything two builders share: the pack and .tiles writers, sprite extraction, icons,
+   layers, noise, weathering, staves and hoops. Change it only with a byte-identical check: rebuild every mod in a
+   scratch copy before and after (FuelBarrel too) and compare every output file.
 
 ## Rules that keep saves and the game happy
 

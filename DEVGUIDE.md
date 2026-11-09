@@ -134,6 +134,66 @@ overlays, stages, styles, hangers.
   square (see ENGINE_NOTES, "Chunk unload and generators").
 - `mod.info`: `author=alienPaco`.
 
+## FAQ: why the series does it this way
+
+For other modders reading the code. Each answer is the reason we chose it, not the only way it could be done.
+
+**Why a weather ledger in global ModData, and not a timer on each object?**
+A station's chunk is unloaded most of the time, and nothing on it runs then. The weather is the same for every
+station, so one set of running totals (work done per place, recorded every 10 in-game minutes) is enough for all of
+them. A station only keeps the totals it last saw; when it loads again, the difference is exactly the work it missed,
+however long it was away. That costs one small table per mod, never grows with the number of stations, and needs no
+catch-up simulation.
+
+**Why three places (Open, Sheltered, Basement), and why a 240-hour season mean?**
+They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
+day's weather. A roof doesn't follow the hour: thick walls follow the season, so Sheltered is the mean of the last ten
+days or so plus 10 C, capped at 28 C. A basement is near the year's average all year, so 15 C. Ten days is long
+enough that one warm afternoon in January does nothing, and short enough that spring arrives within a fortnight.
+More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them.
+
+**Why override the craft timers?**
+The engine's craft timers tick at the speed of a 60-minute day whatever Day Length says, and stop while the area is
+unloaded. So a recipe's `OnStart` notes where the run begins, and `OnUpdate` sets the elapsed time from the game clock
+(plain timers) or from the work in the ledger (weather timers). The recipe's `time` is overwritten from the sandbox
+options at load with `recipe:Load()`, so the window's Duration matches the real time.
+
+**Why layer attached sprites instead of using SpriteOverlayConfig?**
+SpriteOverlayConfig shows one overlay, for the first batch only. A shelf with five cultures or a frame with eight
+stacks needs one sprite per batch, each at its own stage, and a station waiting to start or holding a finished batch
+needs a look too. So the tracker reads the station and lays its own sprites with `addAttachedAnimSpriteByName`, only
+redrawing when a signature of the state changes.
+
+**Why custom popups and slot rules instead of vanilla's?**
+Vanilla's progress popup goes by the recipe's time and its own temperature curve, so it shows the wrong time left
+for a weather timer. Ours shows progress, real time left at today's rate, the temperature, the place and the rate.
+Vanilla's slots take any item and only limit by free slots, so a wrong item leaves Craft greyed with no reason, and a
+station that limits by weight or by stacks can't be expressed. Our slot rules check before the item goes in, and the
+same check sets the slot's green border, so it never promises what adding then refuses. The add loop is a copy of
+vanilla's and must be compared with it after a game update.
+
+**Why is the core copied into each mod instead of being one shared mod?**
+Every mod stays standalone: a player can subscribe to one without a dependency. PZ loads only one file per Lua path,
+so two mods shipping the same path would get whichever loaded last, possibly an older copy. Each mod carries the core
+under its own path (`<Mod>/Core/...`), as modules that return a local table and set no global, so versions can never
+collide. `tp sync` keeps the copies identical and `tp test` fails if one is out of date.
+
+**Why the extra check that a station is loaded?**
+An unloaded object keeps its square and its index until its chunk has been saved and reused, so `getSquare()` and
+`getObjectIndex()` both say it's fine. Writing to it then is lost, or worse, writes into a stale chunk. The cell stops
+returning that square the moment the chunk unloads, so `getCell():getGridSquare(x, y, z) == square` is the real test.
+FuelBarrel found this first; every tracker uses it through `Station.isLoaded`.
+
+**Why no literal `%` in translations?**
+The game's translator reads a finished line again as a format pattern. "40% soured" makes it throw, and so does a
+line with `%1` given no values. So translations take plain tokens (`@1@`) through `UI.say`, and the values are swapped
+in afterwards with `gsub`. `test_harness.lua` checks every mod's translations for a stray `%`.
+
+**Why do saves never lose a key?**
+Players keep saves for months. A renamed ledger field or modData key silently resets every running batch, so names
+are fixed once and old-save migrations (Vinegar's `lastOpen/lastSheltered`, `vinegarMl`, Yeast's
+`fermentStartHour`) stay in the code with a test each.
+
 ## Starting a new mod
 
 Settle the design questions in `SERIES.md` first, then:

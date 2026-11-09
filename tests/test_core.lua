@@ -1,5 +1,4 @@
--- Checks the shared core in lua/, and that it does what Vinegar's own code does today, so moving a
--- mod onto it changes nothing. Run from _tpcore: luajit tests/test_core.lua
+-- Checks the shared core in lua/. Run from _tpcore: luajit tests/test_core.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 
@@ -159,69 +158,7 @@ local inside = { isOutside = function() return false end }
 check("outdoorOnly: refuses an indoor square", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "beam_0" }, nil, inside) == false and not placed)
 check("outdoorOnly: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, inside) and placed)
 
--- Same results as the mods' own code. A year of weather, every ten minutes, with a day-night swing.
-local function weatherAt(step)
-    local hours = step / 6
-    local day = hours / 24
-    return 10 - 18 * math.cos(2 * math.pi * day / 365) + 6 * math.sin(2 * math.pi * hours / 24) + 3 * math.sin(day * 1.7)
-end
-local function sameLedger(a, b)
-    for key, value in pairs(a) do
-        if type(value) == "number" and not near(value, b[key] or -1e9, 1e-9 * math.max(1, math.abs(value))) then
-            return false, key
-        end
-    end
-    return true
-end
-local function noGlobals()
-    ScriptManager = { instance = { getCraftRecipe = function() return { Load = function() end } end, getItem = function() return { DoParam = function() end } end } }
-    H.installModData()
-    H.installEvents()
-end
-
--- Yeast has run on the core since 2026-11-09, checked then against its old code here. Its golden season
--- report keeps it in step now.
-local old, new
-local ok, key = true, nil
-local same
-
-noGlobals()
-dofile("../TraditionalPreservationVinegar/42/media/lua/shared/TraditionalPreservationVinegar.lua")
-local V = TraditionalPreservationVinegar
-local vinegarKinds = { malting = V.maltingRate, alcoholic = V.alcoholicRate, acetic = V.aceticRate }
-old, new = V.newLedger(0), Weather.newLedger(0, vinegarKinds)
-key = nil
-for step = 1, 365 * 24 * 6 do
-    V.advance(old, step / 6, weatherAt(step))
-    Weather.advance(new, step / 6, weatherAt(step), vinegarKinds)
-    if step % 144 == 0 then
-        ok, key = sameLedger(new, old)
-        if not ok then break end
-    end
-end
-check("Vinegar: a year of weather gives the same ledger" .. (key and " (" .. key .. ")" or ""), ok)
-
--- A cask brought up to date now and then, as updateCask does it, against catchUp.
-local cask = { ml = 20000, strength = 0 }
-local caskMarks, souredWork = nil, 0
-local seenWork = 0
-local vinegarLedger = V.newLedger(0)
-same = true
-for step = 1, 60 * 24 * 6 do
-    V.advance(vinegarLedger, step / 6, weatherAt(step))
-    if step % 50 == 0 then
-        local place = step < 4000 and "Open" or "Sheltered"
-        local before = cask.last and (vinegarLedger["acetic" .. place] - (cask.last[place] or vinegarLedger["acetic" .. place])) or 0
-        V.updateCask(cask, vinegarLedger, place)
-        seenWork = seenWork + before
-        if caskMarks then
-            souredWork = souredWork + Weather.catchUp(caskMarks, vinegarLedger, "acetic", place)
-        else
-            caskMarks = Weather.mark({}, vinegarLedger, "acetic")
-        end
-        same = same and near(seenWork, souredWork, 1e-9)
-    end
-end
-check("Vinegar: a cask's catch-up matches", same and souredWork > 0)
+-- Yeast, Fish and Vinegar were checked here against their old code when each moved onto the core (2026-11-09).
+-- Their golden outputs and their own tests keep them in step now.
 
 H.done()

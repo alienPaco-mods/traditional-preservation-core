@@ -79,10 +79,27 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installClock(hours)`, `H.setHours(h)` | `getGameTime():getWorldAgeHours()`. |
 | `H.installModData()` | `ModData.getOrCreate`, one table per key in `H.modData`. |
 | `H.installEvents()`, `H.fire(name, ...)` | `Events.<Any>.Add`, and firing the handlers added. |
+| `H.useModPaths()` | `require` finds the mod's own Lua as the game does, e.g. `require "TraditionalPreservationYeast/Core/Weather"`. |
 | `H.installGetText()` | `getText` with the mod's real EN translations. Notes the game formatter's `%` errors in `H.textWarnings`. |
 
 `luajit tests/test_harness.lua`, run from `_tpcore` (or `tp test` with no mod), tests the harness itself, and checks
 every mod's translation files for a literal `%`.
+
+## The shared core
+
+`~/MODS/_tpcore/lua` holds the Lua every TP mod shares: `shared/Core/Weather.lua`, `shared/Core/Station.lua`,
+`client/Core/UI.lua`. Each mod carries its own copy under its own path, so every mod stays standalone:
+
+```lua
+local Weather = require "TraditionalPreservationYeast/Core/Weather"
+```
+
+1. Edit the core only in `_tpcore/lua`, and run `luajit tests/test_core.lua` from `_tpcore` (or `tp test`).
+2. `tp sync` copies it into every mod that already has it (`tp sync <Mod>` adds it to a new one). Each copy starts
+   with a "Copied from ... Edit it there" line. Sync refuses to overwrite a copy edited by hand; `--force` overrides.
+3. `tp test <Mod>` and `tp install <Mod>` fail while a mod's copy is out of date. `tp status` shows `core synced`.
+
+Core modules return a local table and never set a global, and never require each other.
 
 ## Rules that keep saves and the game happy
 

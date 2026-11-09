@@ -8,6 +8,8 @@
                                 test, then copy the mod to ~/Zomboid/mods. Refuses if the installed copy has
                                 edits newer than the source, or files the source doesn't have (--force overrides)
   tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
+  tp sync [MOD...] [--force]    copy the shared core (lua/) into each mod under its own path. With no MOD, the mods
+                                that already have it. Refuses to overwrite a copy edited by hand (--force overrides)
 
 MOD is a folder name or its short form: Salt, Fish, Yeast, Vinegar, SaltLTP, FuelBarrel.
 """
@@ -19,8 +21,8 @@ import sys
 import zipfile
 from pathlib import Path
 
-MODS = Path.home() / "MODS"
-CORE = MODS / "_tpcore"
+MODS = Path(os.environ.get("TP_MODS", Path.home() / "MODS"))  # tests point it elsewhere
+CORE = Path(__file__).resolve().parent
 INSTALLED = Path(os.environ.get("TP_INSTALLED", Path.home() / "Zomboid" / "mods"))  # tests point it elsewhere
 GUIDES = MODS / "guides"
 COLLECTION = GUIDES / "TraditionalPreservationCollectionGuides"
@@ -90,6 +92,35 @@ def compare_install(mod):
     return differ, newer, extra
 
 
+CORE_LUA = CORE / "lua"
+CORE_HEADER = "-- Copied from ~/MODS/_tpcore/{source} by `tp sync`. Edit it there, not here.\n"
+
+
+def core_copies(mod):
+    """(source in _tpcore, copy in the mod, text the copy should hold) for every core module.
+
+    lua/<side>/Core/X.lua goes to <mod>/42/media/lua/<side>/<mod>/Core/X.lua, required as "<mod>/Core/X".
+    """
+    copies = []
+    for source in sorted(CORE_LUA.glob("*/Core/*.lua")):
+        side = source.parent.parent.name
+        copy = MODS / mod / "42" / "media" / "lua" / side / mod / "Core" / source.name
+        text = CORE_HEADER.format(source=source.relative_to(CORE)) + source.read_text()
+        copies.append((source, copy, text))
+    return copies
+
+
+def uses_core(mod):
+    return any(copy.exists() for _, copy, _ in core_copies(mod))
+
+
+def core_state(mod):
+    """None if the mod doesn't use the core, else the copies that are missing or out of date."""
+    if not uses_core(mod):
+        return None
+    return [copy for _, copy, text in core_copies(mod) if not copy.exists() or copy.read_text() != text]
+
+
 def git_state(mod):
     root = MODS / mod
     if not (root / ".git").exists():
@@ -130,7 +161,9 @@ def cmd_status(_args):
         if mod in pairs:
             src, copy = pairs[mod]
             guide = "guide same" if copy.exists() and copy.read_bytes() == src.read_bytes() else "guide differs (tp guides)"
-        print(f"{short(mod):<11} git: {git_state(mod)}\n{'':<11} installed: {installed}" + (f"; {guide}" if guide else ""))
+        stale = core_state(mod)
+        core = "" if stale is None else ("; core synced" if not stale else f"; core: {len(stale)} out of date (tp sync)")
+        print(f"{short(mod):<11} git: {git_state(mod)}\n{'':<11} installed: {installed}" + (f"; {guide}" if guide else "") + core)
 
 
 def run_tests(mod):
@@ -139,6 +172,11 @@ def run_tests(mod):
     tests = sorted((root / "tests").glob("*.lua"))
     env = dict(os.environ, TPCORE=str(CORE))
     ok = True
+    stale = core_state(mod)
+    if stale:
+        ok = False
+        print(f"  FAIL {short(mod)}: core out of date, run tp sync {short(mod)}: "
+              + ", ".join(str(copy.relative_to(root)) for copy in stale))
     for test in tests:
         result = subprocess.run(["luajit", str(test.relative_to(root))], cwd=root, env=env,
                                 capture_output=True, text=True, timeout=600)
@@ -273,7 +311,34 @@ def cmd_guides(args):
     return 0
 
 
-COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "guides": cmd_guides}
+def cmd_sync(args):
+    force = "--force" in args
+    names = [a for a in args if not a.startswith("--")]
+    mods = resolve(names) if names else [mod for mod in all_mods() if uses_core(mod)]
+    if not mods:
+        sys.exit("tp sync: no mod uses the core yet. Name one: tp sync <MOD>")
+    blocked = []
+    for mod in mods:
+        for source, copy, text in core_copies(mod):
+            if copy.exists() and copy.read_text() != text and copy.stat().st_mtime > source.stat().st_mtime:
+                blocked.append(copy)
+    if blocked and not force:
+        for copy in blocked:
+            print(f"  edited inside the mod, newer than _tpcore: {copy.relative_to(MODS)}")
+        sys.exit("tp sync: nothing copied. Move those edits into ~/MODS/_tpcore/lua first, or pass --force")
+    for mod in mods:
+        changed = 0
+        for _, copy, text in core_copies(mod):
+            if not copy.exists() or copy.read_text() != text:
+                copy.parent.mkdir(parents=True, exist_ok=True)
+                copy.write_text(text)
+                changed += 1
+        print(f"  {short(mod)}: {changed} core files copied" if changed else f"  {short(mod)}: core up to date")
+    return 0
+
+
+COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "guides": cmd_guides,
+            "sync": cmd_sync}
 
 
 def main():

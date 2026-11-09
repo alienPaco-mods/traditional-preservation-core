@@ -22,6 +22,12 @@ function H.done()
     print("all passed")
 end
 
+-- Lets require find the mod's own Lua as the game does, so a mod file can
+--   local Weather = require "TraditionalPreservationYeast/Core/Weather"
+function H.useModPaths()
+    package.path = "42/media/lua/shared/?.lua;42/media/lua/client/?.lua;42/media/lua/server/?.lua;" .. package.path
+end
+
 -- A game clock the test moves with H.setHours.
 H.hours = 0
 function H.installClock(hours)

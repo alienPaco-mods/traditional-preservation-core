@@ -142,6 +142,21 @@ function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now)
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
 end
 
+-- Work that goes by the clock alone (Fish's press, Salt's leaching) needs no ledger, only the hour it began.
+-- The engine pools recipe data without clearing its ModData, so every run's OnStart must call startClock.
+function Weather.startClock(craftRecipeData, key, now)
+    craftRecipeData:getModData()[key] = now
+end
+
+-- A run with no start hour is left alone. The start hour saves with the recipe.
+function Weather.showClock(craftRecipeData, key, now)
+    local startHour = craftRecipeData:getModData()[key]
+    if not startHour then return end
+
+    local elapsed = (now - startHour) * SECONDS_PER_HOUR
+    craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
+end
+
 -- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds.
 function Weather.batchStatus(done, recipeHours, ledger, place, rateAt)
     local temperature = Weather.placeTemperature(ledger, place)

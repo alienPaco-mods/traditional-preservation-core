@@ -47,6 +47,19 @@ check("catchUp: the work at the station's place", Weather.catchUp(marks, ledger,
 check("catchUp: moves every mark on", marks.Open == 14 and marks.Sheltered == 25 and marks.Basement == 36)
 check("catchUp: a new place with no mark counts nothing", Weather.catchUp({}, ledger, "", "Open") == 0)
 
+-- The plain clock
+local recipe = { modData = {}, elapsed = 12 }
+function recipe:getModData() return self.modData end
+function recipe:setElapsedTime(value) self.elapsed = value end
+function recipe:getRecipe() return { getTime = function() return 7200 end } end
+Weather.showClock(recipe, "runStartHour", 100)
+check("showClock: a run with no start hour is left alone", recipe.elapsed == 12)
+Weather.startClock(recipe, "runStartHour", 100)
+Weather.showClock(recipe, "runStartHour", 101)
+check("showClock: one hour is 3600 seconds", recipe.elapsed == 3600)
+Weather.showClock(recipe, "runStartHour", 150)
+check("showClock: time away finishes the run, and no further", recipe.elapsed == 7200)
+
 H.installClock(50)
 H.installModData()
 local made = 0

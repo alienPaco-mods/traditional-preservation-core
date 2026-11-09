@@ -1,4 +1,13 @@
 {
-  "TraditionalPreservationFish": ["tools/season_report.lua", "tools/storage_model.lua"],
-  "TraditionalPreservationVinegar": ["tools/season_report.lua", "tools/simulate.lua"]
+  "TraditionalPreservationFish": [
+    "tools/season_report.lua",
+    "tools/storage_model.lua"
+  ],
+  "TraditionalPreservationVinegar": [
+    "tools/season_report.lua",
+    "tools/simulate.lua"
+  ],
+  "TraditionalPreservationYeast": [
+    "tools/season_report.lua"
+  ]
 }

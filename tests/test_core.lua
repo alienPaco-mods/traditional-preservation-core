@@ -1,4 +1,4 @@
--- Checks the shared core in lua/, and that it does what Yeast's and Vinegar's own code does today, so moving a
+-- Checks the shared core in lua/, and that it does what Vinegar's own code does today, so moving a
 -- mod onto it changes nothing. Run from _tpcore: luajit tests/test_core.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
@@ -179,54 +179,11 @@ local function noGlobals()
     H.installEvents()
 end
 
-noGlobals()
-dofile("../TraditionalPreservationYeast/42/media/lua/shared/TraditionalPreservationYeast.lua")
-local Y = TraditionalPreservationYeast
-local yeastKinds = { [""] = Y.cultureRate }
-local old, new = Y.newLedger(0), Weather.newLedger(0, yeastKinds)
+-- Yeast has run on the core since 2026-11-09, checked then against its old code here. Its golden season
+-- report keeps it in step now.
+local old, new
 local ok, key = true, nil
-for step = 1, 365 * 24 * 6 do
-    Y.advance(old, step / 6, weatherAt(step))
-    Weather.advance(new, step / 6, weatherAt(step), yeastKinds)
-    if step % 144 == 0 then
-        ok, key = sameLedger(old, new)
-        if not ok then break end
-    end
-end
-check("Yeast: a year of weather gives the same ledger" .. (key and " (" .. key .. ")" or ""), ok and sameLedger(new, old))
-
--- A culture's run, started and updated as Yeast does, against startRun, catchUp and showProgress.
-local function recipeData(time)
-    local data = { modData = {}, elapsed = 0 }
-    function data:getModData() return self.modData end
-    function data:getElapsedTime() return self.elapsed end
-    function data:setElapsedTime(value) self.elapsed = value end
-    function data:getRecipe() return { getTime = function() return time end } end
-    return data
-end
-H.installClock(0)
-H.modData[Y.MOD_DATA_KEY] = { ledger = Y.newLedger(0) }
-local yeastLedger = Y.getLedger()
-local oldRun, newRun = recipeData(Y.FERMENT_HOURS * 3600), recipeData(Y.FERMENT_HOURS * 3600)
-Y.onFermentStart(oldRun)
-Weather.startRun(newRun:getModData(), yeastLedger, "")
-local same = true
-for step = 1, 120 * 6 do
-    H.setHours(step / 6 + 0.05)
-    if step % 3 == 0 then Y.advance(yeastLedger, step / 6, weatherAt(step)) end
-    local place = step < 300 and "Sheltered" or "Basement"
-    oldRun:getModData().place = place
-    Y.onFermentUpdate(oldRun)
-    local modData = newRun:getModData()
-    modData.done = modData.done + Weather.catchUp(modData.last, yeastLedger, "", place)
-    Weather.showProgress(newRun, yeastLedger, "", place, 1, H.hours)
-    same = same and near(oldRun.elapsed, newRun.elapsed, 1e-6) and near(oldRun.modData.done, modData.done, 1e-9)
-end
-check("Yeast: a run's progress matches, moved to a basement halfway", same and oldRun.elapsed > 0)
-local oldStatus = Y.batchStatus(oldRun.modData, Y.FERMENT_HOURS, yeastLedger)
-local newStatus = Weather.batchStatus(newRun.modData.done, Y.FERMENT_HOURS, yeastLedger, "Basement", Y.cultureRate)
-check("Yeast: and its popup", near(oldStatus.hoursLeft, newStatus.hoursLeft) and oldStatus.rate == newStatus.rate
-    and oldStatus.temperature == newStatus.temperature and near(oldStatus.progress, newStatus.progress))
+local same
 
 noGlobals()
 dofile("../TraditionalPreservationVinegar/42/media/lua/shared/TraditionalPreservationVinegar.lua")

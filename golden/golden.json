@@ -1,4 +1,7 @@
 {
+  "TraditionalPreservationCheese": [
+    "tools/season_report.lua"
+  ],
   "TraditionalPreservationFish": [
     "tools/season_report.lua",
     "tools/storage_model.lua"

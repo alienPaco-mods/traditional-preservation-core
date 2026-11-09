@@ -37,10 +37,12 @@ function Station.tracker(options)
         return entry
     end
 
+    -- The station's entry, or nil if it isn't tracked. Never makes one.
     function tracker.entry(object)
         return tracker.tracked[object]
     end
 
+    -- For a station picked up or destroyed, so it isn't refreshed again.
     function tracker.forget(object)
         tracker.tracked[object] = nil
     end
@@ -58,6 +60,7 @@ function Station.tracker(options)
         end
     end
 
+    -- Refreshes every station once each `ticks` ticks.
     function tracker.onTick()
         ticksSinceRefresh = ticksSinceRefresh + 1
         if ticksSinceRefresh < ticks then return end
@@ -65,6 +68,7 @@ function Station.tracker(options)
         tracker.refreshAll()
     end
 
+    -- Call once at load: starts the tick loop and asks the map loader for the stations.
     function tracker.start()
         Events.OnTick.Add(tracker.onTick)
         for _, name in ipairs(options.sprites) do
@@ -86,6 +90,7 @@ function Station.uiLogic(object, entry, logic)
     return entry.uiLogic
 end
 
+-- The item slots of one resource group, input or output, as a Java list.
 function Station.itemSlots(resources, group, io)
     return resources:getResourcesFromGroup(group, ArrayList.new(), io, ResourceType.Item)
 end

@@ -35,6 +35,7 @@ function Weather.scaled(rate, sensitivity, minRate)
     return math.max(1 - (1 - rate) * sensitivity, minRate)
 end
 
+-- Below ground is a basement, under a roof sheltered, anything else open.
 function Weather.placeOf(object)
     local square = object and object:getSquare()
     if square and square:getZ() < 0 then return "Basement" end
@@ -42,10 +43,12 @@ function Weather.placeOf(object)
     return "Open"
 end
 
+-- A roof gives the season's mean plus SHELTER_WARMTH, capped at SHELTER_MAX.
 function Weather.shelterTemperature(seasonTemperature)
     return math.min(seasonTemperature + Weather.SHELTER_WARMTH, Weather.SHELTER_MAX)
 end
 
+-- The temperature a place has now, from the ledger's last reading.
 function Weather.placeTemperature(ledger, place)
     if place == "Basement" then return Weather.BASEMENT_TEMPERATURE end
     local temperature = ledger.temperature or 0

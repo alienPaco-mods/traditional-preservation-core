@@ -22,6 +22,7 @@ function UI.say(key, ...)
     return (string.gsub(getText(key, unpack(tokens)), "@(%d)@", function(index) return tostring(values[tonumber(index)]) end))
 end
 
+-- 0.4 -> "40%". Pass the result as a value through UI.say, never into getText's pattern.
 function UI.percent(share)
     return string.format("%.0f%%", share * 100)
 end
@@ -84,6 +85,7 @@ local function hook()
     end
 end
 
+-- Adds a handler (see above). The first call installs the one wrap.
 function UI.onProgressSlot(handler)
     hook()
     table.insert(slotHandlers, handler)

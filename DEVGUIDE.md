@@ -104,7 +104,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 
 1. Edit the core only here, and run `tp test Core` (or `luajit tests/test_core.lua` from this folder).
 2. `tp install Core` ships only its `42/` folder; the rest of this folder is tooling and private notes.
-3. **Moving over, one mod per session:** Dairy and new mods (`tp new`) require TP Core. Salt, Fish, Yeast and Vinegar
+3. **Moving over, one mod per session:** Dairy, Fish and new mods (`tp new`) require TP Core. Salt, Yeast and Vinegar
    still carry their own copy under `<Mod>/Core/`, kept identical by `tp sync` (each copy starts with a "Copied from
    ... Edit it there" line; sync refuses to overwrite a copy edited by hand, `--force` overrides). `tp test <Mod>` and
    `tp install <Mod>` fail while a copy is out of date. To move a mod over: delete its `Core/` folders, change

@@ -232,14 +232,32 @@ def cmd_status(_args):
         print(f"{short(mod):<11} git: {git_state(mod)}\n{'':<11} installed: {installed}" + (f"; {guide}" if guide else "") + core)
 
 
+# Lua the game's Kahlua lacks though luajit has it, so tests can't catch it: (pattern, what to use instead).
+KAHLUA_MISSING = [(re.compile(r"(?<![\w.:])next\s*\("), "next() is nil in game: use a pairs loop")]
+
+
+def kahlua_lint(root):
+    """Shipped Lua calling what Kahlua lacks, as 'path:line: advice' lines."""
+    found = []
+    for path in sorted(root.glob("*/media/lua/**/*.lua")):
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            code = line.split("--", 1)[0]
+            for pattern, advice in KAHLUA_MISSING:
+                if pattern.search(code):
+                    found.append(f"{path.relative_to(root)}:{number}: {advice}")
+    return found
+
+
 def run_tests(mod):
     """Runs tests/*.lua from the mod folder. Returns True if every one passed."""
     if mod == CORE.name:
-        return run_core_tests()
+        return run_core_tests() and not lint_failed(CORE)
     root = MODS / mod
     tests = sorted((root / "tests").glob("*.lua"))
     env = dict(os.environ, TPCORE=str(CORE))
     ok = True
+    if lint_failed(root):
+        ok = False
     stale = core_state(mod)
     if stale:
         ok = False
@@ -286,6 +304,13 @@ def run_golden(mod, update=False):
             changed = sum(1 for a, b in zip(old, new) if a != b) + abs(len(old) - len(new))
             print(f"  FAIL {short(mod)}/{tool}: {changed} lines differ from {record.relative_to(CORE)}")
     return ok
+
+
+def lint_failed(root):
+    found = kahlua_lint(root)
+    for entry in found:
+        print(f"  FAIL {root.name}/{entry}")
+    return bool(found)
 
 
 def run_core_tests():

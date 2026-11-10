@@ -1,6 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- `tp test` lints each mod's shipped Lua for calls the game's Lua lacks though luajit has them (`next`), which
+  tests can't catch.
 - Fixed: the debug `here()` commands (`TPD.here()`, `TPY.here()`, ...) said "Open" under a roof with no walls, where
   every station and the game's rain count it as sheltered. `Weather.placeOf` now asks the square, not the object
   (a player's `isOutside()` only means "not in a room"). Stations behave as before.

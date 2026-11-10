@@ -1,6 +1,47 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Core consolidation (2026-11-10 review, group C: R14-R23), so each mod stops carrying its own copy:
+  - **One weather for the series** (R18). The last reading and the season's means (temperature, and humidity for
+    Fish) live once in the core's ModData (`Weather.shared`, the ledger the Hearth already had). `Weather.record`
+    is now one ten-minute handler that takes the reading first and then runs each mod's recorder, and
+    `Weather.advance` copies the series' mean instead of growing one per mod (`Weather.season`). A mod added to a
+    running save agrees with the others about the temperature under a roof from its first day. Save keys stay;
+    tools and tests, which have no shared state, work as before (goldens unchanged).
+  - `UI`: menu helpers `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `fluidName` (R17);
+    `UI.keepInPlace(test)` is the one wrap of the pick-up check and its cursor line (R17);
+    `UI.progressTooltips` makes a slot's popup once, not at every list update (R20).
+  - `InfoWindow.clickOpens(test, open)` is the one wrap of `ISObjectClickHandler.doClickSpecificObject` (R15);
+    notes are wrapped once and kept until their text or the window's width changes (R20).
+  - `Station.kinds(prefix, faces, bases)`: which station an object is by a table lookup on its sprite's name (R19).
+    `Station.tracker{ scan = true }` and `Station.players()`: the look round each player for stations built or put
+    down this session, one pass for every tracker that asks (R16). The Hearth uses both.
+  - New `TraditionalPreservationCore/Action` (R21): `duration` honours the instant-actions cheat, `pourDuration`
+    holds the pouring speed four actions each spelt out. New `TraditionalPreservationCore/Log` (R22): console lines
+    only in debug mode. `Container.fluidIn` (R17). `Weather.sensitivity` and `SENSITIVITY_SCALES` (R20).
+  - Timed actions are `TPHearthCopper` and `TPHearthFire` (were `IS...`), file and class (R21).
+  - Removed `World.hearths` (never called) and the Hearth's own weather recorder (R23, R18).
+  - DEVGUIDE: "What the core already does", the `TP` prefix for timed actions, the wrap table. 9 new checks in
+    `test_core.lua` for the series' weather.
+- Review fixes (2026-11-10 review, R1, R6, R11, R12):
+  - Fixed: a cold item read as low as -86 C (milk from a powered fridge, in the copper, the pour menus and Dairy's
+    crock). Below room heat `Hearth.heatCelsius` now uses a gentler scale: the engine's floor of 0.2 (fridge or
+    freezer) reads 4 C (`Hearth.COLD_HEAT`, `Hearth.COLD_C`), and nothing reads colder. `Hearth.itemHeat` is its
+    mirror, so a cold copper's fill keeps its temperature, down to that floor.
+  - Fixed: the Hearth's menu answers vanilla's controller probe (`ISWorldObjectContextMenu.setTest()`).
+  - `UI.slotRules` asks a mod's `station()` only about world objects (`instanceof IsoObject`): an item that is a
+    crafting entity has no sprite to read and goes straight to vanilla.
+  - `Weather.getLedger` starts a new ledger on the weather there is, so a new game or a mod added to a save no
+    longer reads 0 C (10 C under a roof) for its first ten minutes.
+  - Tests: lower bound and cold round trip in `test_hearth.lua`; ledger seeding and the item-entity case in
+    `test_core.lua`.
+- New `TraditionalPreservationCore/Container` (review R9): a bucket that a chain of recipes turns into other items
+  comes back as the bucket it was. `Container.note` (first recipe's OnCreate), `Container.pass` (a recipe in
+  between) and `Container.giveBack` (last recipe: swaps the script's placeholder for the noted type). The note is
+  the modData key `condition:tpContainer`, because the engine's cooking swap (`ReplaceOnCooked`) carries over only
+  keys starting with `condition:`. Used by Salt and Vinegar. 12 checks in `tests/test_container.lua`.
+- DEVGUIDE: the wrap table names every mod that wraps the pick-up and click handlers; the layout table drops the
+  `Core/` row.
 - TP Core is now a mod that the TP mods require (`require=\TraditionalPreservationCore`). Its Lua moved from `lua/`
   to `42/media/lua/<side>/TraditionalPreservationCore/` and is loaded as `require "TraditionalPreservationCore/Weather"`
   (also `Station`, `UI`). Dairy and new mods (`tp new`) use it; Salt, Fish, Yeast and Vinegar keep a `tp sync` copy

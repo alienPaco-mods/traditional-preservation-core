@@ -109,7 +109,7 @@ CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp
 
 
 # Core modules that only work from the required TP Core mod (they own tiles, a save key or a World): never copied.
-REQUIRED_ONLY = {"Hearth.lua", "Tiles.lua", "HearthWorld.lua", "HearthUI.lua", "InfoWindow.lua"}
+REQUIRED_ONLY = {"Action.lua", "Container.lua", "Log.lua", "Hearth.lua", "Tiles.lua", "HearthWorld.lua", "HearthUI.lua", "InfoWindow.lua"}
 
 
 def core_copies(mod):

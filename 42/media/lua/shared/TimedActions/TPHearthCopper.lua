@@ -3,20 +3,12 @@
 -- The copper holds one fluid at a time. Mods follow the fluid with Hearth.hook (heatOf, taken, filled).
 require "TimedActions/ISBaseTimedAction"
 local Hearth = require "TraditionalPreservationCore/Hearth"
+local Action = require "TraditionalPreservationCore/Action"
+local Container = require "TraditionalPreservationCore/Container"
 
-ISHearthCopper = ISBaseTimedAction:derive("ISHearthCopper")
+TPHearthCopper = ISBaseTimedAction:derive("TPHearthCopper")
 
-local BASE_DURATION = 40
-local DURATION_PER_LITRE = 12
-
--- The fluid in a container if it is all one kind, else nil.
-local function fluidIn(container)
-    if not container or container:isEmpty() then return nil end
-    local fluid = container:getPrimaryFluid()
-    if not fluid or container:getPrimaryFluidAmount() < container:getAmount() - 0.001 then return nil end
-    return fluid:getFluidTypeString()
-end
-ISHearthCopper.fluidIn = fluidIn
+local fluidIn = Container.fluidIn
 
 local function mlIn(container)
     return math.floor(container:getAmount() * 1000 + 0.5)
@@ -31,9 +23,9 @@ local function canFillFrom(container, copper)
     if (copper.ml or 0) <= 0 or roomIn(container) <= 0 then return false end
     return container:isEmpty() or fluidIn(container) == copper.fluid
 end
-ISHearthCopper.canFillFrom = canFillFrom
+TPHearthCopper.canFillFrom = canFillFrom
 
-function ISHearthCopper:isValid()
+function TPHearthCopper:isValid()
     if not self.hearth:getSquare() or not self.character:getInventory():containsRecursive(self.item) then return false end
     local container = self.item:getFluidContainer()
     local copper = Hearth.stateOf(self.hearth:getModData())
@@ -44,16 +36,16 @@ function ISHearthCopper:isValid()
     return canFillFrom(container, copper)
 end
 
-function ISHearthCopper:waitToStart()
+function TPHearthCopper:waitToStart()
     self.character:faceThisObject(self.hearth)
     return self.character:shouldBeTurning()
 end
 
-function ISHearthCopper:start()
+function TPHearthCopper:start()
     self:setActionAnim("Loot")
 end
 
-function ISHearthCopper:complete()
+function TPHearthCopper:complete()
     -- Brought up to the minute first, so poured fluid mixes with the copper as it is now.
     local copper = Hearth.copperOf(self.hearth)
     local now = getGameTime():getWorldAgeHours()
@@ -81,19 +73,19 @@ function ISHearthCopper:complete()
     return true
 end
 
-function ISHearthCopper:perform()
+function TPHearthCopper:perform()
     ISBaseTimedAction.perform(self)
 end
 
-function ISHearthCopper:getDuration()
+function TPHearthCopper:getDuration()
     local container = self.item:getFluidContainer()
     local litres = 0
     if container and self.mode == "pourIn" then litres = container:getAmount() end
     if container and self.mode == "fillFrom" then litres = container:getCapacity() - container:getAmount() end
-    return BASE_DURATION + math.floor(math.min(litres, 10) * DURATION_PER_LITRE)
+    return Action.pourDuration(self.character, litres, 10)
 end
 
-function ISHearthCopper:new(character, hearth, item, mode)
+function TPHearthCopper:new(character, hearth, item, mode)
     local o = ISBaseTimedAction.new(self, character)
     o.hearth = hearth
     o.item = item

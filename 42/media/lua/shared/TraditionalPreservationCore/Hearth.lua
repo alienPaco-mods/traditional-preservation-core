@@ -13,6 +13,7 @@
 -- one speed, a minute of fuel each minute (caught up in one go when its area loads), so a banked Hearth keeps its
 -- own reckoning of the fuel and sets vanilla's to it (Hearth.reckonFuel).
 local Weather = require "TraditionalPreservationCore/Weather"
+local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local Hearth = {}
@@ -55,18 +56,29 @@ Hearth.FLOOR_ML = 1000             -- a splash heats as fast as a litre
 -- container in the player's hands to room heat within seconds.
 Hearth.ROOM_C = 20
 Hearth.HEAT_PER_DEGREE = 1 / 133   -- itemHeat 1.0 is room temperature; 1.6 (water turns clean) is about 100 C
+Hearth.COLD_HEAT = 0.2             -- the engine's floor: an item in a powered fridge or freezer
+Hearth.COLD_C = 4                  -- what that reads as; below room heat the scale is gentler than above it
 
 -- Newton's law: tempC after hours at placeC, for a time constant tau.
 function Hearth.cool(tempC, placeC, hours, tau)
     return placeC + (tempC - placeC) * math.exp(-hours / tau)
 end
 
+local COLD_PER_DEGREE = (1 - Hearth.COLD_HEAT) / (Hearth.ROOM_C - Hearth.COLD_C)
+
 function Hearth.heatCelsius(itemHeat)
-    return math.min(Hearth.ROOM_C + ((itemHeat or 1) - 1) / Hearth.HEAT_PER_DEGREE, Hearth.MAX_C)
+    itemHeat = itemHeat or 1
+    if itemHeat < 1 then
+        return Hearth.ROOM_C + (math.max(itemHeat, Hearth.COLD_HEAT) - 1) / COLD_PER_DEGREE
+    end
+    return math.min(Hearth.ROOM_C + (itemHeat - 1) / Hearth.HEAT_PER_DEGREE, Hearth.MAX_C)
 end
 
 -- The other way, for fluid poured back out: it starts at the heat it had.
 function Hearth.itemHeat(celsius)
+    if celsius < Hearth.ROOM_C then
+        return math.max(1 + (celsius - Hearth.ROOM_C) * COLD_PER_DEGREE, Hearth.COLD_HEAT)
+    end
     return 1 + (celsius - Hearth.ROOM_C) * Hearth.HEAT_PER_DEGREE
 end
 
@@ -219,19 +231,12 @@ Hearth.LOOKS = Tiles.HEARTH_LOOKS or {}
 Hearth.SPRITES = Tiles.HEARTHS or {}
 Hearth.FACE_COUNT = Tiles.FACE_COUNT or 2
 
-local function spriteIndex(name)
-    if not name or string.sub(name, 1, #Tiles.PREFIX) ~= Tiles.PREFIX then return nil end
-    return tonumber(string.sub(name, #Tiles.PREFIX + 1))
-end
+-- The hearth's own sprite is swapped among its looks, so each look is a "kind" of tile here.
+local lookOf, HEARTH_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.LOOKS)
 
 -- The facing (0 S, 1 E) of a hearth tile, whatever its copper shows; nil for any other tile.
 function Hearth.face(spriteName)
-    local index = spriteIndex(spriteName)
-    if not index then return nil end
-    for _, base in pairs(Hearth.LOOKS) do
-        if index >= base and index < base + Hearth.FACE_COUNT then return index - base end
-    end
-    return nil
+    return spriteName and HEARTH_TILES.face[spriteName]
 end
 
 function Hearth.sprite(look, face)
@@ -239,8 +244,7 @@ function Hearth.sprite(look, face)
 end
 
 function Hearth.isHearth(object)
-    local sprite = object and object:getSprite()
-    return sprite ~= nil and instanceof(object, "IsoFireplace") and Hearth.face(sprite:getName()) ~= nil
+    return lookOf(object) ~= nil and instanceof(object, "IsoFireplace")
 end
 
 -- The copper's state, brought up to now where the World runs (a server or single player).

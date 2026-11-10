@@ -3,6 +3,9 @@
 -- Everything here is opt-in: a test keeps any stub of its own that behaves differently on purpose.
 local H = {}
 
+-- The core's Log asks this before it prints: tests run quiet unless one sets it.
+isDebugEnabled = isDebugEnabled or function() return false end
+
 -- Prints one line per check and stops at the first failure, as every test always has.
 function H.check(name, condition)
     print((condition and "ok   " or "FAIL ") .. name)

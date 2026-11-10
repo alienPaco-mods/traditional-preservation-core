@@ -2,6 +2,10 @@
 -- weather in global ModData say how much work each place has done, even while a station was unloaded.
 -- Rate curves stay in each mod. A ledger keeps one total and one last rate per kind of work and place,
 -- under kind .. place ("" for a mod with one kind, so plain "Open", "OpenRate").
+--
+-- The weather itself is kept once for the whole series (Weather.shared): the last reading and the season's means.
+-- Each mod's ledger copies them at every record, so a mod added to a running save agrees with the others about the
+-- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
 local Weather = {}
 
 -- Outdoors goes by the day, a roof by the season (the mean of the last ten days or so, a bit warmer,
@@ -28,6 +32,14 @@ function Weather.curve(points, celsius)
         end
     end
     return points[#points][2]
+end
+
+-- The sandbox's Temperature Sensitivity, the same four steps in every mod: Off, Forgiving, Normal, Harsh.
+Weather.SENSITIVITY_SCALES = { 0, 0.5, 1, 1.5 }
+
+-- The scale for a sandbox option's value; Normal for one out of range.
+function Weather.sensitivity(option)
+    return Weather.SENSITIVITY_SCALES[option] or 1
 end
 
 -- Sensitivity says how much of a temperature's slowdown applies: 0 (off) to 1.5 (harsh).
@@ -64,6 +76,50 @@ function Weather.seasonMean(ledger, field, value, hours)
     ledger[field] = (ledger[field] or value) * (1 - share) + value * share
 end
 
+-- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity }, in the core's global ModData.
+-- Save key: never rename it.
+Weather.SHARED_KEY = "TraditionalPreservationCore"
+
+-- The state in use: the game's, once it runs. Nil in tests and tools, where each ledger grows its own means.
+local shared
+
+-- One reading into the series' weather.
+function Weather.observe(state, now, temperature, humidity)
+    local hours = math.max(now - (state.lastHour or now), 0)
+    state.lastHour = now
+    state.temperature = temperature
+    Weather.seasonMean(state, "seasonTemperature", temperature, hours)
+    if humidity then Weather.seasonMean(state, "seasonHumidity", humidity, hours) end
+end
+
+-- The series' weather, made on first use. Until its first record it would read 0 C, so it starts on the weather
+-- there is now.
+function Weather.shared()
+    local data = ModData.getOrCreate(Weather.SHARED_KEY)
+    data.ledger = data.ledger or { lastHour = getGameTime():getWorldAgeHours() }
+    local state = data.ledger
+    if state.temperature == nil then
+        local climate = getClimateManager and getClimateManager()
+        if climate then Weather.observe(state, state.lastHour, climate:getTemperature(), climate:getHumidity()) end
+    end
+    return state
+end
+
+-- For tests: the state Weather.season copies from, or nil for none.
+function Weather.share(state)
+    shared = state
+end
+
+-- A ledger's season mean (field is "seasonTemperature" or "seasonHumidity"): the series' own where there is one,
+-- else a running mean of the ledger's own.
+function Weather.season(ledger, field, value, hours)
+    if shared and shared[field] ~= nil then
+        ledger[field] = shared[field]
+    else
+        Weather.seasonMean(ledger, field, value, hours)
+    end
+end
+
 -- kinds maps each kind of work to its rate at a temperature.
 function Weather.newLedger(now, kinds)
     local ledger = { lastHour = now }
@@ -86,7 +142,7 @@ function Weather.advance(ledger, now, temperature, kinds)
     if hours <= 0 then return nil end
     ledger.lastHour = now
 
-    Weather.seasonMean(ledger, "seasonTemperature", temperature, hours)
+    Weather.season(ledger, "seasonTemperature", temperature, hours)
     ledger.temperature = temperature
     for kind, rateAt in pairs(kinds) do
         for _, place in ipairs(Weather.PLACES) do
@@ -101,15 +157,41 @@ end
 -- The mod's ledger in global ModData, made on first use.
 function Weather.getLedger(key, newLedger)
     local data = ModData.getOrCreate(key)
-    if not data.ledger then data.ledger = newLedger(getGameTime():getWorldAgeHours()) end
+    if not data.ledger then
+        data.ledger = newLedger(getGameTime():getWorldAgeHours())
+        -- Until its first record a new ledger would read 0 C: it starts on the series' weather.
+        local state = Weather.shared()
+        if data.ledger.temperature == nil then
+            data.ledger.temperature = state.temperature
+            data.ledger.seasonTemperature = data.ledger.seasonTemperature or state.seasonTemperature
+        end
+    end
     return data.ledger
 end
 
--- Calls record(now, climate) every ten in-game minutes, the weather's resolution in every mod.
+-- Every ten in-game minutes, the weather's resolution in every mod: the series' weather takes its reading first,
+-- then each mod's recorder adds the stretch to its own totals.
+local recorders = {}
+local started = false
+
+local function onTenMinutes()
+    local now, climate = getGameTime():getWorldAgeHours(), getClimateManager()
+    shared = Weather.shared()
+    Weather.observe(shared, now, climate:getTemperature(), climate:getHumidity())
+    for _, record in ipairs(recorders) do record(now, climate) end
+end
+
+-- Starts the ten-minute readings. The core calls it; so does the first Weather.record.
+function Weather.start()
+    if started then return end
+    started = true
+    Events.EveryTenMinutes.Add(onTenMinutes)
+end
+
+-- Calls record(now, climate) at each reading.
 function Weather.record(record)
-    Events.EveryTenMinutes.Add(function()
-        record(getGameTime():getWorldAgeHours(), getClimateManager())
-    end)
+    Weather.start()
+    table.insert(recorders, record)
 end
 
 -- Marks are each place's total when a run or cask was last brought up to date. Work since then is the

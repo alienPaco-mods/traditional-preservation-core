@@ -1,4 +1,4 @@
--- Traditional Preservation core: text and popups for the station windows.
+-- Traditional Preservation core: text and popups for the station windows, and what the right-click menus share.
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
 require "Entity/ISUI/Controls/ISItemSlot"
@@ -31,6 +31,57 @@ end
 function UI.timeText(hours, key)
     local whole = math.ceil(hours)
     return UI.say(key, string.format("%.0f", math.floor(whole / 24)), string.format("%.0f", whole % 24))
+end
+
+-- Millilitres as litres to one decimal: 2500 -> "2.5".
+function UI.litres(ml)
+    return string.format("%.1f", ml / 1000)
+end
+
+-- Whole degrees.
+function UI.degrees(celsius)
+    return string.format("%.0f", celsius)
+end
+
+-- Whole hours, or "under an hour".
+function UI.hoursText(hours)
+    if hours <= 1 then return getText("IGUI_TraditionalPreservationCore_UnderHour") end
+    return UI.say("IGUI_TraditionalPreservationCore_Hours", tostring(math.ceil(hours)))
+end
+
+-- A fluid's name as the game shows it, from its type ("CowMilk").
+function UI.fluidName(name)
+    local fluid = name and Fluid.Get(name)
+    return fluid and fluid:getTranslatedName() or tostring(name)
+end
+
+-- Right-click menus
+
+-- Every item on the player or in containers in reach that passes test. Favourites are left alone.
+function UI.findItems(playerObj, test)
+    local found = {}
+    local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
+    for i = 0, containers:size() - 1 do
+        local items = containers:get(i):getItems()
+        for j = 0, items:size() - 1 do
+            local item = items:get(j)
+            if not item:isFavorite() and test(item) then table.insert(found, item) end
+        end
+    end
+    return found
+end
+
+-- A menu option's hover. text is finished text, not a key.
+function UI.tooltip(option, text)
+    local tooltip = ISWorldObjectContextMenu.addToolTip()
+    tooltip.description = text
+    option.toolTip = tooltip
+end
+
+-- Greys the option out, with the reason as its hover.
+function UI.disable(option, text)
+    option.isDisabled = true
+    UI.tooltip(option, text)
 end
 
 -- colour is { r, g, b }, white if left out.
@@ -98,6 +149,9 @@ function UI.progressTooltips(draws)
         local draw = name and draws[name]
         if not draw then return end
         local entity = widget.entity
+        -- Vanilla updates the list many times a second: the slot's popup is only made anew when it would differ.
+        if slot.tpDraw == draw and slot.tpName == name and slot.tpEntity == entity then return end
+        slot.tpDraw, slot.tpName, slot.tpEntity = draw, name, entity
         slot.drawTooltip = function(itemSlot, tooltip)
             -- A batch that has just finished hands its data back before the slot goes.
             local data = itemSlot.craftRecipeData
@@ -118,6 +172,12 @@ end
 -- ISItemSlot.onMouseUp: compare them with vanilla after a game update. Each mod's call wraps the last, so
 -- other entities pass through every mod to vanilla.
 function UI.slotRules(rules)
+    -- An item can be a crafting entity too, and has no sprite for a mod's station() to read.
+    local modStation = rules.station
+    local function station(entity)
+        if not instanceof(entity, "IsoObject") then return nil end
+        return modStation(entity)
+    end
     local vanillaAddItems = ISCraftLogicPanel.ItemSlotAddItems
     local vanillaVerifyItem = ISItemSlot.defaultVerifyItem
     local vanillaMouseUp = ISItemSlot.onMouseUp
@@ -127,7 +187,7 @@ function UI.slotRules(rules)
     end
 
     function ISCraftLogicPanel.ItemSlotAddItems(player, entity, itemSlot, itemList, component)
-        local ours, extra = rules.station(entity)
+        local ours, extra = station(entity)
         if not ours then return vanillaAddItems(player, entity, itemSlot, itemList, component) end
         if rules.added then rules.added(entity) end
 
@@ -155,7 +215,7 @@ function UI.slotRules(rules)
         local resource = itemSlot and itemSlot.resource
         if not resource or resource:getIO() ~= ResourceIO.Input then return nil end
         local entity = resource:getGameEntity()
-        local component, extra = rules.station(entity)
+        local component, extra = station(entity)
         if not component then return nil end
         return { entity = entity, component = component, resource = resource, extra = extra }
     end
@@ -187,6 +247,39 @@ function UI.slotRules(rules)
         if reason then HaloTextHelper.addBadText(getPlayer(), getText(reason)) end
         return vanillaMouseUp(self, x, y)
     end
+end
+
+-- Picking a station up can break it, and one that holds something would lose it. mustStay(object) is true for a
+-- station that has to stay where it is; the pick-up cursor then says why, with vanilla's own line for a full
+-- container. Wraps ISMoveableSpriteProps.canPickUpMoveable and getInfoPanelFlagsPerTile, once for every mod.
+local stayTests = {}
+
+local function mustStay(object)
+    if not object then return false end
+    for _, test in ipairs(stayTests) do
+        if test(object) then return true end
+    end
+    return false
+end
+
+local function wrapPickUp()
+    local vanillaCanPickUp = ISMoveableSpriteProps.canPickUpMoveable
+    local vanillaInfoFlags = ISMoveableSpriteProps.getInfoPanelFlagsPerTile
+
+    function ISMoveableSpriteProps:canPickUpMoveable(character, square, object)
+        if mustStay(object) then return false end
+        return vanillaCanPickUp(self, character, square, object)
+    end
+
+    function ISMoveableSpriteProps:getInfoPanelFlagsPerTile(square, object, player, mode)
+        vanillaInfoFlags(self, square, object, player, mode)
+        if mode == "pickup" and mustStay(object) then InfoPanelFlags.hasItems = true end
+    end
+end
+
+function UI.keepInPlace(test)
+    if #stayTests == 0 then wrapPickUp() end
+    table.insert(stayTests, test)
 end
 
 -- Stations built for the open refuse an indoor square, and this stops one being picked up and carried in,

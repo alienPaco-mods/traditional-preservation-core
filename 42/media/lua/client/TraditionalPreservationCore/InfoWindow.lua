@@ -1,6 +1,7 @@
 -- Traditional Preservation core: the base of every station's info window (Hearth Info, Dairy's Incubator and Crock
 -- Info). Rows of label and value, filled bars and wrapped notes, kept up to date while open. It closes when the player
 -- walks off or the station is gone. One info window at a time, whatever the mod: opening another closes the last.
+-- InfoWindow.clickOpens makes a click on the station open it.
 -- A window derives this, sets its title in new, fills self.info in refresh and draws it in render:
 --     local MyWindow = InfoWindow:derive("MyModWindow")
 --     function MyWindow.open(playerObj, station) InfoWindow.open(MyWindow, playerObj, station) end
@@ -103,18 +104,59 @@ function InfoWindow:bar(y, label, share, colour, value)
     return y + lineHeight + 4
 end
 
--- The notes in a muted colour, wrapped to the window, which then fits its height to them.
+-- The notes in a muted colour, wrapped to the window, which then fits its height to them. Wrapping measures every
+-- word, so each note's lines are kept until its text or the window's width changes.
 function InfoWindow:drawNotes(y, notes)
     local lineHeight = getTextManager():getFontHeight(UIFont.Small)
-    for _, note in ipairs(notes) do
+    local width = self.width - InfoWindow.PADDING * 2
+    if self.noteWidth ~= width then self.noteWidth, self.noteTexts, self.noteLines = width, {}, {} end
+    for index, note in ipairs(notes) do
         y = y + 4
-        for _, line in ipairs(wrapped(note, self.width - InfoWindow.PADDING * 2)) do
+        if self.noteTexts[index] ~= note then
+            self.noteTexts[index], self.noteLines[index] = note, wrapped(note, width)
+        end
+        for _, line in ipairs(self.noteLines[index]) do
             self:drawText(line, InfoWindow.PADDING, y, 0.8, 0.8, 0.65, 1, UIFont.Small)
             y = y + lineHeight
         end
     end
     local height = y + InfoWindow.PADDING
     if self.height ~= height then self:setHeight(height) end
+end
+
+-- Clicking a station opens its info window, as clicking a door opens it. test(object) says whether the object is
+-- the mod's station, and open(playerObj, object) opens the window. Not while paused, aiming or out of reach:
+-- vanilla's own checks for a click. Wraps ISObjectClickHandler.doClickSpecificObject once for every mod; it is in
+-- vanilla's server folder, which loads after this one, so it is wrapped once the game has started.
+local clicks = {}
+
+local function canClick(object, playerObj)
+    return playerObj and not playerObj:isAiming()
+        and not (UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0)
+        and InfoWindow.inReach(playerObj, object)
+end
+
+local function wrapClickHandler()
+    if not ISObjectClickHandler or ISObjectClickHandler.tpInfoClick then return end
+    local vanillaClickObject = ISObjectClickHandler.doClickSpecificObject
+    ISObjectClickHandler.tpInfoClick = true
+    function ISObjectClickHandler.doClickSpecificObject(object, playerNum, playerObj)
+        if object then
+            for _, click in ipairs(clicks) do
+                if click.test(object) then
+                    if not canClick(object, playerObj) then break end
+                    click.open(playerObj, object)
+                    return true
+                end
+            end
+        end
+        return vanillaClickObject(object, playerNum, playerObj)
+    end
+end
+
+function InfoWindow.clickOpens(test, open)
+    if #clicks == 0 then Events.OnGameStart.Add(wrapClickHandler) end
+    table.insert(clicks, { test = test, open = open })
 end
 
 return InfoWindow

@@ -16,8 +16,6 @@ local KIND = "process"
 
 -- TEMPLATE: { temperature, share of full speed } points, joined by straight lines.
 local PROCESS_CURVE = { { -5, 0.05 }, { 0, 0.1 }, { 5, 0.2 }, { 10, 0.4 }, { 18, 1 }, { 30, 1 }, { 35, 0.6 }, { 40, 0.1 } }
--- Off, Forgiving, Normal, Harsh: how much of a temperature's slowdown applies.
-M.SENSITIVITY_SCALES = { 0, 0.5, 1, 1.5 }
 M.SENSITIVITY = 1
 M.MIN_RATE = 0.02
 
@@ -74,7 +72,7 @@ function M.applySandbox()
     local options = SandboxVars and SandboxVars.__MOD__
     if not options then return end
     if options.ProcessDays then M.PROCESS_HOURS = options.ProcessDays * 24 end
-    if options.TemperatureSensitivity then M.SENSITIVITY = M.SENSITIVITY_SCALES[options.TemperatureSensitivity] or 1 end
+    if options.TemperatureSensitivity then M.SENSITIVITY = Weather.sensitivity(options.TemperatureSensitivity) end
 end
 
 function M.applyProcessTime()

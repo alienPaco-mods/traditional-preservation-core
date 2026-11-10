@@ -8,6 +8,10 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 check("room heat is room temperature", Hearth.heatCelsius(1.0) == Hearth.ROOM_C)
 check("an item never reads hotter than the copper gets", Hearth.heatCelsius(3.0) == Hearth.MAX_C)
 check("heat goes back to the item it came from", near(Hearth.heatCelsius(Hearth.itemHeat(60)), 60))
+check("an item from the fridge reads cold, not frozen", near(Hearth.heatCelsius(0.2), Hearth.COLD_C))
+check("and never colder than the fridge", Hearth.heatCelsius(0) == Hearth.COLD_C and Hearth.heatCelsius(-5) == Hearth.COLD_C)
+check("cold heat goes back to the item too", near(Hearth.heatCelsius(Hearth.itemHeat(10)), 10))
+check("a freezing copper fills at the engine's floor", Hearth.itemHeat(-10) == Hearth.COLD_HEAT)
 
 -- Filling and emptying
 local copper = {}

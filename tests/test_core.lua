@@ -66,6 +66,46 @@ local made = 0
 local function newLedger(now) made = made + 1 return Weather.newLedger(now, kinds) end
 local first = Weather.getLedger("Key", newLedger)
 check("getLedger: made once, in ModData", Weather.getLedger("Key", newLedger) == first and made == 1 and first.lastHour == 50)
+check("getLedger: no climate yet, no reading yet", first.temperature == nil)
+local outside, damp = 12, 60
+getClimateManager = function()
+    return { getTemperature = function() return outside end, getHumidity = function() return damp end }
+end
+local seeded = Weather.getLedger("Seeded", newLedger)
+check("getLedger: a new ledger starts on the weather there is", Weather.placeTemperature(seeded, "Open") == 12
+    and Weather.placeTemperature(seeded, "Sheltered") == Weather.shelterTemperature(12))
+
+-- One weather for the series: every mod's ledger copies its season means at each record.
+H.installEvents()
+local series = Weather.shared()
+check("shared: the core's own ModData, read once at the start", H.modData[Weather.SHARED_KEY].ledger == series
+    and series.temperature == 12 and series.seasonTemperature == 12 and series.seasonHumidity == 60)
+local old = Weather.getLedger("OldMod", newLedger)
+local recorded = 0
+Weather.record(function(now, climate)
+    recorded = recorded + 1
+    Weather.advance(old, now, climate:getTemperature(), kinds)
+end)
+Weather.record(function() recorded = recorded + 1 end)
+for hour = 51, 50 + Weather.SEASON_HOURS do
+    H.setHours(hour)
+    outside = 30
+    H.fire("EveryTenMinutes")
+end
+check("record: every recorder runs at each reading", recorded == 2 * Weather.SEASON_HOURS)
+check("shared: the season mean follows the weather", series.temperature == 30 and series.seasonTemperature > 22
+    and series.seasonTemperature < 30)
+check("a ledger's season mean is the series' own", old.seasonTemperature == series.seasonTemperature)
+local late = Weather.getLedger("AddedLater", newLedger)
+check("a mod added later agrees with the others from its first day", late.temperature == 30
+    and Weather.placeTemperature(late, "Sheltered") == Weather.placeTemperature(old, "Sheltered"))
+local own = { lastHour = 0 }
+Weather.season(own, "seasonHumidity", 40, 1)
+check("season: the series' humidity too", own.seasonHumidity == series.seasonHumidity)
+Weather.share(nil)
+Weather.season(own, "seasonHumidity", 40, Weather.SEASON_HOURS)
+check("season: with no series' weather a ledger grows its own mean", own.seasonHumidity == 40)
+getClimateManager = nil
 
 -- Station
 local cellSquares = {}
@@ -179,6 +219,7 @@ ISItemSlot = { defaultVerifyItem = function() return true end, onMouseUp = funct
 HaloTextHelper = { addBadText = function(_, text) table.insert(halos, text) end }
 ISEntityUI = { WalkToEntity = function() return true end }
 ISItemSlotAddAction = { new = function(_, _, _, item) return { item = item } end }
+instanceof = function(object, class) return class == "IsoObject" and not object.isItem end
 ISTimedActionQueue = { add = function(action) table.insert(queuedActions, action) end }
 ISMouseDrag = {}
 ISInventoryPane = { getActualItems = function(dragging) return dragging end }
@@ -212,6 +253,10 @@ check("slotRules: the other mod's station gets its own rules", #queuedActions ==
 local otherSlot, other = station("barrel", 5)
 ISCraftLogicPanel.ItemSlotAddItems("player", other, otherSlot, { "a" }, {})
 check("slotRules: anything else goes to vanilla", vanillaAdds == 1)
+local itemSlot, craftedItem = station("cask", 2)
+craftedItem.isItem = true
+ISCraftLogicPanel.ItemSlotAddItems("player", craftedItem, itemSlot, { "a" }, {})
+check("slotRules: an item that crafts is never asked for a sprite", vanillaAdds == 2 and #queuedActions == 0)
 check("slotRules: green border follows the refusal", ISItemSlot.defaultVerifyItem({}, caskSlot, "a") and not ISItemSlot.defaultVerifyItem({}, caskSlot, "wrong"))
 local outSlot = station("cask", 2)
 outSlot.resource.getIO = function() return ResourceIO.Output end

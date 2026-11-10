@@ -5,6 +5,8 @@ local Station = {}
 
 Station.TICKS_PER_REFRESH = 30
 Station.MAP_PRIORITY = 5
+Station.SCAN_TICKS = 30
+Station.SCAN_NEAR = 3
 
 -- An unloaded object keeps its square and index until its chunk has been saved and reused, but the cell
 -- stops returning that square as soon as the chunk unloads (ENGINE_NOTES, "Chunk unload and generators").
@@ -14,11 +16,75 @@ function Station.isLoaded(object)
         and getCell():getGridSquare(square:getX(), square:getY(), square:getZ()) == square
 end
 
+-- Which of a mod's stations an object is, by one table lookup on its sprite's name. Nothing is cut out of the
+-- name and nothing allocated, which counts where every object round a player is asked (a tracker's scan).
+--   prefix  the tileset's prefix (Tiles.PREFIX)
+--   faces   tiles per station, one for each facing (Tiles.FACE_COUNT)
+--   bases   each kind's first tile: { vessel = Tiles.VESSEL, cask = Tiles.CASK }
+-- Returns kindOf(object), giving the kind and the facing (from 0), or nil for anything else, and the lookup
+-- itself: tiles.kind[spriteName] and tiles.face[spriteName].
+function Station.kinds(prefix, faces, bases)
+    local tiles = { kind = {}, face = {} }
+    for kind, base in pairs(bases) do
+        for face = 0, faces - 1 do
+            tiles.kind[prefix .. (base + face)] = kind
+            tiles.face[prefix .. (base + face)] = face
+        end
+    end
+    local function kindOf(object)
+        local sprite = object and object:getSprite()
+        local name = sprite and sprite:getName()
+        if not name then return nil end
+        return tiles.kind[name], tiles.face[name]
+    end
+    return kindOf, tiles
+end
+
+-- Every player here: all of them on a server, the local ones otherwise. A Java list.
+function Station.players()
+    if isServer() then return getOnlinePlayers() end
+    local list = ArrayList.new()
+    for i = 0, getNumActivePlayers() - 1 do
+        local player = getSpecificPlayer(i)
+        if player then list:add(player) end
+    end
+    return list
+end
+
+-- A station just built or put down isn't known to the map loader. For the trackers that ask (options.scan), the
+-- squares round each player are looked over twice a second, once for all of them, so a new one shows at once.
+local scanning = {}
+local scanTicks = 0
+
+local function scanNear(player)
+    local cell, px, py, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), math.floor(player:getZ())
+    for x = px - Station.SCAN_NEAR, px + Station.SCAN_NEAR do
+        for y = py - Station.SCAN_NEAR, py + Station.SCAN_NEAR do
+            local square = cell:getGridSquare(x, y, z)
+            local objects = square and square:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do
+                local object = objects:get(i)
+                for _, tracker in ipairs(scanning) do tracker.found(object) end
+            end
+        end
+    end
+end
+
+local function onScanTick()
+    scanTicks = scanTicks + 1
+    if scanTicks < Station.SCAN_TICKS then return end
+    scanTicks = 0
+    local list = Station.players()
+    for i = 0, list:size() - 1 do scanNear(list:get(i)) end
+end
+
 -- options:
 --   sprites  sprite names the map loader reports
 --   entry    function(object): a new station's entry table, or nil to leave the object alone. Default {}.
 --   refresh  function(object, entry), for each loaded station
 --   ticks    ticks between refreshes (default TICKS_PER_REFRESH)
+--   scan     true to find stations built or put down this session as soon as a player is near (see above).
+--            entry must then turn down every object that isn't the mod's, and cheaply (Station.kinds).
 function Station.tracker(options)
     local tracker = { tracked = {} }
     local ticks = options.ticks or Station.TICKS_PER_REFRESH
@@ -68,9 +134,20 @@ function Station.tracker(options)
         tracker.refreshAll()
     end
 
+    -- Tracks and refreshes object now if it is a station not seen before.
+    function tracker.found(object)
+        if tracker.tracked[object] then return end
+        local entry = tracker.track(object)
+        if entry then options.refresh(object, entry) end
+    end
+
     -- Call once at load: starts the tick loop and asks the map loader for the stations.
     function tracker.start()
         Events.OnTick.Add(tracker.onTick)
+        if options.scan then
+            if #scanning == 0 then Events.OnTick.Add(onScanTick) end
+            table.insert(scanning, tracker)
+        end
         for _, name in ipairs(options.sprites) do
             MapObjects.OnLoadWithSprite(name, tracker.track, Station.MAP_PRIORITY)
         end

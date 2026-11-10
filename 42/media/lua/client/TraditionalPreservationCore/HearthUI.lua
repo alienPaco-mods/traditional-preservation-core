@@ -3,12 +3,12 @@
 -- from it, and banks a lit fire or stokes it up again. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
 -- it burns or its copper holds anything. Clicking a Hearth opens Hearth Info too. Mods add their own notes to Hearth
 -- Info with HearthUI.addNotes.
-require "TimedActions/ISHearthCopper"
-require "TimedActions/ISHearthFire"
-require "Moveables/ISMoveableSpriteProps"
+require "TimedActions/TPHearthCopper"
+require "TimedActions/TPHearthFire"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local Container = require "TraditionalPreservationCore/Container"
 
 local HearthUI = {}
 
@@ -18,61 +18,20 @@ local POUR_ICON = "Item_Pot_Water"
 local FUEL_SCALE_MIN = 12 * 60 -- a full Fuel bar: 12 hours of burning
 local BAR_COLOURS = { fuel = { 0.75, 0.42, 0.18 }, copper = { 0.72, 0.45, 0.3 } }
 
-local function litresText(ml)
-    return string.format("%.1f", ml / 1000)
-end
-
-local function degrees(celsius)
-    return string.format("%.0f", celsius)
-end
-
-local function fluidName(name)
-    local fluid = name and Fluid.Get(name)
-    return fluid and fluid:getTranslatedName() or tostring(name)
-end
-
--- Whole hours, or "under an hour".
-local function hoursText(hours)
-    if hours <= 1 then return getText("IGUI_TraditionalPreservationCore_UnderHour") end
-    return say("IGUI_TraditionalPreservationCore_Hours", tostring(math.ceil(hours)))
-end
-
-local function tooltipFor(option, text)
-    local tooltip = ISWorldObjectContextMenu.addToolTip()
-    tooltip.description = text
-    option.toolTip = tooltip
-end
-
-local function disableWith(option, text)
-    option.isDisabled = true
-    tooltipFor(option, text)
-end
-
--- Every item on the player or in containers in reach that passes test.
-local function findItems(playerObj, test)
-    local found = {}
-    local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
-    for i = 0, containers:size() - 1 do
-        local items = containers:get(i):getItems()
-        for j = 0, items:size() - 1 do
-            local item = items:get(j)
-            if not item:isFavorite() and test(item) then table.insert(found, item) end
-        end
-    end
-    return found
-end
+local litresText, degrees, fluidName, hoursText = UI.litres, UI.degrees, UI.fluidName, UI.hoursText
+local tooltipFor, disableWith, findItems = UI.tooltip, UI.disable, UI.findItems
 
 -- Menu
 
 local function onHearthAction(playerObj, hearth, item, mode)
     if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item)
-    ISTimedActionQueue.add(ISHearthCopper:new(playerObj, hearth, item, mode))
+    ISTimedActionQueue.add(TPHearthCopper:new(playerObj, hearth, item, mode))
 end
 
 local function onFireAction(playerObj, hearth, mode)
     if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
-    ISTimedActionQueue.add(ISHearthFire:new(playerObj, hearth, mode))
+    ISTimedActionQueue.add(TPHearthFire:new(playerObj, hearth, mode))
 end
 
 local function addFireOption(menu, playerObj, hearth)
@@ -108,7 +67,7 @@ local function addPourInMenu(menu, playerObj, hearth, copper)
         local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", item:getDisplayName(),
             litresText(container:getAmount() * 1000)), playerObj, onHearthAction, hearth, item, "pourIn")
         entry.iconTexture = item:getTex()
-        local fluid = ISHearthCopper.fluidIn(container)
+        local fluid = Container.fluidIn(container)
         local refusal
         if not fluid then
             refusal = getText("IGUI_TraditionalPreservationCore_NotOneFluid")
@@ -128,7 +87,7 @@ local function addFillMenu(menu, playerObj, hearth, copper)
     option.iconTexture = getTexture(HEARTH_ICON)
     local items = findItems(playerObj, function(item)
         local container = item:getFluidContainer()
-        return container ~= nil and ISHearthCopper.canFillFrom(container, copper)
+        return container ~= nil and TPHearthCopper.canFillFrom(container, copper)
     end)
     if #items == 0 then return disableWith(option, getText("IGUI_TraditionalPreservationCore_NoRoomItem")) end
     local sub = menu:getNew(menu)
@@ -168,9 +127,11 @@ local function addHearthMenu(context, playerObj, hearth)
     if (copper.ml or 0) > 0 then addFillMenu(menu, playerObj, hearth, copper) end
 end
 
-local function onFillContextMenu(playerNum, context, worldobjects)
+local function onFillContextMenu(playerNum, context, worldobjects, test)
     for _, object in ipairs(worldobjects) do
         if Hearth.isHearth(object) then
+            -- Vanilla's probe for a controller's prompt: say there is a menu, do no work.
+            if test then return ISWorldObjectContextMenu.setTest() end
             -- A hearth built this session isn't tracked until its area reloads, so its menu starts it.
             if Hearth.World then Hearth.World.track(object) end
             return addHearthMenu(context, getSpecificPlayer(playerNum), object)
@@ -181,24 +142,9 @@ end
 Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
 -- Picking the Hearth up while the fire burns or the copper holds anything would lose them.
-local vanillaCanPickUp = ISMoveableSpriteProps.canPickUpMoveable
-local vanillaInfoFlags = ISMoveableSpriteProps.getInfoPanelFlagsPerTile
-
-local function mustStay(object)
-    if not object or not Hearth.isHearth(object) then return false end
-    return object:isLit() or (Hearth.stateOf(object:getModData()).ml or 0) > 0
-end
-
-function ISMoveableSpriteProps:canPickUpMoveable(character, square, object)
-    if mustStay(object) then return false end
-    return vanillaCanPickUp(self, character, square, object)
-end
-
--- And the pick-up cursor says why, with vanilla's own line for a full container.
-function ISMoveableSpriteProps:getInfoPanelFlagsPerTile(square, object, player, mode)
-    vanillaInfoFlags(self, square, object, player, mode)
-    if mode == "pickup" and mustStay(object) then InfoPanelFlags.hasItems = true end
-end
+UI.keepInPlace(function(object)
+    return Hearth.isHearth(object) and (object:isLit() or (Hearth.stateOf(object:getModData()).ml or 0) > 0)
+end)
 
 -- Hearth Info: the fire, its fuel and the copper.
 
@@ -272,28 +218,10 @@ function HearthWindow:render()
 end
 
 -- Clicking a Hearth opens Hearth Info, as clicking a TP station opens its window (its firebox is still in the loot
--- window beside it). Not while paused, aiming or out of reach: vanilla's own checks for a click. The click handler is
--- in vanilla's server folder, which loads after this one, so it is wrapped once the game has started.
-local function canClick(object, playerObj)
-    return playerObj and not playerObj:isAiming()
-        and not (UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0)
-        and InfoWindow.inReach(playerObj, object)
-end
-
-local function wrapClickHandler()
-    if not ISObjectClickHandler or ISObjectClickHandler.tpHearthClick then return end
-    local vanillaClickObject = ISObjectClickHandler.doClickSpecificObject
-    ISObjectClickHandler.tpHearthClick = true
-    function ISObjectClickHandler.doClickSpecificObject(object, playerNum, playerObj)
-        if object and Hearth.isHearth(object) and canClick(object, playerObj) then
-            if Hearth.World then Hearth.World.track(object) end
-            HearthWindow.open(playerObj, object)
-            return true
-        end
-        return vanillaClickObject(object, playerNum, playerObj)
-    end
-end
-
-Events.OnGameStart.Add(wrapClickHandler)
+-- window beside it).
+InfoWindow.clickOpens(Hearth.isHearth, function(playerObj, hearth)
+    if Hearth.World then Hearth.World.track(hearth) end
+    HearthWindow.open(playerObj, hearth)
+end)
 
 return HearthUI

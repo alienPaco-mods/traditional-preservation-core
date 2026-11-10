@@ -2,26 +2,27 @@
 -- ("stoke"). A banked fire burns a third of the wood, keeps the copper about 50 C and cooks a third as fast.
 require "TimedActions/ISBaseTimedAction"
 local Hearth = require "TraditionalPreservationCore/Hearth"
+local Action = require "TraditionalPreservationCore/Action"
 
-ISHearthFire = ISBaseTimedAction:derive("ISHearthFire")
+TPHearthFire = ISBaseTimedAction:derive("TPHearthFire")
 
 local DURATION = 100
 
-function ISHearthFire:isValid()
+function TPHearthFire:isValid()
     if not self.hearth:getSquare() or not self.hearth:isLit() then return false end
     return Hearth.isBanked(self.hearth) == (self.mode == "stoke")
 end
 
-function ISHearthFire:waitToStart()
+function TPHearthFire:waitToStart()
     self.character:faceThisObject(self.hearth)
     return self.character:shouldBeTurning()
 end
 
-function ISHearthFire:start()
+function TPHearthFire:start()
     self:setActionAnim("Loot")
 end
 
-function ISHearthFire:complete()
+function TPHearthFire:complete()
     -- Brought up to the minute first, so the copper heated as the fire was until now.
     local state = Hearth.copperOf(self.hearth)
     Hearth.setBanked(state, self.mode == "bank", self.hearth:getFuelAmount(), getGameTime():getWorldAgeHours())
@@ -29,15 +30,15 @@ function ISHearthFire:complete()
     return true
 end
 
-function ISHearthFire:perform()
+function TPHearthFire:perform()
     ISBaseTimedAction.perform(self)
 end
 
-function ISHearthFire:getDuration()
-    return DURATION
+function TPHearthFire:getDuration()
+    return Action.duration(self.character, DURATION)
 end
 
-function ISHearthFire:new(character, hearth, mode)
+function TPHearthFire:new(character, hearth, mode)
     local o = ISBaseTimedAction.new(self, character)
     o.hearth = hearth
     o.mode = mode

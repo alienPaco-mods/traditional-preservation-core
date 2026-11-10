@@ -1,6 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- New Hearth art (was a grey placeholder): a waist-high block of split fieldstone, as vanilla's kilns are built,
+  with a lime-rendered top, an arched fire mouth on the side it faces, and a hammered copper pan set in it, empty,
+  full or steaming. The mouth glows while the fire burns and shows only dull embers when it is banked (the
+  hearth's overlay sprite, as vanilla lights its kilns). The stone has hard edges; the steam and the glow are soft.
+  `pzart.hard_edges` is shared now (Dairy used its own copy).
 - Balance (series pass, F1): the Hearth is laid brick, so it is Masonry 2, gives Masonry XP and sits in the
   Masonry build category (was Pottery 2, Pottery XP, Pottery).
 - New `UI.offAppliances(sprites)`: a table-top station refuses a square holding a stove, a fridge or freezer, or a

@@ -41,7 +41,7 @@ local function slowCooking(fire)
 end
 
 -- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, notes how long the fire will burn on,
--- and shows the copper empty, full or steaming.
+-- and shows the copper empty, full or steaming, and the fire mouth's glow, lit or banked.
 function World.update(fire, now)
     local copper = Hearth.stateOf(fire:getModData())
     local before = Hearth.look(copper)
@@ -55,6 +55,9 @@ function World.update(fire, now)
     local face = Hearth.face(fire:getSprite():getName())
     local name = face and Hearth.sprite(look, face)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
+    local glow = face and Hearth.glowSprite(fire:isLit(), copper.banked, face)
+    local shown = fire:getOverlaySprite()
+    if (shown and shown:getName()) ~= glow then fire:setOverlaySprite(glow) end
     if look ~= before then
         log("TP", "hearth copper %s -> %s: %.1f L %s at %.1f C", before, look, (copper.ml or 0) / 1000,
             tostring(copper.fluid), copper.tempC or 0)

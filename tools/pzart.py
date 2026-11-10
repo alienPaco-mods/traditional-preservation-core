@@ -235,6 +235,14 @@ def shrink(layer):
     return layer.resize((TILE_W, TILE_H), Image.LANCZOS)
 
 
+def hard_edges(tile, cut=128):
+    """Clears every pixel under half opaque and makes the rest solid, as vanilla's hand-painted edges are. B42 writes
+    depth for a faint edge pixel too, so a soft edge on a raised object left a ring where the wall or barricade behind
+    it was never drawn. Shadows, steam and glows stay soft: paint them on their own layer."""
+    tile.putalpha(tile.getchannel("A").point(lambda v: 255 if v >= cut else 0))
+    return tile
+
+
 def project(x, y, z=0.0, foot=FOOT):
     """x and y are in tiles from the middle of the floor (+x runs down-right, +y down-left), z in pixels.
     Returns tile pixels; multiply by the supersampling to draw on a layer."""

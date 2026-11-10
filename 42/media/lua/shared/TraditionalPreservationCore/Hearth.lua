@@ -318,6 +318,14 @@ function Hearth.sprite(look, face)
     return Tiles.PREFIX .. (Hearth.LOOKS[look] + face)
 end
 
+-- The fire mouth's glow, the hearth's overlay sprite (as vanilla lights its kilns): nil while the fire is out.
+Hearth.GLOWS = Tiles.GLOWS or {}
+
+function Hearth.glowSprite(lit, banked, face)
+    local base = lit and Hearth.GLOWS[banked and "Banked" or "Lit"]
+    return base and Tiles.PREFIX .. (base + face) or nil
+end
+
 function Hearth.isHearth(object)
     return lookOf(object) ~= nil and instanceof(object, "IsoFireplace")
 end

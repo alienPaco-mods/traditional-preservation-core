@@ -15,4 +15,8 @@ return {
         Hot = 4,
     },
     HEARTHS = { "traditionalpreservationcore_01_0", "traditionalpreservationcore_01_1", "traditionalpreservationcore_01_2", "traditionalpreservationcore_01_3", "traditionalpreservationcore_01_4", "traditionalpreservationcore_01_5" },
+    GLOWS = {
+        Lit = 6,
+        Banked = 8,
+    },
 }

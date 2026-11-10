@@ -112,6 +112,10 @@ check("a banked firebox cooks a third as fast", near(Hearth.bankedCooking(10, 40
 check("every hearth tile is known with its facing", #Hearth.SPRITES == 6 and Hearth.face(Hearth.sprite("Hot", 1)) == 1
     and Hearth.face(Hearth.sprite("Empty", 0)) == 0 and Hearth.face("traditionalpreservationcore_01_6") == nil
     and Hearth.face("traditionalpreservationdairy_01_20") == nil)
+check("the fire mouth glows while lit, dimly when banked, not at all when out",
+    Hearth.glowSprite(true, false, 1) == "traditionalpreservationcore_01_7"
+    and Hearth.glowSprite(true, true, 0) == "traditionalpreservationcore_01_8"
+    and Hearth.glowSprite(false, true, 0) == nil and Hearth.face(Hearth.glowSprite(true, false, 0)) == nil)
 
 -- By a fire
 local ledger = { temperature = -10, seasonTemperature = -5 }

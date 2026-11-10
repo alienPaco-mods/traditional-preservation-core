@@ -1,9 +1,10 @@
 -- Traditional Preservation core: the Hearth is worked from its right-click menu. Vanilla's own menu lights and feeds
 -- the fire; ours, inside vanilla's Hearth submenu, shows the copper and pours a fluid into it or fills a container
--- from it. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
+-- from it, and banks a lit fire or stokes it up again. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
 -- it burns or its copper holds anything. Clicking a Hearth opens Hearth Info too. Mods add their own notes to Hearth
 -- Info with HearthUI.addNotes.
 require "TimedActions/ISHearthCopper"
+require "TimedActions/ISHearthFire"
 require "Moveables/ISMoveableSpriteProps"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
@@ -67,6 +68,21 @@ local function onHearthAction(playerObj, hearth, item, mode)
     if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item)
     ISTimedActionQueue.add(ISHearthCopper:new(playerObj, hearth, item, mode))
+end
+
+local function onFireAction(playerObj, hearth, mode)
+    if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
+    ISTimedActionQueue.add(ISHearthFire:new(playerObj, hearth, mode))
+end
+
+local function addFireOption(menu, playerObj, hearth)
+    if not hearth:isLit() then return end
+    local banked = Hearth.isBanked(hearth)
+    local mode = banked and "stoke" or "bank"
+    local option = menu:addOption(getText(banked and "ContextMenu_TraditionalPreservationCore_StokeFire"
+        or "ContextMenu_TraditionalPreservationCore_BankFire"), playerObj, onFireAction, hearth, mode)
+    option.iconTexture = getTexture(HEARTH_ICON)
+    tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
 local function copperStatus(copper)
@@ -147,6 +163,7 @@ local function addHearthMenu(context, playerObj, hearth)
     status.isDisabled = true
     local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_HearthInfo"), playerObj, HearthWindow.open, hearth)
     info.iconTexture = getTexture(HEARTH_ICON)
+    addFireOption(menu, playerObj, hearth)
     addPourInMenu(menu, playerObj, hearth, copper)
     if (copper.ml or 0) > 0 then addFillMenu(menu, playerObj, hearth, copper) end
 end
@@ -187,7 +204,7 @@ end
 
 local NOTES = {}
 
--- fn(info, notes) adds lines to Hearth Info's notes. info = { copper, lit, fuelMin }.
+-- fn(info, notes) adds lines to Hearth Info's notes. info = { copper, lit, banked, fuelMin, burnHours }.
 function HearthUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
@@ -207,15 +224,17 @@ end
 
 function HearthWindow:refresh()
     local hearth = self.station
-    self.info = { copper = Hearth.copperOf(hearth), lit = hearth:isLit(), fuelMin = hearth:getFuelAmount() }
+    self.info = { copper = Hearth.copperOf(hearth), lit = hearth:isLit(), banked = Hearth.isBanked(hearth),
+        fuelMin = hearth:getFuelAmount(), burnHours = Hearth.fuelHours(hearth) }
 end
 
 -- Steaming already, or when it will be while the fire burns on.
 local function steamText(info)
     local copper = info.copper
     if Hearth.isHot(copper) then return getText("IGUI_TraditionalPreservationCore_InfoHotYes") end
+    if info.banked then return getText("IGUI_TraditionalPreservationCore_InfoHotBanked") end
     local hotIn = info.lit and Hearth.hoursToHot(copper)
-    if hotIn and hotIn <= info.fuelMin / 60 then return say("IGUI_TraditionalPreservationCore_InfoHotIn", hoursText(hotIn)) end
+    if hotIn and hotIn <= info.burnHours then return say("IGUI_TraditionalPreservationCore_InfoHotIn", hoursText(hotIn)) end
     return getText("IGUI_TraditionalPreservationCore_InfoHotNo")
 end
 
@@ -226,11 +245,13 @@ function HearthWindow:render()
     local copper, ml = info.copper, info.copper.ml or 0
     local y = self:top()
 
-    y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFire",
-        getText(info.lit and "IGUI_TraditionalPreservationCore_InfoFireLit" or "IGUI_TraditionalPreservationCore_InfoFireOut"))
-    local fuelMin = math.floor(info.fuelMin)
-    y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", fuelMin / FUEL_SCALE_MIN, BAR_COLOURS.fuel,
-        say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(fuelMin / 60)), tostring(fuelMin % 60)))
+    local fire = info.banked and "IGUI_TraditionalPreservationCore_InfoFireBanked"
+        or info.lit and "IGUI_TraditionalPreservationCore_InfoFireLit" or "IGUI_TraditionalPreservationCore_InfoFireOut"
+    y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFire", getText(fire))
+    -- The bar is the wood; the time is how long it burns, three times as long banked.
+    local burnMin = math.floor(info.burnHours * 60)
+    y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", info.fuelMin / FUEL_SCALE_MIN, BAR_COLOURS.fuel,
+        say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)))
     y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoCopper", ml / Hearth.COPPER_ML, BAR_COLOURS.copper,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.COPPER_ML)))
     y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
@@ -245,6 +266,7 @@ function HearthWindow:render()
     elseif not info.lit then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpOut"))
     end
+    if info.banked then table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpBanked")) end
     for _, fn in ipairs(NOTES) do fn(info, notes) end
     self:drawNotes(y, notes)
 end

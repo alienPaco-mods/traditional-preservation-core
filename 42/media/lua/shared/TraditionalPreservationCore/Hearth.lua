@@ -7,19 +7,41 @@
 -- "By a fire" is a place of its own (PLACE, at FIRE_C): any lit fire within FIRE_RADIUS tiles on the same floor,
 -- the Hearth or not. It is opt-in: Weather.placeOf never returns it, Hearth.placeOf does, so only a mod that asks
 -- for it gets it. Mods hook into the copper with Hearth.hook (see HOOKS below).
+--
+-- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
+-- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
+-- one speed, a minute of fuel each minute (caught up in one go when its area loads), so a banked Hearth keeps its
+-- own reckoning of the fuel and sets vanilla's to it (Hearth.reckonFuel).
 local Weather = require "TraditionalPreservationCore/Weather"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, tempC, last, fireUntil.
+-- Inside: ml, fluid, tempC, last, fireUntil; banked, fuel, fuelAt, fuelSet.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
 Hearth.PLACE = "Hearth"
 Hearth.FIRE_C = 28
 Hearth.FIRE_RADIUS = 2
+
+-- Banked
+Hearth.BANKED_C = 50               -- the copper's heat over banked embers
+Hearth.BANKED_BURN = 1 / 3         -- of the wood a lit fire burns: a banked fire lasts three times as long
+Hearth.EMBERS = "Embers"           -- the place by a banked Hearth
+Hearth.EMBERS_C = 24
+
+local FIRE_C = { [Hearth.PLACE] = Hearth.FIRE_C, [Hearth.EMBERS] = Hearth.EMBERS_C }
+
+-- The heat of a place by a fire, lit or banked; nil for any other place.
+function Hearth.fireC(place)
+    return FIRE_C[place]
+end
+
+function Hearth.isFirePlace(place)
+    return FIRE_C[place] ~= nil
+end
 
 -- The copper
 Hearth.COPPER_ML = 10000
@@ -91,13 +113,15 @@ function Hearth.take(copper, maxMl)
     return ml, fluid, tempC
 end
 
--- Brings the copper up to now: heating while the fire burns (to fireUntil), cooling to roomC after.
+-- Brings the copper up to now: heating while the fire burns (to fireUntil), cooling to roomC after. Over banked
+-- embers it settles at BANKED_C, as slowly as it cools: the fire is low and the stone holds the heat.
 function Hearth.advance(copper, now, roomC)
     if (copper.ml or 0) <= 0 then return end
     local t = copper.last or now
     if copper.fireUntil and copper.fireUntil > t then
         local stop = math.min(copper.fireUntil, now)
-        copper.tempC = Hearth.cool(copper.tempC, Hearth.MAX_C, stop - t, Hearth.copperTau(copper.ml, true))
+        local target = copper.banked and Hearth.BANKED_C or Hearth.MAX_C
+        copper.tempC = Hearth.cool(copper.tempC, target, stop - t, Hearth.copperTau(copper.ml, not copper.banked))
         t = stop
     end
     if now > t then copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, Hearth.copperTau(copper.ml, false)) end
@@ -114,11 +138,48 @@ function Hearth.isHot(copper)
     return (copper.ml or 0) > 0 and (copper.tempC or 0) >= Hearth.HOT_C
 end
 
--- Hours until the copper is hot if the fire burns on; 0 if it is already, nil if it is empty.
+-- Hours until the copper is hot if the fire burns on; 0 if it is already, nil if it is empty or banked.
 function Hearth.hoursToHot(copper)
     if (copper.ml or 0) <= 0 then return nil end
     if copper.tempC >= Hearth.HOT_C then return 0 end
+    if copper.banked then return nil end
     return Hearth.copperTau(copper.ml, true) * math.log((Hearth.MAX_C - copper.tempC) / (Hearth.MAX_C - Hearth.HOT_C))
+end
+
+-- Banks the fire (banked true) or stokes it up again, with fuel minutes in vanilla's fireplace now.
+function Hearth.setBanked(state, banked, fuel, now)
+    state.banked = banked or nil
+    if banked then
+        state.fuel, state.fuelAt, state.fuelSet = fuel, now, fuel
+    else
+        state.fuel, state.fuelAt, state.fuelSet = nil, nil, nil
+    end
+end
+
+-- The fuel a banked fire has left now, from vanilla's fuel (minutes) and whether it is lit. Returns the fuel to give
+-- vanilla's fireplace (nil to leave it alone) and true when it must be lit again: vanilla burnt it out at full speed
+-- while its area was away. Wood added since the last reckoning counts in full. Put out by hand (fuel left), or burnt
+-- down, the fire is no longer banked: it lights up again as a lit fire.
+function Hearth.reckonFuel(state, fuel, lit, now)
+    if not state.banked then return nil end
+    if not state.fuel then
+        Hearth.setBanked(state, true, fuel, now)
+        return nil
+    end
+    local left = state.fuel - (now - state.fuelAt) * 60 * Hearth.BANKED_BURN + math.max(fuel - state.fuelSet, 0)
+    if (not lit and fuel > 0) or left < 1 then
+        Hearth.setBanked(state, false)
+        return lit and 0 or nil
+    end
+    state.fuel, state.fuelAt, state.fuelSet = left, now, math.ceil(left)
+    return state.fuelSet, not lit
+end
+
+-- A banked firebox cooks as slowly as it burns: vanilla adds cooking time at full speed, so of the minutes cooked
+-- since before, only BANKED_BURN count. Returns the cooking time the food should have.
+function Hearth.bankedCooking(before, now)
+    if now <= before then return now end
+    return before + (now - before) * Hearth.BANKED_BURN
 end
 
 -- Hooks: other mods' say on fluid going in and out of the copper. Each is a list of functions, called in order.
@@ -216,9 +277,23 @@ function Hearth.near(square, test)
     return list
 end
 
--- The nearest lit fire within FIRE_RADIUS tiles on the same floor, or nil.
+-- A Hearth whose fire is lit and banked.
+function Hearth.isBanked(object)
+    return Hearth.isHearth(object) and object:isLit() and Hearth.stateOf(object:getModData()).banked == true
+end
+
+-- The warmest lit fire within FIRE_RADIUS tiles on the same floor, the nearest of those, with its place (PLACE, or
+-- EMBERS for a banked Hearth); nil if there is none.
+local function warmestFire(square)
+    local fires = Hearth.near(square, isLitFire)
+    for _, fire in ipairs(fires) do
+        if not Hearth.isBanked(fire) then return fire, Hearth.PLACE end
+    end
+    if fires[1] then return fires[1], Hearth.EMBERS end
+end
+
 function Hearth.fireNear(square)
-    return Hearth.near(square, isLitFire)[1]
+    return (warmestFire(square))
 end
 
 -- Hearths within FIRE_RADIUS tiles, nearest first.
@@ -228,21 +303,23 @@ end
 
 -- Hours of fuel the fire has left; nil if it can't be read (it is then taken to burn on).
 function Hearth.fuelHours(fire)
+    if Hearth.isBanked(fire) then return fire:getFuelAmount() / 60 / Hearth.BANKED_BURN end
     if instanceof(fire, "IsoFireplace") then return fire:getFuelAmount() / 60 end
     local minutes = fire:getModData().fuelAmt
     return minutes and minutes / 60 or nil
 end
 
--- The opt-in place: by a fire, else below ground, under a roof or in the open. The fire, if any, comes second.
+-- The opt-in place: by a fire (or by banked embers), else below ground, under a roof or in the open. The fire, if any, comes second.
 function Hearth.placeOf(object)
     local square = object and object:getSquare()
-    local fire = square and Hearth.fireNear(square)
-    if fire then return Hearth.PLACE, fire end
+    local fire, place
+    if square then fire, place = warmestFire(square) end
+    if fire then return place, fire end
     return Weather.placeOf(object)
 end
 
 function Hearth.placeTemperature(ledger, place)
-    if place == Hearth.PLACE then return Hearth.FIRE_C end
+    if FIRE_C[place] then return FIRE_C[place] end
     return Weather.placeTemperature(ledger, place)
 end
 

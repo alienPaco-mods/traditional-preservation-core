@@ -25,5 +25,10 @@
   "IGUI_TraditionalPreservationCore_InfoHotNo": "Not yet (85 C)",
   "IGUI_TraditionalPreservationCore_InfoHotIn": "in %1",
   "IGUI_TraditionalPreservationCore_HearthHelpEmpty": "Pour a fluid into the copper and light the fire: it heats towards 95 C and steams at 85 C. Fill your own containers from it.",
-  "IGUI_TraditionalPreservationCore_HearthHelpOut": "The fire is out: the copper cools. Add fuel and light it."
+  "IGUI_TraditionalPreservationCore_HearthHelpOut": "The fire is out: the copper cools. Add fuel and light it.",
+  "IGUI_TraditionalPreservationCore_InfoFireBanked": "Banked",
+  "IGUI_TraditionalPreservationCore_InfoHotBanked": "Not while banked",
+  "IGUI_TraditionalPreservationCore_BankHelp": "Rake the fire down under its ash: it burns a third of the wood, keeps the copper about 50 C and cooks a third as fast.",
+  "IGUI_TraditionalPreservationCore_StokeHelp": "Rake the embers up into a full fire: the copper heats towards 95 C and the firebox cooks at full speed.",
+  "IGUI_TraditionalPreservationCore_HearthHelpBanked": "Banked: the embers burn a third of the wood, keep the copper about 50 C and cook a third as fast. Stoke the fire to bring the copper to the steam."
 }

@@ -1,7 +1,8 @@
 -- Traditional Preservation core: keeps track of every Hearth and brings its copper up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
 -- the hearth tiles (vanilla's flames are attached sprites: never clear them). The core keeps its own weather ledger
--- for the room's temperature, so the Hearth works whichever TP mods are on.
+-- for the room's temperature, so the Hearth works whichever TP mods are on. A banked Hearth's fuel and the food
+-- cooking in its firebox are set back each refresh to what a fire burning at BANKED_BURN would have done.
 if isClient() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
@@ -22,12 +23,41 @@ function World.getLedger()
     return Weather.getLedger(LEDGER_KEY, newLedger)
 end
 
--- Brings the copper up to now, notes how long the fire will burn on, and shows the copper empty, full or steaming.
+-- The cooking time each food in a banked firebox had at the last refresh, by fire and item id. Cooking only runs in
+-- loaded areas, as the refresh does, so this needn't be saved.
+local cookSeen = setmetatable({}, { __mode = "k" })
+
+local function slowCooking(fire)
+    local seen = cookSeen[fire] or {}
+    local now = {}
+    local container = fire:getContainer()
+    local items = container and container:getItems()
+    for i = 0, items and items:size() - 1 or -1 do
+        local item = items:get(i)
+        if instanceof(item, "Food") and item:isCookable() then
+            local time = item:getCookingTime()
+            local before = seen[item:getID()]
+            if before and time > before then
+                time = Hearth.bankedCooking(before, time)
+                item:setCookingTime(time)
+            end
+            now[item:getID()] = time
+        end
+    end
+    cookSeen[fire] = now
+end
+
+-- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, notes how long the fire will burn on,
+-- and shows the copper empty, full or steaming.
 function World.update(fire, now)
     local copper = Hearth.stateOf(fire:getModData())
     local before = Hearth.look(copper)
     Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
-    copper.fireUntil = fire:isLit() and now + fire:getFuelAmount() / 60 or nil
+    local fuel, relight = Hearth.reckonFuel(copper, fire:getFuelAmount(), fire:isLit(), now)
+    if fuel then fire:setFuelAmount(fuel) end
+    if relight then fire:turnOn() end
+    if Hearth.isBanked(fire) then slowCooking(fire) else cookSeen[fire] = nil end
+    copper.fireUntil = fire:isLit() and now + Hearth.fuelHours(fire) or nil
     local look = Hearth.look(copper)
     local face = Hearth.face(fire:getSprite():getName())
     local name = face and Hearth.sprite(look, face)

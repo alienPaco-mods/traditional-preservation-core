@@ -131,7 +131,7 @@ Every TP mod splits the same way (`tp new` makes this layout), under `42/media/l
 | `shared/TimedActions/IS*.lua` | both | The mod's own timed actions. |
 | `server/<Mod>World.lua` | server | The station tracker (`Station.tracker`), sprites and overlays, the weather recorder. Public as `<Mod>World` (`track`, `refresh`) so the UI can start tracking a station built this session. Yeast calls it `...Shelf`. |
 | `client/<Mod>UI.lua` | client | Popups, slot rules, context menus, and the mod's own vanilla wraps. Salt's is `...Menu`, Yeast's `...ShelfUI`. |
-| `client/<Mod>Dev.lua` | client | The Dev console (`TPF`, `TPS`, `TPV`, `TPY`), documented by its `help()` and DEVHELP. Vinegar also has `...Debug.lua`, debug-mode only. |
+| `client/<Mod>Dev.lua` | client | The Dev console (`TPF`, `TPS`, `TPV`, `TPY`, `TPD`), documented by its `help()` and DEVHELP. Vinegar also has `...Debug.lua`, debug-mode only. TP Core's is `TPC` (`TraditionalPreservationCoreDev.lua`): the Hearth's commands, whichever mods are on. |
 
 Extra shared files hold a separate piece of the game that stands on its own: Fish's `...Evolved` (stock pots), Salt's
 `...Shaker`, Vinegar's `...Bottles`.

@@ -24,3 +24,14 @@
   info window (rows, bars, notes, closes out of reach, one at a time across mods), from Dairy's Pot Info.
   Translations under `TraditionalPreservationCore`. Hearths built in older test saves are gone: rebuild them.
 - Left-clicking a Hearth opens Hearth Info (user, after test H), as an incubator's click opens Incubator Info.
+- Banked fire (S3): "Bank the Fire" / "Stoke the Fire" on a lit Hearth's menu (timed action `ISHearthFire`). Banked,
+  it burns a third of the wood, the copper settles at 50 C (never steams) and food in the firebox cooks a third as
+  fast. Vanilla's fireplace has one speed, so the core keeps its own reckoning (`Hearth.reckonFuel`,
+  `Hearth.bankedCooking`) and sets vanilla's fuel and each food's cooking time back to it, and lights the fire again
+  if vanilla burnt it out at full speed while its area was unloaded. Putting it out or burning down ends banking.
+  New opt-in place `Hearth.EMBERS` (24 C) by a banked Hearth; `Hearth.fireC`, `Hearth.isFirePlace`; a lit fire nearby
+  wins over a banked one. Hearth Info shows Fire "Banked", the burn time left and a banked note. Flames, light and
+  room heat stay vanilla's. Save fields under `tpHearth`: banked, fuel, fuelAt, fuelSet.
+- Debug console `TPC` (`client/TraditionalPreservationCoreDev.lua`, debug mode only): `TPC.hearth()` (shows banked
+  and the reckoned fuel), `TPC.copper(l, c, fluid)`, `TPC.fuel(min)`, `TPC.hot()`, `TPC.kit()` (a Hearth's materials).
+  Moved from Dairy's `TPD`, since the Hearth is the core's.

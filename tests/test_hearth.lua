@@ -55,6 +55,36 @@ Hearth.advance(warming, eta + 0.01, 20)
 check("the time to hot is right, for any fluid", eta > 1.3 and eta < 1.7 and Hearth.isHot(warming)
     and Hearth.hoursToHot(warming) == 0 and Hearth.hoursToHot({}) == nil)
 
+-- Banked
+local banked = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100, banked = true }
+Hearth.advance(banked, 24, 20)
+check("banked embers keep the copper about 50 C and never steam it", near(banked.tempC, Hearth.BANKED_C, 0.5)
+    and Hearth.hoursToHot(banked) == nil)
+local fromHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0, fireUntil = 100, banked = true }
+local outHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0 }
+Hearth.advance(fromHot, 2, 20)
+Hearth.advance(outHot, 2, 20)
+check("a hot copper over banked embers cools, slower than with the fire out", fromHot.tempC < 90 and fromHot.tempC > outHot.tempC)
+
+local fire = {}
+check("a fire that isn't banked is left alone", Hearth.reckonFuel(fire, 120, true, 0) == nil)
+Hearth.setBanked(fire, true, 120, 0)
+local fuel, relight = Hearth.reckonFuel(fire, 60, true, 1)
+check("banked, an hour burns 20 minutes of fuel", fuel == 100 and not relight)
+fuel = Hearth.reckonFuel(fire, 100 - 30 + 60, true, 1.5)
+check("wood added counts in full", fuel == 100 - 10 + 60 - 30)
+local away = {}
+Hearth.setBanked(away, true, 180, 0)
+fuel, relight = Hearth.reckonFuel(away, 0, false, 5)
+check("burnt out at full speed while away, it is lit again with what embers would have left", fuel == 80 and relight)
+local putOut = {}
+Hearth.setBanked(putOut, true, 180, 0)
+check("put out by hand, it is no longer banked", Hearth.reckonFuel(putOut, 170, false, 0.2) == nil and putOut.banked == nil)
+local burnt = {}
+Hearth.setBanked(burnt, true, 30, 0)
+check("burnt down, it goes out and is no longer banked", Hearth.reckonFuel(burnt, 0, true, 2) == 0 and burnt.banked == nil)
+check("a banked firebox cooks a third as fast", near(Hearth.bankedCooking(10, 40), 20) and Hearth.bankedCooking(10, 5) == 5)
+
 -- Tiles
 check("every hearth tile is known with its facing", #Hearth.SPRITES == 6 and Hearth.face(Hearth.sprite("Hot", 1)) == 1
     and Hearth.face(Hearth.sprite("Empty", 0)) == 0 and Hearth.face("traditionalpreservationcore_01_6") == nil
@@ -64,6 +94,8 @@ check("every hearth tile is known with its facing", #Hearth.SPRITES == 6 and Hea
 local ledger = { temperature = -10, seasonTemperature = -5 }
 check("a fire keeps its warmth whatever the weather", Hearth.placeTemperature(ledger, Hearth.PLACE) == Hearth.FIRE_C
     and Hearth.placeTemperature(ledger, "Open") == -10)
+check("banked embers are a cooler place by a fire", Hearth.placeTemperature(ledger, Hearth.EMBERS) == Hearth.EMBERS_C
+    and Hearth.EMBERS_C < Hearth.FIRE_C and Hearth.isFirePlace(Hearth.EMBERS) and not Hearth.isFirePlace("Open"))
 local state = {}
 Hearth.noteFire(state, nil, nil, 5)
 check("no fire, no notes", state.fireUntil == nil and state.under == nil)

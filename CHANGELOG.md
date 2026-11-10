@@ -1,6 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- The copper takes fluids that blend: a mod names a group with `Hearth.blend(...)` (Dairy: cow's and sheep's milk)
+  and those share the copper, a blend going in and out in its shares (`Hearth.partsIn`, `partsOf`, `addParts`,
+  `share`; `Hearth.take` returns the ml by fluid as a fourth value, and the `filled` hook gets `parts`). Anything
+  else is still one fluid at a time. The Hearth's menu and Hearth Info name each fluid of a blend.
 - Tooling (2026-11-10 review, group E: R28, R29). No change to the game's files:
   - `tp install` and `tp status` warn when the installed TP Core is missing or not the source's, so a mod isn't
     tested in game against an old core.

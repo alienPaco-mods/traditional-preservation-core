@@ -22,6 +22,25 @@ check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 100
     and select(2, Hearth.pourInto(copper, "SheepMilk", 100, 20, 0)) == "Mixed")
 check("10 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
 
+-- Fluids a mod has said may share the copper
+Hearth.blend("CowMilk", "SheepMilk")
+local herd = {}
+Hearth.pourInto(herd, "CowMilk", 3000, 20, 0)
+check("fluids that blend share the copper, heat mixing by volume", Hearth.pourInto(herd, "SheepMilk", 1000, 60, 0) == 1000
+    and herd.ml == 4000 and near(herd.tempC, 30) and herd.fluid == "CowMilk" and herd.parts.SheepMilk == 1000)
+check("but nothing else joins them", select(2, Hearth.pourInto(herd, "Water", 100, 20, 0)) == "Mixed")
+local outMl, outFluid, _, outParts = Hearth.take(herd, 2000)
+check("a blend comes out in its shares", outMl == 2000 and outFluid == "CowMilk" and near(outParts.CowMilk, 1500)
+    and near(outParts.SheepMilk, 500) and near(Hearth.partsOf(herd).SheepMilk, 500))
+check("a blend poured in keeps its shares", Hearth.pourInto(herd, { SheepMilk = 3, CowMilk = 1 }, 2000, 20, 0) == 2000
+    and near(Hearth.partsOf(herd).SheepMilk, 2000) and herd.fluid == "CowMilk")
+Hearth.take(herd)
+check("emptied, the blend is forgotten", herd.parts == nil and herd.fluid == nil)
+local plain = {}
+Hearth.pourInto(plain, "Water", 1000, 20, 0)
+local _, _, _, waterParts = Hearth.take(plain, 400)
+check("one fluid is one part", plain.parts == nil and waterParts.Water == 400)
+
 -- Heating and cooling
 copper.fireUntil = 100
 local hot

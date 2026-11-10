@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the Hearth, a low stone oven with a copper set in its top, shared by every TP mod.
 -- The built tile is swapped for a vanilla fireplace, as the Barrel Oven's is (BuildRecipeCode.barrelOven.OnCreate),
 -- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The copper holds one fluid at
--- a time: it heats towards MAX_C while the fire burns and cools to the room when it is out. Its state is a plain
+-- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C while the fire burns and cools to the room when it is out. Its state is a plain
 -- table in the fireplace's modData under KEY; every rule here works on it without the engine.
 --
 -- "By a fire" is a place of its own (PLACE, at FIRE_C): any lit fire within FIRE_RADIUS tiles on the same floor,
@@ -19,7 +19,7 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, tempC, last, fireUntil; banked, fuel, fuelAt, fuelSet.
+-- Inside: ml, fluid, parts, tempC, last, fireUntil; banked, fuel, fuelAt, fuelSet.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
@@ -94,35 +94,110 @@ function Hearth.copperTau(ml, lit)
     return base * (math.max(ml, Hearth.FLOOR_ML) / Hearth.COPPER_ML) ^ (1 / 3)
 end
 
--- How much of ml of a fluid fits, or 0 with the reason: one fluid at a time.
+-- Fluids that may share the copper, as a cow's and a sheep's milk do: a mod names each group. Anything else is
+-- one fluid at a time.
+local BLENDS = {}
+
+function Hearth.blend(...)
+    local group = {}
+    for _, name in ipairs({ ... }) do
+        group[name] = true
+        BLENDS[name] = group
+    end
+end
+
+function Hearth.blends(a, b)
+    return a == b or (BLENDS[a] ~= nil and BLENDS[a][b] == true)
+end
+
+-- parts ({ name = ml }) in the same shares, adding up to ml.
+function Hearth.share(parts, ml)
+    local total, shares = 0, {}
+    for _, part in pairs(parts) do total = total + part end
+    if total <= 0 then return shares end
+    for name, part in pairs(parts) do shares[name] = part * ml / total end
+    return shares
+end
+
+-- What ml of a store (the copper, or a mod's own: anything with ml, fluid and parts) is, by fluid: { name = ml }.
+-- parts is kept only for a blend, and only its shares count; fluid is then the largest of them.
+function Hearth.partsOf(state, ml)
+    ml = ml or state.ml or 0
+    if state.parts then return Hearth.share(state.parts, ml) end
+    return state.fluid and ml > 0 and { [state.fluid] = ml } or {}
+end
+
+-- Notes ml of a fluid (a name, or parts for a blend) going into a store. Call it before the store's ml grows.
+function Hearth.addParts(state, fluid, ml)
+    local parts = Hearth.partsOf(state)
+    local added = type(fluid) == "table" and Hearth.share(fluid, ml) or { [fluid] = ml }
+    for name, part in pairs(added) do parts[name] = (parts[name] or 0) + part end
+    local count, most = 0, nil
+    for name, part in pairs(parts) do
+        count = count + 1
+        if not most or part > parts[most] or (part == parts[most] and name < most) then most = name end
+    end
+    state.fluid = most
+    state.parts = count > 1 and parts or nil
+end
+
+-- What a fluid container holds, { name = ml }, and its main fluid: one fluid, or a blend of fluids that may share
+-- the copper. nil for none, or for any other mixture.
+function Hearth.partsIn(container)
+    if not container or container:isEmpty() then return nil end
+    local primary = container:getPrimaryFluid()
+    local name = primary and primary:getFluidTypeString()
+    if not name then return nil end
+    local found = container:getPrimaryFluidAmount()
+    local parts = { [name] = found * 1000 }
+    for other in pairs(BLENDS[name] or {}) do
+        local fluid = other ~= name and Fluid.Get(other)
+        local amount = fluid and container:getSpecificFluidAmount(fluid) or 0
+        if amount > 0 then
+            parts[other] = amount * 1000
+            found = found + amount
+        end
+    end
+    if found < container:getAmount() - 0.001 then return nil end
+    return parts, name
+end
+
+-- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend.
 function Hearth.copperRoom(copper, fluid, ml)
-    if (copper.ml or 0) > 0 and copper.fluid ~= fluid then return 0, "Mixed" end
+    if (copper.ml or 0) > 0 then
+        for name in pairs(type(fluid) == "table" and fluid or { [fluid] = true }) do
+            if not Hearth.blends(copper.fluid, name) then return 0, "Mixed" end
+        end
+    end
     local room = Hearth.COPPER_ML - (copper.ml or 0)
     if room <= 0 then return 0, "Full" end
     return math.min(ml, room)
 end
 
--- Pours a fluid in; the temperatures mix by volume. Returns the ml taken (0 with a reason when refused).
+-- Pours a fluid (a name, or parts) in; the temperatures mix by volume. Returns the ml taken (0 with a reason when
+-- refused).
 function Hearth.pourInto(copper, fluid, ml, fluidC, now)
     local taken, reason = Hearth.copperRoom(copper, fluid, ml)
     if taken <= 0 then return 0, reason end
     local had = copper.ml or 0
     copper.tempC = had > 0 and (copper.tempC * had + fluidC * taken) / (had + taken) or fluidC
-    copper.ml, copper.fluid = had + taken, fluid
+    Hearth.addParts(copper, fluid, taken)
+    copper.ml = had + taken
     copper.last = copper.last or now
     return taken
 end
 
--- Takes up to maxMl out, all of it if left out. Returns the ml, the fluid and its temperature.
+-- Takes up to maxMl out, all of it if left out. Returns the ml, the main fluid, its temperature, and the ml by
+-- fluid ({ name = ml }: more than one name when the copper holds a blend).
 function Hearth.take(copper, maxMl)
     local ml = math.min(copper.ml or 0, maxMl or copper.ml or 0)
     if ml <= 0 then return 0 end
-    local fluid, tempC = copper.fluid, copper.tempC
+    local fluid, tempC, parts = copper.fluid, copper.tempC, Hearth.partsOf(copper, ml)
     copper.ml = copper.ml - ml
     if copper.ml <= 0 then
-        for _, key in ipairs({ "ml", "fluid", "tempC", "last" }) do copper[key] = nil end
+        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last" }) do copper[key] = nil end
     end
-    return ml, fluid, tempC
+    return ml, fluid, tempC, parts
 end
 
 -- Brings the copper up to now: heating while the fire burns (to fireUntil), cooling to roomC after. Over banked
@@ -198,7 +273,7 @@ end
 --   heatOf(item, now, character)  the heat in C of the fluid in item, or nil to let the next one (or vanilla's
 --                                 item heat) say. A container that keeps its own heat answers here.
 --   taken(item, ml)               ml left item for the copper.
---   filled(item, fill)            fill = { ml, fluid, tempC, hot, hadMl, hadC, now, character }: ml went into
+--   filled(item, fill)            fill = { ml, fluid, parts, tempC, hot, hadMl, hadC, now, character }: ml went into
 --                                 item from the copper. Return true if it set the item's heat itself.
 local HOOKS = { heatOf = {}, taken = {}, filled = {} }
 

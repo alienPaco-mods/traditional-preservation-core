@@ -8,7 +8,6 @@ require "TimedActions/TPHearthFire"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
-local Container = require "TraditionalPreservationCore/Container"
 
 local HearthUI = {}
 
@@ -44,13 +43,25 @@ local function addFireOption(menu, playerObj, hearth)
     tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
+-- The copper's fluid by name; a blend names each, the largest share first.
+local function holds(copper)
+    local names = {}
+    for name in pairs(Hearth.partsOf(copper)) do table.insert(names, name) end
+    if #names < 2 then return fluidName(copper.fluid) end
+    local parts = copper.parts
+    table.sort(names, function(a, b) return parts[a] > parts[b] or (parts[a] == parts[b] and a < b) end)
+    for index, name in ipairs(names) do names[index] = fluidName(name) end
+    return table.concat(names, " + ")
+end
+
 local function copperStatus(copper)
     if (copper.ml or 0) <= 0 then return getText("IGUI_TraditionalPreservationCore_CopperEmpty") end
     return say("IGUI_TraditionalPreservationCore_CopperStatus", litresText(copper.ml), litresText(Hearth.COPPER_ML),
-        fluidName(copper.fluid), degrees(copper.tempC))
+        holds(copper), degrees(copper.tempC))
 end
 
--- Every container with a fluid in it. A mix, or a fluid other than the copper's, shows in red with the reason.
+-- Every container with a fluid in it. A mix, or a fluid that doesn't go with the copper's, shows in red with the
+-- reason.
 local function addPourInMenu(menu, playerObj, hearth, copper)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_PourIntoCopper"))
     option.iconTexture = getTexture(POUR_ICON)
@@ -67,12 +78,12 @@ local function addPourInMenu(menu, playerObj, hearth, copper)
         local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", item:getDisplayName(),
             litresText(container:getAmount() * 1000)), playerObj, onHearthAction, hearth, item, "pourIn")
         entry.iconTexture = item:getTex()
-        local fluid = Container.fluidIn(container)
+        local parts = Hearth.partsIn(container)
         local refusal
-        if not fluid then
+        if not parts then
             refusal = getText("IGUI_TraditionalPreservationCore_NotOneFluid")
-        elseif select(2, Hearth.copperRoom(copper, fluid, 1)) == "Mixed" then
-            refusal = say("IGUI_TraditionalPreservationCore_CopperMixed", fluidName(copper.fluid))
+        elseif select(2, Hearth.copperRoom(copper, parts, 1)) == "Mixed" then
+            refusal = say("IGUI_TraditionalPreservationCore_CopperMixed", holds(copper))
         end
         if refusal then
             entry.notAvailable = true
@@ -81,7 +92,7 @@ local function addPourInMenu(menu, playerObj, hearth, copper)
     end
 end
 
--- Empty containers, and those holding the copper's fluid with room left.
+-- Empty containers, and those holding the copper's fluid (or one that blends with it) with room left.
 local function addFillMenu(menu, playerObj, hearth, copper)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_FillFromCopper"))
     option.iconTexture = getTexture(HEARTH_ICON)
@@ -201,7 +212,7 @@ function HearthWindow:render()
     y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoCopper", ml / Hearth.COPPER_ML, BAR_COLOURS.copper,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.COPPER_ML)))
     y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
-        ml > 0 and fluidName(copper.fluid) or getText("IGUI_TraditionalPreservationCore_InfoNothing"))
+        ml > 0 and holds(copper) or getText("IGUI_TraditionalPreservationCore_InfoNothing"))
     y = self:row(y, "IGUI_TraditionalPreservationCore_InfoTemp",
         ml > 0 and say("IGUI_TraditionalPreservationCore_InfoDegrees", degrees(copper.tempC)) or "-")
     if ml > 0 then y = self:row(y, "IGUI_TraditionalPreservationCore_InfoHot", steamText(info)) end

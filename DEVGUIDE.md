@@ -104,12 +104,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
 
 1. Edit the core only here, and run `tp test Core` (or `luajit tests/test_core.lua` from this folder).
 2. `tp install Core` ships only its `42/` folder; the rest of this folder is tooling and private notes.
-3. **Moving over, one mod per session:** Dairy, Fish and new mods (`tp new`) require TP Core. Salt, Yeast and Vinegar
-   still carry their own copy under `<Mod>/Core/`, kept identical by `tp sync` (each copy starts with a "Copied from
-   ... Edit it there" line; sync refuses to overwrite a copy edited by hand, `--force` overrides). `tp test <Mod>` and
-   `tp install <Mod>` fail while a copy is out of date. To move a mod over: delete its `Core/` folders, change
-   `"<Mod>/Core/X"` to `"TraditionalPreservationCore/X"`, add the two mod.info lines, `tp install <Mod> --force`
-   (the installed copy still has the old files).
+3. **Every TP mod requires TP Core** (Dairy first; Yeast, Fish, Vinegar and Salt moved over 2026-11-10). None
+   carries a copy under `<Mod>/Core/` any more. `tp sync` is left for a mod that would want a copy again, and refuses
+   a mod whose mod.info requires TP Core. FuelBarrel isn't TP and doesn't require it (its tests and builder only
+   borrow the core's harness and `pzart`). A test with its own `require` stub (e.g. `name:find("^TraditionalPreservation<Mod>/")`)
+   must also let `^TraditionalPreservationCore/` through, or use `H.useModPaths()`.
 4. **Modules only the required mod has:** `Hearth` (the Hearth and its copper, save key `tpHearth`, the opt-in "by
    a fire" place, hooks), its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two

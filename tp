@@ -9,8 +9,8 @@
                                 edits newer than the source, or files the source doesn't have (--force overrides)
   tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
   tp sync [MOD...] [--force]    copy the shared core into each mod that still carries its own copy, under that mod's
-                                path (mods that require TP Core don't). With no MOD, the mods
-                                that already have it. Refuses to overwrite a copy edited by hand (--force overrides)
+                                path. With no MOD, the mods that already have it. Refuses a mod that requires TP
+                                Core, and a copy edited by hand (--force overrides the second only)
   tp new Name [--station "Two Words"] [--short TPX]
                                 a new mod TraditionalPreservation<Name> from template/: requires TP Core, art built, golden
                                 season report recorded, guide stub in guides/, git initialised, tests run
@@ -127,6 +127,13 @@ def core_copies(mod):
         text = CORE_HEADER.format(source=source.relative_to(CORE)) + source.read_text()
         copies.append((source, copy, text))
     return copies
+
+
+def requires_core(mod):
+    """True if the mod's mod.info requires TP Core, so it must never get a copy."""
+    info = MODS / mod / "42" / "mod.info"
+    return any(line.startswith("require=") and "\\TraditionalPreservationCore" in line
+               for line in info.read_text().splitlines())
 
 
 def uses_core(mod):
@@ -354,8 +361,11 @@ def cmd_sync(args):
     force = "--force" in args
     names = [a for a in args if not a.startswith("--")]
     mods = resolve(names) if names else [mod for mod in all_mods() if uses_core(mod)]
+    required = [mod for mod in mods if requires_core(mod)]
+    if required:
+        sys.exit(f"tp sync: {', '.join(short(m) for m in required)} requires TP Core and must not carry a copy")
     if not mods:
-        sys.exit("tp sync: no mod uses the core yet. Name one: tp sync <MOD>")
+        sys.exit("tp sync: no mod carries a core copy (every TP mod requires TP Core)")
     blocked = []
     for mod in mods:
         for source, copy, text in core_copies(mod):

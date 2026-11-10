@@ -35,3 +35,5 @@
 - Debug console `TPC` (`client/TraditionalPreservationCoreDev.lua`, debug mode only): `TPC.hearth()` (shows banked
   and the reckoned fuel), `TPC.copper(l, c, fluid)`, `TPC.fuel(min)`, `TPC.hot()`, `TPC.kit()` (a Hearth's materials).
   Moved from Dairy's `TPD`, since the Hearth is the core's.
+- Core split finished: Yeast, Fish, Vinegar and Salt require TP Core (none carries a copy). DEVGUIDE says so and adds
+  the test require-stub rule; `tp sync` refuses a mod that requires TP Core.

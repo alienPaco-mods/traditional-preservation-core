@@ -108,6 +108,10 @@ CORE_LUA = CORE / "42" / "media" / "lua"
 CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp sync`. Edit it there, not here.\n"
 
 
+# Core modules that only work from the required TP Core mod (they own tiles, a save key or a World): never copied.
+REQUIRED_ONLY = {"Hearth.lua", "Tiles.lua", "HearthWorld.lua"}
+
+
 def core_copies(mod):
     """(source in TraditionalPreservationCore, copy in the mod, text the copy should hold) for every core module.
 
@@ -116,6 +120,8 @@ def core_copies(mod):
     """
     copies = []
     for source in sorted(CORE_LUA.glob("*/" + CORE.name + "/*.lua")):
+        if source.name in REQUIRED_ONLY:
+            continue
         side = source.parent.parent.name
         copy = MODS / mod / "42" / "media" / "lua" / side / mod / "Core" / source.name
         text = CORE_HEADER.format(source=source.relative_to(CORE)) + source.read_text()

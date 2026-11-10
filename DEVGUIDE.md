@@ -109,6 +109,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
    `tp install <Mod>` fail while a copy is out of date. To move a mod over: delete its `Core/` folders, change
    `"<Mod>/Core/X"` to `"TraditionalPreservationCore/X"`, add the two mod.info lines, `tp install <Mod> --force`
    (the installed copy still has the old files).
+4. **Modules only the required mod has:** `Hearth` (the Hearth and its copper, save key `tpHearth`, the opt-in "by
+   a fire" place, hooks), its `Tiles` and the server's `HearthWorld` are never copied by `tp sync` (`REQUIRED_ONLY`
+   in `tp`): they own a tileset, a save key and a World, which two mods can't both ship. A mod that wants them
+   requires TP Core.
 
 Core modules return a local table and never set a global, and never require each other.
 
@@ -241,7 +245,8 @@ path, so each copy lived under its mod's own path). That changed on 2026-11-10: 
 not only code (the Hearth, a fire with a copper, is wanted by Dairy and later by cheese and others), and a station
 needs one tileset, one save key and one set of timed actions. Two mods can't both ship it. One required mod also
 means one copy of each fix, and one place for multiplayer's network code later. Its modules still return a local
-table and set no global. FuelBarrel is not a TP mod and does not require it.
+table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateHearth`
+(the entity script) and the `ISHearthCopper` timed action. FuelBarrel is not a TP mod and does not require it.
 
 **Why the extra check that a station is loaded?**
 An unloaded object keeps its square and its index until its chunk has been saved and reused, so `getSquare()` and

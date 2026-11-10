@@ -1,6 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Balance (series pass, F1): the Hearth is laid brick, so it is Masonry 2, gives Masonry XP and sits in the
+  Masonry build category (was Pottery 2, Pottery XP, Pottery).
 - New `UI.offAppliances(sprites)`: a table-top station refuses a square holding a stove, a fridge or freezer, or a
   washer or dryer, when built and when put down. Vanilla lets a table-top tile onto any table surface, electric
   stoves and chest freezers included.

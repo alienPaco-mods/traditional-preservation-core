@@ -29,15 +29,14 @@ module TraditionalPreservationCore
                 }
             }
         }
-        /* Fired bricks laid in clay, and a copper sheet beaten into the vessel. Pottery until the series-wide
-           recipe balance pass. */
+        /* Fired bricks laid in clay, and a copper sheet beaten into the vessel. Masonry: it is laid brick. */
         component CraftRecipe
         {
             timedAction = Make_With_Brick_Low,
             time = 200,
-            SkillRequired = Pottery:2,
-            xpAward = Pottery:10,
-            category = Pottery,
+            SkillRequired = Masonry:2,
+            xpAward = Masonry:10,
+            category = Masonry,
             Tooltip = Tooltip_craft_TPHearthDesc,
             inputs
             {

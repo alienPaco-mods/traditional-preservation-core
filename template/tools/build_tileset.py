@@ -2,7 +2,7 @@
 """Builds the __STATION__ tileset (42/media/*.tiles and texturepacks/*.pack), its icons and the generated Tiles.lua.
 
 Made by `tp new`: the station is a placeholder crate. TEMPLATE: paint the real station (and any attached sprites
-for its stages) here, with the helpers in _tpcore/tools/pzart.py; see the other mods' builders.
+for its stages) here, with the helpers in TraditionalPreservationCore/tools/pzart.py; see the other mods' builders.
 
 Usage: python3 tools/build_tileset.py
 Needs Pillow. Deterministic: a rerun with no change gives byte-identical files.
@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-sys.path.insert(0, str(Path(os.environ.get("TPCORE", Path(__file__).resolve().parents[2] / "_tpcore")) / "tools"))
+sys.path.insert(0, str(Path(os.environ.get("TPCORE", Path(__file__).resolve().parents[2] / "TraditionalPreservationCore")) / "tools"))
 import pzart  # noqa: E402
 
 MOD = "__MOD__"

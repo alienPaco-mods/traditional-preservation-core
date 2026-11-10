@@ -3,7 +3,7 @@
 How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. What the mods are and
 how they fit together: `SERIES.md`. The plan for the shared core is in `ROADMAP.md`. Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
 
-Tip: `alias tp=~/MODS/_tpcore/tp` (the examples below use it).
+Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it).
 
 ## Where things live
 
@@ -11,7 +11,7 @@ Tip: `alias tp=~/MODS/_tpcore/tp` (the examples below use it).
 |---|---|
 | `~/MODS/<Mod>` | The source. Each mod is its own git repo. Edit here. |
 | `~/Zomboid/mods/<Mod>` | The installed copy the game loads. Only `tp install` writes here. |
-| `~/MODS/_tpcore` | Shared tooling: `tp`, the test harness, the golden results, this guide, the roadmap. |
+| `~/MODS/TraditionalPreservationCore` | Shared tooling: `tp`, the test harness, the golden results, this guide, the roadmap. |
 | `~/MODS/guides` | The player guides. The copy inside each mod is made from these by `tp guides`. |
 | `~/MODS/_pzdev` | Engine notes and `jdis.py` for reading the game's classes. |
 
@@ -39,7 +39,7 @@ When you change a number on purpose (souring days, a drying rate, a temperature 
 
 1. Run `tp golden <Mod>` and read what changed. Only the numbers you meant to change should move.
 2. Record the new results: `tp golden <Mod> --update`. Name the mod, so other mods' recordings stay as they are.
-3. Commit the updated files in `_tpcore` along with the change in the mod, so the two stay together.
+3. Commit the updated files in `TraditionalPreservationCore` along with the change in the mod, so the two stay together.
 4. Install as usual: `tp install <Mod>`.
 
 `tp install <Mod> --skip-tests` skips **every** check, tests included. Keep it for emergencies.
@@ -61,7 +61,7 @@ Tests are plain Lua files in `<Mod>/tests/`, run with `luajit` from the mod fold
 
 ```lua
 -- What this checks. Run from the mod folder: luajit tests/test_example.lua
-local H = dofile((os.getenv("TPCORE") or "../_tpcore") .. "/tests/harness.lua")
+local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 local check = H.check
 ...
 check("a cask sours in 35 days", near(days, 35))
@@ -82,19 +82,19 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.useModPaths()` | `require` finds the mod's own Lua as the game does, e.g. `require "TraditionalPreservationYeast/Core/Weather"`. |
 | `H.installGetText()` | `getText` with the mod's real EN translations. Notes the game formatter's `%` errors in `H.textWarnings`. |
 
-`luajit tests/test_harness.lua`, run from `_tpcore` (or `tp test` with no mod), tests the harness itself, and checks
+`luajit tests/test_harness.lua`, run from `TraditionalPreservationCore` (or `tp test` with no mod), tests the harness itself, and checks
 every mod's translation files for a literal `%`.
 
 ## The shared core
 
-`~/MODS/_tpcore/lua` holds the Lua every TP mod shares: `shared/Core/Weather.lua`, `shared/Core/Station.lua`,
+`~/MODS/TraditionalPreservationCore/lua` holds the Lua every TP mod shares: `shared/Core/Weather.lua`, `shared/Core/Station.lua`,
 `client/Core/UI.lua`. Each mod carries its own copy under its own path, so every mod stays standalone:
 
 ```lua
 local Weather = require "TraditionalPreservationYeast/Core/Weather"
 ```
 
-1. Edit the core only in `_tpcore/lua`, and run `luajit tests/test_core.lua` from `_tpcore` (or `tp test`).
+1. Edit the core only in `TraditionalPreservationCore/lua`, and run `luajit tests/test_core.lua` from `TraditionalPreservationCore` (or `tp test`).
 2. `tp sync` copies it into every mod that already has it (`tp sync <Mod>` adds it to a new one). Each copy starts
    with a "Copied from ... Edit it there" line. Sync refuses to overwrite a copy edited by hand; `--force` overrides.
 3. `tp test <Mod>` and `tp install <Mod>` fail while a mod's copy is out of date. `tp status` shows `core synced`.
@@ -166,7 +166,7 @@ overlays, stages, styles, hangers.
    rerun it. Never edit Tiles.lua.
 2. Entity scripts stay hand written. `tests/test_tiles.lua` (`H.checkTiles`) fails if a script names a tile the
    builder didn't make, or a station sprite has no script.
-3. The writer is `pzart.write_lua_tiles` in `_tpcore/tools/pzart.py`; builders import it from `_tpcore` (or
+3. The writer is `pzart.write_lua_tiles` in `TraditionalPreservationCore/tools/pzart.py`; builders import it from `TraditionalPreservationCore` (or
    `TPCORE`). Builders are deterministic: a rerun with no change gives byte-identical art.
 4. `pzart.py` also holds everything two builders share: the pack and .tiles writers, sprite extraction, icons,
    layers, noise, weathering, staves and hoops. Change it only with a byte-identical check: rebuild every mod in a
@@ -254,7 +254,7 @@ Settle the design questions in `SERIES.md` first, then:
 tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name
 ```
 
-It renders `_tpcore/template/` into `~/MODS/TraditionalPreservationDairy`: one floor station (S and E faces, a
+It renders `TraditionalPreservationCore/template/` into `~/MODS/TraditionalPreservationDairy`: one floor station (S and E faces, a
 placeholder crate painted by `tools/build_tileset.py`), a placeholder item in and out, a weather-weighted timer on the
 core, the popup, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
 `test_process.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and

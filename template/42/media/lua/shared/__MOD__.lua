@@ -1,5 +1,5 @@
 -- Traditional Preservation (__NAME__) B42: how a batch works on the __STATION__.
--- Made by `tp new` from ~/MODS/_tpcore/template: a working one-station skeleton. Lines marked TEMPLATE are
+-- Made by `tp new` from ~/MODS/TraditionalPreservationCore/template: a working one-station skeleton. Lines marked TEMPLATE are
 -- placeholders to replace with the real technique (SERIES.md, "Designing a new mod").
 -- Each press of Craft runs its own timer. A batch works by the temperature where the station stands: running
 -- totals of the weather in global ModData say how much each one has done, even while its area was unloaded.

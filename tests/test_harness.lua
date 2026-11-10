@@ -1,5 +1,5 @@
 -- Checks the shared harness, and every mod's EN translations for text the game's formatter chokes on.
--- Run from ~/MODS/_tpcore: luajit tests/test_harness.lua
+-- Run from ~/MODS/TraditionalPreservationCore: luajit tests/test_harness.lua
 local H = dofile("tests/harness.lua")
 local check = H.check
 

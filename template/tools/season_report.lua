@@ -2,7 +2,7 @@
 -- own code (the ten-minute weather record, a run's start and updates, the popup), so it doubles as a check
 -- that a change to that code keeps every number. Run from the mod folder: luajit tools/season_report.lua [climate.csv]
 -- Each line of the file: world month offset tempMin tempMean tempMax humMin humMean humMax rainy snowy
-local H = dofile((os.getenv("TPCORE") or "../_tpcore") .. "/tests/harness.lua")
+local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 H.useModPaths()
 H.installClock(0)
 H.installModData()

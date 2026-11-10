@@ -1,5 +1,5 @@
 -- Shared test harness for the Traditional Preservation mods. Tests run from the mod folder and load it with
---   local H = dofile((os.getenv("TPCORE") or "../_tpcore") .. "/tests/harness.lua")
+--   local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 -- Everything here is opt-in: a test keeps any stub of its own that behaves differently on purpose.
 local H = {}
 

@@ -99,11 +99,11 @@ def compare_install(mod):
 
 
 CORE_LUA = CORE / "lua"
-CORE_HEADER = "-- Copied from ~/MODS/_tpcore/{source} by `tp sync`. Edit it there, not here.\n"
+CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp sync`. Edit it there, not here.\n"
 
 
 def core_copies(mod):
-    """(source in _tpcore, copy in the mod, text the copy should hold) for every core module.
+    """(source in TraditionalPreservationCore, copy in the mod, text the copy should hold) for every core module.
 
     lua/<side>/Core/X.lua goes to <mod>/42/media/lua/<side>/<mod>/Core/X.lua, required as "<mod>/Core/X".
     """
@@ -245,7 +245,7 @@ def run_golden(mod, update=False):
 
 
 def run_core_tests():
-    """The harness's own tests, run from _tpcore."""
+    """The harness's own tests, run from TraditionalPreservationCore."""
     ok = True
     for test in sorted((CORE / "tests").glob("test_*.lua")):
         result = subprocess.run(["luajit", f"tests/{test.name}"], cwd=CORE, capture_output=True, text=True, timeout=600)
@@ -348,8 +348,8 @@ def cmd_sync(args):
                 blocked.append(copy)
     if blocked and not force:
         for copy in blocked:
-            print(f"  edited inside the mod, newer than _tpcore: {copy.relative_to(MODS)}")
-        sys.exit("tp sync: nothing copied. Move those edits into ~/MODS/_tpcore/lua first, or pass --force")
+            print(f"  edited inside the mod, newer than TraditionalPreservationCore: {copy.relative_to(MODS)}")
+        sys.exit("tp sync: nothing copied. Move those edits into ~/MODS/TraditionalPreservationCore/lua first, or pass --force")
     for mod in mods:
         changed = 0
         for _, copy, text in core_copies(mod):
@@ -457,9 +457,9 @@ def cmd_new(args):
     ok = run_tests(mod)
     print(f"""
 next:
-  1. Settle the design questions in _tpcore/SERIES.md, then replace every TEMPLATE mark (grep -rn TEMPLATE {mod}).
+  1. Settle the design questions in TraditionalPreservationCore/SERIES.md, then replace every TEMPLATE mark (grep -rn TEMPLATE {mod}).
   2. tp install {short(mod)}, restart the game, build the {station}, {short_name}.batches(4), Craft, {short_name}.age(72).
-  3. Commit: the new repo ({mod}), and _tpcore (golden.json, golden/{mod}) and guides/.
+  3. Commit: the new repo ({mod}), and TraditionalPreservationCore (golden.json, golden/{mod}) and guides/.
   4. Add the mod to SERIES.md's table.""")
     return 0 if ok else 1
 

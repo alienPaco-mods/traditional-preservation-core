@@ -1,4 +1,4 @@
--- Checks the shared core in lua/. Run from _tpcore: luajit tests/test_core.lua
+-- Checks the shared core in lua/. Run from TraditionalPreservationCore: luajit tests/test_core.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 

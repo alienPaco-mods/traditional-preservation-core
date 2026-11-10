@@ -1,8 +1,8 @@
 """Shared helpers for the Traditional Preservation art builders.
 
-A builder imports it from _tpcore (TPCORE, or ../_tpcore next to the mod):
+A builder imports it from TraditionalPreservationCore (TPCORE, or ../TraditionalPreservationCore next to the mod):
 
-    sys.path.insert(0, str(Path(os.environ.get("TPCORE", Path(__file__).resolve().parents[2] / "_tpcore")) / "tools"))
+    sys.path.insert(0, str(Path(os.environ.get("TPCORE", Path(__file__).resolve().parents[2] / "TraditionalPreservationCore")) / "tools"))
     import pzart
 
 Builders must stay deterministic: everything random here takes the caller's rng, so a rebuild is byte-identical.

@@ -1,5 +1,5 @@
 -- Checks the batch timer outside the game. Run from the mod folder: luajit tests/test_process.lua
-local H = dofile((os.getenv("TPCORE") or "../_tpcore") .. "/tests/harness.lua")
+local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 local check, near = H.check, H.near
 H.useModPaths()
 H.installClock(10)

@@ -3,7 +3,7 @@
 if not isDebugEnabled() then return end
 
 local M = __MOD__
-local Weather = require "__MOD__/Core/Weather"
+local Weather = require "TraditionalPreservationCore/Weather"
 __SHORT__ = {}
 
 local RECIPE_NAME = "__MOD__.ProcessBatch"

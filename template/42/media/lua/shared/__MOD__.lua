@@ -5,7 +5,7 @@
 -- totals of the weather in global ModData say how much each one has done, even while its area was unloaded.
 __MOD__ = __MOD__ or {}
 local M = __MOD__
-local Weather = require "__MOD__/Core/Weather"
+local Weather = require "TraditionalPreservationCore/Weather"
 
 M.PROCESS_HOURS = 72  -- TEMPLATE: hours at the best temperature
 -- Save keys: never rename these once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").

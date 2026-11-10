@@ -1,9 +1,9 @@
--- Checks the shared core in lua/. Run from TraditionalPreservationCore: luajit tests/test_core.lua
+-- Checks the shared core in 42/media/lua. Run from TraditionalPreservationCore: luajit tests/test_core.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 
-local Weather = dofile("lua/shared/Core/Weather.lua")
-local Station = dofile("lua/shared/Core/Station.lua")
+local Weather = dofile("42/media/lua/shared/TraditionalPreservationCore/Weather.lua")
+local Station = dofile("42/media/lua/shared/TraditionalPreservationCore/Station.lua")
 
 -- Weather
 local points = { { 0, 0.1 }, { 10, 0.5 }, { 20, 1 } }
@@ -143,7 +143,7 @@ require = function() end
 ISWidgetCraftLogicOutputProgress = { updateProgressItems = function(self) self.vanillaRan = true end }
 local placed
 ISMoveableSpriteProps = { canPlaceMoveable = function() placed = true return true end }
-local UI = dofile("lua/client/Core/UI.lua")
+local UI = dofile("42/media/lua/client/TraditionalPreservationCore/UI.lua")
 check("say: values go in after the translator", UI.say("T_Soured", UI.percent(0.4)) == "40% soured" and #H.textWarnings == 0)
 check("say: a text with no values", UI.say("T_None") == "plain")
 check("timeText: rounds up to the hour", UI.timeText(25.2, "T_Time") == "1 d 2 h")

@@ -31,7 +31,7 @@ In debug mode, `__SHORT__.help()` in the Lua console lists commands for testing 
 
 ## Engineering notes
 
-- `42/media/lua/<side>/__MOD__/Core/` is the shared core, copied from `~/MODS/TraditionalPreservationCore` by `tp sync`. Edit it there.
+- The shared core (Weather, Station, UI) is the required TP Core mod (`~/MODS/TraditionalPreservationCore`), loaded as `require "TraditionalPreservationCore/Weather"`. Edit it there.
 - `tiledef` __TILEDEF__ was picked by `tp new` as the next free number.
 - Save keys: the ledger lives in global ModData under `__MOD__` (totals `process<Place>`), and a run's recipe
   ModData holds `done`, `last`, `place`. Never rename them once the mod is out.

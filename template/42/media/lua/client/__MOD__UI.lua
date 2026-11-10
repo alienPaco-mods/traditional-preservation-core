@@ -2,7 +2,7 @@
 -- running batch. A station built or placed this session isn't reported by the map loader, so adding items to it
 -- starts tracking it.
 require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
-local UI = require "__MOD__/Core/UI"
+local UI = require "TraditionalPreservationCore/UI"
 local Tiles = require "__MOD__/Tiles"
 
 local STATIONS = {}

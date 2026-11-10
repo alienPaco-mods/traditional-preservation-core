@@ -8,13 +8,15 @@
                                 test, then copy the mod to ~/Zomboid/mods. Refuses if the installed copy has
                                 edits newer than the source, or files the source doesn't have (--force overrides)
   tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
-  tp sync [MOD...] [--force]    copy the shared core (lua/) into each mod under its own path. With no MOD, the mods
+  tp sync [MOD...] [--force]    copy the shared core into each mod that still carries its own copy, under that mod's
+                                path (mods that require TP Core don't). With no MOD, the mods
                                 that already have it. Refuses to overwrite a copy edited by hand (--force overrides)
   tp new Name [--station "Two Words"] [--short TPX]
-                                a new mod TraditionalPreservation<Name> from template/: core synced, art built, golden
+                                a new mod TraditionalPreservation<Name> from template/: requires TP Core, art built, golden
                                 season report recorded, guide stub in guides/, git initialised, tests run
 
-MOD is a folder name or its short form: Salt, Fish, Yeast, Vinegar, SaltLTP, FuelBarrel.
+MOD is a folder name or its short form: Core, Salt, Fish, Yeast, Vinegar, Dairy, SaltLTP, FuelBarrel.
+TP Core (this folder) is a mod too: the others require it, and install ships only its 42/ folder.
 """
 import datetime
 import json
@@ -66,11 +68,15 @@ def short(mod):
 
 
 def shipped_files(root):
-    """Relative paths of the files that belong in an installed copy."""
+    """Relative paths of the files that belong in an installed copy. TP Core ships its 42/ folder only: the rest of
+    this folder is tooling (tp, harness, template, golden) and private notes."""
     files = {}
+    core = root.name == CORE.name
     for path in root.rglob("*"):
         rel = path.relative_to(root)
         if any(part in SKIP_NAMES for part in rel.parts) or path.suffix in SKIP_SUFFIXES or not path.is_file():
+            continue
+        if core and rel.parts[0] != "42":
             continue
         files[rel] = path
     return files
@@ -98,17 +104,18 @@ def compare_install(mod):
     return differ, newer, extra
 
 
-CORE_LUA = CORE / "lua"
+CORE_LUA = CORE / "42" / "media" / "lua"
 CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp sync`. Edit it there, not here.\n"
 
 
 def core_copies(mod):
     """(source in TraditionalPreservationCore, copy in the mod, text the copy should hold) for every core module.
 
-    lua/<side>/Core/X.lua goes to <mod>/42/media/lua/<side>/<mod>/Core/X.lua, required as "<mod>/Core/X".
+    42/media/lua/<side>/TraditionalPreservationCore/X.lua goes to <mod>/42/media/lua/<side>/<mod>/Core/X.lua,
+    required as "<mod>/Core/X". Only for the mods not yet moved onto the required TP Core mod.
     """
     copies = []
-    for source in sorted(CORE_LUA.glob("*/Core/*.lua")):
+    for source in sorted(CORE_LUA.glob("*/" + CORE.name + "/*.lua")):
         side = source.parent.parent.name
         copy = MODS / mod / "42" / "media" / "lua" / side / mod / "Core" / source.name
         text = CORE_HEADER.format(source=source.relative_to(CORE)) + source.read_text()
@@ -192,6 +199,8 @@ def cmd_status(_args):
 
 def run_tests(mod):
     """Runs tests/*.lua from the mod folder. Returns True if every one passed."""
+    if mod == CORE.name:
+        return run_core_tests()
     root = MODS / mod
     tests = sorted((root / "tests").glob("*.lua"))
     env = dict(os.environ, TPCORE=str(CORE))
@@ -251,7 +260,7 @@ def run_core_tests():
         result = subprocess.run(["luajit", f"tests/{test.name}"], cwd=CORE, capture_output=True, text=True, timeout=600)
         out = result.stdout + result.stderr
         passed = result.returncode == 0 and "all passed" in out
-        print(f"  {'ok  ' if passed else 'FAIL'} core/{test.name}")
+        print(f"  {'ok  ' if passed else 'FAIL'} Core/{test.name}")
         if not passed:
             ok = False
             print("\n".join("       " + line for line in out.strip().splitlines()[-8:]))
@@ -259,7 +268,7 @@ def run_core_tests():
 
 
 def cmd_test(args):
-    ok = run_core_tests() if not args else True
+    ok = True
     for mod in resolve(args):
         ok = run_tests(mod) and ok
         ok = run_golden(mod) and ok
@@ -349,7 +358,7 @@ def cmd_sync(args):
     if blocked and not force:
         for copy in blocked:
             print(f"  edited inside the mod, newer than TraditionalPreservationCore: {copy.relative_to(MODS)}")
-        sys.exit("tp sync: nothing copied. Move those edits into ~/MODS/TraditionalPreservationCore/lua first, or pass --force")
+        sys.exit("tp sync: nothing copied. Move those edits into ~/MODS/TraditionalPreservationCore/42/media/lua first, or pass --force")
     for mod in mods:
         changed = 0
         for _, copy, text in core_copies(mod):
@@ -439,7 +448,6 @@ def cmd_new(args):
         script.chmod(0o755)
     print(f"created ~/MODS/{mod}: station {station}, console {short_name}, tiledef {tiledef}")
 
-    cmd_sync([mod])
     env = dict(os.environ, TPCORE=str(CORE))
     subprocess.run([sys.executable, "tools/build_tileset.py"], cwd=root, env=env, check=True)
 

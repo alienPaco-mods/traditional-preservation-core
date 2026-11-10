@@ -4,8 +4,8 @@
 if isClient() then return end
 
 __MOD__World = __MOD__World or {}
-local Station = require "__MOD__/Core/Station"
-local Weather = require "__MOD__/Core/Weather"
+local Station = require "TraditionalPreservationCore/Station"
+local Weather = require "TraditionalPreservationCore/Weather"
 local Tiles = require "__MOD__/Tiles"
 
 local function refresh(station, entry)

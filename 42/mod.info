@@ -1,0 +1,6 @@
+name=Traditional Preservation (Core)
+id=TraditionalPreservationCore
+author=alienPaco
+modversion=0.1.0
+versionMin=42.20
+description=Shared code for the Traditional Preservation mods: the weather and places, station tracking, and the progress popups. Adds nothing on its own; the TP mods require it.

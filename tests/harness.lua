@@ -22,10 +22,13 @@ function H.done()
     print("all passed")
 end
 
--- Lets require find the mod's own Lua as the game does, so a mod file can
---   local Weather = require "TraditionalPreservationYeast/Core/Weather"
+-- Lets require find the mod's own Lua and TP Core's as the game does, so a mod file can
+--   local Weather = require "TraditionalPreservationCore/Weather"
+-- (or a mod still carrying its own copy: require "TraditionalPreservationYeast/Core/Weather").
 function H.useModPaths()
-    package.path = "42/media/lua/shared/?.lua;42/media/lua/client/?.lua;42/media/lua/server/?.lua;" .. package.path
+    local core = (os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/42/media/lua/"
+    package.path = "42/media/lua/shared/?.lua;42/media/lua/client/?.lua;42/media/lua/server/?.lua;"
+        .. core .. "shared/?.lua;" .. core .. "client/?.lua;" .. package.path
 end
 
 -- A game clock the test moves with H.setHours.

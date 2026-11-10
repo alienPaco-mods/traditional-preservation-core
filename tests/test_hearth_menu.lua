@@ -85,6 +85,7 @@ local lit = hearth({}, true)
 sub = open(lit)
 local bank = named(sub, "ContextMenu_TraditionalPreservationCore_BankFire")
 check("a lit fire can be banked", bank ~= nil and named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire") == nil)
+check("Bank shows the Hearth banked", bank.iconTexture == "media/textures/Item_TPHearthBanked.png")
 local character = { isTimedActionInstant = function() return false end }
 bank.onSelect(character, unpack(bank.args))
 check("choosing it walks over and queues the fire action", ui.walks == 1 and #ui.queued == 1 and ui.queued[1].Type == "TPHearthFire"
@@ -93,6 +94,7 @@ lit:getModData()[Hearth.KEY].banked = true
 sub = open(lit)
 check("a banked fire can be stoked", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire") ~= nil
     and named(sub, "ContextMenu_TraditionalPreservationCore_BankFire") == nil)
+check("Stoke shows the Hearth lit", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire").iconTexture == "media/textures/Item_TPHearthLit.png")
 
 -- Pouring in
 local milk, water = H.vessel("Pot of Milk", "CowMilk", 3, 5), H.vessel("Bucket of Water", "Water", 8, 10)
@@ -107,6 +109,10 @@ pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper")
 local entries = pour.subOption.options
 check("pouring lists every container with fluid in it, favourites and empties left out", #entries == 3
     and entries[1].args[2] == milk and entries[2].args[2] == water and entries[3].args[2] == mixture)
+check("the copper's lines show the copper, full when it holds something", sub.options[1].iconTexture == "media/textures/Item_TPCopperFull.png"
+    and pour.iconTexture == "media/textures/Item_TPCopper.png")
+check("each container shows as the inventory draws it, its fluid's colour and all", entries[2].itemForTexture == water
+    and entries[2].iconTexture == nil)
 check("each with its litres", entries[2].name:find("Bucket of Water", 1, true) ~= nil and entries[2].name:find("8.0", 1, true) ~= nil)
 check("another fluid than the copper's is red, with the reason", entries[1].notAvailable == true
     and entries[1].toolTip.description:find("Water", 1, true) ~= nil)
@@ -131,6 +137,7 @@ check("a full copper takes no more", pour.isDisabled == true and pour.subOption 
 sub = open(holdsWater)
 local fill = named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCopper")
 entries = fill.subOption.options
+check("Fill from shows the copper full", fill.iconTexture == "media/textures/Item_TPCopperFull.png" and entries[2].itemForTexture == empty)
 check("filling lists empty containers and those of the copper's fluid with room", #entries == 2
     and entries[1].args[2] == water and entries[2].args[2] == empty)
 entries[2].onSelect(character, unpack(entries[2].args))

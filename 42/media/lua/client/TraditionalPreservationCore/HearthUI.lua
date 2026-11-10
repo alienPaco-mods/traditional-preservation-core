@@ -13,7 +13,9 @@ local HearthUI = {}
 
 local say = UI.say
 local HEARTH_ICON = "media/textures/Item_TPHearth.png"
-local POUR_ICON = "Item_Pot_Water"
+local COPPER_ICON = "media/textures/Item_TPCopper.png"
+local COPPER_FULL_ICON = "media/textures/Item_TPCopperFull.png"
+local FIRE_ICONS = { bank = "media/textures/Item_TPHearthBanked.png", stoke = "media/textures/Item_TPHearthLit.png" }
 local FUEL_SCALE_MIN = 12 * 60 -- a full Fuel bar: 12 hours of burning
 local BAR_COLOURS = { fuel = { 0.75, 0.42, 0.18 }, copper = { 0.72, 0.45, 0.3 } }
 
@@ -39,7 +41,8 @@ local function addFireOption(menu, playerObj, hearth)
     local mode = banked and "stoke" or "bank"
     local option = menu:addOption(getText(banked and "ContextMenu_TraditionalPreservationCore_StokeFire"
         or "ContextMenu_TraditionalPreservationCore_BankFire"), playerObj, onFireAction, hearth, mode)
-    option.iconTexture = getTexture(HEARTH_ICON)
+    -- The Hearth as the fire will be: banked, or burning up again.
+    option.iconTexture = getTexture(FIRE_ICONS[mode])
     tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
@@ -64,7 +67,7 @@ end
 -- reason.
 local function addPourInMenu(menu, playerObj, hearth, copper)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_PourIntoCopper"))
-    option.iconTexture = getTexture(POUR_ICON)
+    option.iconTexture = getTexture(COPPER_ICON)
     if (copper.ml or 0) >= Hearth.COPPER_ML then return disableWith(option, getText("IGUI_TraditionalPreservationCore_CopperFull")) end
     local items = findItems(playerObj, function(item)
         local container = item:getFluidContainer()
@@ -77,7 +80,8 @@ local function addPourInMenu(menu, playerObj, hearth, copper)
         local container = item:getFluidContainer()
         local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", item:getDisplayName(),
             litresText(container:getAmount() * 1000)), playerObj, onHearthAction, hearth, item, "pourIn")
-        entry.iconTexture = item:getTex()
+        -- Drawn as the inventory draws it: a bucket shows the colour of what is in it.
+        entry.itemForTexture = item
         local parts = Hearth.partsIn(container)
         local refusal
         if not parts then
@@ -95,7 +99,7 @@ end
 -- Empty containers, and those holding the copper's fluid (or one that blends with it) with room left.
 local function addFillMenu(menu, playerObj, hearth, copper)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_FillFromCopper"))
-    option.iconTexture = getTexture(HEARTH_ICON)
+    option.iconTexture = getTexture(COPPER_FULL_ICON)
     local items = findItems(playerObj, function(item)
         local container = item:getFluidContainer()
         return container ~= nil and TPHearthCopper.canFillFrom(container, copper)
@@ -106,7 +110,7 @@ local function addFillMenu(menu, playerObj, hearth, copper)
     for _, item in ipairs(items) do
         local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_Holds", item:getDisplayName(),
             litresText(item:getFluidContainer():getCapacity() * 1000)), playerObj, onHearthAction, hearth, item, "fillFrom")
-        entry.iconTexture = item:getTex()
+        entry.itemForTexture = item
     end
 end
 
@@ -131,6 +135,7 @@ local function addHearthMenu(context, playerObj, hearth)
 
     local status = menu:addOption(copperStatus(copper))
     status.isDisabled = true
+    status.iconTexture = getTexture((copper.ml or 0) > 0 and COPPER_FULL_ICON or COPPER_ICON)
     local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_HearthInfo"), playerObj, HearthWindow.open, hearth)
     info.iconTexture = getTexture(HEARTH_ICON)
     addFireOption(menu, playerObj, hearth)

@@ -1,6 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Menu icons: the copper's options show a copper (empty for the status line and Pour into Copper, full of milk for
+  Fill from Copper), Bank Fire shows the Hearth banked and Stoke Fire the Hearth lit (both showed the Hearth
+  logo). Each container row shows the item as the inventory draws it, so a bucket of milk is white and one of water
+  blue (was the bare item icon). The icons are drawn by `tools/build_tileset.py`.
 - New Hearth art (was a grey placeholder): a waist-high block of split fieldstone, as vanilla's kilns are built,
   with a lime-rendered top, an arched fire mouth on the side it faces, and a hammered copper pan set in it, empty,
   full or steaming. The mouth glows while the fire burns and shows only dull embers when it is banked (the

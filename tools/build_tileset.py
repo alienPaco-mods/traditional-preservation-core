@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Builds the TP Core art: the shared stations' tileset (42/media/*.tiles and texturepacks/*.pack), their build icons,
-the mod icon and the generated Tiles.lua.
+the mod icon, the Hearth's menu icons and the generated Tiles.lua.
 
 The Hearth: a farmhouse copper. A block of split fieldstone, as vanilla's kilns are built, waist high with a lime
 render on top, and a copper pan set into it over its own firebox, whose arched mouth is on the side it faces. The
@@ -304,6 +304,84 @@ def paint_glow(kind, face):
     return shrink(layer)
 
 
+# --- Menu icons --------------------------------------------------------------------------------------------------
+
+MENU_ICON = 32
+ICON_SS = 8
+ICON_METAL = (176, 92, 52)     # brighter than the tile's copper: a menu icon is seen small and on its own
+ICON_OUTLINE = (40, 20, 12)
+
+
+def icon_box(cx, cy, rx, ry):
+    return [cx - rx, cy - ry, cx + rx, cy + ry]
+
+
+def copper_icon(full):
+    """The copper seen from the side, for the Hearth's menus: a hammered bowl with a riveted seam, a rolled lip
+    catching the light from the left and a touch of verdigris; full, a skin of milk inside. Drawn at ICON_SS times
+    the size, shrunk, then given a dark one-pixel outline so it reads on the menu's dark strip."""
+    n, s = MENU_ICON * ICON_SS, ICON_SS
+    icon = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(icon)
+    cx, rx, top, ry, depth = n / 2, 14.2 * s, 11 * s, 4.2 * s, 15 * s
+    for x in range(int(cx - rx), int(cx + rx) + 1):
+        u = (x - cx) / rx
+        if abs(u) > 1:
+            continue
+        across = math.sqrt(1 - u * u)
+        light = 0.55 + 0.75 * max(0.0, math.cos((u + 0.45) * 1.6)) ** 1.5
+        draw.line([(x, top + ry * across - 2), (x, top + depth * across ** 0.8 + ry * 0.6 * across)],
+                  fill=shade(ICON_METAL, light))
+    rng = random.Random(3)
+    for _ in range(26):
+        u, v = rng.uniform(-0.85, 0.85), rng.uniform(0.25, 0.85)
+        x, y = cx + u * rx, top + ry + v * depth * math.sqrt(1 - u * u) * 0.8
+        draw.ellipse(icon_box(x, y, 1.2 * s, 0.7 * s), fill=shade(ICON_METAL, rng.uniform(0.85, 1.25)))
+    for i in range(7):
+        u = -0.8 + i * 0.27
+        x, y = cx + u * rx, top + ry * 0.4 + depth * 0.42 * math.sqrt(1 - u * u)
+        draw.ellipse(icon_box(x, y, 0.9 * s, 0.8 * s), fill=shade(ICON_METAL, 0.5))
+        draw.ellipse(icon_box(x - 0.2 * s, y - 0.25 * s, 0.4 * s, 0.35 * s), fill=shade(METAL_LIT, 1.3))
+    for _ in range(6):
+        u = rng.uniform(-0.9, 0.9)
+        x, y = cx + u * rx, top + ry * math.sqrt(1 - u * u) + rng.uniform(0.8, 2.0) * s
+        draw.ellipse(icon_box(x, y, 0.9 * s, 0.45 * s), fill=VERDIGRIS + (150,))
+    draw.ellipse(icon_box(cx, top, rx, ry), fill=shade(ICON_METAL, 0.35))
+    draw.ellipse(icon_box(cx, top + 0.2 * s, rx - 1.6 * s, ry - 0.8 * s), fill=shade(ICON_METAL, 0.55))
+    if full:
+        draw.ellipse(icon_box(cx, top + 0.45 * s, rx - 2.4 * s, ry - 1.35 * s), fill=MILK + (255,))
+    else:
+        draw.ellipse(icon_box(cx - s, top + 0.7 * s, rx - 4 * s, ry - 1.5 * s), fill=shade(ICON_METAL, 0.3))
+    for i in range(160):
+        a = 2 * math.pi * i / 160
+        light = 0.7 + 0.8 * max(0.0, math.cos(a - 2.4)) ** 2
+        draw.ellipse(icon_box(cx + (rx - 0.6 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.3 * s, 0.9 * s),
+                     fill=shade(ICON_METAL, light))
+    for i in range(30):
+        a = 2.3 + 0.9 * i / 29
+        draw.ellipse(icon_box(cx + (rx - 0.6 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s,
+                         0.7 * s, 0.35 * s), fill=SPECULAR + (255,))
+    shine = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    ImageDraw.Draw(shine).ellipse([cx - rx * 0.62, top + ry + s, cx - rx * 0.38, top + ry + 9 * s], fill=SPECULAR + (110,))
+    icon.alpha_composite(shine.filter(ImageFilter.GaussianBlur(1.5 * s)))
+    return outlined(icon.resize((MENU_ICON, MENU_ICON), Image.LANCZOS))
+
+
+def outlined(icon):
+    """icon on a dark ring one pixel wider than its solid part."""
+    ring = icon.getchannel("A").point(lambda v: 255 if v >= 100 else 0).filter(ImageFilter.MaxFilter(3))
+    out = Image.composite(Image.new("RGBA", icon.size, ICON_OUTLINE + (255,)), Image.new("RGBA", icon.size), ring)
+    out.alpha_composite(icon)
+    return out
+
+
+def hearth_icon(kind):
+    """The Hearth with its fire lit or banked, for Stoke and Bank."""
+    tile = paint_hearth("Empty", 0)
+    tile.alpha_composite(paint_glow(kind, 0))
+    return tile
+
+
 # --- Output ------------------------------------------------------------------------------------------------------
 
 def lua_tiles():
@@ -345,6 +423,11 @@ def main():
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
     (media / "textures").mkdir(parents=True, exist_ok=True)
     pzart.write_build_icon(tiles[HEARTH], media / "textures" / "Item_TPHearth.png")
+    # Menu icons: the copper empty and full, the Hearth lit and banked.
+    copper_icon(False).save(media / "textures" / "Item_TPCopper.png")
+    copper_icon(True).save(media / "textures" / "Item_TPCopperFull.png")
+    for kind in GLOWS:
+        pzart.write_build_icon(hearth_icon(kind), media / "textures" / f"Item_TPHearth{kind}.png", MENU_ICON)
     # The mod list shows the copper steaming.
     pzart.write_mod_icon(tiles[HEARTH_LOOKS["Hot"]], media.parent / "icon.png")
     if len(sys.argv) > 1:

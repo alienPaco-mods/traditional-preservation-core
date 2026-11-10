@@ -73,6 +73,12 @@ cultureOpenRate      0.160181501
 cultureSheltered     11157.522193208
 cultureShelteredRate 0.977185319
 lastHour             20160.000000004
+milkBasement         10080.000000002
+milkBasementRate     0.500000000
+milkOpen             8622.268763573
+milkOpenRate         0.381154276
+milkSheltered        16942.363393157
+milkShelteredRate    1.235740824
 seasonTemperature    14.714816487
 temperature          11.504537521
 exit=0

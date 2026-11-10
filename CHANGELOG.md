@@ -1,6 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Fluids that go off (`FluidAgeing`, D9): a mod registers a kind of fluid (Dairy: milk) with a twin for each fresh fluid,
+  a spoiled fluid and a rate curve; the core keeps an age record (`tpFluidAge`) on the item or object holding it, counted on
+  the mod's weather ledger by place (a powered fridge by the clock at 4 C, a freezer not at all), and swaps the fluid
+  when it turns and when it spoils. What players carry is checked every ten minutes and loot windows check what they
+  show. Pouring hands the age on (the older wins), milking into an emptied container starts afresh, and the Hearth's
+  copper keeps the age of what is in it and ages it at the Hearth's place: turned or spoiled milk is renamed in
+  the copper too, so the incubator and the crock refuse it there; milk in a steaming copper is steamed from then on. Sealed items a mod names (store
+  milk) never age until poured out.
 - `tp test` lints each mod's shipped Lua for calls the game's Lua lacks though luajit has them (`next`), which
   tests can't catch.
 - Fixed: the debug `here()` commands (`TPD.here()`, `TPY.here()`, ...) said "Open" under a roof with no walls, where

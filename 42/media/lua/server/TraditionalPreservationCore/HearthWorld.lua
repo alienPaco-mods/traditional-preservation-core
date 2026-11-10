@@ -9,6 +9,7 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local log = require "TraditionalPreservationCore/Log"
+local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 
 local World = {}
 Hearth.World = World
@@ -46,6 +47,7 @@ function World.update(fire, now)
     local copper = Hearth.stateOf(fire:getModData())
     local before = Hearth.look(copper)
     Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
+    FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.isHot(copper))
     local fuel, relight = Hearth.reckonFuel(copper, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end
     if relight then fire:turnOn() end

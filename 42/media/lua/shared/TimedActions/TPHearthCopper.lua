@@ -5,6 +5,8 @@
 require "TimedActions/ISBaseTimedAction"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local Action = require "TraditionalPreservationCore/Action"
+local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
+local Weather = require "TraditionalPreservationCore/Weather"
 
 TPHearthCopper = ISBaseTimedAction:derive("TPHearthCopper")
 
@@ -53,21 +55,31 @@ function TPHearthCopper:complete()
     if self.mode == "pourIn" then
         local parts = Hearth.partsIn(container)
         local heat = Hearth.heatOf(self.item, now, self.character)
+        local age = FluidAgeing.sourceRecord(self.item, now)
+        local had = copper.ml or 0
         local taken = parts and Hearth.pourInto(copper, parts, mlIn(container), heat, now) or 0
         if taken > 0 then
             container:removeFluid(taken / 1000)
             Hearth.tookFrom(self.item, taken)
+            if age then FluidAgeing.receive(copper, age, had > 0, Weather.placeOf(self.hearth)) end
         end
     elseif canFillFrom(container, copper) then
         local hadMl = mlIn(container)
         local hadC = hadMl > 0 and Hearth.heatOf(self.item, now, self.character) or 0
         local hot = Hearth.isHot(copper)
+        local age = FluidAgeing.copperRecord(copper, now, Weather.placeOf(self.hearth))
+        if age then FluidAgeing.look(self.item, now) end
         local ml, fluid, tempC, parts = Hearth.take(copper, roomIn(container))
         if ml > 0 then
             for name, part in pairs(parts) do container:addFluid(name, part / 1000) end
             Hearth.filledFrom(self.item, { ml = ml, fluid = fluid, parts = parts, tempC = tempC, hot = hot, hadMl = hadMl,
                 hadC = hadC, now = now, character = self.character })
+            if age then
+                FluidAgeing.receive(self.item:getModData(), age, hadMl > 0, FluidAgeing.placeOfItem(self.item))
+                if hot then FluidAgeing.markSteamed(self.item, now) end
+            end
         end
+        if (copper.ml or 0) <= 0 then copper[FluidAgeing.KEY] = nil end
     end
     if Hearth.World then Hearth.World.refresh(self.hearth) end
     return true

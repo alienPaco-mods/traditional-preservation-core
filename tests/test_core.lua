@@ -211,6 +211,34 @@ local inside = { isOutside = function() return false end }
 check("outdoorOnly: refuses an indoor square", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "beam_0" }, nil, inside) == false and not placed)
 check("outdoorOnly: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, inside) and placed)
 
+-- offAppliances: an object is instanceof its .class; containers by type.
+instanceof = function(object, class) return object.class == class end
+local function thing(class, ...)
+    local types = { ... }
+    return { class = class, getContainerCount = function() return #types end,
+             getContainerByIndex = function(_, i) return { getType = function() return types[i + 1] end } end }
+end
+local function squareWith(...)
+    local list = { ... }
+    return { isOutside = function() return true end,
+             getObjects = function() return { size = function() return #list end, get = function(_, i) return list[i + 1] end } end }
+end
+UI.offAppliances({ crock_2 = true })
+local crock = { spriteName = "crock_2" }
+for _, case in ipairs({
+    { "a stove", thing("IsoStove") },
+    { "a chest freezer", thing("IsoObject", "freezer") },
+    { "a fridge-freezer", thing("IsoObject", "fridge", "freezer") },
+    { "a washer", thing("IsoClothingWasher") },
+}) do
+    placed = false
+    check("offAppliances: refuses " .. case[1], ISMoveableSpriteProps.canPlaceMoveable(crock, nil, squareWith(thing("IsoObject"), case[2])) == false and not placed)
+end
+placed = false
+check("offAppliances: a counter with drawers goes to vanilla", ISMoveableSpriteProps.canPlaceMoveable(crock, nil, squareWith(thing("IsoObject", "counter"))) and placed)
+placed = false
+check("offAppliances: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, squareWith(thing("IsoStove"))) and placed)
+
 -- slotRules, twice as two mods would: each mod's stations go to its own rules, the rest on to vanilla.
 ResourceIO = { Input = "in", Output = "out" }
 local vanillaAdds, vanillaUps, halos, queuedActions = 0, 0, {}, {}

@@ -292,4 +292,35 @@ function UI.outdoorOnly(sprites)
     end
 end
 
+local APPLIANCES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombinationWasherDryer" }
+local COLD_CONTAINERS = { fridge = true, freezer = true }
+
+-- A stove, a fridge or freezer, or a washer or dryer: something that heats, chills or shakes what stands on it.
+function UI.isAppliance(object)
+    for _, class in ipairs(APPLIANCES) do
+        if instanceof(object, class) then return true end
+    end
+    for index = 0, (object.getContainerCount and object:getContainerCount() or 0) - 1 do
+        local container = object:getContainerByIndex(index)
+        if container and COLD_CONTAINERS[container:getType()] then return true end
+    end
+    return false
+end
+
+-- Table-top stations refuse a square holding an appliance. Vanilla only asks for IsTable, which electric stoves
+-- and chest freezers carry, and the build ghost of an IsStackable tile asks canPlaceMoveable too, so this covers
+-- building and putting down. sprites is a set of sprite names.
+function UI.offAppliances(sprites)
+    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
+    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
+        if sprites[self.spriteName] and square then
+            local objects = square:getObjects()
+            for index = 0, objects:size() - 1 do
+                if UI.isAppliance(objects:get(index)) then return false end
+            end
+        end
+        return vanillaCanPlace(self, character, square, item)
+    end
+end
+
 return UI

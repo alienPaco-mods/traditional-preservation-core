@@ -1,7 +1,7 @@
 # Traditional Preservation (__NAME__) — Build 42 prototype (v0.0.1)
 
 Made by `tp new` on __DATE__ from `~/MODS/TraditionalPreservationCore/template`. TEMPLATE: everything below describes the skeleton;
-rewrite it as the mod takes shape. Settle the questions in `~/MODS/TraditionalPreservationCore/SERIES.md` ("Designing a new mod") first.
+rewrite it as the mod takes shape. Settle the questions in `~/MODS/WIP/TPCore/SERIES.md` ("Designing a new mod") first.
 
 ## Install
 

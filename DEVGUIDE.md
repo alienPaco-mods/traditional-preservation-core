@@ -1,7 +1,8 @@
 # Traditional Preservation: development guide
 
 How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. What the mods are and
-how they fit together: `SERIES.md`. The plan for the shared core is in `ROADMAP.md`. Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
+how they fit together: `~/MODS/WIP/TPCore/SERIES.md`. The plan for the shared core is in `~/MODS/WIP/TPCore/ROADMAP.md`
+(local notes, not in git). Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
 
 Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it).
 
@@ -110,9 +111,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
    `"<Mod>/Core/X"` to `"TraditionalPreservationCore/X"`, add the two mod.info lines, `tp install <Mod> --force`
    (the installed copy still has the old files).
 4. **Modules only the required mod has:** `Hearth` (the Hearth and its copper, save key `tpHearth`, the opt-in "by
-   a fire" place, hooks), its `Tiles` and the server's `HearthWorld` are never copied by `tp sync` (`REQUIRED_ONLY`
-   in `tp`): they own a tileset, a save key and a World, which two mods can't both ship. A mod that wants them
-   requires TP Core.
+   a fire" place, hooks), its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI` and `InfoWindow` are
+   never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
+   mods can't both ship. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
+5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
+   window at a time across every mod); see its header and Dairy's Incubator Info.
 
 Core modules return a local table and never set a global, and never require each other.
 
@@ -266,7 +269,7 @@ are fixed once and old-save migrations (Vinegar's `lastOpen/lastSheltered`, `vin
 
 ## Starting a new mod
 
-Settle the design questions in `SERIES.md` first, then:
+Settle the design questions in `~/MODS/WIP/TPCore/SERIES.md` first, then:
 
 ```
 tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name

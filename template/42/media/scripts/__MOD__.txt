@@ -1,6 +1,6 @@
 module __MOD__
 {
-    /* TEMPLATE: placeholder items. Prefer vanilla items in and out where they fit (SERIES.md). */
+    /* TEMPLATE: placeholder items. Prefer vanilla items in and out where they fit (~/MODS/WIP/TPCore/SERIES.md). */
     item RawBatch
     {
         ItemType = base:normal,

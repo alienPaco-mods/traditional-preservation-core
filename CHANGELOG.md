@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Fixed: the debug `here()` commands (`TPD.here()`, `TPY.here()`, ...) said "Open" under a roof with no walls, where
+  every station and the game's rain count it as sheltered. `Weather.placeOf` now asks the square, not the object
+  (a player's `isOutside()` only means "not in a room"). Stations behave as before.
 - `tp new` gives the new mod a CHANGELOG.md (a 0.0.1 entry naming its station), as every TP mod keeps one.
 - Menu icons: the copper's options show a copper (empty for the status line and Pour into Copper, full of milk for
   Fill from Copper), Bank Fire shows the Hearth banked and Stoke Fire the Hearth lit (both showed the Hearth

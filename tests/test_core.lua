@@ -20,11 +20,16 @@ check("place: a roof by the season", Weather.placeTemperature(ledger, "Sheltered
 check("place: a basement holds still", Weather.placeTemperature(ledger, "Basement") == Weather.BASEMENT_TEMPERATURE)
 
 local function object(z, outside)
-    return { getSquare = function() return { getZ = function() return z end } end, isOutside = function() return outside end }
+    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return outside end } end }
 end
 check("placeOf: below ground", Weather.placeOf(object(-1, false)) == "Basement")
 check("placeOf: under a roof", Weather.placeOf(object(0, false)) == "Sheltered")
 check("placeOf: outdoors", Weather.placeOf(object(1, true)) == "Open")
+-- A player under a floor with no walls: the player's own isOutside() says yes (not in a room), the square says no.
+local player = object(0, false)
+function player:isOutside() return true end
+check("placeOf: asks the square, not a player", Weather.placeOf(player) == "Sheltered")
+check("placeOf: nothing to stand on is open", Weather.placeOf({ getSquare = function() return nil end }) == "Open")
 
 local kinds = { [""] = function(celsius) return celsius >= 10 and 1 or 0.5 end }
 ledger = Weather.newLedger(0, kinds)

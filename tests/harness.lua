@@ -161,7 +161,8 @@ end
 function H.player(at)
     at = at or {}
     local x, y, z = at.x or 0, at.y or 0, at.z or 0
-    local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end }
+    local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end,
+        isOutside = function() return at.outside == true end }
     local player = { given = {} }
     local inventory = { AddItem = function(_, fullType) table.insert(player.given, fullType) return {} end }
     function player:getInventory() return inventory end

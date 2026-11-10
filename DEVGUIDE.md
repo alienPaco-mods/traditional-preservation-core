@@ -26,6 +26,9 @@ Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it
 
 `tp status` shows every mod at a glance: uncommitted changes, whether the installed copy matches, whether the guide copy matches.
 
+`tp install` and `tp status` warn when the installed TP Core is not the source's: a mod tested in game against an
+old core passes or fails for the wrong reasons. `tp install Core` clears it.
+
 ## Balance changes and the golden results
 
 Some tools print a whole season or a whole batch: Fish's drying table and storage model, Vinegar's souring table and
@@ -82,6 +85,16 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installEvents()`, `H.fire(name, ...)` | `Events.<Any>.Add`, and firing the handlers added. |
 | `H.useModPaths()` | `require` finds the mod's own Lua and TP Core's as the game does, e.g. `require "TraditionalPreservationCore/Weather"`. |
 | `H.installGetText()` | `getText` with the mod's real EN translations. Notes the game formatter's `%` errors in `H.textWarnings`. |
+| `H.player{ x, y, z, outside }` | A player for a console or a menu: a square, an inventory, and the full types it was given in `.given`. |
+| `H.checkConsole(path, name)` | Loads a Dev console as debug mode does: it stays out of a normal game, and `help()` lists every command it has and none it hasn't. Returns the console and `run("command", ...)`, which gives back what the command printed. |
+| `H.installMenus()` | What a right-click menu file touches: vanilla's classes, the inventory in reach, the action queue, the pick-up check. Returns the record (`.carried` to set; `.queued`, `.moved`, `.probes`, `.walks` to read). |
+| `H.menu()`, `H.vessel(name, fluid, litres, capacity)`, `H.class(name)` | A context menu that keeps its options and submenus, an item with a fluid container, a vanilla class to derive from. |
+
+Every mod has a `tests/test_console.lua`: it calls each console command its stand-ins can carry, so a command can't
+break unseen (Yeast's `TPY.here()` did). Add a line there with each new command. A file with a right-click menu
+gets a menu test on `H.installMenus` (`TraditionalPreservationCore/tests/test_hearth_menu.lua`, Dairy's
+`tests/test_menu.lua`): build the menu on stand-in stations and read the options, their hovers and what choosing
+one queues.
 
 `luajit tests/test_harness.lua`, run from `TraditionalPreservationCore` (or `tp test` with no mod), tests the harness itself, and checks
 every mod's translation files for a literal `%`.
@@ -292,7 +305,7 @@ tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name
 It renders `TraditionalPreservationCore/template/` into `~/MODS/TraditionalPreservationDairy`: one floor station (S and E faces, a
 placeholder crate painted by `tools/build_tileset.py`), a placeholder item in and out, a weather-weighted timer on the
 core, the popup, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
-`test_process.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
+`test_process.lua`, `test_console.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
 recorded), README, DEVHELP, WORKSHOP, and a guide stub as the next number in `guides/`. It picks the tiledef, syncs
 the core, builds the art, runs `git init` and the tests. Nothing is committed or installed.
 
@@ -302,6 +315,13 @@ When a pattern in the mods changes, change the template too (it is not tested on
 `TP_MODS` and `TP_INSTALLED` pointing at a scratch folder, then put `golden/golden.json` back).
 
 ## Guides and Workshop pages
+
+- `tp package <Mod>` writes the folder to upload, `~/MODS/_package/<Mod>/Contents/mods/<Mod>` (`--out DIR` for
+  another place): `42/`, `common/`, README, guide and CHANGELOG, and nothing a player has no use for (tests, tools,
+  DEVHELP, WORKSHOP.txt). It runs the tests first, replaces only the mod's own folder (a `workshop.txt` and
+  `preview.png` beside `Contents` stay), warns if the repo isn't a clean commit and names the mods to list as
+  required items. Don't point `--out` at `~/Zomboid/Workshop` while the mod is also in `~/Zomboid/mods`: the game
+  loads both.
 
 - Edit player guides in `~/MODS/guides`, then run `tp guides`. It copies each guide into its mod and rebuilds the
   collection zip. It refuses if a copy inside a mod was edited more recently than the guide in `guides/`.

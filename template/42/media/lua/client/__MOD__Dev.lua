@@ -30,7 +30,7 @@ function __SHORT__.weather()
 end
 
 function __SHORT__.here()
-    say("You're in: " .. tostring(M.placeOf(getPlayer():getCurrentSquare())))
+    say("You're in: " .. tostring(M.placeOf(getPlayer())))
 end
 
 function __SHORT__.age(hours)

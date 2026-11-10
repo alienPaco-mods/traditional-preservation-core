@@ -6,7 +6,11 @@
   tp golden [MOD...] [--update] compare the season and simulation tools with their recorded output
   tp install MOD [--force] [--skip-tests]
                                 test, then copy the mod to ~/Zomboid/mods. Refuses if the installed copy has
-                                edits newer than the source, or files the source doesn't have (--force overrides)
+                                edits newer than the source, or files the source doesn't have (--force overrides).
+                                Warns when the installed TP Core is not the source's
+  tp package MOD... [--out DIR] [--skip-tests]
+                                test, then write the Workshop upload folder DIR/MOD/Contents/mods/MOD with only
+                                what a player gets: 42/, common/, README, guide and CHANGELOG (default DIR ~/MODS/_package)
   tp guides [--force]           copy guides/ into the mods and rebuild the collection zip
   tp sync [MOD...] [--force]    copy the shared core into each mod that still carries its own copy, under that mod's
                                 path. With no MOD, the mods that already have it. Refuses a mod that requires TP
@@ -104,6 +108,21 @@ def compare_install(mod):
     return differ, newer, extra
 
 
+def stale_core(mod):
+    """A warning if the mod requires TP Core and the installed core is missing or not the source's, else None.
+    A mod tested in game against an old core passes or fails for the wrong reasons."""
+    if mod == CORE.name or not requires_core(mod):
+        return None
+    compared = compare_install(CORE.name)
+    if compared is None:
+        return f"{short(mod)} requires TP Core, which is not installed: tp install Core"
+    differ, _, extra = compared
+    if differ or extra:
+        return (f"{short(mod)} requires TP Core, and the installed core differs from the source "
+                f"({len(differ) + len(extra)} files): tp install Core")
+    return None
+
+
 CORE_LUA = CORE / "42" / "media" / "lua"
 CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp sync`. Edit it there, not here.\n"
 
@@ -190,6 +209,9 @@ def cmd_status(_args):
         if len(users) > 1:
             print(f"WARNING: tiledef {number} is used by {', '.join(users)}")
     pairs = {copy.parent.name: (src, copy) for src, copy in guide_pairs()}
+    behind = [short(mod) for mod in all_mods() if INSTALLED.joinpath(mod).exists() and stale_core(mod)]
+    if behind:
+        print(f"WARNING: the installed TP Core is not the source's, and {', '.join(behind)} run on it: tp install Core")
     for mod in all_mods():
         compared = compare_install(mod)
         if compared is None:
@@ -331,6 +353,61 @@ def cmd_install(args):
         if differ or extra:
             sys.exit(f"tp install: {short(mod)} copied but still differs: {len(differ)} files")
         print(f"installed {short(mod)} to {target}")
+        warning = stale_core(mod)
+        if warning:
+            print(f"WARNING: {warning}")
+    return 0
+
+
+# What a player gets from the Workshop, besides 42/ and common/. The rest of a mod folder is for development.
+PACKAGE_DOCS = ("README.md", "CHANGELOG.md", "*_Guide.md")
+
+
+def package_files(mod):
+    """Relative paths of the files that go into the Workshop upload."""
+    root = MODS / mod
+    files = {}
+    for rel, path in shipped_files(root).items():
+        if rel.parts[0] in ("42", "common") or (len(rel.parts) == 1 and any(path.match(p) for p in PACKAGE_DOCS)):
+            files[rel] = path
+    return files
+
+
+def mod_info(mod, key):
+    match = re.search(rf"^{key}=(.*)$", (MODS / mod / "42" / "mod.info").read_text(), re.M)
+    return match.group(1).strip() if match else None
+
+
+def cmd_package(args):
+    skip_tests = "--skip-tests" in args
+    out, names = MODS / "_package", []
+    rest = iter(args)
+    for arg in rest:
+        if arg == "--out":
+            out = Path(next(rest, None) or sys.exit("tp package: --out needs a folder")).expanduser()
+        elif not arg.startswith("--"):
+            names.append(arg)
+    if not names:
+        sys.exit("tp package: name a mod")
+    for mod in resolve(names):
+        if not skip_tests and not (run_tests(mod) and run_golden(mod)):
+            sys.exit(f"tp package: {short(mod)} has failing tests, nothing packaged")
+        target = out / mod / "Contents" / "mods" / mod
+        if target.exists():
+            shutil.rmtree(target)  # only the mod's own folder: workshop.txt and preview.png beside Contents stay
+        files = package_files(mod)
+        for rel, path in files.items():
+            (target / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target / rel)
+        size = sum(path.stat().st_size for path in files.values())
+        print(f"packaged {short(mod)} {mod_info(mod, 'modversion') or '(no modversion)'}: {len(files)} files, "
+              f"{size / 1e6:.1f} MB, in {out / mod}")
+        state = git_state(mod)
+        if not state.startswith("clean"):
+            print(f"WARNING: {short(mod)} is not a clean commit ({state.split(',')[0]})")
+        for line in (MODS / mod / "42" / "mod.info").read_text().splitlines():
+            if line.startswith("require="):
+                print(f"  requires {line[len('require='):].replace(chr(92), ' ').strip()}: list it as a required item on the Workshop page")
     return 0
 
 
@@ -488,8 +565,8 @@ next:
     return 0 if ok else 1
 
 
-COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "guides": cmd_guides,
-            "sync": cmd_sync, "new": cmd_new}
+COMMANDS = {"status": cmd_status, "test": cmd_test, "golden": cmd_golden, "install": cmd_install, "package": cmd_package,
+            "guides": cmd_guides, "sync": cmd_sync, "new": cmd_new}
 
 
 def main():

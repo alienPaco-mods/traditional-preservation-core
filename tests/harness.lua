@@ -156,6 +156,156 @@ function H.installGetText(texts)
     end
 end
 
+-- A player for a Dev console or a menu: stands at at.x, at.y, at.z (indoors unless at.outside) and keeps the
+-- full types it was given in .given.
+function H.player(at)
+    at = at or {}
+    local x, y, z = at.x or 0, at.y or 0, at.z or 0
+    local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end }
+    local player = { given = {} }
+    local inventory = { AddItem = function(_, fullType) table.insert(player.given, fullType) return {} end }
+    function player:getInventory() return inventory end
+    function player:getSquare() return square end
+    function player:getCurrentSquare() return square end
+    function player:getX() return x + 0.5 end
+    function player:getY() return y + 0.5 end
+    function player:getZ() return z end
+    function player:isOutside() return at.outside == true end
+    return player
+end
+
+-- A vanilla Lua class a mod derives from (a timed action, a window): derive and new, nothing else.
+function H.class(name)
+    local base = { Type = name }
+    function base:derive(type)
+        return setmetatable({ Type = type }, { __index = self })
+    end
+    function base.new(self, character)
+        return setmetatable({ character = character }, { __index = self })
+    end
+    return base
+end
+
+-- A right-click menu: .options in order, each with its submenu in .subOption if it has one. An option keeps what
+-- choosing it calls: option.onSelect(option.target, unpack(option.args)).
+function H.menu()
+    local self = { options = {} }
+    function self:addOption(name, target, onSelect, ...)
+        local option = { name = name, target = target, onSelect = onSelect, args = { ... } }
+        table.insert(self.options, option)
+        return option
+    end
+    function self:getNew() return H.menu() end
+    function self:addSubMenu(option, sub) option.subOption = sub end
+    function self:getSubMenu(sub) return sub end
+    function self:getOptionFromName(name)
+        for _, option in ipairs(self.options) do
+            if option.name == name then return option end
+        end
+    end
+    return self
+end
+
+-- An item with a fluid container: litres of fluid ("Mix" for a mixture, nil for none) in a vessel that holds
+-- capacity litres. more adds or replaces methods (getFullType, isFavorite ...).
+function H.vessel(name, fluid, litres, capacity, more)
+    local container = {
+        isEmpty = function() return litres <= 0 end,
+        getAmount = function() return litres end,
+        getCapacity = function() return capacity end,
+        getPrimaryFluid = function() return litres > 0 and { getFluidTypeString = function() return fluid end } or nil end,
+        getPrimaryFluidAmount = function() return fluid == "Mix" and litres / 2 or litres end,
+    }
+    local item = {
+        getFluidContainer = function() return container end,
+        getDisplayName = function() return name end,
+        getTex = function() return name .. ".png" end,
+        isFavorite = function() return false end,
+    }
+    for key, value in pairs(more or {}) do item[key] = value end
+    return item
+end
+
+-- What a right-click menu file touches in the engine. Returns the record a test reads and sets:
+--   .carried  the items in reach (set it)      .queued  the timed actions queued
+--   .moved    the items brought to hand        .probes  times a controller's probe was answered
+--   .walks    times the player was sent over   .vanillaPickUp  what vanilla says to picking a tile up (set it)
+-- An object is instanceof its .class field.
+function H.installMenus()
+    local ui = { carried = {}, queued = {}, moved = {}, probes = 0, walks = 0, vanillaPickUp = true }
+    H.ui = ui
+    ISBaseTimedAction, ISCollapsableWindow = H.class("ISBaseTimedAction"), H.class("ISCollapsableWindow")
+    function instanceof(object, name) return type(object) == "table" and object.class == name end
+    function getTexture(name) return name end
+    function getSpecificPlayer() return "player" end
+    Fluid = { Get = function() return nil end }
+    ISWorldObjectContextMenu = {
+        addToolTip = function() return {} end,
+        setTest = function() ui.probes = ui.probes + 1 return true end,
+    }
+    local function walk() ui.walks = ui.walks + 1 return true end
+    luautils = { walkAdj = walk }
+    ISEntityUI = { WalkToEntity = walk }
+    ISTimedActionQueue = { add = function(action) table.insert(ui.queued, action) end }
+    ISInventoryPaneContextMenu = {
+        getContainers = function() return H.list({ { getItems = function() return H.list(ui.carried) end } }) end,
+        transferIfNeeded = function(_, item) table.insert(ui.moved, item) end,
+    }
+    InfoPanelFlags = {}
+    ISMoveableSpriteProps = {
+        canPickUpMoveable = function() return ui.vanillaPickUp end,
+        getInfoPanelFlagsPerTile = function() InfoPanelFlags.hasItems = false end,
+    }
+    return ui
+end
+
+-- Loads a mod's Dev console as the game does and checks what breaks unseen: it stays out of a normal game, it
+-- loads in debug mode, and help() lists every command it has and none it hasn't. Returns the console and
+--   run("command", ...)  calls it and returns what it printed, as one text
+-- so a test can go on to call the commands its stand-ins can carry.
+function H.checkConsole(path, name)
+    local wasDebug, realPrint = isDebugEnabled, print
+    local function quietly(work, ...)
+        local lines = {}
+        print = function(...)
+            local parts = {}
+            for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
+            table.insert(lines, table.concat(parts, "\t"))
+        end
+        isDebugEnabled = function() return true end
+        local ok, problem = pcall(work, ...)
+        print, isDebugEnabled = realPrint, wasDebug
+        if not ok then
+            realPrint(table.concat(lines, "\n"))
+            error(problem, 0)
+        end
+        return table.concat(lines, "\n")
+    end
+
+    isDebugEnabled = function() return false end
+    dofile(path)
+    isDebugEnabled = wasDebug
+    H.check(name .. " stays out of a game without debug mode", _G[name] == nil)
+    quietly(dofile, path)
+    local console = _G[name]
+    H.check(name .. " loads in debug mode", type(console) == "table" and type(console.help) == "function")
+
+    local listed, unknown, unlisted = {}, {}, {}
+    for command in quietly(console.help):gmatch(name .. "%.(%w+)%(") do
+        listed[command] = true
+        if type(console[command]) ~= "function" then table.insert(unknown, command) end
+    end
+    for command, value in pairs(console) do
+        if type(value) == "function" and command ~= "help" and not listed[command] then table.insert(unlisted, command) end
+    end
+    table.sort(unknown)
+    table.sort(unlisted)
+    H.check(name .. ".help() lists only commands that exist" .. (unknown[1] and " (not " .. table.concat(unknown, ", ") .. ")" or ""), #unknown == 0)
+    H.check(name .. ".help() lists every command" .. (unlisted[1] and " (not " .. table.concat(unlisted, ", ") .. ")" or ""), #unlisted == 0)
+
+    return console, function(command, ...) return quietly(console[command], ...) end
+end
+
 -- Checks a mod's generated Tiles.lua against its entity scripts: every sprite a script names is a tile the
 -- builder made, and every station sprite has a script. Run from the mod folder.
 function H.checkTiles(Tiles)

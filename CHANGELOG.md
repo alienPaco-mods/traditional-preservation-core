@@ -1,6 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Tooling (2026-11-10 review, group E: R28, R29). No change to the game's files:
+  - `tp install` and `tp status` warn when the installed TP Core is missing or not the source's, so a mod isn't
+    tested in game against an old core.
+  - New `tp package MOD... [--out DIR]`: the Workshop upload folder (`Contents/mods/<Mod>`) with `42/`, `common/`,
+    README, guide and CHANGELOG only; tests, tools, DEVHELP and WORKSHOP.txt stay out.
+  - Harness: `H.checkConsole` (a Dev console loads only in debug mode, and its `help()` matches its commands),
+    `H.player`, and for menu tests `H.installMenus`, `H.menu`, `H.vessel`, `H.class`.
+  - New tests: `test_console.lua` (TPC) and `test_hearth_menu.lua` (the Hearth's menu: status line, pour in, fill,
+    bank and stoke, vanilla's submenu, the controller's probe, the pick-up rule; 31 checks).
+  - Template: `tests/test_console.lua`, so a new mod starts with its console tested. Fixed there: `here()` passed a
+    square to `placeOf` and would have thrown, as Yeast's did (R7).
 - Core consolidation (2026-11-10 review, group C: R14-R23), so each mod stops carrying its own copy:
   - **One weather for the series** (R18). The last reading and the season's means (temperature, and humidity for
     Fish) live once in the core's ModData (`Weather.shared`, the ledger the Hearth already had). `Weather.record`

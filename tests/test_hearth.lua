@@ -121,6 +121,75 @@ local bankedWater = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, 
 Hearth.advance(bankedWater, 24, 20)
 check("banked embers never boil water", bankedWater.fluid == "TaintedWater" and bankedWater.tempC < 60)
 
+-- Fluids a mod has the copper change
+Hearth.turnsHot("RawFat", "MeltedFat", 1)
+Hearth.goesOff("RawFat", "RancidFat")
+Hearth.staysIn("RawFat")
+local fat = {}
+Hearth.pourInto(fat, "RawFat", 1500, 20, 0)
+check("a fluid that stays in can't be filled out", not Hearth.poursOut(fat) and Hearth.poursOut({ fluid = "Water" }))
+check("it has its whole hour of steaming to go", Hearth.hoursToTurn(fat) == 1 and Hearth.hoursToTurn({ ml = 1000, fluid = "Water" }) == nil)
+Hearth.advance(fat, 5, 20)
+check("a cold copper turns nothing", fat.fluid == "RawFat" and fat.hot == 0)
+fat.fireUntil = 100
+local toSteam = Hearth.hoursToHot(fat)
+Hearth.advance(fat, 5 + toSteam + 0.5, 20)
+check("half an hour steaming is half the work", fat.fluid == "RawFat" and near(fat.hot, 0.5) and near(Hearth.hoursToTurn(fat), 0.5))
+Hearth.advance(fat, 5 + toSteam + 1.01, 20)
+check("an hour steaming and it has turned", fat.fluid == "MeltedFat" and fat.hot == nil and Hearth.poursOut(fat))
+local away = {}
+Hearth.pourInto(away, "RawFat", 1500, 20, 0)
+away.fireUntil = 100
+Hearth.advance(away, 3, 20)
+check("left alone over the fire it turns as well", away.fluid == "MeltedFat")
+local stepped = {}
+Hearth.pourInto(stepped, "RawFat", 1500, 20, 0)
+stepped.fireUntil = 100
+for minute = 1, 100 do Hearth.advance(stepped, minute / 60, 20) end
+check("minute by minute it isn't done at an hour and forty minutes", stepped.fluid == "RawFat")
+for minute = 101, 110 do Hearth.advance(stepped, minute / 60, 20) end
+check("and is ten minutes on", stepped.fluid == "MeltedFat")
+local dying = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 0.5 }
+Hearth.advance(dying, 10, 20)
+check("a fire that dies counts the steaming while the copper cools, and no more", dying.fluid == "RawFat" and dying.hot > 0.5 and dying.hot < 1)
+local more = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 100, hot = 0.9 }
+Hearth.pourInto(more, "RawFat", 500, 20, 0)
+check("more put in starts the hour over", more.hot == nil)
+check("what has turned doesn't take the raw", select(2, Hearth.pourInto(fat, "RawFat", 500, 20, 7)) == "Mixed")
+local banked = { ml = 1500, fluid = "RawFat", tempC = 20, last = 0, fireUntil = 100, banked = true }
+Hearth.advance(banked, 24, 20)
+check("banked embers are too cool to turn it", banked.fluid == "RawFat")
+
+-- Going off
+local old = {}
+Hearth.pourInto(old, "RawFat", 1000, 20, 0)
+Hearth.offBy(old, 48)
+Hearth.offBy(old, 72)
+check("the soonest hour to go off is kept", old.offAt == 48)
+Hearth.advance(old, 47, 20)
+check("before then it is as it was", old.fluid == "RawFat")
+Hearth.advance(old, 49, 20)
+check("after, it has gone off", old.fluid == "RancidFat" and old.offAt == nil)
+old.fireUntil = 100
+Hearth.advance(old, 60, 20)
+check("and no fire brings it back", old.fluid == "RancidFat")
+local saved = {}
+Hearth.pourInto(saved, "RawFat", 1000, 20, 0)
+Hearth.offBy(saved, 48)
+saved.fireUntil = 100
+Hearth.advance(saved, 3, 20)
+Hearth.advance(saved, 500, 20)
+check("what turned in time never goes off", saved.fluid == "MeltedFat" and saved.offAt == nil)
+local late = {}
+Hearth.pourInto(late, "RawFat", 1000, 20, 0)
+Hearth.offBy(late, 48)
+Hearth.advance(late, 40, 20)
+late.fireUntil = 100
+Hearth.advance(late, 500, 20)
+check("a fire lit in time turns it, however late it is looked at", late.fluid == "MeltedFat")
+Hearth.take(old)
+check("emptied, the copper forgets both clocks", old.hot == nil and old.offAt == nil)
+
 -- Banked
 local banked = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100, banked = true }
 Hearth.advance(banked, 24, 20)

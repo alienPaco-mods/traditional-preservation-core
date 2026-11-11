@@ -1,6 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- The copper can change a fluid for a mod (Fish & Meat's fat): `Hearth.turnsHot(from, to, hours)` (kept at 85 C
+  or more for that long in all, `hot` in the copper's state), `Hearth.goesOff(from, to)` with `Hearth.offBy(copper,
+  hour)` (`offAt`), and `Hearth.staysIn(name)` for a fluid no container can be filled with (Fill from Copper is
+  greyed with the reason). `Hearth.hoursToTurn`, `Hearth.poursOut`. `HearthUI.addMenu(fn)` adds a mod's rows to the
+  Hearth's menu.
 - Tooling: Fish is now Fish & Meat (`TraditionalPreservationFishMeat`, console `TPFM`). `tp` takes `FishMeat`, and
   still `Fish` as an alias; the golden folder and `golden.json` entry are renamed, the recorded output is unchanged.
 - `Weather.placeOf(object, withCovered)`: a caller that asks gets "Covered" for a roof over a square that isn't in

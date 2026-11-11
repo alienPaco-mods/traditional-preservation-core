@@ -146,6 +146,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Hearth.blend("A", "B")`: fluids that may share the copper. `Hearth.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.
+   - `Hearth.turnsHot(from, to, hours)`, `Hearth.goesOff(from, to)` + `Hearth.offBy(copper, hour)` and
+     `Hearth.staysIn(name)`: a fluid the copper changes when kept steaming, one that goes off at an hour, and one
+     that can't be filled out (Fish & Meat's raw fat is all three). `HearthUI.addMenu(fn)` and `HearthUI.addNotes(fn)`
+     put a mod's rows on the Hearth's menu and its lines in Hearth Info.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.

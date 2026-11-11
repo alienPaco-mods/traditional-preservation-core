@@ -21,7 +21,7 @@ local function roomIn(container)
 end
 
 local function canFillFrom(container, copper)
-    if (copper.ml or 0) <= 0 or roomIn(container) <= 0 then return false end
+    if (copper.ml or 0) <= 0 or roomIn(container) <= 0 or not Hearth.poursOut(copper) then return false end
     if container:isEmpty() then return true end
     local parts, fluid = Hearth.partsIn(container)
     return parts ~= nil and Hearth.blends(copper.fluid, fluid)

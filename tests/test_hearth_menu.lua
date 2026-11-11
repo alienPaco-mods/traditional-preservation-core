@@ -230,6 +230,22 @@ fill = named(open(holdsWater), "ContextMenu_TraditionalPreservationCore_FillFrom
 check("with nothing to fill, the option is greyed with the reason", fill.isDisabled == true
     and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_NoRoomItem"))
 
+-- A fluid that stays in the copper, and a mod's own rows
+Hearth.staysIn("RawFat")
+fill = named(open(hearth({ ml = 1000, fluid = "RawFat", tempC = 20 })), "ContextMenu_TraditionalPreservationCore_FillFromCopper")
+check("a fluid that stays in can't be filled from, with the reason", fill.isDisabled == true and fill.subOption == nil
+    and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_CopperStaysIn", "RawFat"))
+local HearthUI = require "TraditionalPreservationCore/HearthUI"
+local rowFor
+HearthUI.addMenu(function(aMenu, playerObj, aHearth, copper)
+    rowFor = { playerObj, aHearth, copper }
+    aMenu:addOption("A mod's row")
+end)
+local withRow = hearth({ ml = 1000, fluid = "Water", tempC = 20 })
+sub = open(withRow)
+check("a mod's row goes in the Hearth's menu, with the hearth and its copper",
+    sub:getOptionFromName("A mod's row") ~= nil and rowFor[2] == withRow and rowFor[3].fluid == "Water")
+
 -- Emptying the copper
 check("an empty copper has nothing to empty", named(open(hearth()), "ContextMenu_TraditionalPreservationCore_EmptyCopper") == nil)
 local rotten = hearth({ ml = 6000, fluid = "RottenCowMilk", tempC = 20, tpFluidAge = { kind = "milk", age = 80 } })

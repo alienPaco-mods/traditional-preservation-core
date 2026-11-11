@@ -20,7 +20,7 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled; banked, fuel, fuelAt, fuelSet.
+-- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled, hot, offAt; banked, fuel, fuelAt, fuelSet.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
@@ -188,6 +188,42 @@ function Hearth.partsIn(container)
     return parts, name
 end
 
+-- Fluids the copper changes, as a mod names them (Fish & Meat's fat).
+-- Hearth.turnsHot(from, to, hours): from, on its own and kept steaming (HOT_C or more) for hours in all, becomes to:
+-- raw fat renders. The hours are kept in the copper's hot, and start over when more is put in.
+-- Hearth.goesOff(from, to): from becomes to at the copper's offAt (Hearth.offBy sets it), unless it turned first.
+-- Hearth.staysIn(name): the copper holds it, but no container can be filled with it.
+local TURNS, OFF, STAYS = {}, {}, {}
+
+function Hearth.turnsHot(from, to, hours)
+    TURNS[from] = { to = to, hours = hours }
+end
+
+function Hearth.goesOff(from, to)
+    OFF[from] = to
+end
+
+function Hearth.staysIn(name)
+    STAYS[name] = true
+end
+
+-- Whether containers can be filled with what the copper holds.
+function Hearth.poursOut(copper)
+    return not STAYS[copper.fluid]
+end
+
+-- The copper's fluid goes off at the hour at, or sooner if it was already going to.
+function Hearth.offBy(copper, at)
+    copper.offAt = math.min(copper.offAt or at, at)
+end
+
+-- Hours of steaming still to go before the copper's fluid turns; nil if it never will.
+function Hearth.hoursToTurn(copper)
+    local turn = (copper.ml or 0) > 0 and not copper.parts and TURNS[copper.fluid]
+    if not turn then return nil end
+    return math.max(turn.hours - (copper.hot or 0), 0)
+end
+
 -- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend.
 function Hearth.copperRoom(copper, fluid, ml)
     if (copper.ml or 0) > 0 then
@@ -208,6 +244,7 @@ function Hearth.pourInto(copper, fluid, ml, fluidC, now)
     local had = copper.ml or 0
     copper.tempC = had > 0 and (copper.tempC * had + fluidC * taken) / (had + taken) or fluidC
     copper.boiled = nil
+    copper.hot = nil
     Hearth.addParts(copper, fluid, taken)
     copper.ml = had + taken
     copper.last = copper.last or now
@@ -222,15 +259,44 @@ function Hearth.take(copper, maxMl)
     local fluid, tempC, parts = copper.fluid, copper.tempC, Hearth.partsOf(copper, ml)
     copper.ml = copper.ml - ml
     if copper.ml <= 0 then
-        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled" }) do copper[key] = nil end
+        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "offAt" }) do copper[key] = nil end
     end
     return ml, fluid, tempC, parts
+end
+
+-- The hours out of hours that a copper at tempC, moving towards target, spends at HOT_C or more.
+local function hoursHot(tempC, target, hours, tau)
+    local hot = Hearth.HOT_C
+    if tempC >= hot and target >= hot then return hours end
+    if tempC < hot and target <= hot then return 0 end
+    local cross = tau * math.log((target - tempC) / (target - hot))
+    if tempC < hot then return math.max(hours - cross, 0) end
+    return math.min(hours, cross)
+end
+
+-- Counts the steaming hours of a fluid that turns hot (Hearth.turnsHot), before tempC moves towards target, and
+-- turns it when it has had them all. What has turned no longer goes off.
+local function keepHot(copper, target, hours, tau)
+    local turn = not copper.parts and TURNS[copper.fluid]
+    if not turn then return end
+    copper.hot = (copper.hot or 0) + hoursHot(copper.tempC, target, hours, tau)
+    if copper.hot >= turn.hours then
+        copper.fluid, copper.hot, copper.offAt = turn.to, nil, nil
+    end
+end
+
+-- A fluid past its offAt becomes what it goes off to (Hearth.goesOff).
+local function goOff(copper, now)
+    if not copper.offAt or copper.offAt > now then return end
+    if OFF[copper.fluid] and not copper.parts then copper.fluid = OFF[copper.fluid] end
+    copper.hot, copper.offAt = nil, nil
 end
 
 -- Hours of a lit fire under the copper: water stops at BOIL_C, and the time it spends there counts towards boiling
 -- tainted water clean.
 local function heat(copper, hours)
     local target, tau = Hearth.fireTarget(copper), Hearth.copperTau(copper.ml, not copper.banked)
+    keepHot(copper, target, hours, tau)
     if target <= Hearth.BOIL_C then
         copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
         return
@@ -253,15 +319,19 @@ end
 function Hearth.advance(copper, now, roomC)
     if (copper.ml or 0) <= 0 then return end
     local t = copper.last or now
+    goOff(copper, t)
     if copper.fireUntil and copper.fireUntil > t then
         local stop = math.min(copper.fireUntil, now)
         heat(copper, stop - t)
         t = stop
     end
     if now > t then
-        copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, Hearth.copperTau(copper.ml, false))
+        local tau = Hearth.copperTau(copper.ml, false)
+        keepHot(copper, roomC, now - t, tau)
+        copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, tau)
         copper.boiled = nil
     end
+    goOff(copper, now)
     copper.last = now
 end
 

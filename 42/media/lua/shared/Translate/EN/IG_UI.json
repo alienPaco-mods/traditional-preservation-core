@@ -7,6 +7,7 @@
   "IGUI_TraditionalPreservationCore_CopperMixed": "The copper holds %1: fluids don't mix. Empty it first.",
   "IGUI_TraditionalPreservationCore_NotOneFluid": "A mix of fluids: only one plain fluid goes into the copper.",
   "IGUI_TraditionalPreservationCore_CopperFull": "The copper is full.",
+  "IGUI_TraditionalPreservationCore_CopperStaysIn": "%1 can't be ladled out.",
   "IGUI_TraditionalPreservationCore_NoFluidItem": "You have nothing with a fluid in it.",
   "IGUI_TraditionalPreservationCore_NoRoomItem": "You have no empty container, nor one holding the same fluid with room.",
   "IGUI_TraditionalPreservationCore_EmptyCopperHelp": "Pours away all %1 L of %2. There's no getting it back.",

@@ -103,6 +103,7 @@ end
 local function addFillMenu(menu, playerObj, hearth, copper)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_FillFromCopper"))
     option.iconTexture = getTexture(COPPER_FULL_ICON)
+    if not Hearth.poursOut(copper) then return disableWith(option, say("IGUI_TraditionalPreservationCore_CopperStaysIn", holds(copper))) end
     local items = findItems(playerObj, function(item)
         local container = item:getFluidContainer()
         return container ~= nil and TPHearthCopper.canFillFrom(container, copper)
@@ -163,6 +164,13 @@ end
 
 local HearthWindow -- below
 
+local MENUS = {}
+
+-- fn(menu, playerObj, hearth, copper) adds a mod's own rows to the Hearth's menu, after Pour into Copper.
+function HearthUI.addMenu(fn)
+    table.insert(MENUS, fn)
+end
+
 local function addHearthMenu(context, playerObj, hearth)
     local copper = Hearth.copperOf(hearth)
     local menu = hearthSubMenu(context, hearth)
@@ -175,6 +183,7 @@ local function addHearthMenu(context, playerObj, hearth)
     info.iconTexture = getTexture(HEARTH_ICON)
     addFireOption(menu, playerObj, hearth)
     addPourInMenu(menu, playerObj, hearth, copper)
+    for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, copper) end
     if (copper.ml or 0) > 0 then
         addFillMenu(menu, playerObj, hearth, copper)
         addEmptyOption(menu, playerObj, hearth, copper)

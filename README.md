@@ -18,7 +18,7 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 
 **Right-click it.** Vanilla's Hearth submenu gains:
 
-- A grey status line: `Copper: 10 / 20 L Cow's Milk (Fresh), 62 C`, or `Copper: empty`.
+- A grey status line: `Copper: 10 / 60 L Cow's Milk (Fresh), 62 C`, or `Copper: empty`.
 - **Hearth Info**: the fire (Lit, Banked or Out), a fuel bar with the time it will burn (a full bar is 12 hours), the copper's litres, what it holds, its heat, and under **Steaming** either "Yes", "in 1.2 hours", "Not yet (85 C)" or "Not while banked". Clicking the Hearth opens it too. It closes when you walk more than 6 squares away.
 - **Bank the Fire** / **Stoke the Fire**, while it is lit. The loot window has it too, as a button beside vanilla's Put out Fire.
 - **Pour into the Copper**: every container on you or nearby with a fluid in it. A mixture, or a fluid that doesn't go with what the copper holds, shows in red with the reason.
@@ -28,9 +28,13 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 
 ### The copper
 
-- Holds **20 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Hearth.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
+- Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Hearth.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
 - Poured fluid mixes its temperature with what is there, by volume.
-- **Lit fire:** it heats towards 95 C and **steams at 85 C**; nothing in it quite boils.
+- **Lit fire:** it heats towards 95 C and **steams at 85 C**; milk and every other fluid are kept off the boil.
+- **Water boils.** Water on its own heats towards 110 C and holds at **100 C**. Tainted water kept at the boil for
+  **10 minutes** turns to clean water (`Hearth.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
+  `boiled` in the copper's state and starts over when the fire goes out or more is poured in). Being let boil, water
+  also steams sooner than milk.
 - **Fire out:** it cools towards the temperature of the place the Hearth stands in (outdoors, under a roof or a basement), slowly, as the stone holds heat.
 - **Banked fire:** it settles at 50 C.
 - More fluid heats and cools more slowly (by the cube root of the volume; a splash counts as a litre).
@@ -39,7 +43,14 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 |---|---|---|
 | 5 L | about 1.2 hours | about 1.5 hours |
 | 10 L | about 1.5 hours | about 1.9 hours |
-| 20 L (full) | about 1.9 hours | about 2.4 hours |
+| 20 L | about 1.9 hours | about 2.4 hours |
+| 60 L (full) | about 2.75 hours | about 3.5 hours |
+
+| Water in the copper | 20 C to clean, fire lit (to 100 C, then 10 minutes) |
+|---|---|
+| 10 L | about 1.8 hours |
+| 20 L | about 2.25 hours |
+| 60 L (full) | about 3.2 hours |
 
 The copper shows empty, full or steaming in the Hearth's sprite. The fire mouth glows while the fire burns and shows dull embers when it is banked.
 

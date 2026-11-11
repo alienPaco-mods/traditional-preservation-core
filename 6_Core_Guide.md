@@ -25,7 +25,7 @@
 
 **Traditional Preservation (Core)**, TP Core for short, is the mod every Traditional Preservation mod needs: Salt, Fish, Yeast, Vinegar and Dairy. It carries the rules they share, so they all agree about the weather, the cellar and the time you were away.
 
-It also adds one station of its own, shared by the series: the **Hearth**, a stone fireplace with a 20 L copper in its top for heating whatever you pour into it.
+It also adds one station of its own, shared by the series: the **Hearth**, a stone fireplace with a 60 L copper in its top for heating whatever you pour into it.
 
 On its own it adds only the Hearth, and changes no vanilla recipe, item or loot.
 
@@ -37,9 +37,9 @@ On its own it adds only the Hearth, and changes no vanilla recipe, item or loot.
 
 | Step | You need | You get |
 |---|---|---|
-| Build a **Hearth** (Build menu, Masonry) | 12 Clay Bricks, 4 Clay, 1 Copper Sheet, a mason's trowel (kept). Masonry 2 | A fireplace with a 20 L copper. 10 Masonry XP |
+| Build a **Hearth** (Build menu, Masonry) | 12 Clay Bricks, 4 Clay, 1 Copper Sheet, a mason's trowel (kept). Masonry 2 | A fireplace with a 60 L copper. 10 Masonry XP |
 | **Add Fuel** and **Light** it | Firewood and a lighter, as any fireplace | Fire, room heat, a firebox that cooks |
-| **Pour into the Copper** | Any one fluid, up to 20 L | The copper heating towards 95 C |
+| **Pour into the Copper** | Any one fluid, up to 60 L | The copper heating towards 95 C |
 | Wait | About 1.5 hours for 10 L | The copper **steaming** at 85 C |
 | **Fill from the Copper** | Empty containers | Your fluid back, hot |
 
@@ -55,7 +55,7 @@ Right-click it. In its **Hearth** submenu you'll find:
 
 | Option | What it does |
 |---|---|
-| *Copper: 10 / 20 L Cow's Milk (Fresh), 62 C* | A grey status line: what the copper holds and how hot it is |
+| *Copper: 10 / 60 L Cow's Milk (Fresh), 62 C* | A grey status line: what the copper holds and how hot it is |
 | **Hearth Info** | A small window: the fire, the fuel, the copper, and when it will steam. **Clicking the Hearth opens it too** |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See section 5 |
 | **Pour into the Copper** | From any container on you or nearby with a fluid in it |
@@ -81,10 +81,11 @@ The window updates while it's open, and closes when you walk more than 6 squares
 
 ## 4. The Copper
 
-- **20 L, one fluid at a time.** Any fluid: water, milk, whatever a container holds. A mixture is refused, and so is a fluid that doesn't go with what's already in the copper. Both show in red, with the reason.
+- **60 L, one fluid at a time.** Any fluid: water, milk, whatever a container holds. A mixture is refused, and so is a fluid that doesn't go with what's already in the copper. Both show in red, with the reason.
 - **Some fluids may share it.** A mod can say which: Dairy lets cow's, sheep's and animal's milk mix, and the blend keeps its shares in and out.
 - **Heat mixes by volume.** Cold poured onto hot cools the lot.
-- **Lit:** it heats towards 95 C. Nothing in it quite boils.
+- **Lit:** it heats towards 95 C. Milk and the rest are kept off the boil.
+- **Water boils.** Water on its own comes to a rolling boil at 100 C. Tainted water held there for **10 minutes** comes out clean: a whole copper of rain-barrel water made safe at once. If the fire goes out or you pour more in, the 10 minutes start over.
 - **At 85 C it steams.** You see it in the copper, and in Hearth Info.
 - **Fire out:** it cools towards the temperature of the place the Hearth stands in. Slowly: the stone holds its heat.
 - **More takes longer**, both ways.
@@ -93,9 +94,18 @@ The window updates while it's open, and closes when you walk more than 6 squares
 |---|---|---|
 | 5 L | about 1¼ hours | about 1½ hours |
 | 10 L | about 1½ hours | about 2 hours |
-| 20 L (full) | about 2 hours | about 2½ hours |
+| 20 L | about 2 hours | about 2½ hours |
+| 60 L (full) | about 2¾ hours | about 3½ hours |
 
-> ✏ *Margin note:* doubling the fluid doesn't double the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: 20 L takes only a quarter longer than 10.
+| Water | From 20 C to clean (boiling, then 10 minutes) |
+|---|---|
+| 10 L | about 1¾ hours |
+| 20 L | about 2¼ hours |
+| 60 L (full) | about 3¼ hours |
+
+Water steams sooner than milk: nobody holds it back from the boil.
+
+> ✏ *Margin note:* six times the fluid doesn't take six times the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: a full 60 L copper takes less than twice as long as 10 L.
 
 What you fill from the copper leaves at the copper's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Yoghurt Pot holds it for hours.
 
@@ -187,14 +197,15 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Bricks and clay | 12 Clay Bricks, 4 Clay |
 | Metal | 1 Copper Sheet |
 | Skill | Masonry 2 |
-| Holds | 20 L |
-| Wood for a full copper | about 2 hours of fire to the steam |
+| Holds | 60 L |
+| Wood for a full copper | about 2¾ hours of fire to the steam, 3¼ to boil water clean |
 | Banked | the same wood for 6 hours, the copper at 50 C |
 
 ### Why it works the way it does
 
 - **Why copper?** It carries heat better than iron and far better than clay, so the fire's heat reaches the whole potful, and it doesn't taint milk or wort.
-- **Why doesn't it boil?** A simplification: the copper tops out at 95 C. Steaming is all the series asks of it. Milk is scalded at about 85 C, not boiled, or it catches and skins over.
+- **Why doesn't milk boil?** The dairymaid kept it off the boil: milk is scalded at about 85 C, not boiled, or it catches and skins over. The copper holds it at 95 C at most. Water is another matter: it was boiled in the copper for the wash, the brew and the scalding of pails.
+- **Why 60 L?** Real farmhouse coppers held 40 to 100 L (ten to twenty gallons). Sixty is the middle of the range: a wash day's water, or a whole morning's milking.
 - **Why bank a fire?** Ash keeps the air off the coals, so they glow instead of flaming. A banked fire could be woken with a poker in the morning, which mattered when the alternative was flint and tinder.
 - **Why is a cellar 15 C?** A few feet of earth average out the whole year. It's cool in August and mild in January, and it's why cheese, beer and roots were kept below ground.
 
@@ -208,7 +219,8 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 ## 9. Tips
 
-- **Fill it up.** A full 20 L copper takes only half an hour longer to steam than 10 L.
+- **Fill it up.** A full 60 L copper takes only about an hour and a quarter longer to steam than 10 L.
+- **Boil your water by the copperful.** A rain barrel's tainted water, boiled clean 60 L at a time, saves a stove a whole afternoon of pots.
 - **Bank it overnight.** A third of the wood, and anything beside it still stands at 24 C. The rest of the room cools, so sleep near it.
 - **Build the stations that need it within 2 tiles.** Dairy's incubator and crock pour straight from the copper at that range, and sit "by a fire" at the same time.
 - **Check Hearth Info before you walk off.** If the fuel won't last until the steam, it says "Not yet".

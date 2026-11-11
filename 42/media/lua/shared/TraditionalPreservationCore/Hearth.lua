@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the Hearth, a low stone oven with a copper set in its top, shared by every TP mod.
 -- The built tile is swapped for a vanilla fireplace, as the Barrel Oven's is (BuildRecipeCode.barrelOven.OnCreate),
 -- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The copper holds one fluid at
--- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C while the fire burns and cools to the room when it is out. Its state is a plain
+-- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C (water boils, and boils clean) while the fire burns and cools to the room when it is out. Its state is a plain
 -- table in the fireplace's modData under KEY; every rule here works on it without the engine.
 --
 -- "By a fire" is a place of its own (PLACE, at FIRE_C): any lit fire within FIRE_RADIUS tiles on the same floor,
@@ -20,7 +20,7 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, parts, tempC, last, fireUntil; banked, fuel, fuelAt, fuelSet.
+-- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled; banked, fuel, fuelAt, fuelSet.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
@@ -51,13 +51,21 @@ function Hearth.isFirePlace(place)
 end
 
 -- The copper
-Hearth.COPPER_ML = 20000
+Hearth.COPPER_ML = 60000            -- a farmhouse copper (real ones 40 to 100 L)
 Hearth.TAU_ML = 10000              -- the litres the time constants below are for; more heats and cools slower
 Hearth.MAX_C = 95                  -- over a fire; nothing in it quite boils
 Hearth.HOT_C = 85                  -- steaming
 Hearth.LIT_TAU = 0.75              -- hours, for 10 L over a lit fire: 20 to 85 C in about an hour and a half
 Hearth.OUT_TAU = 2.0               -- hours, for 10 L once the fire is out: the stone holds its heat
 Hearth.FLOOR_ML = 1000             -- a splash heats as fast as a litre
+
+-- Water is let boil: over a lit fire it heats towards WATER_FIRE_C and holds at BOIL_C. Tainted water kept at the
+-- boil for BOIL_HOURS turns clean (BOILED). Every other fluid is kept off the boil, at MAX_C.
+Hearth.BOIL_C = 100
+Hearth.WATER_FIRE_C = 110
+Hearth.BOIL_HOURS = 1 / 6
+Hearth.BOILS = { Water = true, TaintedWater = true }
+Hearth.BOILED = { TaintedWater = "Water" }
 
 -- Vanilla's item heat, for fluids poured between the copper and the player's containers. Vanilla cools a
 -- container in the player's hands to room heat within seconds.
@@ -99,6 +107,17 @@ end
 function Hearth.copperTau(ml, lit)
     local base = lit and Hearth.LIT_TAU or Hearth.OUT_TAU
     return base * (math.max(ml, Hearth.FLOOR_ML) / Hearth.TAU_ML) ^ (1 / 3)
+end
+
+-- Whether the copper's fluid is let boil: water on its own.
+function Hearth.boils(copper)
+    return Hearth.BOILS[copper.fluid] == true and not copper.parts
+end
+
+-- The heat the copper heats towards while the fire burns.
+function Hearth.fireTarget(copper)
+    if copper.banked then return Hearth.BANKED_C end
+    return Hearth.boils(copper) and Hearth.WATER_FIRE_C or Hearth.MAX_C
 end
 
 -- Fluids that may share the copper, as a cow's and a sheep's milk do: a mod names each group. Anything else is
@@ -188,6 +207,7 @@ function Hearth.pourInto(copper, fluid, ml, fluidC, now)
     if taken <= 0 then return 0, reason end
     local had = copper.ml or 0
     copper.tempC = had > 0 and (copper.tempC * had + fluidC * taken) / (had + taken) or fluidC
+    copper.boiled = nil
     Hearth.addParts(copper, fluid, taken)
     copper.ml = had + taken
     copper.last = copper.last or now
@@ -202,9 +222,30 @@ function Hearth.take(copper, maxMl)
     local fluid, tempC, parts = copper.fluid, copper.tempC, Hearth.partsOf(copper, ml)
     copper.ml = copper.ml - ml
     if copper.ml <= 0 then
-        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last" }) do copper[key] = nil end
+        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled" }) do copper[key] = nil end
     end
     return ml, fluid, tempC, parts
+end
+
+-- Hours of a lit fire under the copper: water stops at BOIL_C, and the time it spends there counts towards boiling
+-- tainted water clean.
+local function heat(copper, hours)
+    local target, tau = Hearth.fireTarget(copper), Hearth.copperTau(copper.ml, not copper.banked)
+    if target <= Hearth.BOIL_C then
+        copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
+        return
+    end
+    local toBoil = copper.tempC >= Hearth.BOIL_C and 0
+        or tau * math.log((target - copper.tempC) / (target - Hearth.BOIL_C))
+    if hours <= toBoil then
+        copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
+        return
+    end
+    copper.tempC = Hearth.BOIL_C
+    copper.boiled = (copper.boiled or 0) + hours - toBoil
+    if copper.boiled >= Hearth.BOIL_HOURS and Hearth.BOILED[copper.fluid] then
+        copper.fluid = Hearth.BOILED[copper.fluid]
+    end
 end
 
 -- Brings the copper up to now: heating while the fire burns (to fireUntil), cooling to roomC after. Over banked
@@ -214,11 +255,13 @@ function Hearth.advance(copper, now, roomC)
     local t = copper.last or now
     if copper.fireUntil and copper.fireUntil > t then
         local stop = math.min(copper.fireUntil, now)
-        local target = copper.banked and Hearth.BANKED_C or Hearth.MAX_C
-        copper.tempC = Hearth.cool(copper.tempC, target, stop - t, Hearth.copperTau(copper.ml, not copper.banked))
+        heat(copper, stop - t)
         t = stop
     end
-    if now > t then copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, Hearth.copperTau(copper.ml, false)) end
+    if now > t then
+        copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, Hearth.copperTau(copper.ml, false))
+        copper.boiled = nil
+    end
     copper.last = now
 end
 
@@ -237,7 +280,8 @@ function Hearth.hoursToHot(copper)
     if (copper.ml or 0) <= 0 then return nil end
     if copper.tempC >= Hearth.HOT_C then return 0 end
     if copper.banked then return nil end
-    return Hearth.copperTau(copper.ml, true) * math.log((Hearth.MAX_C - copper.tempC) / (Hearth.MAX_C - Hearth.HOT_C))
+    local target = Hearth.fireTarget(copper)
+    return Hearth.copperTau(copper.ml, true) * math.log((target - copper.tempC) / (target - Hearth.HOT_C))
 end
 
 -- Banks the fire (banked true) or stokes it up again, with fuel minutes in vanilla's fireplace now.

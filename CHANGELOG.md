@@ -1,6 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- A bigger copper (user 2026-11-11, for realism): `Hearth.COPPER_ML` 20 L -> 60 L (real ones 40 to 100 L). Same build
+  cost; heating still by the cube root of what is in it, so 10 L is unchanged and a full copper steams in about 2.75 h.
+- Water boils (user 2026-11-11): water or tainted water alone heats towards `WATER_FIRE_C` (110) and holds at
+  `BOIL_C` (100); tainted water at the boil for `BOIL_HOURS` (10 min) turns to water. New key `boiled` in `tpHearth`
+  (hours at the boil; cleared when the fire goes out, fluid is poured in or the copper is emptied). Milk and every
+  other fluid still top out at 95 C. Water, let boil, steams sooner than milk. `TPC.hearth()` shows the minutes at
+  the boil.
 - `UI.itemName(item)` and `UI.nameHook(fn)`: an item's name in a menu, vanilla's unless a mod has a say. The Hearth's
   Pour into and Fill from the Copper menus use it (Dairy names wrapped pots).
 - `Station.hotContainers(square, radius, heat, fn)`: every item container at a vanilla temperature or hotter near a

@@ -18,9 +18,9 @@ local copper = {}
 check("an empty copper takes any fluid", Hearth.pourInto(copper, "Water", 4000, 20, 0) == 4000 and copper.fluid == "Water")
 check("but not a second one", select(2, Hearth.pourInto(copper, "CowMilk", 1000, 20, 0)) == "Mixed")
 check("emptied, it forgets the fluid", Hearth.take(copper) == 4000 and copper.fluid == nil and copper.tempC == nil)
-check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 20000, 20, 0) == 20000
+check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 60000, 20, 0) == 60000
     and select(2, Hearth.pourInto(copper, "SheepMilk", 100, 20, 0)) == "Mixed")
-check("20 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
+check("60 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
 
 -- Fluids a mod has said may share the copper
 Hearth.blend("CowMilk", "SheepMilk")
@@ -53,6 +53,8 @@ end
 check("10 L over the fire is hot in about an hour and a half", hot and hot > 1.3 and hot < 1.7)
 check("20 L takes about two hours", Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 1.8
     and Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.1)
+check("a full 60 L copper under three hours", Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 2.6
+    and Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.9)
 check("and never boils", copper.tempC <= Hearth.MAX_C)
 local split = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
 Hearth.advance(split, 1, 20)
@@ -76,11 +78,48 @@ Hearth.advance(unlit, 2, 20)
 check("a copper with no fire cools", unlit.tempC < 60 and unlit.tempC > 20)
 check("the copper shows empty, full or steaming", Hearth.look({}) == "Empty"
     and Hearth.look({ ml = 100, tempC = 40 }) == "Full" and Hearth.look({ ml = 100, fluid = "Water", tempC = 90 }) == "Hot")
-local warming = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100 }
-local eta = Hearth.hoursToHot(warming)
-Hearth.advance(warming, eta + 0.01, 20)
-check("the time to hot is right, for any fluid", eta > 1.3 and eta < 1.7 and Hearth.isHot(warming)
-    and Hearth.hoursToHot(warming) == 0 and Hearth.hoursToHot({}) == nil)
+for _, fluid in ipairs({ "CowMilk", "Water" }) do
+    local warming = { ml = 10000, fluid = fluid, tempC = 20, last = 0, fireUntil = 100 }
+    local eta = Hearth.hoursToHot(warming)
+    Hearth.advance(warming, eta - 0.01, 20)
+    local before = Hearth.isHot(warming)
+    Hearth.advance(warming, eta + 0.01, 20)
+    check("the time to hot is right: " .. fluid, not before and Hearth.isHot(warming) and Hearth.hoursToHot(warming) == 0)
+end
+check("an empty copper is never hot", Hearth.hoursToHot({}) == nil)
+
+-- Water boils
+local pot = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+check("water steams sooner than milk: it is let boil", Hearth.hoursToHot(pot) < 1.1)
+Hearth.advance(pot, 1.5, 20)
+check("10 L of water is not at the boil in an hour and a half", pot.tempC < Hearth.BOIL_C and pot.fluid == "TaintedWater")
+Hearth.advance(pot, 1.7, 20)
+check("it boils at 100 C and holds there", pot.tempC == Hearth.BOIL_C and pot.boiled and pot.fluid == "TaintedWater")
+Hearth.advance(pot, 1.9, 20)
+check("ten minutes at the boil and it is clean", pot.fluid == "Water" and pot.tempC == Hearth.BOIL_C)
+check("water at the boil pours out hot enough for vanilla to call it clean", Hearth.itemHeat(Hearth.BOIL_C) >= 1.6)
+local stepped = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+for minute = 1, 114 do Hearth.advance(stepped, minute / 60, 20) end
+check("minute by minute it boils clean as well", stepped.fluid == "Water")
+local fullCopper = { ml = 60000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+Hearth.advance(fullCopper, 2.9, 20)
+local notYet = fullCopper.tempC < Hearth.BOIL_C
+Hearth.advance(fullCopper, 3.3, 20)
+check("a full copper of water boils clean in about three hours", notYet and fullCopper.fluid == "Water")
+local interrupted = { ml = 10000, fluid = "TaintedWater", tempC = 99, last = 0, fireUntil = 0.1 }
+Hearth.advance(interrupted, 0.2, 20)
+interrupted.fireUntil = 100
+Hearth.advance(interrupted, 0.3, 20)
+check("the boil starts over when the fire goes out", interrupted.fluid == "TaintedWater")
+local topped = { ml = 10000, fluid = "TaintedWater", tempC = 100, last = 0, fireUntil = 100, boiled = 0.1 }
+Hearth.pourInto(topped, "TaintedWater", 1000, 20, 0)
+check("and when more is poured in", topped.boiled == nil)
+local milk = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
+Hearth.advance(milk, 24, 20)
+check("milk is kept off the boil", milk.tempC <= Hearth.MAX_C and milk.boiled == nil)
+local bankedWater = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100, banked = true }
+Hearth.advance(bankedWater, 24, 20)
+check("banked embers never boil water", bankedWater.fluid == "TaintedWater" and bankedWater.tempC < 60)
 
 -- Banked
 local banked = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100, banked = true }

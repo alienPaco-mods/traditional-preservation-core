@@ -6,7 +6,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 
 [h2]What it adds[/h2]
 [list]
-[*][b]The Hearth[/b]: a stone fireplace with a 20 L copper set in its top, for heating any fluid
+[*][b]The Hearth[/b]: a stone fireplace with a 60 L copper set in its top, for heating any fluid
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Three kinds of place a station can stand in: outdoors, under a roof and in a basement
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
@@ -17,14 +17,14 @@ Build menu, Masonry. Masonry 2: 12 Clay Bricks, 4 Clay, 1 Copper Sheet and a mas
 
 It is a working fireplace: add fuel and light it as you would any other, cook in its firebox, warm the room. Its right-click menu also has:
 [list]
-[*][b]Pour into the Copper[/b]: up to 20 L of one fluid, from any container.
+[*][b]Pour into the Copper[/b]: up to 60 L of one fluid, from any container.
 [*][b]Fill from the Copper[/b]: into your own containers, at the copper's heat.
 [*][b]Empty the Copper[/b]: pour the whole lot away, rotten milk and all.
 [*][b]Bank the Fire[/b]: the fire burns a third of the wood, holds the copper at about 50 C, warms only the 2 tiles round it and cooks a third as fast. [b]Stoke the Fire[/b] brings it back.
 [*][b]Hearth Info[/b] (or just click the Hearth): the fire, the fuel and how long it will burn, the copper's contents and heat, and when it will steam.
 [/list]
 
-With the fire lit the copper heats towards 95 C and steams at 85 C: about 1.5 hours for 10 L, about 2 for a full 20 L. With the fire out it cools slowly, as the stone holds its heat. The copper shows empty, full or steaming, and the fire mouth glows.
+With the fire lit the copper heats towards 95 C and steams at 85 C: about 1.5 hours for 10 L, about 2.75 for a full 60 L. Water alone is let boil: tainted water held at the boil for 10 minutes comes out clean (about 1.75 hours for 10 L, 3.25 for a full copper). With the fire out it cools slowly, as the stone holds its heat. The copper shows empty, full or steaming, and the fire mouth glows.
 
 A Hearth can't be picked up while its fire burns or its copper holds anything.
 

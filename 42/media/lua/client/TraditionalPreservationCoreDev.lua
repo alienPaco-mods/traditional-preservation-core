@@ -10,7 +10,7 @@ local function say(text) print("[TPC] " .. text) end
 function TPC.help()
     say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
-    say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 20)")
+    say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set its fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot()            bring its copper to the steam (90 C) now")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
@@ -39,12 +39,13 @@ function TPC.hearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
     local hotIn = Hearth.hoursToHot(copper)
-    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; copper %.1f L %s at %.1f C (%s), steaming %s, fire until %s",
+    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; copper %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         hearth:getX(), hearth:getY(), hearth:getZ(),
         Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", copper.fuel or 0)
             or hearth:isLit() and "lit" or "out", hearth:getFuelAmount(),
         hearth:getSprite():getName(), (copper.ml or 0) / 1000, tostring(copper.fluid), copper.tempC or 0, Hearth.look(copper),
-        hotIn and string.format("in %.1f h", hotIn) or "never", copper.fireUntil and string.format("%.2f", copper.fireUntil) or "-"))
+        hotIn and string.format("in %.1f h", hotIn) or "never", copper.fireUntil and string.format("%.2f", copper.fireUntil) or "-",
+        (copper.boiled or 0) * 60))
 end
 
 function TPC.copper(litres, celsius, fluid)

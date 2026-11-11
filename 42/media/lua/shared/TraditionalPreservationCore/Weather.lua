@@ -247,12 +247,13 @@ function Weather.startClock(craftRecipeData, key, now)
     craftRecipeData:getModData()[key] = now
 end
 
--- A run with no start hour is left alone. The start hour saves with the recipe.
-function Weather.showClock(craftRecipeData, key, now)
+-- A run with no start hour is left alone. The start hour saves with the recipe. speed (default 1) runs the
+-- bar faster, for a run shorter than its recipe's time.
+function Weather.showClock(craftRecipeData, key, now, speed)
     local startHour = craftRecipeData:getModData()[key]
     if not startHour then return end
 
-    local elapsed = (now - startHour) * SECONDS_PER_HOUR
+    local elapsed = (now - startHour) * (speed or 1) * SECONDS_PER_HOUR
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
 end
 

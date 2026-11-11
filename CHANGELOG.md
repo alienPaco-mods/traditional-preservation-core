@@ -1,6 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- `Weather.showClock` takes an optional speed, for a clock run shorter than its recipe's time (Fish's press by
+  the heaviest fish). Default 1, so Salt's leaching is unchanged.
 - A bigger copper (user 2026-11-11, for realism): `Hearth.COPPER_ML` 20 L -> 60 L (real ones 40 to 100 L). Same build
   cost; heating still by the cube root of what is in it, so 10 L is unchanged and a full copper steams in about 2.75 h.
 - Water boils (user 2026-11-11): water or tainted water alone heats towards `WATER_FIRE_C` (110) and holds at

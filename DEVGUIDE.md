@@ -104,7 +104,8 @@ every mod's translation files for a literal `%`.
 `~/MODS/TraditionalPreservationCore` is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
-that comes back as the bucket it was) and
+that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
+`OnInitWorld`) and
 `42/media/lua/client/TraditionalPreservationCore/UI.lua`. A mod that uses it says so in its mod.info:
 
 ```

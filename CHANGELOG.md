@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- More fluids for a vanilla recipe (`Recipes.addFluids`, D9 step 2): at `OnInitWorld` a mod widens a vanilla craft
+  recipe's fluid line (Dairy: every milk, fresh or soured, in cake batter, muffins and cereal). A script copy of the recipe can't do it,
+  as the game adds a copy's inputs to the original's. A line that names the fluids already is left alone.
 - Fluids that go off (`FluidAgeing`, D9): a mod registers a kind of fluid (Dairy: milk) with a twin for each fresh fluid,
   a spoiled fluid and a rate curve; the core keeps an age record (`tpFluidAge`) on the item or object holding it, counted on
   the mod's weather ledger by place (a powered fridge by the clock at 4 C, a freezer not at all), and swaps the fluid

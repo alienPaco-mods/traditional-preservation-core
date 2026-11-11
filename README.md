@@ -23,6 +23,8 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 - **Bank the Fire** / **Stoke the Fire**, while it is lit.
 - **Pour into the Copper**: every container on you or nearby with a fluid in it. A mixture, or a fluid that doesn't go with what the copper holds, shows in red with the reason.
 - **Fill from the Copper** (when it holds anything): empty containers, and ones holding the same fluid with room left.
+- **Empty the Copper** (when it holds anything): pours the whole lot away, its age record with it. The hover says how
+  much of what.
 
 ### The copper
 

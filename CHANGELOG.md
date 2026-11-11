@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Empty the Copper (user 2026-11-11): the Hearth's menu pours whatever the copper holds away in one go, with its
+  age record (rotten milk above all; before, it went out a container at a time). `TPHearthCopper` mode "empty", no
+  item; the time grows with the litres, as a pour does. Hover: how much of what.
 - Docs: TP Core has its own `README.md` (the Hearth, the copper, banking, by a fire, places, fluids that go off),
   `DEVHELP.md` (the `TPC` console), `WORKSHOP.txt` and a player guide, `6_Core_Guide.md`. The Hearth was documented
   only in Dairy's. The collection guide (0) is rewritten for five mods and Core.

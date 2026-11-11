@@ -1,6 +1,6 @@
 -- Traditional Preservation core: the Hearth is worked from its right-click menu. Vanilla's own menu lights and feeds
--- the fire; ours, inside vanilla's Hearth submenu, shows the copper and pours a fluid into it or fills a container
--- from it, and banks a lit fire or stokes it up again. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
+-- the fire; ours, inside vanilla's Hearth submenu, shows the copper and pours a fluid into it, fills a container
+-- from it or empties it, and banks a lit fire or stokes it up again. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
 -- it burns or its copper holds anything. Clicking a Hearth opens Hearth Info too. Mods add their own notes to Hearth
 -- Info with HearthUI.addNotes.
 require "TimedActions/TPHearthCopper"
@@ -26,7 +26,7 @@ local tooltipFor, disableWith, findItems = UI.tooltip, UI.disable, UI.findItems
 
 local function onHearthAction(playerObj, hearth, item, mode)
     if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
-    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item)
+    if item then ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
     ISTimedActionQueue.add(TPHearthCopper:new(playerObj, hearth, item, mode))
 end
 
@@ -114,6 +114,14 @@ local function addFillMenu(menu, playerObj, hearth, copper)
     end
 end
 
+-- Pours the copper away, whatever it holds: rotten milk would otherwise go out a container at a time.
+local function addEmptyOption(menu, playerObj, hearth, copper)
+    local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_EmptyCopper"), playerObj, onHearthAction,
+        hearth, false, "empty")
+    option.iconTexture = getTexture(COPPER_ICON)
+    tooltipFor(option, say("IGUI_TraditionalPreservationCore_EmptyCopperHelp", litresText(copper.ml), holds(copper)))
+end
+
 -- Vanilla gives every fire its own submenu, named after the tile (ISBBQMenu): the copper's options go in there too,
 -- so there is one Hearth menu, not two.
 local function hearthSubMenu(context, hearth)
@@ -140,7 +148,10 @@ local function addHearthMenu(context, playerObj, hearth)
     info.iconTexture = getTexture(HEARTH_ICON)
     addFireOption(menu, playerObj, hearth)
     addPourInMenu(menu, playerObj, hearth, copper)
-    if (copper.ml or 0) > 0 then addFillMenu(menu, playerObj, hearth, copper) end
+    if (copper.ml or 0) > 0 then
+        addFillMenu(menu, playerObj, hearth, copper)
+        addEmptyOption(menu, playerObj, hearth, copper)
+    end
 end
 
 local function onFillContextMenu(playerNum, context, worldobjects, test)

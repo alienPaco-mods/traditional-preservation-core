@@ -147,6 +147,23 @@ fill = named(open(holdsWater), "ContextMenu_TraditionalPreservationCore_FillFrom
 check("with nothing to fill, the option is greyed with the reason", fill.isDisabled == true
     and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_NoRoomItem"))
 
+-- Emptying the copper
+check("an empty copper has nothing to empty", named(open(hearth()), "ContextMenu_TraditionalPreservationCore_EmptyCopper") == nil)
+local rotten = hearth({ ml = 6000, fluid = "RottenCowMilk", tempC = 20, tpFluidAge = { kind = "milk", age = 80 } })
+local emptyIt = named(open(rotten), "ContextMenu_TraditionalPreservationCore_EmptyCopper")
+check("a copper holding anything can be emptied, the hover saying how much of what", emptyIt ~= nil and emptyIt.isDisabled == nil
+    and emptyIt.toolTip.description:find("6.0", 1, true) ~= nil)
+local moved = #ui.moved
+emptyIt.onSelect(character, unpack(emptyIt.args))
+local emptying = ui.queued[#ui.queued]
+check("choosing it queues the emptying, with nothing brought to hand", emptying.Type == "TPHearthCopper"
+    and emptying.mode == "empty" and not emptying.item and emptying.hearth == rotten and #ui.moved == moved)
+check("it takes longer the more there is", emptying.maxTime > 0 and emptying:isValid())
+emptying:complete()
+local left = rotten:getModData()[Hearth.KEY]
+check("done, the copper is empty and its age forgotten", left.ml == nil and left.fluid == nil and left.tpFluidAge == nil
+    and not emptying:isValid())
+
 -- Picking a Hearth up
 local props = {}
 check("a cold, empty Hearth can be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth()) == true)

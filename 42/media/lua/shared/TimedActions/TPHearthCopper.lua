@@ -1,5 +1,6 @@
 -- Traditional Preservation core: the hand jobs at a Hearth's copper. "pourIn" empties a container of one plain
--- fluid into the copper, as much as fits; "fillFrom" fills an empty container, or one of the same fluid, from it.
+-- fluid into the copper, as much as fits; "fillFrom" fills an empty container, or one of the same fluid, from it;
+-- "empty" pours whatever the copper holds away (rotten milk above all), and takes no item.
 -- The copper holds one fluid at a time, or fluids that blend (Hearth.blend). Mods follow the fluid with Hearth.hook
 -- (heatOf, taken, filled).
 require "TimedActions/ISBaseTimedAction"
@@ -28,6 +29,9 @@ end
 TPHearthCopper.canFillFrom = canFillFrom
 
 function TPHearthCopper:isValid()
+    if self.mode == "empty" then
+        return self.hearth:getSquare() ~= nil and (Hearth.stateOf(self.hearth:getModData()).ml or 0) > 0
+    end
     if not self.hearth:getSquare() or not self.character:getInventory():containsRecursive(self.item) then return false end
     local container = self.item:getFluidContainer()
     local copper = Hearth.stateOf(self.hearth:getModData())
@@ -51,6 +55,12 @@ function TPHearthCopper:complete()
     -- Brought up to the minute first, so poured fluid mixes with the copper as it is now.
     local copper = Hearth.copperOf(self.hearth)
     local now = getGameTime():getWorldAgeHours()
+    if self.mode == "empty" then
+        Hearth.take(copper)
+        copper[FluidAgeing.KEY] = nil
+        if Hearth.World then Hearth.World.refresh(self.hearth) end
+        return true
+    end
     local container = self.item:getFluidContainer()
     if self.mode == "pourIn" then
         local parts = Hearth.partsIn(container)
@@ -90,6 +100,9 @@ function TPHearthCopper:perform()
 end
 
 function TPHearthCopper:getDuration()
+    if self.mode == "empty" then
+        return Action.pourDuration(self.character, (Hearth.stateOf(self.hearth:getModData()).ml or 0) / 1000, 10)
+    end
     local container = self.item:getFluidContainer()
     local litres = 0
     if container and self.mode == "pourIn" then litres = container:getAmount() end
@@ -97,6 +110,7 @@ function TPHearthCopper:getDuration()
     return Action.pourDuration(self.character, litres, 10)
 end
 
+-- item is false for "empty".
 function TPHearthCopper:new(character, hearth, item, mode)
     local o = ISBaseTimedAction.new(self, character)
     o.hearth = hearth

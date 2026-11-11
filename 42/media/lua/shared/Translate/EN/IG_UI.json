@@ -9,6 +9,7 @@
   "IGUI_TraditionalPreservationCore_CopperFull": "The copper is full.",
   "IGUI_TraditionalPreservationCore_NoFluidItem": "You have nothing with a fluid in it.",
   "IGUI_TraditionalPreservationCore_NoRoomItem": "You have no empty container, nor one holding the same fluid with room.",
+  "IGUI_TraditionalPreservationCore_EmptyCopperHelp": "Pours away all %1 L of %2. There's no getting it back.",
   "IGUI_TraditionalPreservationCore_InfoFire": "Fire",
   "IGUI_TraditionalPreservationCore_InfoFireLit": "Lit",
   "IGUI_TraditionalPreservationCore_InfoFireOut": "Out",

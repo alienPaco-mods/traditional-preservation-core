@@ -60,6 +60,7 @@ Right-click it. In its **Hearth** submenu you'll find:
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit. See section 5 |
 | **Pour into the Copper** | From any container on you or nearby with a fluid in it |
 | **Fill from the Copper** | Into empty containers, or ones holding the same fluid with room left |
+| **Empty the Copper** | Pours away everything in it at once: for rotten milk, or a fluid you're done with. Longer the more there is |
 
 **Hearth Info** shows:
 

@@ -2,6 +2,7 @@
   "ContextMenu_TraditionalPreservationCore_HearthInfo": "Hearth Info",
   "ContextMenu_TraditionalPreservationCore_PourIntoCopper": "Pour into the Copper",
   "ContextMenu_TraditionalPreservationCore_FillFromCopper": "Fill from the Copper",
+  "ContextMenu_TraditionalPreservationCore_EmptyCopper": "Empty the Copper",
   "ContextMenu_TraditionalPreservationCore_FluidItem": "%1 (%2 L)",
   "ContextMenu_TraditionalPreservationCore_Holds": "%1 (holds %2 L)",
   "ContextMenu_TraditionalPreservationCore_BankFire": "Bank the Fire",

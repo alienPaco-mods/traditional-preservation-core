@@ -83,6 +83,8 @@ Every TP station works by the temperature of the place it stands in, from one we
 | **Under a roof** | Any roof or floor overhead, walls or not | The average outdoor temperature of the last 10 days, plus 10 C, never above 28 C |
 | **Basement** | Any level below ground | 15 C all year |
 
+A mod can ask to tell **covered** from under a roof (`Weather.placeOf(object, true)`; Fish does, for its drying frames): a roof over a square that isn't in a room, such as a porch or an open shed. A room is a map building's, or a space you built with walls all round and every square roofed. Other mods read covered as under a roof.
+
 Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again.
 
 ## Fluids that go off

@@ -30,6 +30,13 @@ local player = object(0, false)
 function player:isOutside() return true end
 check("placeOf: asks the square, not a player", Weather.placeOf(player) == "Sheltered")
 check("placeOf: nothing to stand on is open", Weather.placeOf({ getSquare = function() return nil end }) == "Open")
+local function roofed(inRoom)
+    return { getSquare = function() return { getZ = function() return 0 end, isOutside = function() return false end,
+        isInARoom = function() return inRoom end } end }
+end
+check("placeOf: a porch is covered when asked", Weather.placeOf(roofed(false), true) == "Covered")
+check("placeOf: a room is sheltered when asked", Weather.placeOf(roofed(true), true) == "Sheltered")
+check("placeOf: a porch is sheltered when not asked", Weather.placeOf(roofed(false)) == "Sheltered")
 
 local kinds = { [""] = function(celsius) return celsius >= 10 and 1 or 0.5 end }
 ledger = Weather.newLedger(0, kinds)
@@ -218,6 +225,11 @@ UI.outdoorOnly({ beam_0 = true })
 local inside = { isOutside = function() return false end }
 check("outdoorOnly: refuses an indoor square", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "beam_0" }, nil, inside) == false and not placed)
 check("outdoorOnly: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, inside) and placed)
+UI.notInRooms({ rack_0 = true })
+local porch = { isOutside = function() return false end, isInARoom = function() return false end }
+local room = { isOutside = function() return false end, isInARoom = function() return true end }
+check("notInRooms: takes a porch", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "rack_0" }, nil, porch))
+check("notInRooms: refuses a room", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "rack_0" }, nil, room) == false)
 
 -- offAppliances: an object is instanceof its .class; containers by type.
 instanceof = function(object, class) return object.class == class end

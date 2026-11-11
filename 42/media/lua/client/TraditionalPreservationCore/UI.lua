@@ -298,14 +298,24 @@ function UI.keepInPlace(test)
     table.insert(stayTests, test)
 end
 
+-- Refuses these sprites on a square that fails fits, when a moveable is put down.
+local function placeOnly(sprites, fits)
+    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
+    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
+        if sprites[self.spriteName] and square and not fits(square) then return false end
+        return vanillaCanPlace(self, character, square, item)
+    end
+end
+
 -- Stations built for the open refuse an indoor square, and this stops one being picked up and carried in,
 -- as placing a moveable doesn't run that check. sprites is a set of sprite names.
 function UI.outdoorOnly(sprites)
-    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
-    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
-        if sprites[self.spriteName] and square and not square:isOutside() then return false end
-        return vanillaCanPlace(self, character, square, item)
-    end
+    placeOnly(sprites, function(square) return square:isOutside() end)
+end
+
+-- The same for stations that may stand under a roof (a porch, an open shed) but not in a room.
+function UI.notInRooms(sprites)
+    placeOnly(sprites, function(square) return not square:isInARoom() end)
 end
 
 local APPLIANCES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombinationWasherDryer" }

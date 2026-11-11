@@ -191,7 +191,7 @@ of all:
 | `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, Yeast, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
 | `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (Fish, Vinegar, Yeast, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Fish, Salt) | Outdoor stations can't be carried indoors |
+| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |
@@ -220,7 +220,7 @@ Each mod's art builder (`tools/build_tileset.py`, Yeast's `tools/build_shelf_til
 numbers live. Every run writes `42/media/lua/shared/<Mod>/Tiles.lua` (header: generated, don't edit), and the Lua
 reads it: `local Tiles = require "<Mod>/Tiles"`. Every Tiles.lua has `SHEETS` (prefix and tile count of each
 tileset), `STATIONS` (the sprite names of every workstation face, which the station tracker registers), and where they
-apply `PREFIX`, `FACE_COUNT` and `OUTDOOR` (a set for `UI.outdoorOnly`); the rest is the mod's own: station bases,
+apply `PREFIX`, `FACE_COUNT` and `OUTDOOR` (a set for `UI.outdoorOnly` or `UI.notInRooms`); the rest is the mod's own: station bases,
 overlays, stages, styles, hangers.
 
 1. To renumber or add tiles, change the builder's constants (and its `lua_tiles()` if a new name is needed) and
@@ -265,6 +265,8 @@ day's weather. A roof doesn't follow the hour: thick walls follow the season, so
 days or so plus 10 C, capped at 28 C. A basement is near the year's average all year, so 15 C. Ten days is long
 enough that one warm afternoon in January does nothing, and short enough that spring arrives within a fortnight.
 More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them.
+Fish alone asks for a fourth, Covered (a roof, not a room: `placeOf(object, true)`), because drying fish turns on
+moving air and shade, which a porch has and a room doesn't. The others read it as Sheltered.
 
 **Why override the craft timers?**
 The engine's craft timers tick at the speed of a 60-minute day whatever Day Length says, and stop while the area is

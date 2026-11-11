@@ -1,6 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- `Weather.placeOf(object, withCovered)`: a caller that asks gets "Covered" for a roof over a square that isn't in
+  a room (`not square:isInARoom()`: no map room and no player-built room, i.e. walled all round and fully roofed).
+  Other callers still get "Sheltered" there, so Yeast, Vinegar, Dairy and Salt are unchanged. Fish asks.
+- `UI.notInRooms(sprites)`: like `UI.outdoorOnly`, but refuses only a square in a room, so a station may go under a
+  porch or open-shed roof (Fish's Beam and Gantry).
 - `Weather.showClock` takes an optional speed, for a clock run shorter than its recipe's time (Fish's press by
   the heaviest fish). Default 1, so Salt's leaching is unchanged.
 - A bigger copper (user 2026-11-11, for realism): `Hearth.COPPER_ML` 20 L -> 60 L (real ones 40 to 100 L). Same build

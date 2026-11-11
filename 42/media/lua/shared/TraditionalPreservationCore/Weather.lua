@@ -49,12 +49,16 @@ end
 
 -- Below ground is a basement, under a roof sheltered, anything else open. Asks the square, not the object: a
 -- player's isOutside() only means "not in a room", while the square's exterior flag also clears under a floor
--- with no walls round it, as a station's isOutside() and the game's rain both see.
-function Weather.placeOf(object)
+-- with no walls round it, as a station's isOutside() and the game's rain both see. A mod that asks for it
+-- (withCovered) gets "Covered" for a roof that isn't a room: a porch, an open shed. The rest read that as sheltered.
+function Weather.placeOf(object, withCovered)
     local square = object and object:getSquare()
     if not square then return "Open" end
     if square:getZ() < 0 then return "Basement" end
-    if not square:isOutside() then return "Sheltered" end
+    if not square:isOutside() then
+        if withCovered and not square:isInARoom() then return "Covered" end
+        return "Sheltered"
+    end
     return "Open"
 end
 

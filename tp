@@ -19,7 +19,7 @@
                                 a new mod TraditionalPreservation<Name> from template/: requires TP Core, art built, golden
                                 season report recorded, guide stub in guides/, git initialised, tests run
 
-MOD is a folder name or its short form: Core, Salt, Fish, Yeast, Vinegar, Dairy, SaltLTP, FuelBarrel.
+MOD is a folder name or its short form: Core, Salt, FishMeat (or Fish), Yeast, Vinegar, Dairy, SaltLTP, FuelBarrel.
 TP Core (this folder) is a mod too: the others require it, and install ships only its 42/ folder.
 """
 import datetime
@@ -43,6 +43,8 @@ PREFIX = "TraditionalPreservation"
 # Never shipped: version control and Python caches.
 SKIP_NAMES = {".git", "__pycache__", ".gitignore"}
 SKIP_SUFFIXES = {".pyc"}
+# Old short forms that still work: Fish became Fish & Meat (0.4.0).
+ALIASES = {"Fish": "FishMeat", PREFIX + "Fish": PREFIX + "FishMeat"}
 
 
 def all_mods():
@@ -58,6 +60,7 @@ def resolve(names):
         return mods
     found = []
     for name in names:
+        name = ALIASES.get(name, name)
         for candidate in (name, PREFIX + name):
             if candidate in mods:
                 found.append(candidate)
@@ -492,7 +495,7 @@ TEMPLATE = CORE / "template"
 
 
 def console_names():
-    """The Dev console tables the mods already use (TPS, TPF, ...)."""
+    """The Dev console tables the mods already use (TPS, TPFM, ...)."""
     names = set()
     for dev in MODS.glob("*/42/media/lua/client/*Dev.lua"):
         names.update(re.findall(r"^(TP[A-Z]+) = ", dev.read_text(errors="replace"), re.M))

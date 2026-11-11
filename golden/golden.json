@@ -2,7 +2,7 @@
   "TraditionalPreservationDairy": [
     "tools/season_report.lua"
   ],
-  "TraditionalPreservationFish": [
+  "TraditionalPreservationFishMeat": [
     "tools/season_report.lua",
     "tools/storage_model.lua"
   ],

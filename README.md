@@ -95,7 +95,6 @@ In debug mode, `TPC.help()` in the Lua console lists the Hearth's commands. They
 ## Known prototype caveats
 
 - While a Hearth's area is unloaded, its copper heats only as far as the fuel it had when last seen would have lasted, then cools.
-- The copper can't be emptied in one go: fill containers from it. An Empty Copper option is planned.
 - Cooking in a banked firebox is slowed only while the area is loaded, which is also the only time vanilla cooks.
 - The tiledef number 5173 must be unique among your active mods.
 - Multiplayer is not supported. This mod is singleplayer only for now.

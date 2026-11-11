@@ -1,6 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- `UI.itemName(item)` and `UI.nameHook(fn)`: an item's name in a menu, vanilla's unless a mod has a say. The Hearth's
+  Pour into and Fill from the Copper menus use it (Dairy names wrapped pots).
+- `Station.hotContainers(square, radius, heat, fn)`: every item container at a vanilla temperature or hotter near a
+  square. `FluidAgeing.lookOnHeat` uses it; Dairy uses it to burn wraps left on the heat.
 - Banked Hearth (user 2026-11-11): vanilla's fire is put out while banked, since its room heat and light reach 8 tiles
   whatever the fuel. In its place the mod adds its own heat source (2 tiles, 25 C), a faint light (radius 1) and a hot
   firebox (custom container temperature 1.8, cooking slowed to a third as before); none is saved by the game, so each

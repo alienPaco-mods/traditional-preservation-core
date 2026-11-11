@@ -81,7 +81,7 @@ local function addPourInMenu(menu, playerObj, hearth, copper)
     menu:addSubMenu(option, sub)
     for _, item in ipairs(items) do
         local container = item:getFluidContainer()
-        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", item:getDisplayName(),
+        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", UI.itemName(item),
             litresText(container:getAmount() * 1000)), playerObj, onHearthAction, hearth, item, "pourIn")
         -- Drawn as the inventory draws it: a bucket shows the colour of what is in it.
         entry.itemForTexture = item
@@ -111,7 +111,7 @@ local function addFillMenu(menu, playerObj, hearth, copper)
     local sub = menu:getNew(menu)
     menu:addSubMenu(option, sub)
     for _, item in ipairs(items) do
-        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_Holds", item:getDisplayName(),
+        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_Holds", UI.itemName(item),
             litresText(item:getFluidContainer():getCapacity() * 1000)), playerObj, onHearthAction, hearth, item, "fillFrom")
         entry.itemForTexture = item
     end

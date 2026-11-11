@@ -16,6 +16,7 @@
 -- record, so pouring never makes milk young. Sealed items (store milk) keep their own fluid without a record; poured
 -- out, it counts as scalded. Every rule here works on plain tables; the engine parts are at the end.
 local Weather = require "TraditionalPreservationCore/Weather"
+local Station = require "TraditionalPreservationCore/Station"
 
 local FluidAgeing = {}
 
@@ -366,21 +367,8 @@ FluidAgeing.HEAT_RADIUS = 8
 -- a square on its level, so milk left on the heat scalds with nobody looking at it.
 function FluidAgeing.lookOnHeat(square, now)
     local heat = FluidAgeing.lowestScaldHeat()
-    if not heat or not square then return end
-    local cell, r = getCell(), FluidAgeing.HEAT_RADIUS
-    for dx = -r, r do
-        for dy = -r, r do
-            local there = cell:getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
-            local objects = there and there:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                for c = 0, object:getContainerCount() - 1 do
-                    local container = object:getContainerByIndex(c)
-                    if container:getTemperature() >= heat then FluidAgeing.lookIn(container, now) end
-                end
-            end
-        end
-    end
+    if not heat then return end
+    Station.hotContainers(square, FluidAgeing.HEAT_RADIUS, heat, function(container) FluidAgeing.lookIn(container, now) end)
 end
 
 return FluidAgeing

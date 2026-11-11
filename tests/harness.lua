@@ -222,7 +222,10 @@ function H.vessel(name, fluid, litres, capacity, more)
         getDisplayName = function() return name end,
         getTex = function() return name .. ".png" end,
         isFavorite = function() return false end,
+        getFullType = function() return "Base." .. name:gsub("%W", "") end,
     }
+    local modData = {}
+    item.getModData = function() return modData end
     for key, value in pairs(more or {}) do item[key] = value end
     return item
 end

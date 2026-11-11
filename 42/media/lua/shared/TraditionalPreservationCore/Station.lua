@@ -51,6 +51,26 @@ function Station.players()
     return list
 end
 
+-- Calls fn(container, object) for every item container at heat or hotter (vanilla's container temperature: 1.0 is
+-- cold, a lit stove or fire more) on any object within radius tiles of square on its level.
+function Station.hotContainers(square, radius, heat, fn)
+    if not square then return end
+    local cell = getCell()
+    for dx = -radius, radius do
+        for dy = -radius, radius do
+            local there = cell:getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
+            local objects = there and there:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do
+                local object = objects:get(i)
+                for c = 0, object:getContainerCount() - 1 do
+                    local container = object:getContainerByIndex(c)
+                    if container:getTemperature() >= heat then fn(container, object) end
+                end
+            end
+        end
+    end
+end
+
 -- A station just built or put down isn't known to the map loader. For the trackers that ask (options.scan), the
 -- squares round each player are looked over twice a second, once for all of them, so a new one shows at once.
 local scanning = {}

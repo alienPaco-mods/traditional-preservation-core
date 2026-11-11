@@ -33,6 +33,22 @@ function UI.timeText(hours, key)
     return UI.say(key, string.format("%.0f", math.floor(whole / 24)), string.format("%.0f", whole % 24))
 end
 
+-- An item's name in a menu: vanilla's, unless a mod has a say (UI.nameHook): Dairy names a wrapped pot "Wrapped
+-- Cooking Pot", which vanilla's display name never shows.
+local NAME_HOOKS = {}
+
+function UI.nameHook(fn)
+    table.insert(NAME_HOOKS, fn)
+end
+
+function UI.itemName(item)
+    for _, fn in ipairs(NAME_HOOKS) do
+        local name = fn(item)
+        if name then return name end
+    end
+    return item:getDisplayName()
+end
+
 -- Millilitres as litres to one decimal: 2500 -> "2.5".
 function UI.litres(ml)
     return string.format("%.1f", ml / 1000)

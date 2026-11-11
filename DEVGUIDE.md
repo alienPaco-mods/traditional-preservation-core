@@ -210,6 +210,7 @@ of all:
 | `ISInventoryTransferAction.transferItem` | core `FluidAgeingUI`; Dairy `UI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
 | `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yoghurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
+| `ISEatFoodAction.complete`, `serverStop` | Fish & Meat `...Potted` | A Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives its Clay Jar or Clay Pot back |
 | `ISCampingMenu.doLightFireOption` | core `HearthUI` | A banked Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `HearthLootControls` | The same in the loot window's buttons |
 | `ISTakeGenerator.isValid` | FuelBarrel `ISFuelBarrelHose` | A generator with a barrel can't be picked up |

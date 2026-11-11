@@ -196,7 +196,9 @@ of all:
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (Vinegar, the Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit or holds fluid, and the cursor says why |
 | `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Hearth) | Clicking a cask, a Hearth, an incubator or a crock opens its info window |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
-| `ISFluidTransferAction.start` | core `FluidAgeingWorld` (Dairy's milk) | Poured fluid takes the source's age (older wins) |
+| `ISFluidTransferAction.start`, `stop`, `complete` | core `FluidAgeingWorld` (Dairy's milk) | Poured fluid takes the source's age (older wins); both ends are looked at as it ends, so names change at once |
+| `ISFluidTransferAction.start`, `stop`, `complete` | Dairy `World` | Poured milk carries its heat record (`tpdCarry`) over, mixed by volume |
+| `ISInventoryTransferAction.transferItem` | core `FluidAgeingUI`; Dairy `UI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
 | `ISTakeGenerator.isValid` | FuelBarrel `ISFuelBarrelHose` | A generator with a barrel can't be picked up |
 | `ISGeneratorInfoWindow.getRichText` | FuelBarrel `...Menu` | Barrel level in the generator's info |

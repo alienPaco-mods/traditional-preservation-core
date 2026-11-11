@@ -23,6 +23,7 @@ local spec = FluidAgeing.register({
     spoilHours = 72,
     fresh = { CowMilk = "SourCowMilk", SheepMilk = "SourSheepMilk" },
     spoiled = { CowMilk = "RottenCowMilk", SheepMilk = "RottenSheepMilk" },
+    scalded = { CowMilk = "ScaldedCowMilk", SheepMilk = "ScaldedSheepMilk" },
     sealed = { ["Base.Milk"] = true },
     getLedger = function() return ledger end,
     enabled = function() return on end,
@@ -53,10 +54,10 @@ end
 check("fresh milk is fresh", FluidAgeing.stage({ age = 35 }, spec) == "Fresh")
 check("raw milk turns at 36", FluidAgeing.stage({ age = 36 }, spec) == "Turned")
 check("and spoils at 72", FluidAgeing.stage({ age = 72 }, spec) == "Spoiled")
-check("steamed milk never turns", FluidAgeing.stage({ age = 50, steamed = true }, spec) == "Fresh")
-check("but spoils at the same age", FluidAgeing.stage({ age = 72, steamed = true }, spec) == "Spoiled")
+check("scalded milk never turns", FluidAgeing.stage({ age = 50, scalded = true }, spec) == "Fresh")
+check("but spoils at the same age", FluidAgeing.stage({ age = 72, scalded = true }, spec) == "Spoiled")
 check("hours left: to souring when raw", FluidAgeing.hoursLeft({ age = 30 }, spec) == 6)
-check("to spoiling when steamed", FluidAgeing.hoursLeft({ age = 30, steamed = true }, spec) == 42)
+check("to spoiling when scalded", FluidAgeing.hoursLeft({ age = 30, scalded = true }, spec) == 42)
 
 -- Catching up by place
 local record = FluidAgeing.newRecord(spec, ledger, 0, "Basement")
@@ -81,8 +82,8 @@ speed = 1
 
 -- Mixing
 check("the older age wins", FluidAgeing.merge({ age = 5 }, { age = 40 }).age == 40)
-check("raw milk makes steamed raw", FluidAgeing.merge({ age = 5, steamed = true }, { age = 1 }).steamed == nil)
-check("steamed into steamed stays steamed", FluidAgeing.merge({ age = 5, steamed = true }, { age = 1, steamed = true }).steamed)
+check("raw milk makes scalded raw", FluidAgeing.merge({ age = 5, scalded = true }, { age = 1 }).scalded == nil)
+check("scalded into scalded stays scalded", FluidAgeing.merge({ age = 5, scalded = true }, { age = 1, scalded = true }).scalded)
 
 -- Looking: records, swaps
 local bucket = item({ CowMilk = 3, SheepMilk = 1 })
@@ -116,11 +117,11 @@ local carton = item({ CowMilk = 1 }, "Base.Milk")
 check("a sealed carton keeps with no record", FluidAgeing.look(carton, 0) == nil and carton.md.tpFluidAge == nil)
 local jug = item({})
 FluidAgeing.pour(carton, jug, 0)
-check("poured out, store milk counts as steamed", jug.md.tpFluidAge and jug.md.tpFluidAge.steamed and jug.md.tpFluidAge.age == 0)
+check("poured out, store milk counts as scalded", jug.md.tpFluidAge and jug.md.tpFluidAge.scalded and jug.md.tpFluidAge.age == 0)
 local old = item({ CowMilk = 1 })
 old.md.tpFluidAge = { kind = "milk", age = 20, place = "Sheltered", hour = 0, marks = { Sheltered = ledger.milkSheltered } }
 FluidAgeing.pour(old, carton, 0)
-check("raw milk poured into a carton ages there", carton.md.tpFluidAge and carton.md.tpFluidAge.age == 20 and not carton.md.tpFluidAge.steamed)
+check("raw milk poured into a carton ages there", carton.md.tpFluidAge and carton.md.tpFluidAge.age == 20 and not carton.md.tpFluidAge.scalded)
 
 -- Pouring
 local empty = item({})
@@ -150,9 +151,57 @@ FluidAgeing.receive(copper, { kind = "milk", age = 3, marks = {} }, true, "Shelt
 check("and the older age when more is poured onto it", copper.tpFluidAge.age == 12)
 local pail = item({ CowMilk = 1 })
 FluidAgeing.receive(pail:getModData(), out, false, "Sheltered")
-FluidAgeing.markSteamed(pail, 0)
-check("drawn steaming, it is steamed", pail.md.tpFluidAge.steamed and pail.md.tpFluidAge.age == 12)
+FluidAgeing.markScalded(pail, 0)
+check("drawn steaming, it is scalded, and renamed so", pail.md.tpFluidAge.scalded and pail.md.tpFluidAge.age == 12
+    and pail.fc.fluids.ScaldedCowMilk == 1 and pail.fc.fluids.CowMilk == nil)
 check("an empty copper has no age to give", FluidAgeing.copperRecord({ ml = 0, tpFluidAge = { kind = "milk", age = 1 } }, 0, "Open") == nil)
+
+-- Scalded milk in containers
+local jar = item({ ScaldedCowMilk = 1 })
+check("scalded milk seen for the first time is scalded", FluidAgeing.look(jar, 0).scalded and jar.fc.fluids.ScaldedCowMilk == 1)
+local mixed = item({ ScaldedCowMilk = 1, CowMilk = 0.5 })
+mixed.md.tpFluidAge = { kind = "milk", age = 4, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+FluidAgeing.look(mixed, 0, "Sheltered")
+check("with raw milk in it, scalded is plain milk again", mixed.fc.fluids.CowMilk == 1.5 and mixed.fc.fluids.ScaldedCowMilk == nil)
+local turned = item({ ScaldedSheepMilk = 1 })
+turned.md.tpFluidAge = { kind = "milk", age = 40, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+FluidAgeing.look(turned, 0, "Sheltered")
+check("raw again past souring age, it sours", turned.fc.fluids.SourSheepMilk == 1)
+local storeJug = item({ CowMilk = 1 })
+storeJug.md.tpFluidAge = { kind = "milk", age = 0, scalded = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+FluidAgeing.look(storeJug, 0, "Sheltered")
+check("store milk poured out is scalded", storeJug.fc.fluids.ScaldedCowMilk == 1)
+check("nameAt: rotten stays rotten", FluidAgeing.nameAt(spec, "Fresh", "RottenCowMilk", true) == "RottenCowMilk")
+check("nameAt: soured is never scalded", FluidAgeing.nameAt(spec, "Fresh", "SourCowMilk", true) == "SourCowMilk")
+
+local oldJug = item({ CowMilk = 1 })
+oldJug.md.tpFluidAge = { kind = "milk", age = 50, steamed = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+FluidAgeing.look(oldJug, 0, "Sheltered")
+check("a record from before the rename (steamed) reads as scalded", oldJug.md.tpFluidAge.scalded and oldJug.md.tpFluidAge.steamed == nil
+    and oldJug.fc.fluids.ScaldedCowMilk == 1)
+
+-- Scalding on a stove or a fire: the item's own heat
+spec.scaldHeat = 1.5
+local onStove = item({ CowMilk = 2 })
+onStove.heat = 1.6
+function onStove:getItemHeat() return self.heat end
+check("milk first seen on the heat is scalded", FluidAgeing.look(onStove, 0, "Sheltered").scalded and onStove.fc.fluids.ScaldedCowMilk == 2)
+local warming = item({ SheepMilk = 1 })
+warming.heat = 1.2
+function warming:getItemHeat() return self.heat end
+FluidAgeing.look(warming, 0, "Sheltered")
+check("warm is not enough", not warming.md.tpFluidAge.scalded and warming.fc.fluids.SheepMilk == 1)
+warming.heat = 1.55
+FluidAgeing.look(warming, 0, "Sheltered")
+check("brought to the steam later, it scalds", warming.md.tpFluidAge.scalded and warming.fc.fluids.ScaldedSheepMilk == 1)
+local soured = item({ SourCowMilk = 1 })
+soured.md.tpFluidAge = { kind = "milk", age = 40, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+soured.heat = 2
+function soured:getItemHeat() return self.heat end
+FluidAgeing.look(soured, 0, "Sheltered")
+check("soured milk boiled stays soured", soured.fc.fluids.SourCowMilk == 1 and not soured.md.tpFluidAge.scalded)
+check("the lowest scalding heat", FluidAgeing.lowestScaldHeat() == 1.5)
+spec.scaldHeat = nil
 
 -- Milk left in the copper turns there too
 local cold = { ml = 4000, fluid = "CowMilk", parts = { CowMilk = 3000, SheepMilk = 1000 } }
@@ -176,7 +225,39 @@ FluidAgeing.receive(hotCopper, { kind = "milk", age = 30, place = "Sheltered", m
 FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", true)
 pass("Sheltered", 10)
 FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", false)
-check("milk steamed in the copper doesn't sour there", hotCopper.tpFluidAge.steamed and hotCopper.fluid == "CowMilk")
+check("milk scalded in the copper doesn't sour there, and is scalded", hotCopper.tpFluidAge.scalded
+    and hotCopper.fluid == "ScaldedCowMilk")
+check("raw milk poured onto old scalded milk sours it all", (function()
+    FluidAgeing.receive(hotCopper, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
+    hotCopper.parts = { ScaldedCowMilk = 1000, CowMilk = 500 }
+    FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", false)
+    return hotCopper.fluid == "SourCowMilk" and hotCopper.parts == nil
+end)())
+local youngCopper = { ml = 1500, fluid = "ScaldedCowMilk", parts = { ScaldedCowMilk = 1000, CowMilk = 500 } }
+FluidAgeing.receive(youngCopper, { kind = "milk", age = 2, scalded = true, marks = {} }, false, "Sheltered")
+FluidAgeing.receive(youngCopper, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
+FluidAgeing.updateCopper(youngCopper, 0, "Sheltered", false)
+check("raw milk poured onto it makes it all plain again", youngCopper.fluid == "CowMilk" and youngCopper.parts == nil
+    and not youngCopper.tpFluidAge.scalded)
+local blendCopper = { ml = 2000, fluid = "CowMilk", parts = { CowMilk = 1500, SheepMilk = 500 } }
+FluidAgeing.receive(blendCopper, { kind = "milk", age = 0, marks = {} }, false, "Sheltered")
+FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", true)
+check("a steaming blend scalds each milk", blendCopper.fluid == "ScaldedCowMilk" and blendCopper.parts.ScaldedSheepMilk == 500)
+pass("Sheltered", 80)
+FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", false)
+check("and scalded milk spoils to its own milk's rotten one", blendCopper.fluid == "RottenCowMilk"
+    and blendCopper.parts.RottenSheepMilk == 500)
+local cooled = { ml = 1000, fluid = "ScaldedCowMilk" }
+FluidAgeing.receive(cooled, { kind = "milk", age = 2, scalded = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
+FluidAgeing.updateCopper(cooled, 0, "Sheltered", false)
+check("cooled, scalded milk stays scalded", cooled.fluid == "ScaldedCowMilk")
+local debugCopper = { ml = 5000, fluid = "CowMilk" }
+FluidAgeing.updateCopper(debugCopper, 0, "Sheltered", true)
+check("milk in a copper with no record starts one, and scalds", debugCopper.tpFluidAge and debugCopper.tpFluidAge.age == 0
+    and debugCopper.fluid == "ScaldedCowMilk")
+local waterCopper = { ml = 5000, fluid = "Water" }
+check("water in the copper gets no record", FluidAgeing.updateCopper(waterCopper, 0, "Sheltered", true) == nil
+    and waterCopper.tpFluidAge == nil)
 local drained = { ml = 0, tpFluidAge = { kind = "milk", age = 5 } }
 FluidAgeing.updateCopper(drained, 0, "Sheltered", false)
 check("an emptied copper forgets the age", drained.tpFluidAge == nil)

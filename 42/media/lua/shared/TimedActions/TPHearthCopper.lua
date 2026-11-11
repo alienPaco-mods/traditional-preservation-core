@@ -76,7 +76,7 @@ function TPHearthCopper:complete()
                 hadC = hadC, now = now, character = self.character })
             if age then
                 FluidAgeing.receive(self.item:getModData(), age, hadMl > 0, FluidAgeing.placeOfItem(self.item))
-                if hot then FluidAgeing.markSteamed(self.item, now) end
+                if hot then FluidAgeing.markScalded(self.item, now) end
             end
         end
         if (copper.ml or 0) <= 0 then copper[FluidAgeing.KEY] = nil end

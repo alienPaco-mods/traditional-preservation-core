@@ -45,7 +45,8 @@ function Hearth.isFirePlace(place)
 end
 
 -- The copper
-Hearth.COPPER_ML = 10000
+Hearth.COPPER_ML = 20000
+Hearth.TAU_ML = 10000              -- the litres the time constants below are for; more heats and cools slower
 Hearth.MAX_C = 95                  -- over a fire; nothing in it quite boils
 Hearth.HOT_C = 85                  -- steaming
 Hearth.LIT_TAU = 0.75              -- hours, for 10 L over a lit fire: 20 to 85 C in about an hour and a half
@@ -91,7 +92,7 @@ end
 
 function Hearth.copperTau(ml, lit)
     local base = lit and Hearth.LIT_TAU or Hearth.OUT_TAU
-    return base * (math.max(ml, Hearth.FLOOR_ML) / Hearth.COPPER_ML) ^ (1 / 3)
+    return base * (math.max(ml, Hearth.FLOOR_ML) / Hearth.TAU_ML) ^ (1 / 3)
 end
 
 -- Fluids that may share the copper, as a cow's and a sheep's milk do: a mod names each group. Anything else is

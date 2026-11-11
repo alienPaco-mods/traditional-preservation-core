@@ -6,24 +6,27 @@
 -- counts at FRIDGE_C by the clock, a powered freezer not at all.
 --
 -- Stages: Fresh, then Turned (each fresh fluid swapped for its twin: soured milk) at turnHours, then Spoiled (each
--- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours. A steamed record never turns: scalding kills what
--- would sour it, so it stays fresh until spoilHours and then spoils.
+-- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours. A scalded record never turns: scalding kills what
+-- would sour it, so it stays fresh until spoilHours and then spoils. A kind may name a scalded twin for each fresh fluid
+-- (Cow's Milk (Scalded)): while a fresh record is scalded its fresh fluids go by that name, and by the plain one again once
+-- raw is mixed in. A kind may also name a scalding heat (scaldHeat, vanilla item heat): fluid seen in an item that hot,
+-- on a stove or a fire, is scalded from then on, as vanilla's boiling makes tainted water clean.
 --
 -- Pouring: the older age wins, and a raw share makes the whole lot raw again. An empty container takes the source's
 -- record, so pouring never makes milk young. Sealed items (store milk) keep their own fluid without a record; poured
--- out, it counts as steamed. Every rule here works on plain tables; the engine parts are at the end.
+-- out, it counts as scalded. Every rule here works on plain tables; the engine parts are at the end.
 local Weather = require "TraditionalPreservationCore/Weather"
 
 local FluidAgeing = {}
 
--- Save key: never rename it once the mod is out. Inside: kind, age, steamed, place, marks, hour.
+-- Save key: never rename it once the mod is out. Inside: kind, age, scalded, place, marks, hour.
 FluidAgeing.KEY = "tpFluidAge"
 FluidAgeing.FRIDGE = "Fridge"
 FluidAgeing.FREEZER = "Freezer"
 FluidAgeing.FRIDGE_C = 4
 
 -- spec = { kind, rate(celsius), turnHours, spoilHours, fresh = { name = twin }, spoiled = { fresh name = spoiled },
---          sealed = { fullType = true }, getLedger(), enabled(), speed() }. enabled and speed are asked each time, so
+--          scalded = { fresh name = scalded }, scaldHeat (both optional), sealed = { fullType = true }, getLedger(), enabled(), speed() }. enabled and speed are asked each time, so
 --          the sandbox can change them.
 local specs = {}
 local byFluid = {}
@@ -31,11 +34,16 @@ local byFluid = {}
 function FluidAgeing.register(spec)
     specs[spec.kind] = spec
     -- What each of the kind's fluids ends as: a fresh fluid, its twin and its spoiled one all end as the spoiled one.
-    spec.spoiledOf = {}
+    -- A scalded fluid ends the same way, and goes back to its plain one (plainOf) when raw is mixed in.
+    spec.spoiledOf, spec.plainOf = {}, {}
     for fresh, twin in pairs(spec.fresh) do
         local spoiled = spec.spoiled[fresh]
         byFluid[fresh], byFluid[twin], byFluid[spoiled] = spec, spec, spec
         spec.spoiledOf[fresh], spec.spoiledOf[twin], spec.spoiledOf[spoiled] = spoiled, spoiled, spoiled
+        local scalded = spec.scalded and spec.scalded[fresh]
+        if scalded then
+            byFluid[scalded], spec.spoiledOf[scalded], spec.plainOf[scalded] = spec, spoiled, fresh
+        end
     end
     return spec
 end
@@ -56,7 +64,7 @@ end
 -- Fresh, Turned or Spoiled.
 function FluidAgeing.stage(record, spec)
     if record.age >= spec.spoilHours then return "Spoiled" end
-    if not record.steamed and record.age >= spec.turnHours then return "Turned" end
+    if not record.scalded and record.age >= spec.turnHours then return "Turned" end
     return "Fresh"
 end
 
@@ -64,26 +72,28 @@ end
 function FluidAgeing.hoursLeft(record, spec)
     local stage = FluidAgeing.stage(record, spec)
     if stage == "Spoiled" then return nil end
-    local next = stage == "Fresh" and not record.steamed and spec.turnHours or spec.spoilHours
+    local next = stage == "Fresh" and not record.scalded and spec.turnHours or spec.spoilHours
     return next - record.age
 end
 
 -- A new record: nothing done yet, marked on the ledger now.
-function FluidAgeing.newRecord(spec, ledger, now, place, steamed)
-    return { kind = spec.kind, age = 0, steamed = steamed or nil, place = place, hour = now,
+function FluidAgeing.newRecord(spec, ledger, now, place, scalded)
+    return { kind = spec.kind, age = 0, scalded = scalded or nil, place = place, hour = now,
         marks = Weather.mark({}, ledger, spec.kind) }
 end
 
 function FluidAgeing.copy(record)
     local marks = {}
     for k, v in pairs(record.marks or {}) do marks[k] = v end
-    return { kind = record.kind, age = record.age, steamed = record.steamed, place = record.place, hour = record.hour,
+    return { kind = record.kind, age = record.age, scalded = record.scalded, place = record.place, hour = record.hour,
         marks = marks }
 end
 
 -- Brings the record up to now: the time since it was last seen counts at the place it was seen in then. place is
 -- where it is now, and counts from here on.
 function FluidAgeing.advance(record, spec, ledger, now, place)
+    -- Records from test builds before the rename say steamed.
+    if record.steamed ~= nil then record.scalded, record.steamed = record.scalded or record.steamed, nil end
     local was, work = record.place, 0
     if was == FluidAgeing.FRIDGE then
         work = math.max(now - (record.hour or now), 0) * spec.rate(FluidAgeing.FRIDGE_C)
@@ -97,10 +107,10 @@ function FluidAgeing.advance(record, spec, ledger, now, place)
     return record
 end
 
--- into takes from: the older age, and steamed only while both were.
+-- into takes from: the older age, and scalded only while both were.
 function FluidAgeing.merge(into, from)
     into.age = math.max(into.age, from.age)
-    into.steamed = (into.steamed and from.steamed) or nil
+    into.scalded = (into.scalded and from.scalded) or nil
     return into
 end
 
@@ -136,20 +146,34 @@ local function swap(container, from, to, amount)
     container:addFluid(to, amount)
 end
 
--- The name a fluid goes by at a stage: a fresh fluid's twin once turned, its spoiled fluid once spoiled.
-local function nameAt(spec, stage, name)
+-- The name a fluid goes by at a stage: a fresh fluid's twin once turned, its spoiled fluid once spoiled; while fresh,
+-- its scalded twin when the record is scalded and its plain one when not.
+local function nameAt(spec, stage, name, scalded)
     if stage == "Spoiled" then return spec.spoiledOf[name] or name end
-    if stage == "Turned" and spec.fresh[name] then return spec.fresh[name] end
-    return name
+    local plain = spec.plainOf[name] or name
+    if stage == "Turned" then return spec.fresh[plain] or name end
+    if scalded and spec.scalded then return spec.scalded[plain] or name end
+    return plain
+end
+FluidAgeing.nameAt = nameAt
+
+-- True if the fresh fluid in found ({ name = litres }) is all scalded: it came from a copper steaming, so a container
+-- seen for the first time with it is scalded.
+local function allScalded(spec, found)
+    local any = false
+    for name in pairs(found) do
+        if spec.fresh[name] then return false end
+        if spec.plainOf[name] then any = true end
+    end
+    return any
 end
 
 -- Swaps the fluids for the record's stage. Returns true if anything changed.
 function FluidAgeing.apply(container, record, spec)
     local stage = FluidAgeing.stage(record, spec)
-    if stage == "Fresh" then return false end
     local changed = false
     for name, amount in pairs(FluidAgeing.amounts(container, spec)) do
-        local target = nameAt(spec, stage, name)
+        local target = nameAt(spec, stage, name, record.scalded)
         if target ~= name then
             swap(container, name, target, amount)
             changed = true
@@ -182,6 +206,11 @@ local function placeOfOwner(owner)
     return Weather.placeOf(owner)
 end
 
+-- True if the owner is an item as hot as the kind scalds at (on a stove or a fire: an item's heat follows what holds it).
+local function scalding(owner, spec)
+    return spec.scaldHeat ~= nil and instanceof(owner, "InventoryItem") and owner:getItemHeat() >= spec.scaldHeat
+end
+
 local function isSealed(owner, spec)
     return spec.sealed and instanceof(owner, "InventoryItem") and spec.sealed[owner:getFullType()] or false
 end
@@ -202,17 +231,20 @@ function FluidAgeing.look(owner, now, place)
     local ledger = spec.getLedger()
     if not record or record.kind ~= spec.kind then
         if isSealed(owner, spec) then return nil end
-        record = FluidAgeing.newRecord(spec, ledger, now, place)
+        local scalded = allScalded(spec, (FluidAgeing.amounts(container, spec))) or scalding(owner, spec)
+        record = FluidAgeing.newRecord(spec, ledger, now, place, scalded or nil)
         modData[FluidAgeing.KEY] = record
+        if scalded then FluidAgeing.apply(container, record, spec) end
         return record, spec
     end
     FluidAgeing.advance(record, spec, ledger, now, place)
+    if scalding(owner, spec) and FluidAgeing.stage(record, spec) == "Fresh" then record.scalded = true end
     FluidAgeing.apply(container, record, spec)
     return record, spec
 end
 
 -- The age of the fluid leaving an owner, brought up to now: its record, or for a sealed item (store milk) a new
--- steamed one, since it was pasteurised. Nil when it holds none of a kind's fluid. Call it before the fluid leaves.
+-- scalded one, since it was pasteurised. Nil when it holds none of a kind's fluid. Call it before the fluid leaves.
 function FluidAgeing.sourceRecord(source, now)
     local record, spec = FluidAgeing.look(source, now)
     if record then return FluidAgeing.copy(record), spec end
@@ -236,33 +268,43 @@ end
 
 -- Brings what a copper's state ({ ml, fluid, parts }, Hearth's) holds up to now at the Hearth's place and renames
 -- its fluids for their stage, as a container's are swapped, so turned milk in the copper is no longer milk to
--- anything that reads it. Milk in a steaming copper (hot) is scalded: steamed from then on. An empty copper forgets.
+-- anything that reads it. Milk in a steaming copper (hot) is scalded from then on, and renamed so; raw milk
+-- poured onto it makes it plain again. An empty copper forgets; one holding a kind's fluid with no record (filled before
+-- the kind aged, or by a debug command) starts one.
 function FluidAgeing.updateCopper(copper, now, place, hot)
     local record = copper[FluidAgeing.KEY]
     if (copper.ml or 0) <= 0 then
         copper[FluidAgeing.KEY] = nil
         return nil
     end
-    local spec = record and specs[record.kind]
+    if not record then
+        local found = copper.parts or { [copper.fluid or ""] = copper.ml }
+        local spec = copper.fluid and byFluid[copper.fluid]
+        if not spec or not isOn(spec) then return nil end
+        record = FluidAgeing.newRecord(spec, spec.getLedger(), now, place, allScalded(spec, found) or nil)
+        copper[FluidAgeing.KEY] = record
+    end
+    local spec = specs[record.kind]
     if not spec or not isOn(spec) then return nil end
     FluidAgeing.advance(record, spec, spec.getLedger(), now, place)
     local stage = FluidAgeing.stage(record, spec)
-    if hot and stage == "Fresh" then record.steamed = true end
-    if stage == "Fresh" then return record, spec end
+    if hot and stage == "Fresh" then record.scalded = true end
     if copper.parts then
-        local parts, count, most = {}, 0, nil
+        local parts, count, most, changed = {}, 0, nil, false
         for name, part in pairs(copper.parts) do
-            local renamed = nameAt(spec, stage, name)
+            local renamed = nameAt(spec, stage, name, record.scalded)
             if not parts[renamed] then count = count + 1 end
             parts[renamed] = (parts[renamed] or 0) + part
+            changed = changed or renamed ~= name
         end
+        if not changed then return record, spec end
         for name, part in pairs(parts) do
             if not most or part > parts[most] or (part == parts[most] and name < most) then most = name end
         end
         copper.parts = count > 1 and parts or nil
         copper.fluid = most
     elseif copper.fluid then
-        copper.fluid = nameAt(spec, stage, copper.fluid)
+        copper.fluid = nameAt(spec, stage, copper.fluid, record.scalded)
     end
     return record, spec
 end
@@ -289,20 +331,56 @@ function FluidAgeing.clearIfEmpty(owner)
     end
 end
 
--- Marks the fluid an owner holds as steamed (drawn hot from the Hearth's copper): a fresh record, or the one it has.
-function FluidAgeing.markSteamed(owner, now)
-    local record = FluidAgeing.look(owner, now)
-    if record and FluidAgeing.stage(record, FluidAgeing.spec(record.kind)) == "Fresh" then record.steamed = true end
+-- Marks the fluid an owner holds as scalded (drawn hot from the Hearth's copper): a fresh record, or the one it has.
+-- Its fresh fluids are renamed to their scalded twins.
+function FluidAgeing.markScalded(owner, now)
+    local record, spec = FluidAgeing.look(owner, now)
+    if record and FluidAgeing.stage(record, spec) == "Fresh" then
+        record.scalded = true
+        FluidAgeing.apply(owner:getFluidContainer(), record, spec)
+    end
 end
 
 local function hasFluid(item)
     return item:getFluidContainer() ~= nil
 end
 
+-- The lowest heat any kind scalds at, or nil.
+function FluidAgeing.lowestScaldHeat()
+    local lowest
+    for _, spec in pairs(specs) do
+        if spec.scaldHeat and (not lowest or spec.scaldHeat < lowest) then lowest = spec.scaldHeat end
+    end
+    return lowest
+end
+
 -- Brings every fluid item in an item container (and the bags inside it) up to now.
 function FluidAgeing.lookIn(container, now)
     local items = container and container:getAllEvalRecurse(hasFluid)
     for i = 0, items and items:size() - 1 or -1 do FluidAgeing.look(items:get(i), now) end
+end
+
+FluidAgeing.HEAT_RADIUS = 8
+
+-- Looks at the fluid items in every hot container (a lit stove, fireplace, barbecue or campfire) within HEAT_RADIUS of
+-- a square on its level, so milk left on the heat scalds with nobody looking at it.
+function FluidAgeing.lookOnHeat(square, now)
+    local heat = FluidAgeing.lowestScaldHeat()
+    if not heat or not square then return end
+    local cell, r = getCell(), FluidAgeing.HEAT_RADIUS
+    for dx = -r, r do
+        for dy = -r, r do
+            local there = cell:getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
+            local objects = there and there:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do
+                local object = objects:get(i)
+                for c = 0, object:getContainerCount() - 1 do
+                    local container = object:getContainerByIndex(c)
+                    if container:getTemperature() >= heat then FluidAgeing.lookIn(container, now) end
+                end
+            end
+        end
+    end
 end
 
 return FluidAgeing

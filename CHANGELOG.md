@@ -1,6 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- The Hearth's copper holds 20 L (was 10). Heating and cooling times are still set for 10 L and grow with the cube root
+  of the volume (`Hearth.TAU_ML`): 10 L steam in about 1.5 hours as before, 20 L in about 2.
+- Scalding on a stove or a fire (`FluidAgeing`, `scaldHeat`): a kind may name a vanilla item heat it scalds at. A
+  fluid item seen that hot is scalded from then on, as vanilla's boiling makes tainted water clean. It is checked
+  when a loot window shows it, as it is moved (`ISInventoryTransferAction.transferItem`, read while still on the
+  heat), and every game minute in any hot container within 8 tiles of a player (`lookOnHeat`). Both ends of a vanilla
+  pour are looked at as it ends (or is stopped), so mixed milk is renamed at once.
+- Scalded twins (`FluidAgeing`, D9 step 2b): a kind may name a scalded fluid for each fresh one (`scalded`). A scalded
+  fresh record goes by it, in containers and in the copper (renamed as it steams), and back to the plain fluid when
+  raw is mixed in; it spoils to the fresh fluid's spoiled one. A container first seen holding only scalded fluid is
+  scalded; `markScalded` renames at once. The record's flag is `scalded` (was `steamed` in test builds, still read).
 - More fluids for a vanilla recipe (`Recipes.addFluids`, D9 step 2): at `OnInitWorld` a mod widens a vanilla craft
   recipe's fluid line (Dairy: every milk, fresh or soured, in cake batter, muffins and cereal). A script copy of the recipe can't do it,
   as the game adds a copy's inputs to the original's. A line that names the fluids already is left alone.
@@ -10,7 +21,7 @@
   when it turns and when it spoils. What players carry is checked every ten minutes and loot windows check what they
   show. Pouring hands the age on (the older wins), milking into an emptied container starts afresh, and the Hearth's
   copper keeps the age of what is in it and ages it at the Hearth's place: turned or spoiled milk is renamed in
-  the copper too, so the incubator and the crock refuse it there; milk in a steaming copper is steamed from then on. Sealed items a mod names (store
+  the copper too, so the incubator and the crock refuse it there; milk in a steaming copper is scalded from then on. Sealed items a mod names (store
   milk) never age until poured out.
 - `tp test` lints each mod's shipped Lua for calls the game's Lua lacks though luajit has them (`next`), which
   tests can't catch.

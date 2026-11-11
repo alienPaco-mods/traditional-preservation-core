@@ -18,9 +18,9 @@ local copper = {}
 check("an empty copper takes any fluid", Hearth.pourInto(copper, "Water", 4000, 20, 0) == 4000 and copper.fluid == "Water")
 check("but not a second one", select(2, Hearth.pourInto(copper, "CowMilk", 1000, 20, 0)) == "Mixed")
 check("emptied, it forgets the fluid", Hearth.take(copper) == 4000 and copper.fluid == nil and copper.tempC == nil)
-check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 10000, 20, 0) == 10000
+check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 20000, 20, 0) == 20000
     and select(2, Hearth.pourInto(copper, "SheepMilk", 100, 20, 0)) == "Mixed")
-check("10 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
+check("20 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
 
 -- Fluids a mod has said may share the copper
 Hearth.blend("CowMilk", "SheepMilk")
@@ -42,6 +42,8 @@ local _, _, _, waterParts = Hearth.take(plain, 400)
 check("one fluid is one part", plain.parts == nil and waterParts.Water == 400)
 
 -- Heating and cooling
+copper = {}
+Hearth.pourInto(copper, "CowMilk", 10000, 20, 0)
 copper.fireUntil = 100
 local hot
 for minute = 6, 240, 6 do
@@ -49,6 +51,8 @@ for minute = 6, 240, 6 do
     if not hot and Hearth.isHot(copper) then hot = minute / 60 end
 end
 check("10 L over the fire is hot in about an hour and a half", hot and hot > 1.3 and hot < 1.7)
+check("20 L takes about two hours", Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 1.8
+    and Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.1)
 check("and never boils", copper.tempC <= Hearth.MAX_C)
 local split = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
 Hearth.advance(split, 1, 20)

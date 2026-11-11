@@ -3,6 +3,8 @@
 -- from it or empties it, and banks a lit fire or stokes it up again. Hearth Info, also on the menu, shows the fire, its fuel and the copper. A Hearth can't be picked up while
 -- it burns or its copper holds anything. Clicking a Hearth opens Hearth Info too. Mods add their own notes to Hearth
 -- Info with HearthUI.addNotes.
+-- A Firebox has the same menu without the copper: Firebox Info and Bank / Stoke, plus a mod's rows
+-- (HearthUI.addFireboxMenu, Fish & Meat's flue) and notes (HearthUI.addFireboxNotes).
 require "TimedActions/TPHearthCopper"
 require "TimedActions/TPHearthFire"
 local UI = require "TraditionalPreservationCore/UI"
@@ -16,6 +18,8 @@ local HEARTH_ICON = "media/textures/Item_TPHearth.png"
 local COPPER_ICON = "media/textures/Item_TPCopper.png"
 local COPPER_FULL_ICON = "media/textures/Item_TPCopperFull.png"
 local FIRE_ICONS = { bank = "media/textures/Item_TPHearthBanked.png", stoke = "media/textures/Item_TPHearthLit.png" }
+local FIREBOX_ICON = "media/textures/Item_TPFirebox.png"
+local FIREBOX_FIRE_ICONS = { bank = "media/textures/Item_TPFireboxBanked.png", stoke = "media/textures/Item_TPFireboxLit.png" }
 local FUEL_SCALE_MIN = 12 * 60 -- a full Fuel bar: 12 hours of burning
 local BAR_COLOURS = { fuel = { 0.75, 0.42, 0.18 }, copper = { 0.72, 0.45, 0.3 } }
 
@@ -38,6 +42,11 @@ end
 HearthUI.fireAction = onFireAction
 HearthUI.FIRE_ICONS = FIRE_ICONS
 
+-- The Hearth or the Firebox as its fire will be, banked or burning up again.
+function HearthUI.fireIcon(fire, mode)
+    return (Hearth.isFirebox(fire) and FIREBOX_FIRE_ICONS or FIRE_ICONS)[mode]
+end
+
 local function addFireOption(menu, playerObj, hearth)
     if not Hearth.isBurning(hearth) then return end
     local banked = Hearth.isBanked(hearth)
@@ -45,7 +54,7 @@ local function addFireOption(menu, playerObj, hearth)
     local option = menu:addOption(getText(banked and "ContextMenu_TraditionalPreservationCore_StokeFire"
         or "ContextMenu_TraditionalPreservationCore_BankFire"), playerObj, onFireAction, hearth, mode)
     -- The Hearth as the fire will be: banked, or burning up again.
-    option.iconTexture = getTexture(FIRE_ICONS[mode])
+    option.iconTexture = getTexture(HearthUI.fireIcon(hearth, mode))
     tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
@@ -132,8 +141,9 @@ local function hearthSubMenu(context, hearth)
     local vanilla = context:getOptionFromName(hearth:getTileName())
     local menu = vanilla and vanilla.subOption and context:getSubMenu(vanilla.subOption)
     if menu then return menu end
-    local option = context:addOption(getText("IGUI_CraftingWindow_TPHearth"))
-    option.iconTexture = getTexture(HEARTH_ICON)
+    local firebox = Hearth.isFirebox(hearth)
+    local option = context:addOption(getText(firebox and "IGUI_CraftingWindow_TPFirebox" or "IGUI_CraftingWindow_TPHearth"))
+    option.iconTexture = getTexture(firebox and FIREBOX_ICON or HEARTH_ICON)
     menu = context:getNew(context)
     context:addSubMenu(option, menu)
     return menu
@@ -190,13 +200,31 @@ local function addHearthMenu(context, playerObj, hearth)
     end
 end
 
+local FIREBOX_MENUS = {}
+
+-- fn(menu, playerObj, firebox, state) adds a mod's own rows to the Firebox's menu, after Bank / Stoke.
+function HearthUI.addFireboxMenu(fn)
+    table.insert(FIREBOX_MENUS, fn)
+end
+
+local function addFireboxMenu(context, playerObj, firebox)
+    local state = Hearth.copperOf(firebox)
+    local menu = hearthSubMenu(context, firebox)
+    fixFuelLine(menu, firebox)
+    local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_FireboxInfo"), playerObj, HearthWindow.open, firebox)
+    info.iconTexture = getTexture(FIREBOX_ICON)
+    addFireOption(menu, playerObj, firebox)
+    for _, fn in ipairs(FIREBOX_MENUS) do fn(menu, playerObj, firebox, state) end
+end
+
 local function onFillContextMenu(playerNum, context, worldobjects, test)
     for _, object in ipairs(worldobjects) do
-        if Hearth.isHearth(object) then
+        if Hearth.isFire(object) then
             -- Vanilla's probe for a controller's prompt: say there is a menu, do no work.
             if test then return ISWorldObjectContextMenu.setTest() end
             -- A hearth built this session isn't tracked until its area reloads, so its menu starts it.
             if Hearth.World then Hearth.World.track(object) end
+            if Hearth.isFirebox(object) then return addFireboxMenu(context, getSpecificPlayer(playerNum), object) end
             return addHearthMenu(context, getSpecificPlayer(playerNum), object)
         end
     end
@@ -204,18 +232,25 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
--- Picking the Hearth up while the fire burns (lit or banked) or the copper holds anything would lose them.
+-- Picking the Hearth up while the fire burns (lit or banked) or the copper holds anything would lose them; a
+-- Firebox, while its fire burns.
 UI.keepInPlace(function(object)
+    if Hearth.isFirebox(object) then return Hearth.isBurning(object) end
     return Hearth.isHearth(object) and (Hearth.isBurning(object) or (Hearth.stateOf(object:getModData()).ml or 0) > 0)
 end)
 
 -- Hearth Info: the fire, its fuel and the copper.
 
-local NOTES = {}
+local NOTES, FIREBOX_NOTES = {}, {}
 
 -- fn(info, notes) adds lines to Hearth Info's notes. info = { copper, lit, banked, fuelMin, burnHours }.
 function HearthUI.addNotes(fn)
     table.insert(NOTES, fn)
+end
+
+-- The same for Firebox Info: info = { copper (its state: flue, flueSide), lit, banked, fuelMin, burnHours, firebox }.
+function HearthUI.addFireboxNotes(fn)
+    table.insert(FIREBOX_NOTES, fn)
 end
 
 HearthWindow = InfoWindow:derive("TraditionalPreservationCoreHearthWindow")
@@ -223,7 +258,7 @@ HearthUI.HearthWindow = HearthWindow
 
 function HearthWindow:new(playerObj, hearth)
     local o = InfoWindow.new(self, playerObj, hearth)
-    o.title = getText("IGUI_CraftingWindow_TPHearth")
+    o.title = getText(Hearth.isFirebox(hearth) and "IGUI_CraftingWindow_TPFirebox" or "IGUI_CraftingWindow_TPHearth")
     return o
 end
 
@@ -234,7 +269,7 @@ end
 function HearthWindow:refresh()
     local hearth = self.station
     self.info = { copper = Hearth.copperOf(hearth), lit = Hearth.isBurning(hearth), banked = Hearth.isBanked(hearth),
-        fuelMin = hearth:getFuelAmount(), burnHours = Hearth.fuelHours(hearth) }
+        fuelMin = hearth:getFuelAmount(), burnHours = Hearth.fuelHours(hearth), firebox = Hearth.isFirebox(hearth) }
 end
 
 -- Steaming already, or when it will be while the fire burns on.
@@ -261,6 +296,13 @@ function HearthWindow:render()
     local burnMin = math.floor(info.burnHours * 60)
     y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", info.fuelMin / FUEL_SCALE_MIN, BAR_COLOURS.fuel,
         say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)))
+    if info.firebox then
+        local notes = { getText(info.banked and "IGUI_TraditionalPreservationCore_FireboxHelpBanked"
+            or info.lit and "IGUI_TraditionalPreservationCore_FireboxHelpLit" or "IGUI_TraditionalPreservationCore_FireboxHelpOut") }
+        for _, fn in ipairs(FIREBOX_NOTES) do fn(info, notes) end
+        self:drawNotes(y, notes)
+        return
+    end
     y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoCopper", ml / Hearth.COPPER_ML, BAR_COLOURS.copper,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.COPPER_ML)))
     y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
@@ -280,9 +322,9 @@ function HearthWindow:render()
     self:drawNotes(y, notes)
 end
 
--- Clicking a Hearth opens Hearth Info, as clicking a TP station opens its window (its firebox is still in the loot
+-- Clicking a Hearth or Firebox opens its Info, as clicking a TP station opens its window (its firebox is still in the loot
 -- window beside it).
-InfoWindow.clickOpens(Hearth.isHearth, function(playerObj, hearth)
+InfoWindow.clickOpens(Hearth.isFire, function(playerObj, hearth)
     if Hearth.World then Hearth.World.track(hearth) end
     HearthWindow.open(playerObj, hearth)
 end)

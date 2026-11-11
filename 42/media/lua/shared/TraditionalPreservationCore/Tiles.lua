@@ -19,4 +19,20 @@ return {
         Lit = 6,
         Banked = 8,
     },
+    FIREBOX_LOOKS = {
+        Capped = 10,
+        Pipe_Back = 12,
+        Pipe_Left = 14,
+        Pipe_Right = 16,
+        Stones_Back = 18,
+        Stones_Left = 20,
+        Stones_Right = 22,
+    },
+    FIREBOXES = { "traditionalpreservationcore_01_10", "traditionalpreservationcore_01_11", "traditionalpreservationcore_01_12", "traditionalpreservationcore_01_13", "traditionalpreservationcore_01_14", "traditionalpreservationcore_01_15", "traditionalpreservationcore_01_16", "traditionalpreservationcore_01_17", "traditionalpreservationcore_01_18", "traditionalpreservationcore_01_19", "traditionalpreservationcore_01_20", "traditionalpreservationcore_01_21", "traditionalpreservationcore_01_22", "traditionalpreservationcore_01_23" },
+    FIREBOX_GLOWS = {
+        Lit = 24,
+        Banked = 26,
+        LitFlue = 28,
+        BankedFlue = 30,
+    },
 }

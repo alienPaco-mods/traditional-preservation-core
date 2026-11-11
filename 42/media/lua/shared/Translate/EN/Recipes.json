@@ -1,5 +1,8 @@
 {
   "TP_Hearth": "Hearth",
   "TraditionalPreservationCore.TP_Hearth": "Hearth",
-  "TPHearth": "Hearth"
+  "TPHearth": "Hearth",
+  "TP_Firebox": "Firebox",
+  "TraditionalPreservationCore.TP_Firebox": "Firebox",
+  "TPFirebox": "Firebox"
 }

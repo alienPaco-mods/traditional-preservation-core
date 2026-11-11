@@ -129,4 +129,23 @@ cell.squares["5,6,0"] = nil
 for _ = 1, 200 do H.fire("OnTick") end
 check("its area unloaded, the embers' heat and light are taken away", count(cell.heat) == 0 and count(cell.lights) == 0)
 
+-- The Firebox: the same fire, no copper; its tile follows its flue.
+cell.squares["5,6,0"] = square
+local boxData = {}
+local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Hearth.fireboxSprite(nil, nil, 0)) }, { __index = fire })
+function box:getModData() return boxData end
+World.track(box)
+World.update(box, 110)
+check("a lit Firebox is tracked, capped, with smoke round its door", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, 0) and boxData[Hearth.KEY].ml == nil)
+World.setFire(box, "bank", 110)
+check("it banks as the Hearth does", not box:isLit() and Hearth.isBanked(box) and count(cell.heat) >= 1
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, 0))
+Hearth.setFlue(boxData[Hearth.KEY], "Pipe", "Back")
+World.update(box, 111)
+check("its flue joined, its tile shows the pipe and the smoke goes up it", box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, "Pipe", 0))
+check("and it never grows a copper", boxData[Hearth.KEY].ml == nil and boxData[Hearth.KEY].tempC == nil)
+World.setFire(box, "stoke", 111)
+
 H.done()

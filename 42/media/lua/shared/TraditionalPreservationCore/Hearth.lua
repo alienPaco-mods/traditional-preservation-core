@@ -13,6 +13,11 @@
 -- one speed and heats and lights 8 tiles whatever its fuel (ENGINE_NOTES), so a banked Hearth's vanilla fire is out:
 -- the mod counts its fuel from the clock (Hearth.reckonFuel) and sets vanilla's to the count, gives it its own small
 -- heat and faint light, and keeps the firebox hot (HearthWorld). Hearth.isBurning is a fire lit or banked.
+--
+-- The Firebox is the Hearth's fire without the copper: a low stone box with an iron door, for heat and cooking, banked
+-- and stoked the same way. Its state is the same table (no ml). Its flue leaves its top, capped until a mod joins it
+-- to something on its back or either flank, never the door's side (Hearth.setFlue; Fish & Meat's Smokehouse): its tile
+-- is picked by facing, flue and side, as Fuel Barrel picks its barrel's by the generator's. Hearth.isFire is either.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -20,7 +25,8 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled, hot, offAt; banked, fuel, fuelAt, fuelSet.
+-- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled, hot, offAt; banked, fuel, fuelAt, fuelSet; a Firebox's flue
+-- and flueSide.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
@@ -455,6 +461,92 @@ function Hearth.isHearth(object)
     return lookOf(object) ~= nil and instanceof(object, "IsoFireplace")
 end
 
+-- The Firebox: one tile per flue and facing, its glow by fire and flue (capped, smoke leaks round the door).
+Hearth.FIREBOX_LOOKS = Tiles.FIREBOX_LOOKS or {}
+Hearth.FIREBOX_SPRITES = Tiles.FIREBOXES or {}
+Hearth.FIREBOX_GLOWS = Tiles.FIREBOX_GLOWS or {}
+Hearth.CAPPED = "Capped"
+Hearth.FLUES = { Pipe = true, Stones = true }
+-- The sides a flue may go to, by facing (0 S, 1 E), as world steps (+x east, +y south): the same table as FLUE_SIDES
+-- in tools/build_tileset.py. The door's side is never one.
+Hearth.FLUE_SIDES = {
+    [0] = { Back = { 0, -1 }, Left = { -1, 0 }, Right = { 1, 0 } },
+    [1] = { Back = { -1, 0 }, Left = { 0, -1 }, Right = { 0, 1 } },
+}
+
+local fireboxLookOf, FIREBOX_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.FIREBOX_LOOKS)
+
+function Hearth.fireboxFace(spriteName)
+    return spriteName and FIREBOX_TILES.face[spriteName]
+end
+
+function Hearth.fireboxSprite(flue, side, face)
+    local look = flue and side and flue .. "_" .. side or Hearth.CAPPED
+    return Tiles.PREFIX .. ((Hearth.FIREBOX_LOOKS[look] or Hearth.FIREBOX_LOOKS[Hearth.CAPPED]) + face)
+end
+
+function Hearth.fireboxGlow(lit, banked, flue, face)
+    if not lit then return nil end
+    local base = Hearth.FIREBOX_GLOWS[(banked and "Banked" or "Lit") .. (flue and "Flue" or "")]
+    return base and Tiles.PREFIX .. (base + face) or nil
+end
+
+function Hearth.isFirebox(object)
+    return fireboxLookOf(object) ~= nil and instanceof(object, "IsoFireplace")
+end
+
+-- A Hearth or a Firebox: a fire this mod banks, stokes and counts the fuel of.
+function Hearth.isFire(object)
+    return Hearth.isHearth(object) or Hearth.isFirebox(object)
+end
+
+-- Every Hearth and Firebox tile.
+Hearth.FIRE_SPRITES = {}
+for _, list in ipairs({ Hearth.SPRITES, Hearth.FIREBOX_SPRITES }) do
+    for _, name in ipairs(list) do table.insert(Hearth.FIRE_SPRITES, name) end
+end
+
+-- Joins a Firebox's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
+function Hearth.setFlue(state, flue, side)
+    if Hearth.FLUES[flue] and Hearth.FLUE_SIDES[0][side] then
+        state.flue, state.flueSide = flue, side
+    else
+        state.flue, state.flueSide = nil, nil
+    end
+end
+
+-- The side of a Firebox that square is on (Back, Left or Right): nil for its door's side, a square not beside it,
+-- or anything but a Firebox.
+function Hearth.flueSideTo(firebox, square)
+    local face = Hearth.fireboxFace(firebox:getSprite():getName())
+    local here = firebox:getSquare()
+    if not face or not here or not square or square:getZ() ~= here:getZ() then return nil end
+    local dx, dy = square:getX() - here:getX(), square:getY() - here:getY()
+    for side, step in pairs(Hearth.FLUE_SIDES[face]) do
+        if step[1] == dx and step[2] == dy then return side end
+    end
+end
+
+-- The square on that side of a Firebox, or nil.
+function Hearth.flueSquare(firebox, side)
+    local face = Hearth.fireboxFace(firebox:getSprite():getName())
+    local step = face and Hearth.FLUE_SIDES[face][side]
+    local here = firebox:getSquare()
+    if not step or not here then return nil end
+    return getCell():getGridSquare(here:getX() + step[1], here:getY() + step[2], here:getZ())
+end
+
+-- The sprite and glow a Hearth or Firebox shows now: its copper or its flue, and its fire. nil for anything else.
+function Hearth.showing(fire, state, burning, banked)
+    local name = fire:getSprite():getName()
+    local face = Hearth.face(name)
+    if face then return Hearth.sprite(Hearth.look(state), face), Hearth.glowSprite(burning, banked, face) end
+    face = Hearth.fireboxFace(name)
+    if face then
+        return Hearth.fireboxSprite(state.flue, state.flueSide, face), Hearth.fireboxGlow(burning, banked, state.flue, face)
+    end
+end
+
 -- The copper's state, brought up to now where the World runs (a server or single player).
 function Hearth.copperOf(fire)
     if Hearth.World then return Hearth.World.update(fire, getGameTime():getWorldAgeHours()) end
@@ -489,9 +581,9 @@ function Hearth.near(square, test)
     return list
 end
 
--- A Hearth whose fire is banked (vanilla's fire is out meanwhile).
+-- A Hearth or Firebox whose fire is banked (vanilla's fire is out meanwhile).
 function Hearth.isBanked(object)
-    return Hearth.isHearth(object) and Hearth.stateOf(object:getModData()).banked == true
+    return Hearth.isFire(object) and Hearth.stateOf(object:getModData()).banked == true
 end
 
 -- A fireplace whose fire burns, lit or banked.
@@ -555,11 +647,11 @@ end
 -- Building: the entity script's OnCreate, so a global.
 TraditionalPreservationCore = TraditionalPreservationCore or {}
 
-function TraditionalPreservationCore.OnCreateHearth(params)
+local function toFireplace(params, faceOf)
     local thumpable = params.thumpable
     local sprite = thumpable and thumpable:getSprite()
     local name = sprite and sprite:getName()
-    if not Hearth.face(name) then return nil end
+    if not faceOf(name) then return nil end
     local square = thumpable:getSquare()
     local fire = IsoFireplace.new(getCell(), square, getSprite(name))
     square:AddTileObject(fire)
@@ -569,6 +661,14 @@ function TraditionalPreservationCore.OnCreateHearth(params)
         thumpable:setSquare(nil)
     end
     return { replaceObject = true, object = fire }
+end
+
+function TraditionalPreservationCore.OnCreateHearth(params)
+    return toFireplace(params, Hearth.face)
+end
+
+function TraditionalPreservationCore.OnCreateFirebox(params)
+    return toFireplace(params, Hearth.fireboxFace)
 end
 
 return Hearth

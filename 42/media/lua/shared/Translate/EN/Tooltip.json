@@ -1,3 +1,4 @@
 {
-  "Tooltip_craft_TPHearthDesc": "A low stone oven with a copper set into its top. Light it like a stove; the copper holds 60 L of one fluid and brings it to the steam, or water to the boil. The firebox cooks like an oven, and its warmth reaches stations within 2 tiles."
+  "Tooltip_craft_TPHearthDesc": "A low stone oven with a copper set into its top. Light it like a stove; the copper holds 60 L of one fluid and brings it to the steam, or water to the boil. The firebox cooks like an oven, and its warmth reaches stations within 2 tiles.",
+  "Tooltip_craft_TPFireboxDesc": "A low stone firebox with an iron door. Light it like a stove; it cooks like an oven, its warmth reaches stations within 2 tiles, and it can be banked to make the wood last. Its flue can be joined to a building beside it."
 }

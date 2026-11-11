@@ -1,0 +1,51 @@
+module TraditionalPreservationCore
+{
+    entity TP_Firebox
+    {
+        /* The Hearth's fire without the copper: a low stone box with an iron door, for heat and cooking. OnCreate
+           swaps the built tile for a vanilla fireplace (fuel, lighting, the firebox to cook in); a mod may join its
+           flue to a building beside it (Fish & Meat's Smokehouse). */
+        component UiConfig
+        {
+            xuiSkin = default,
+            entityStyle = ES_TPFirebox,
+            uiEnabled = false,
+        }
+        component SpriteConfig
+        {
+            isThumpable = false,
+            OnCreate = TraditionalPreservationCore.OnCreateFirebox,
+            face S
+            {
+                layer
+                {
+                    row = traditionalpreservationcore_01_10,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = traditionalpreservationcore_01_11,
+                }
+            }
+        }
+        /* Fired bricks laid in clay, as the Hearth, smaller and with no copper; the door is beaten from scrap iron
+           in the game's abstraction (none asked). */
+        component CraftRecipe
+        {
+            timedAction = Make_With_Brick_Low,
+            time = 150,
+            SkillRequired = Masonry:2,
+            xpAward = Masonry:8,
+            category = Masonry,
+            Tooltip = Tooltip_craft_TPFireboxDesc,
+            inputs
+            {
+                item 1 tags[base:masonstrowel] mode:keep flags[Prop1;MayDegradeLight],
+                item 8 [Base.ClayBrick],
+                item 2 [Base.Clay] flags[DontRecordInput],
+            }
+        }
+    }
+}

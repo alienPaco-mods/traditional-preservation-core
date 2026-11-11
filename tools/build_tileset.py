@@ -17,6 +17,7 @@ Needs Pillow. Deterministic: a rerun with no change gives byte-identical files.
 import math
 import random
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
@@ -30,7 +31,7 @@ MOD = "TraditionalPreservationCore"
 NAME = "traditionalpreservationcore"
 TILESET = NAME + "_01"
 COLUMNS, ROWS = 8, 8
-PAGE_SIZE = 512
+PAGE_SIZE = 1024
 SS = 4  # supersampling
 
 # Facings, S and E, as the entity scripts' faces. Each look takes len(FACES) tiles from its number.
@@ -39,6 +40,20 @@ HEARTH_LOOKS = {"Empty": 0, "Full": 2, "Hot": 4}
 HEARTH = HEARTH_LOOKS["Empty"]
 # The fire mouth's glow, an overlay: lit, and banked (embers under ash, almost no light).
 GLOWS = {"Lit": 6, "Banked": 8}
+# The Firebox: the Hearth's stone, lower, with no copper and an iron door on its mouth. Its flue leaves its top:
+# capped (nothing joined to it), a clay pipe from its top, or a trench in the ground roofed with flat stones from its
+# foot, to the building on one side, never the door's (a mod
+# joins it, as Fuel Barrel picks the barrel's sprite by the generator's). Sides by facing, as world steps (+x east,
+# +y south), the same table as Hearth.FLUE_SIDES in Lua.
+FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
+              "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
+FIREBOX_LOOKS = {"Capped": 10}
+for _kind in ("Pipe", "Stones"):
+    for _side in ("Back", "Left", "Right"):
+        FIREBOX_LOOKS[f"{_kind}_{_side}"] = 10 + 2 * len(FIREBOX_LOOKS)
+FIREBOX = FIREBOX_LOOKS["Capped"]
+# Its glow shows through the door's vents; capped, the smoke leaks round the door.
+FIREBOX_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30}
 
 # Colours.
 STONE = (158, 132, 104)
@@ -78,6 +93,33 @@ for look, base in HEARTH_LOOKS.items():
                                      ("CustomName", "Hearth"), ("Facing", facing), ("GroupName", "Stone"),
                                      ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "100"),
                                      ("container", "woodstove"), ("solidtrans", "")]
+for look, base in FIREBOX_LOOKS.items():
+    for offset, facing in enumerate(FACES):
+        TILE_PROPS[base + offset] = [("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
+                                     ("CustomName", "Firebox"), ("Facing", facing), ("GroupName", "Stone"),
+                                     ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
+                                     ("container", "woodstove"), ("solidtrans", "")]
+
+# The Firebox's body: knee high, a little narrower, its mouth smaller (shape() swaps these in while it is drawn).
+FIREBOX_SHAPE = {"H": 0.32, "TOP": 36, "MOUTH_W": 0.16, "MOUTH_SPRING": 11.5}
+IRON = (58, 54, 52)
+CLAY_PIPE = (172, 96, 64)
+DAUB = (150, 124, 98)
+SMOKE = (150, 146, 140)
+FLUE_R = 4.5                   # the flue's half width, px
+FLUE_RISE = 16                 # how far it climbs from the top to the wall, px
+FLUE_ELBOW = 9                 # of which straight up out of the top, before it turns towards the wall
+
+
+@contextmanager
+def shape(values):
+    """Draws with another body's sizes (the Firebox's): the drawing below reads them as module globals."""
+    saved = {name: globals()[name] for name in values}
+    globals().update(values)
+    try:
+        yield
+    finally:
+        globals().update(saved)
 
 
 def box(cx, cy, rx, ry):
@@ -304,6 +346,196 @@ def paint_glow(kind, face):
     return shrink(layer)
 
 
+# --- The Firebox -------------------------------------------------------------------------------------------------
+
+def door_vents(side):
+    """The door's vents: three draught holes low down and two slits under the arch, as (u, z, rx, ry) in px."""
+    cu = H
+    return [(cu - 0.065, MOUTH_SILL + 2.6, 0.9, 0.9), (cu, MOUTH_SILL + 2.6, 0.9, 0.9), (cu + 0.065, MOUTH_SILL + 2.6, 0.9, 0.9),
+            (cu - 0.03, MOUTH_SPRING - 0.5, 0.45, 1.9), (cu + 0.03, MOUTH_SPRING - 0.5, 0.45, 1.9)]
+
+
+def door(draw, side, rng, light):
+    """An iron door over the arched mouth: a riveted frame, two hinge straps on the left, a latch on the right, and
+    the vents (dark: the glow overlay lights them)."""
+    cu = H
+    draw.polygon(arch_points(side, MOUTH_W - 0.004), fill=shade(IRON, light * 1.15))
+    draw.polygon(arch_points(side, MOUTH_W - 0.022), fill=shade(IRON, light * 0.92))
+    for z in (MOUTH_SILL + 2.2, MOUTH_SPRING - 1.0):
+        face_quad(draw, side, cu - MOUTH_W + 0.01, cu + 0.02, z - 0.8, z + 0.8, shade(IRON, light * 0.65))
+        x, y = face_px(side, cu - MOUTH_W - 0.012, z)
+        draw.ellipse([x - 1.0 * SS, y - 1.3 * SS, x + 1.0 * SS, y + 1.3 * SS], fill=shade(IRON, light * 0.55))
+    x, y = face_px(side, cu + MOUTH_W - 0.04, (MOUTH_SILL + MOUTH_SPRING) / 2)
+    draw.rectangle([x - 0.6 * SS, y - 1.6 * SS, x + 0.9 * SS, y + 1.6 * SS], fill=shade(IRON, light * 0.5))
+    for i in range(8):
+        t = math.pi * (1 - i / 7)
+        x, y = face_px(side, cu + (MOUTH_W - 0.013) * math.cos(t),
+                       MOUTH_SPRING + (MOUTH_W - 0.013) * FACE_LEN * ARCH_RISE * math.sin(t))
+        draw.ellipse([x - 0.35 * SS, y - 0.35 * SS, x + 0.35 * SS, y + 0.35 * SS], fill=shade(IRON, light * 1.5))
+    for _ in range(6):
+        x, y = face_px(side, cu + rng.uniform(-MOUTH_W, MOUTH_W) * 0.8, rng.uniform(MOUTH_SILL, MOUTH_SPRING))
+        draw.ellipse([x - 1.2 * SS, y - 0.8 * SS, x + 1.2 * SS, y + 0.8 * SS], fill=(120, 62, 34, 120))
+    for u, z, rx, ry in door_vents(side):
+        x, y = face_px(side, u, z)
+        draw.ellipse([x - rx * SS, y - ry * SS, x + rx * SS, y + ry * SS], fill=DARK + (255,))
+
+
+TRENCH_W = 0.07                # the trench's half width, in tiles
+
+
+def trench(layer, face, side, rng):
+    """A smoke trench from the foot of the firebox to the wall on its side: a low bank of clay along the ground,
+    roofed with flat stones laid edge to edge, a dark gap between them."""
+    draw = ImageDraw.Draw(layer)
+    dx, dy = FLUE_SIDES[FACES[face]][side]
+    px, py = -dy, dx
+
+    def ground(along, across, z):
+        return tile_px(dx * along + px * across, dy * along + py * across, z)
+
+    a0, a1 = H - 0.01, 0.5
+    draw.polygon([ground(a0, -TRENCH_W - 0.03, 0), ground(a1, -TRENCH_W - 0.03, 0), ground(a1, TRENCH_W + 0.03, 0),
+                  ground(a0, TRENCH_W + 0.03, 0)], fill=shade(DAUB, 0.7))
+    draw.polygon([ground(a0, -TRENCH_W - 0.02, 2.2), ground(a1, -TRENCH_W - 0.02, 2.2), ground(a1, TRENCH_W + 0.02, 2.2),
+                  ground(a0, TRENCH_W + 0.02, 2.2)], fill=shade(DAUB, 0.95))
+    a = a0
+    while a < a1 - 0.01:
+        length = min(rng.uniform(0.045, 0.07), a1 - a)
+        b = a + length
+        j = [rng.uniform(-0.008, 0.008) for _ in range(4)]
+        tone = rng.uniform(0.85, 1.12)
+        draw.polygon([ground(a + 0.004, -TRENCH_W + j[0], 2.8), ground(b - 0.004, -TRENCH_W + j[1], 3.0),
+                      ground(b - 0.004, TRENCH_W + j[2], 3.0), ground(a + 0.004, TRENCH_W + j[3], 2.8)],
+                     fill=shade(STONE, 1.08 * tone))
+        a = b
+
+
+def flue(layer, face, look, rng):
+    """The flue out of the top. Capped, a flat stone over the hole at the back; a clay pipe with collars climbing to
+    the wall on its side, bedded in clay where it leaves the top. A trench (Stones) leaves from the foot instead, so
+    the top is bare."""
+    draw = ImageDraw.Draw(layer)
+    a0, z0 = H - 0.12, TOP + CAP
+    kind, _, side = look.partition("_")
+    if kind == "Stones":
+        return
+    dx, dy = FLUE_SIDES[FACES[face]][side or "Back"]
+
+    def out_px(along, z):
+        return tile_px(dx * along, dy * along, z)
+
+    if kind == "Capped":
+        x, y = out_px(a0, z0)
+        draw.ellipse([x - 5.5 * SS, y - 2.4 * SS, x + 5.5 * SS, y + 2.2 * SS], fill=shade(DARK, 1))
+        draw.polygon([(x - 6 * SS, y - 0.4 * SS), (x - 2 * SS, y - 3.2 * SS), (x + 5 * SS, y - 2.6 * SS),
+                      (x + 6.5 * SS, y + 0.2 * SS), (x + 2 * SS, y + 2.4 * SS), (x - 4 * SS, y + 1.8 * SS)],
+                     fill=shade(STONE, 1.05))
+        draw.polygon([(x - 4 * SS, y - 0.6 * SS), (x - 1 * SS, y - 2.4 * SS), (x + 4 * SS, y - 1.8 * SS),
+                      (x + 2 * SS, y + 0.6 * SS)], fill=shade(STONE, 1.2))
+        return
+    a1, z1 = 0.5, z0 + FLUE_RISE
+    steps = 56
+    # Straight up out of the top for the first part of the steps, then across to the wall: it reads on every side.
+    up = 0.3
+
+    def along(t):
+        if t < up:
+            return a0, z0 + 2 + (FLUE_ELBOW - 2) * t / up
+        u = (t - up) / (1 - up)
+        return a0 + (a1 - a0) * u, z0 + FLUE_ELBOW + (z1 - z0 - FLUE_ELBOW) * u
+
+    x, y = out_px(a0, z0)
+    draw.ellipse([x - (FLUE_R + 3) * SS, y - 3 * SS, x + (FLUE_R + 3) * SS, y + 2.5 * SS], fill=shade(DAUB, 0.9))
+    tones = [rng.uniform(0.82, 1.1) for _ in range(5)]
+    # Far end first: towards the viewer (south or east) the wall end is the near one.
+    order = range(steps + 1) if dx + dy > 0 else range(steps, -1, -1)
+    for i in order:
+        t = i / steps
+        x, y = out_px(*along(t))
+        r = FLUE_R if kind == "Pipe" else FLUE_R + 1.5
+        if kind == "Pipe":
+            collar = any(abs(t - c) < 0.025 for c in (0.42, 0.8))
+            r = r + (0.8 if collar else 0)
+            tone = 0.62 if collar else 0.78
+            draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, tone))
+            draw.ellipse([x - (r - 1.6) * SS, y - (r - 0.6) * 0.85 * SS, x + (r - 2.6) * SS, y + (r - 2.4) * 0.85 * SS],
+                         fill=shade(CLAY_PIPE, tone + 0.38))
+        else:
+            tone = tones[min(int(t * 5), 4)]
+            joint = any(abs(t - c) < 0.03 for c in (0.2, 0.4, 0.6, 0.8))
+            colour = MORTAR if joint else STONE
+            draw.rectangle([x - r * SS, y - r * SS, x + r * SS, y + r * SS], fill=shade(colour, 0.7 * tone))
+            draw.rectangle([x - r * SS, y - r * SS, x + r * SS, y - (r - 2.2) * SS], fill=shade(colour, 1.12 * tone))
+            draw.rectangle([x - r * SS, y - (r - 2.2) * SS, x - (r - 2.4) * SS, y + r * SS], fill=shade(colour, 0.95 * tone))
+    if kind == "Pipe":
+        x, y = out_px(a0, z0 + 2)
+        draw.ellipse([x - (FLUE_R + 2) * SS, y - 1.5 * SS, x + (FLUE_R + 2) * SS, y + 2.5 * SS], fill=shade(DAUB, 1.0))
+
+
+def paint_firebox(look, face):
+    with shape(FIREBOX_SHAPE):
+        rng = random.Random(160 + face)
+        side = FACES[face]
+        light = {"S": 1.0, "E": 0.72}
+        layer = pzart.new_layer(SS)
+        draw = ImageDraw.Draw(layer)
+        for name in ("S", "E"):
+            fieldstone(draw, name, random.Random(170 + (name == "E")), light[name])
+        soot(layer, side)
+        draw = ImageDraw.Draw(layer)
+        mouth(draw, side, rng, light[side])
+        door(draw, side, random.Random(175 + face), light[side])
+        render_top(draw)
+        layer = pzart.darken_down(layer, pzart.FOOT[1] - TOP * 0.5, pzart.FOOT[1] + 30, FOOT_SHADE, SS)
+        flue(layer, face, look, random.Random(180 + face))
+        kind, _, side = look.partition("_")
+        if kind == "Stones":
+            ground = pzart.new_layer(SS)
+            trench(ground, face, side, random.Random(185 + face))
+            dx, dy = FLUE_SIDES[FACES[face]][side]
+            if dx + dy > 0:
+                layer.alpha_composite(ground)      # in front of the stone
+            else:
+                ground.alpha_composite(layer)      # behind it
+                layer = ground
+        return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
+
+
+def paint_firebox_glow(kind, face):
+    """Firelight through the door's vents, a little round its edges and spilt under it; banked, the vents a dull red.
+    With no flue joined, smoke leaks from round the door and climbs the stone."""
+    with shape(FIREBOX_SHAPE):
+        side = FACES[face]
+        lit = kind.startswith("Lit")
+        layer = pzart.new_layer(SS)
+        if not kind.endswith("Flue"):
+            smoke = pzart.new_layer(SS)
+            draw = ImageDraw.Draw(smoke)
+            rng = random.Random(200 + face + (10 if lit else 0))
+            for k in range(3):
+                u0, phase = H + (k - 1) * 0.07, rng.uniform(0, 3)
+                for i in range(22):
+                    t = i / 21
+                    x, y = face_px(side, u0 + 0.03 * math.sin(phase + t * 4), MOUTH_SPRING + 4 + (TOP + 34) * t)
+                    r = (1.6 + 4 * t) * SS
+                    draw.ellipse([x - r, y - r * 0.8, x + r, y + r * 0.8],
+                                 fill=SMOKE + (int((150 if lit else 100) * (1 - t) ** 1.1),))
+            layer.alpha_composite(smoke.filter(ImageFilter.GaussianBlur(1.6 * SS)))
+        halo = pzart.new_layer(SS)
+        hx, hy = face_px(side, H, (MOUTH_SILL + MOUTH_SPRING) / 2)
+        ImageDraw.Draw(halo).ellipse(box(hx / SS, hy / SS, 9 if lit else 6, 7 if lit else 4),
+                                     fill=(255, 130, 50, 40 if lit else 18))
+        layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(3 * SS)))
+        draw = ImageDraw.Draw(layer)
+        if lit:
+            face_quad(draw, side, H - MOUTH_W + 0.02, H + MOUTH_W - 0.02, MOUTH_SILL - 0.2, MOUTH_SILL + 0.5, (255, 150, 50, 200))
+        for u, z, rx, ry in door_vents(side):
+            x, y = face_px(side, u, z)
+            draw.ellipse([x - rx * SS, y - ry * SS, x + rx * SS, y + ry * SS],
+                         fill=(255, 190, 70, 255) if lit else (170, 50, 18, 255))
+        return shrink(layer)
+
+
 # --- Menu icons --------------------------------------------------------------------------------------------------
 
 MENU_ICON = 32
@@ -393,13 +625,20 @@ def lua_tiles():
         "HEARTH_LOOKS": HEARTH_LOOKS,
         "HEARTHS": [prefix + str(base + offset) for base in HEARTH_LOOKS.values() for offset in range(len(FACES))],
         "GLOWS": GLOWS,
+        "FIREBOX_LOOKS": FIREBOX_LOOKS,
+        "FIREBOXES": [prefix + str(base + offset) for base in FIREBOX_LOOKS.values() for offset in range(len(FACES))],
+        "FIREBOX_GLOWS": FIREBOX_GLOWS,
     }
 
 
 def contact_sheet(tiles, path):
-    """Every hearth tile in a row, then each face lit and banked, for checking the art by eye; kept out of the mod."""
+    """Every hearth tile in a row, then each face lit and banked, then the Firebox's the same way (each flue, then
+    capped and joined lit and banked), for checking the art by eye; kept out of the mod."""
     cells = [(index + face, None) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
     cells += [(HEARTH + face, GLOWS[kind] + face) for kind in GLOWS for face in range(len(FACES))]
+    cells += [(index + face, None) for index in FIREBOX_LOOKS.values() for face in range(len(FACES))]
+    cells += [(FIREBOX_LOOKS["Pipe_Back" if kind.endswith("Flue") else "Capped"] + face, FIREBOX_GLOWS[kind] + face)
+              for kind in FIREBOX_GLOWS for face in range(len(FACES))]
     sheet = Image.new("RGBA", (TILE_W * len(cells), TILE_H), (96, 110, 88, 255))
     for x, (index, glow) in enumerate(cells):
         cell = tiles[index].copy()
@@ -418,6 +657,10 @@ def main():
             tiles[index + face] = paint_hearth(look, face)
         for kind, index in GLOWS.items():
             tiles[index + face] = paint_glow(kind, face)
+        for look, index in FIREBOX_LOOKS.items():
+            tiles[index + face] = paint_firebox(look, face)
+        for kind, index in FIREBOX_GLOWS.items():
+            tiles[index + face] = paint_firebox_glow(kind, face)
     (media / "texturepacks").mkdir(parents=True, exist_ok=True)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
@@ -428,6 +671,11 @@ def main():
     copper_icon(True).save(media / "textures" / "Item_TPCopperFull.png")
     for kind in GLOWS:
         pzart.write_build_icon(hearth_icon(kind), media / "textures" / f"Item_TPHearth{kind}.png", MENU_ICON)
+    pzart.write_build_icon(tiles[FIREBOX], media / "textures" / "Item_TPFirebox.png")
+    for kind in ("Lit", "Banked"):
+        icon = tiles[FIREBOX].copy()
+        icon.alpha_composite(tiles[FIREBOX_GLOWS[kind]])
+        pzart.write_build_icon(icon, media / "textures" / f"Item_TPFirebox{kind}.png", MENU_ICON)
     # The mod list shows the copper steaming.
     pzart.write_mod_icon(tiles[HEARTH_LOOKS["Hot"]], media.parent / "icon.png")
     if len(sys.argv) > 1:

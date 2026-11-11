@@ -1,6 +1,16 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Firebox** (Fish & Meat's Smokehouse, ROADMAP §7 phase 5b): the Hearth's fire without the copper, a low stone box
+  with an iron door; build menu, Masonry 2, 8 Clay Bricks, 2 Clay, trowel kept. Swapped for a vanilla fireplace as
+  the Hearth is (`OnCreateFirebox`), so it cooks like an oven and warms stations within 2 tiles; Bank / Stoke, the
+  fuel count, the loot-window button and Firebox Info as the Hearth's. `Hearth.isFirebox`, `Hearth.isFire` (either).
+  Its flue: capped, or a clay pipe from the top or a stone-roofed trench from the foot to its back or either flank,
+  never the door's side (`Hearth.setFlue(state, flue, side)`, state `flue` / `flueSide`, `Hearth.FLUE_SIDES`,
+  `Hearth.flueSideTo`, `Hearth.flueSquare`); its tile is picked by facing, flue and side, as Fuel Barrel picks its
+  barrel's, and its glow shows through the door's vents, with smoke round the door while capped.
+  `HearthUI.addFireboxMenu`, `HearthUI.addFireboxNotes`, `HearthUI.fireIcon`. Art: tiles 10-31, page 1024;
+  the Hearth's tiles unchanged. Console `TPC.fireboxKit()`, `TPC.firebox()`, `TPC.flue(kind, side)`, `TPC.fuel` on either fire; tests.
 - The copper can change a fluid for a mod (Fish & Meat's fat): `Hearth.turnsHot(from, to, hours)` (kept at 85 C
   or more for that long in all, `hot` in the copper's state), `Hearth.goesOff(from, to)` with `Hearth.offBy(copper,
   hour)` (`offAt`), and `Hearth.staysIn(name)` for a fluid no container can be filled with (Fill from Copper is

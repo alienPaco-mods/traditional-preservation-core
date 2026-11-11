@@ -8,5 +8,11 @@ module Base
             DisplayName = TPHearth,
             Icon = Item_TPHearth,
         }
+        entity ES_TPFirebox
+        {
+            LuaWindowClass = ISEntityWindow,
+            DisplayName = TPFirebox,
+            Icon = Item_TPFirebox,
+        }
     }
 }

@@ -231,6 +231,34 @@ check("the fire mouth glows while lit, dimly when banked, not at all when out",
     and Hearth.glowSprite(true, true, 0) == "traditionalpreservationcore_01_8"
     and Hearth.glowSprite(false, true, 0) == nil and Hearth.face(Hearth.glowSprite(true, false, 0)) == nil)
 
+-- The Firebox
+local fireboxTile = Hearth.fireboxSprite(nil, nil, 1)
+check("every firebox tile is known with its facing, apart from the Hearth's", #Hearth.FIREBOX_SPRITES == 14
+    and Hearth.fireboxFace(fireboxTile) == 1 and Hearth.face(fireboxTile) == nil
+    and Hearth.fireboxFace(Hearth.sprite("Empty", 0)) == nil and #Hearth.FIRE_SPRITES == 20)
+check("a firebox's tile by flue and side, capped for none or one it doesn't know",
+    Hearth.fireboxSprite("Pipe", "Left", 0) == "traditionalpreservationcore_01_14"
+    and Hearth.fireboxSprite("Stones", "Right", 1) == "traditionalpreservationcore_01_23"
+    and Hearth.fireboxSprite("Pipe", nil, 0) == "traditionalpreservationcore_01_10"
+    and Hearth.fireboxSprite("Clay", "Back", 0) == "traditionalpreservationcore_01_10")
+check("its glow: smoke round the door while capped, none once joined, nothing while out",
+    Hearth.fireboxGlow(true, false, nil, 0) == "traditionalpreservationcore_01_24"
+    and Hearth.fireboxGlow(true, true, "Pipe", 1) == "traditionalpreservationcore_01_31"
+    and Hearth.fireboxGlow(false, false, nil, 0) == nil)
+local flue = {}
+Hearth.setFlue(flue, "Stones", "Back")
+check("a flue joined to a side", flue.flue == "Stones" and flue.flueSide == "Back")
+Hearth.setFlue(flue, "Pipe", "Front")
+check("never the door's side: it is capped again", flue.flue == nil and flue.flueSide == nil)
+for face, sides in pairs(Hearth.FLUE_SIDES) do
+    local door = face == 0 and { 0, 1 } or { 1, 0 }
+    local ok = true
+    for _, step in pairs(sides) do
+        if step[1] == door[1] and step[2] == door[2] then ok = false end
+    end
+    check("facing " .. face .. ": the flue's three sides never include the door's", ok)
+end
+
 -- By a fire
 local ledger = { temperature = -10, seasonTemperature = -5 }
 check("a fire keeps its warmth whatever the weather", Hearth.placeTemperature(ledger, Hearth.PLACE) == Hearth.FIRE_C

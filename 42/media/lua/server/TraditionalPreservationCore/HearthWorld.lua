@@ -1,4 +1,4 @@
--- Traditional Preservation core: keeps track of every Hearth and brings its copper up to the hour: heated while
+-- Traditional Preservation core: keeps track of every Hearth and Firebox and brings a Hearth's copper up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
 -- the hearth tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
 -- weather (Weather.shared), so the Hearth works whichever TP mods are on. A banked Hearth's vanilla fire is out: its
@@ -79,12 +79,15 @@ local function showEmbers(fire, banked)
 end
 
 -- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, its embers' heat and light, notes how long the fire will burn on,
--- and shows the copper empty, full or steaming, and the fire mouth's glow, lit or banked.
+-- and shows the copper empty, full or steaming (a Firebox: its flue), and the fire mouth's glow, lit or banked.
 function World.update(fire, now)
     local copper = Hearth.stateOf(fire:getModData())
+    local hasCopper = Hearth.isHearth(fire)
     local before = Hearth.look(copper)
-    Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
-    FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.isHot(copper))
+    if hasCopper then
+        Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
+        FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.isHot(copper))
+    end
     local fuel = Hearth.reckonFuel(copper, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end
     local banked = Hearth.isBanked(fire)
@@ -92,13 +95,11 @@ function World.update(fire, now)
     if banked then slowCooking(fire) else cookSeen[fire] = nil end
     copper.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
     local look = Hearth.look(copper)
-    local face = Hearth.face(fire:getSprite():getName())
-    local name = face and Hearth.sprite(look, face)
+    local name, glow = Hearth.showing(fire, copper, Hearth.isBurning(fire), banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
-    local glow = face and Hearth.glowSprite(Hearth.isBurning(fire), banked, face)
     local shown = fire:getOverlaySprite()
     if (shown and shown:getName()) ~= glow then fire:setOverlaySprite(glow) end
-    if look ~= before then
+    if hasCopper and look ~= before then
         log("TP", "hearth copper %s -> %s: %.1f L %s at %.1f C", before, look, (copper.ml or 0) / 1000,
             tostring(copper.fluid), copper.tempC or 0)
     end
@@ -110,14 +111,14 @@ local function refresh(fire)
 end
 
 local tracker = Station.tracker({
-    sprites = Hearth.SPRITES,
-    entry = function(object) return Hearth.isHearth(object) and {} or nil end,
+    sprites = Hearth.FIRE_SPRITES,
+    entry = function(object) return Hearth.isFire(object) and {} or nil end,
     refresh = refresh,
     dropped = function(fire, entry)
         removeEmbers(entry)
         cookSeen[fire] = nil
     end,
-    -- A hearth just built or put down shows its copper at once.
+    -- A hearth just built or put down shows its copper (a Firebox its flue) at once.
     scan = true,
 })
 

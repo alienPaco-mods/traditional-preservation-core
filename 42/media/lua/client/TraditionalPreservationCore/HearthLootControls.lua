@@ -1,5 +1,5 @@
 -- Traditional Preservation core: Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's
--- Put out Fire, while a Hearth's fire burns. It queues the same action as the Hearth's right-click menu. A banked
+-- Put out Fire, while a Hearth's or Firebox's fire burns. It queues the same action as the Hearth's right-click menu. A banked
 -- Hearth's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
 -- unbanks).
 require "ISUI/LootWindow/ISLootWindowContainerControls"
@@ -14,9 +14,9 @@ local Handler = ISLootWindowObjectControlHandler_TPHearthFire
 local TITLES = { bank = "ContextMenu_TraditionalPreservationCore_BankFire", stoke = "ContextMenu_TraditionalPreservationCore_StokeFire" }
 local HELP = { bank = "IGUI_TraditionalPreservationCore_BankHelp", stoke = "IGUI_TraditionalPreservationCore_StokeHelp" }
 
--- "bank" for a lit Hearth, "stoke" for a banked one, nil for anything else.
+-- "bank" for a lit Hearth or Firebox, "stoke" for a banked one, nil for anything else.
 local function modeOf(object)
-    if not object or not Hearth.isHearth(object) or not Hearth.isBurning(object) then return nil end
+    if not object or not Hearth.isFire(object) or not Hearth.isBurning(object) then return nil end
     return Hearth.isBanked(object) and "stoke" or "bank"
 end
 Handler.modeOf = modeOf
@@ -36,7 +36,7 @@ function Handler:handleJoypadContextMenu(context)
     local mode = modeOf(self.object)
     if not mode then return end
     local option = self:addJoypadContextMenuOption(context, getText(TITLES[mode]))
-    option.iconTexture = getTexture(HearthUI.FIRE_ICONS[mode])
+    option.iconTexture = getTexture(HearthUI.fireIcon(self.object, mode))
 end
 
 function Handler:perform()

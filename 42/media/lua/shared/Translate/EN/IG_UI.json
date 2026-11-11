@@ -32,5 +32,9 @@
   "IGUI_TraditionalPreservationCore_InfoHotBanked": "Not while banked",
   "IGUI_TraditionalPreservationCore_BankHelp": "Rake the fire down under its ash: it burns a third of the wood, keeps the copper about 50 C, warms only the two tiles round it and cooks a third as fast.",
   "IGUI_TraditionalPreservationCore_StokeHelp": "Rake the embers up into a full fire: the copper heats towards 95 C and the firebox cooks at full speed.",
-  "IGUI_TraditionalPreservationCore_HearthHelpBanked": "Banked: the embers burn a third of the wood, keep the copper about 50 C, warm only the two tiles round them and cook a third as fast. Stoke the fire to bring the copper to the steam."
+  "IGUI_TraditionalPreservationCore_HearthHelpBanked": "Banked: the embers burn a third of the wood, keep the copper about 50 C, warm only the two tiles round them and cook a third as fast. Stoke the fire to bring the copper to the steam.",
+  "IGUI_CraftingWindow_TPFirebox": "Firebox",
+  "IGUI_TraditionalPreservationCore_FireboxHelpOut": "The fire is out. Add fuel and light it: the firebox cooks like an oven and warms what stands near it.",
+  "IGUI_TraditionalPreservationCore_FireboxHelpLit": "A full fire: the firebox cooks like an oven, and its warmth reaches stations within 2 tiles. Bank it to make the wood last.",
+  "IGUI_TraditionalPreservationCore_FireboxHelpBanked": "Banked: the embers burn a third of the wood, warm only the two tiles round them and cook a third as fast. Stoke it for a full fire."
 }

@@ -11,9 +11,12 @@ function TPC.help()
     say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
-    say("TPC.fuel(minutes)    set its fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
+    say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot()            bring its copper to the steam (90 C) now")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
+    say("TPC.fireboxKit()     a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)")
+    say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
+    say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
 end
 
 function TPC.kit()
@@ -59,14 +62,16 @@ function TPC.copper(litres, celsius, fluid)
     TPC.hearth()
 end
 
+-- The nearest Hearth or Firebox: TPC.fuel works on either.
 function TPC.fuel(minutes)
-    local hearth = nearestHearth()
-    if not hearth then return end
+    local fire = Hearth.near(getPlayer():getSquare(), Hearth.isFire)[1]
+    if not fire then return say("No Hearth or Firebox within 2 tiles.") end
+    if Hearth.World then Hearth.World.track(fire) end
     minutes = minutes or 600
-    hearth:setFuelAmount(minutes)
-    local copper = Hearth.copperOf(hearth)
-    if copper.banked then Hearth.setBanked(copper, true, minutes, getGameTime():getWorldAgeHours()) end
-    TPC.hearth()
+    fire:setFuelAmount(minutes)
+    local state = Hearth.copperOf(fire)
+    if state.banked then Hearth.setBanked(state, true, minutes, getGameTime():getWorldAgeHours()) end
+    if Hearth.isFirebox(fire) then TPC.firebox() else TPC.hearth() end
 end
 
 function TPC.hot()
@@ -109,6 +114,45 @@ function TPC.warmth()
                 item:getHeat(), item:getCookingTime(), item:getMinutesToCook(), tostring(item:isCooked()), tostring(item:isBurnt())))
         end
     end
+end
+
+-- Firebox
+
+function TPC.fireboxKit()
+    local inventory = getPlayer():getInventory()
+    inventory:AddItem("Base.MasonsTrowel_Wood")
+    for _ = 1, 8 do inventory:AddItem("Base.ClayBrick") end
+    for _ = 1, 2 do inventory:AddItem("Base.Clay") end
+    say("Gave a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2).")
+end
+
+local function nearestFirebox()
+    local firebox = Hearth.near(getPlayer():getSquare(), Hearth.isFirebox)[1]
+    if not firebox then say("No Firebox within 2 tiles.") end
+    if firebox and Hearth.World then Hearth.World.track(firebox) end
+    return firebox
+end
+
+function TPC.firebox()
+    local firebox = nearestFirebox()
+    if not firebox then return end
+    local state = Hearth.copperOf(firebox)
+    local sides = {}
+    for _, side in ipairs({ "Back", "Left", "Right" }) do
+        local square = Hearth.flueSquare(firebox, side)
+        table.insert(sides, string.format("%s %s", side, square and (square:getX() .. "," .. square:getY()) or "-"))
+    end
+    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, flue %s %s; sides: %s", firebox:getX(), firebox:getY(),
+        firebox:getZ(), Hearth.isBanked(firebox) and "banked" or firebox:isLit() and "lit" or "out", firebox:getFuelAmount(),
+        firebox:getSprite():getName(), tostring(state.flue), tostring(state.flueSide), table.concat(sides, ", ")))
+end
+
+function TPC.flue(kind, side)
+    local firebox = nearestFirebox()
+    if not firebox then return end
+    Hearth.setFlue(Hearth.copperOf(firebox), kind, side or "Back")
+    Hearth.World.refresh(firebox)
+    TPC.firebox()
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

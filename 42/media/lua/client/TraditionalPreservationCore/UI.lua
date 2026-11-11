@@ -318,6 +318,27 @@ function UI.notInRooms(sprites)
     placeOnly(sprites, function(square) return not square:isInARoom() end)
 end
 
+-- Putting down any station whose door is registered with Doors (the Hearth, the Firebox, a mod's): its own door's
+-- front tile must be free, and it can't stand in front of another one's door. sprites (a set of names, optional)
+-- adds stations without a door that are kept out of a door's front too. Installed once, for every mod.
+local doorKept
+function UI.keepDoorsFree(sprites)
+    if doorKept then
+        for name in pairs(sprites or {}) do doorKept[name] = true end
+        return
+    end
+    doorKept = {}
+    for name in pairs(sprites or {}) do doorKept[name] = true end
+    local Doors = require "TraditionalPreservationCore/Doors"
+    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
+    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
+        if (doorKept[self.spriteName] or Doors.facingOf(self.spriteName)) and not Doors.fits(square, self.spriteName) then
+            return false
+        end
+        return vanillaCanPlace(self, character, square, item)
+    end
+end
+
 local APPLIANCES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombinationWasherDryer" }
 local COLD_CONTAINERS = { fridge = true, freezer = true }
 

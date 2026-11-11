@@ -201,6 +201,7 @@ of all:
 | `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (Fish, Vinegar, Yeast, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
+| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox; Fish's beams and Smokehouse) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |

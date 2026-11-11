@@ -85,20 +85,28 @@ ARCH_RISE = 0.55               # the arch's height for its width
 FACE_LEN = math.hypot(pzart.DIAMOND_HALF_W, pzart.DIAMOND_HALF_H)   # px along a face per tile
 
 TILE_PROPS = {}
+
+
+def group(look, plain):
+    """The engine links the facings of tiles sharing a GroupName and CustomName, and that link lets a moved hearth
+    rotate, but only with one tile a facing: a group of more is left unlinked (IsoWorld.LoadTileDefinitions). So only
+    the plain look (the one that can be picked up: copper empty, flue capped) carries the GroupName."""
+    return [("GroupName", "Stone")] if look == plain else []
+
+
 for look, base in HEARTH_LOOKS.items():
     for offset, facing in enumerate(FACES):
-        # IsoType and the woodstove container make the game load it as a fireplace with a firebox to cook in. The
-        # engine only links the facings of tiles with a GroupName, and that link lets a moved hearth rotate.
-        TILE_PROPS[base + offset] = [("BlocksPlacement", ""), ("ContainerCapacity", "15"), ("ContainerPosition", "Low"),
-                                     ("CustomName", "Hearth"), ("Facing", facing), ("GroupName", "Stone"),
-                                     ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "100"),
-                                     ("container", "woodstove"), ("solidtrans", "")]
+        # IsoType and the woodstove container make the game load it as a fireplace with a firebox to cook in.
+        TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "15"), ("ContainerPosition", "Low"),
+                                            ("CustomName", "Hearth"), ("Facing", facing),
+                                            ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "100"),
+                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Empty"))
 for look, base in FIREBOX_LOOKS.items():
     for offset, facing in enumerate(FACES):
-        TILE_PROPS[base + offset] = [("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
-                                     ("CustomName", "Firebox"), ("Facing", facing), ("GroupName", "Stone"),
-                                     ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
-                                     ("container", "woodstove"), ("solidtrans", "")]
+        TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
+                                            ("CustomName", "Firebox"), ("Facing", facing),
+                                            ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
+                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Capped"))
 
 # The Firebox's body: knee high, a little narrower, its mouth smaller (shape() swaps these in while it is drawn).
 FIREBOX_SHAPE = {"H": 0.32, "TOP": 36, "MOUTH_W": 0.16, "MOUTH_SPRING": 11.5}

@@ -14,6 +14,7 @@ module TraditionalPreservationCore
         component SpriteConfig
         {
             isThumpable = false,
+            OnIsValid = TraditionalPreservationCore.doorFits,
             OnCreate = TraditionalPreservationCore.OnCreateFirebox,
             face S
             {

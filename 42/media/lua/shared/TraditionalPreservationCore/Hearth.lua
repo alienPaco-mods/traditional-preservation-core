@@ -21,6 +21,7 @@
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
+local Doors = require "TraditionalPreservationCore/Doors"
 
 local Hearth = {}
 
@@ -505,6 +506,13 @@ Hearth.FIRE_SPRITES = {}
 for _, list in ipairs({ Hearth.SPRITES, Hearth.FIREBOX_SPRITES }) do
     for _, name in ipairs(list) do table.insert(Hearth.FIRE_SPRITES, name) end
 end
+
+-- The Hearth's open mouth and the Firebox's door need their front tile free (Doors), every look of each.
+local FACE_NAMES = { [0] = "S", [1] = "E" }
+local doorFacings = {}
+for _, name in ipairs(Hearth.SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.face(name)] end
+for _, name in ipairs(Hearth.FIREBOX_SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.fireboxFace(name)] end
+Doors.register(doorFacings)
 
 -- Joins a Firebox's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
 function Hearth.setFlue(state, flue, side)

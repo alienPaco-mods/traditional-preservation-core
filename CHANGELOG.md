@@ -1,6 +1,16 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Doors keep their front free** (user, Smokehouse 5b-2b test): `Doors` (shared) registers tiles with a door or
+  fire mouth and the way it opens: the Hearth's mouth and the Firebox's door, every look; mods add theirs (Fish & Meat's
+  Smokehouse). None is built or put down with something in front of its door (an object that blocks placing, or a
+  wall between), and nothing checked stands on a tile in front of one's door. Build menu: the entities'
+  `OnIsValid = TraditionalPreservationCore.doorFits`; putting down: `UI.keepDoorsFree(sprites)` (extra station
+  sprites a mod wants kept out of door fronts). Vanilla furniture isn't checked. Test `test_doors.lua`. Dev:
+  `TPC.doors()` says what blocks a tile.
+- **A moved Hearth or Firebox rotates again:** the engine links a moveable's facings only for a small GroupName +
+  CustomName group (IsoWorld.LoadTileDefinitions; the Hearth's 6 and the Firebox's 14 tiles were left unlinked), so
+  only the plain look (empty copper, capped flue: the ones that pick up) keeps `GroupName = Stone`. Tiles rebuilt.
 - **Firebox** (Fish & Meat's Smokehouse, ROADMAP §7 phase 5b): the Hearth's fire without the copper, a low stone box
   with an iron door; build menu, Masonry 2, 8 Clay Bricks, 2 Clay, trowel kept. Swapped for a vanilla fireplace as
   the Hearth is (`OnCreateFirebox`), so it cooks like an oven and warms stations within 2 tiles; Bank / Stoke, the

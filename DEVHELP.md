@@ -15,6 +15,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.fireboxKit()` | Gives a mason's trowel, 8 clay bricks and 2 clay: what a Firebox takes to build (Masonry 2). |
 | `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
 | `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |
+| `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (its front tile free, or what blocks it: a wall edge or a sprite with `BlocksPlacement`, `solid` or `solidtrans`), and whether a registered door (Hearth, Firebox, Smokehouse) opens onto it. For a station the build ghost refuses beside another. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 

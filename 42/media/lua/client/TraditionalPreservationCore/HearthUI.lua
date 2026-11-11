@@ -232,6 +232,8 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
+UI.keepDoorsFree()
+
 -- Picking the Hearth up while the fire burns (lit or banked) or the copper holds anything would lose them; a
 -- Firebox, while its fire burns.
 UI.keepInPlace(function(object)

@@ -13,6 +13,7 @@ module TraditionalPreservationCore
         component SpriteConfig
         {
             isThumpable = false,
+            OnIsValid = TraditionalPreservationCore.doorFits,
             OnCreate = TraditionalPreservationCore.OnCreateHearth,
             face S
             {

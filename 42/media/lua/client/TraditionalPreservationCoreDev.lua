@@ -17,6 +17,7 @@ function TPC.help()
     say("TPC.fireboxKit()     a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)")
     say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
+    say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
 
 function TPC.kit()
@@ -153,6 +154,20 @@ function TPC.flue(kind, side)
     Hearth.setFlue(Hearth.copperOf(firebox), kind, side or "Back")
     Hearth.World.refresh(firebox)
     TPC.firebox()
+end
+
+function TPC.doors()
+    local Doors = require "TraditionalPreservationCore/Doors"
+    local square = getPlayer():getSquare()
+    for _, facing in ipairs({ "S", "E" }) do
+        local step = Doors.FRONT[facing]
+        local front = getCell():getGridSquare(square:getX() + step[1], square:getY() + step[2], square:getZ())
+        local blocker = front and Doors.blocker(front, facing)
+        say(string.format("door facing %s: front %s %s", facing, front and (front:getX() .. "," .. front:getY()) or "none",
+            blocker and ("blocked by " .. blocker) or "free"))
+    end
+    local door = Doors.doorOnto(square)
+    say(door and ("a door opens onto this tile: " .. door) or "no registered door opens onto this tile")
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

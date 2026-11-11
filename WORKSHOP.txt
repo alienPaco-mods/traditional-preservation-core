@@ -32,7 +32,9 @@ A Hearth can't be picked up while its fire burns or its copper holds anything.
 [h2]The Firebox[/h2]
 Build menu, Masonry. Masonry 2: 8 Clay Bricks, 2 Clay and a mason's trowel (kept).
 
-The Hearth's fire without the copper: knee high, with an iron door whose vents show the fire. It lights, cooks and warms like the Hearth, and banks and stokes the same way ([b]Firebox Info[/b] shows the fire and fuel). Its flue is capped on its own, so smoke leaks round the door; Traditional Preservation (Fish & Meat)'s Smokehouse leads it into its smoking shed. It can't be picked up while it burns.
+The Hearth's fire without the copper: knee high, with an iron door whose vents show the fire. It lights, cooks and warms like the Hearth, and banks and stokes the same way ([b]Firebox Info[/b] shows the fire and fuel). Its flue is capped on its own, so smoke leaks round the door; Traditional Preservation (Fish & Meat)'s Smokehouse leads it into its smoking shed. It can't be picked up while it burns or while its flue is joined.
+
+The tile in front of the Hearth's mouth and the Firebox's door must stay clear: neither builds or goes down with something in front of it. Picked up, both turn to either facing as you put them down.
 
 [h2]Places[/h2]
 [list]

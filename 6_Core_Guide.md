@@ -79,6 +79,8 @@ The window updates while it's open, and closes when you walk more than 6 squares
 
 **You can't pick a Hearth up** while its fire burns or its copper holds anything.
 
+**Keep the mouth clear.** The tile in front of the Hearth's fire mouth must be free: it won't build or go down with a crate, a fence, a wall on that edge or another station there, and nothing of the Traditional Preservation mods can be built on that tile afterwards. Picked up empty, it turns between its two facings as you put it down.
+
 ---
 
 ## 4. The Copper
@@ -151,6 +153,8 @@ The Hearth without its copper: the same fieldstone and lime top, built knee high
 | Bank the Fire / Stoke the Fire | yes | yes |
 | Info window | Hearth Info | Firebox Info: fire, fuel, a note |
 | Flue | its own | capped, or joined to a building beside it |
+
+**The door.** As with the Hearth, the tile in front of the Firebox's door must stay free, and a picked-up Firebox turns as you put it down. It can't be picked up while it burns, or while its flue is joined to a building.
 
 **The flue.** On its own the flue is capped with a flat stone, and while it burns the smoke leaks out round the door. A mod can lead it into a building on the Firebox's back or either flank (never the door's side): the Smokehouse of *Traditional Preservation (Fish & Meat)* does, with a **clay pipe** from the top or a **trench** in the ground roofed with flat stones from its foot. The Firebox then shows that flue, and the smoke goes where it should.
 
@@ -263,6 +267,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | No Bank the Fire option | The fire isn't lit |
 | No Light Fire option on a Hearth that looks out | It's banked: Stoke the Fire, or Put out Fire first |
 | Can't pick the Hearth up | It's lit, or the copper isn't empty |
+| A Hearth or Firebox won't build or go down there | Something stands in front of its mouth or door (or it would stand in front of another one's), or a wall is on that edge. Turn it, or clear the tile. `TPC.doors()` names what is in the way |
 | The Hearth or another TP station is missing | Check `~/Zomboid/console.txt`. The tiledef 5173 must be unique among your mods |
 
 ---
@@ -283,6 +288,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.hot()` | Brings its copper to the steam (90 C) now. |
 | `TPC.fireboxKit()` | Gives a mason's trowel, 8 clay bricks and 2 clay: what a Firebox takes to build (Masonry 2). |
 | `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
+| `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Hearth's, Firebox's or Smokehouse's door opens onto it. |
 | `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.

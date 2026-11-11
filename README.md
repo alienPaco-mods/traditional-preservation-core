@@ -79,9 +79,15 @@ The Hearth's fire without the copper: the same fieldstone and lime top, knee hig
 
 **Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 8 Clay Bricks, 2 Clay and a mason's trowel (kept). Two facings.
 
-**Right-click it.** Vanilla's Firebox submenu gains **Firebox Info** (fire and fuel, with a note) and **Bank the Fire** / **Stoke the Fire**, which work exactly as on the Hearth (the loot-window button too). Clicking it opens Firebox Info. It can't be picked up while its fire burns.
+**Right-click it.** Vanilla's Firebox submenu gains **Firebox Info** (fire and fuel, with a note) and **Bank the Fire** / **Stoke the Fire**, which work exactly as on the Hearth (the loot-window button too). Clicking it opens Firebox Info. It can't be picked up while its fire burns, or while its flue is joined to a building.
 
 **Its flue** leaves its top and is capped on its own: smoke leaks round the door while it burns. Another mod can join it to a building beside it, on its back or either flank, never the door's side: Traditional Preservation (Fish & Meat)'s Smokehouse does, with a clay pipe out of the top or a trench roofed with flat stones from its foot. The Firebox's tile then shows that flue on that side, and the smoke goes up it instead of round the door.
+
+## Doors keep their front free
+
+`Doors` (shared) keeps a list of tiles with a door or fire mouth and the way each opens (`Doors.register`): the Hearth's mouth and the Firebox's door, every look, and mods add theirs (Fish & Meat's Smokehouse). None is built or put down with something in front of its door: an object that blocks placing (`BlocksPlacement`, `solid`, `solidtrans`) or a wall on that edge. And nothing checked stands on a tile in front of one's door. The build menu asks `TraditionalPreservationCore.doorFits` (the entities' `OnIsValid`); putting a moveable down asks `UI.keepDoorsFree(sprites)`, where a mod adds its door-less stations (Fish's beams). Vanilla furniture isn't checked. `TPC.doors()` says what is in the way.
+
+A picked-up Hearth or Firebox turns between its two facings as it is put down. The engine links a moveable's facings by `GroupName` + `CustomName` only for a small group, so only the plain look (empty copper, capped flue: the ones that can be picked up) carries `GroupName = Stone`.
 
 ## Places and weather
 
@@ -109,7 +115,7 @@ Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functi
 
 The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt` and `entity_TP_Firebox.txt`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_container.lua`, `test_recipes.lua`, `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 

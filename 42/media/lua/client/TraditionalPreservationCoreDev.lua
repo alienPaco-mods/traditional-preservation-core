@@ -8,7 +8,7 @@ TPC = {}
 local function say(text) print("[TPC] " .. text) end
 
 function TPC.help()
-    say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Pottery 2)")
+    say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 20)")
     say("TPC.fuel(minutes)    set its fuel (default 600, ten hours); vanilla's menu still lights it")
@@ -21,7 +21,7 @@ function TPC.kit()
     for _ = 1, 12 do inventory:AddItem("Base.ClayBrick") end
     for _ = 1, 4 do inventory:AddItem("Base.Clay") end
     inventory:AddItem("Base.CopperSheet")
-    say("Gave a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Pottery 2).")
+    say("Gave a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2).")
 end
 
 -- Hearth

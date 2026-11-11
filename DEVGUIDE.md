@@ -12,7 +12,7 @@ Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it
 |---|---|
 | `~/MODS/<Mod>` | The source. Each mod is its own git repo. Edit here. |
 | `~/Zomboid/mods/<Mod>` | The installed copy the game loads. Only `tp install` writes here. |
-| `~/MODS/TraditionalPreservationCore` | Shared tooling: `tp`, the test harness, the golden results, this guide, the roadmap. |
+| `~/MODS/TraditionalPreservationCore` | TP Core, the mod itself (`42/`, `README.md`, `DEVHELP.md`, `WORKSHOP.txt`, its player guide `6_Core_Guide.md`), and the shared tooling: `tp`, the test harness, the golden results, this guide. |
 | `~/MODS/guides` | The player guides. The copy inside each mod is made from these by `tp guides`. |
 | `~/MODS/_pzdev` | Engine notes and `jdis.py` for reading the game's classes. |
 
@@ -105,8 +105,9 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`) and
-`42/media/lua/client/TraditionalPreservationCore/UI.lua`. A mod that uses it says so in its mod.info:
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper),
+`.../Action.lua` and `.../Log.lua`, with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`,
+`HearthUI.lua` and `FluidAgeingUI.lua`, and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
 require=\TraditionalPreservationCore
@@ -145,6 +146,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Hearth.blend("A", "B")`: fluids that may share the copper. `Hearth.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.
+   - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
+     kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
+     it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.
+   - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
    - `Log`: `log("TPV", "format", ...)` prints only in debug mode. Lines the test steps read go through it; a
      normal game's console stays clean.
 
@@ -200,6 +205,7 @@ of all:
 | `ISFluidTransferAction.start`, `stop`, `complete` | Dairy `World` | Poured milk carries its heat record (`tpdCarry`) over, mixed by volume |
 | `ISInventoryTransferAction.transferItem` | core `FluidAgeingUI`; Dairy `UI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
+| `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yoghurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
 | `ISTakeGenerator.isValid` | FuelBarrel `ISFuelBarrelHose` | A generator with a barrel can't be picked up |
 | `ISGeneratorInfoWindow.getRichText` | FuelBarrel `...Menu` | Barrel level in the generator's info |
 
@@ -285,7 +291,7 @@ not only code (the Hearth, a fire with a copper, is wanted by Dairy and later by
 needs one tileset, one save key and one set of timed actions. Two mods can't both ship it. One required mod also
 means one copy of each fix, and one place for multiplayer's network code later. Its modules still return a local
 table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateHearth`
-(the entity script) and the `TPHearthCopper` timed action. FuelBarrel is not a TP mod and does not require it.
+(the entity script), the `TPHearthCopper` and `TPHearthFire` timed actions, and `TPC`, the debug console. FuelBarrel is not a TP mod and does not require it.
 
 **Why the extra check that a station is loaded?**
 An unloaded object keeps its square and its index until its chunk has been saved and reused, so `getSquare()` and

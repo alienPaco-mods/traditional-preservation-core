@@ -1,6 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Docs: TP Core has its own `README.md` (the Hearth, the copper, banking, by a fire, places, fluids that go off),
+  `DEVHELP.md` (the `TPC` console), `WORKSHOP.txt` and a player guide, `6_Core_Guide.md`. The Hearth was documented
+  only in Dairy's. The collection guide (0) is rewritten for five mods and Core.
+- Docs (2026-11-11 pass against the code): `TPC.help()` and `TPC.kit()` say the Hearth is Masonry 2 (said Pottery
+  2); DEVGUIDE lists every core module, `FluidAgeing.register` and `Recipes.addFluids`, Dairy's `ISEatFoodAction`
+  wrap and the core's real globals.
 - The Hearth's copper holds 20 L (was 10). Heating and cooling times are still set for 10 L and grow with the cube root
   of the volume (`Hearth.TAU_ML`): 10 L steam in about 1.5 hours as before, 20 L in about 2.
 - Scalding on a stove or a fire (`FluidAgeing`, `scaldHeat`): a kind may name a vanilla item heat it scalds at. A

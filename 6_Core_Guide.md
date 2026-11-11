@@ -42,6 +42,7 @@ On its own it adds only the Hearth, and changes no vanilla recipe, item or loot.
 | **Pour into the Copper** | Any one fluid, up to 60 L | The copper heating towards 95 C |
 | Wait | About 1.5 hours for 10 L | The copper **steaming** at 85 C |
 | **Fill from the Copper** | Empty containers | Your fluid back, hot |
+| With Fish & Meat: **Put Fat in the Copper** | Raw fat from butchering | Melted Lard or Tallow after an hour of steaming; it never burns here |
 
 ---
 

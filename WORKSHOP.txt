@@ -1,12 +1,13 @@
 [h1]Traditional Preservation (Core)[/h1]
 
-The shared mod of the Traditional Preservation series. Every Traditional Preservation mod (Salt, Fish, Yeast, Vinegar, Dairy) requires it. It holds what they share, and one station of its own: the Hearth.
+The shared mod of the Traditional Preservation series. Every Traditional Preservation mod (Salt, Fish, Yeast, Vinegar, Dairy) requires it. It holds what they share, and two stations of its own: the Hearth and the Firebox.
 
 [b]Build 42 only (42.20 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
 
 [h2]What it adds[/h2]
 [list]
 [*][b]The Hearth[/b]: a stone fireplace with a 60 L copper set in its top, for heating any fluid
+[*][b]The Firebox[/b]: a low stone firebox with an iron door, for heat and cooking
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Three kinds of place a station can stand in: outdoors, under a roof and in a basement
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
@@ -28,13 +29,18 @@ With the fire lit the copper heats towards 95 C and steams at 85 C: about 1.5 ho
 
 A Hearth can't be picked up while its fire burns or its copper holds anything.
 
+[h2]The Firebox[/h2]
+Build menu, Masonry. Masonry 2: 8 Clay Bricks, 2 Clay and a mason's trowel (kept).
+
+The Hearth's fire without the copper: knee high, with an iron door whose vents show the fire. It lights, cooks and warms like the Hearth, and banks and stokes the same way ([b]Firebox Info[/b] shows the fire and fuel). Its flue is capped on its own, so smoke leaks round the door; Traditional Preservation (Fish & Meat)'s Smokehouse leads it into its smoking shed. It can't be picked up while it burns.
+
 [h2]Places[/h2]
 [list]
 [*][b]Outdoors[/b]: the day's weather.
 [*][b]Under a roof[/b] (any roof overhead, walls or not): the last 10 days' average outdoors plus 10 C, never over 28 C.
 [*][b]In a basement[/b]: 15 C all year.
 [/list]
-Mods that ask for it (Dairy) also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and a banked Hearth's embers 24 C.
+Mods that ask for it (Dairy) also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and banked embers (a Hearth's or a Firebox's) 24 C.
 
 [h2]Good to know[/h2]
 [list]

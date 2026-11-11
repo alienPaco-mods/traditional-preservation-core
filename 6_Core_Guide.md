@@ -1,5 +1,5 @@
 # Traditional Preservation: CORE
-### The Official Player's Guide to the Hearth and the Shared Rules
+### The Official Player's Guide to the Hearth, the Firebox and the Shared Rules
 
 > *"One fire, one copper, and the weather over all of it."*
 
@@ -11,6 +11,7 @@
 3. The Hearth
 4. The Copper
 5. Banking the Fire
+5½. The Firebox
 6. By the Fire
 7. Places and Weather
 8. Milk and Other Fluids That Go Off
@@ -25,9 +26,9 @@
 
 **Traditional Preservation (Core)**, TP Core for short, is the mod every Traditional Preservation mod needs: Salt, Fish, Yeast, Vinegar and Dairy. It carries the rules they share, so they all agree about the weather, the cellar and the time you were away.
 
-It also adds one station of its own, shared by the series: the **Hearth**, a stone fireplace with a 60 L copper in its top for heating whatever you pour into it.
+It also adds two stations of its own, shared by the series: the **Hearth**, a stone fireplace with a 60 L copper in its top for heating whatever you pour into it, and the **Firebox**, the same fire without the copper (chapter 5½).
 
-On its own it adds only the Hearth, and changes no vanilla recipe, item or loot.
+On its own it adds only those two, and changes no vanilla recipe, item or loot.
 
 ---
 
@@ -136,6 +137,27 @@ The embers keep burning while you're away, at their third. **Put out Fire** work
 
 ---
 
+## 5½. The Firebox
+
+The Hearth without its copper: the same fieldstone and lime top, built knee high, with an **iron door** over the fire mouth. You see the fire only through the door's vents, three draught holes low down and two slits under the arch.
+
+| | Hearth | Firebox |
+|---|---|---|
+| Build (Masonry 2, trowel kept) | 12 Clay Bricks, 4 Clay, 1 Copper Sheet | **8 Clay Bricks, 2 Clay** |
+| Masonry XP | 10 | 8 |
+| Copper | 60 L | none |
+| Firebox cooks like an oven | yes | yes |
+| Warms stations within 2 tiles | yes | yes |
+| Bank the Fire / Stoke the Fire | yes | yes |
+| Info window | Hearth Info | Firebox Info: fire, fuel, a note |
+| Flue | its own | capped, or joined to a building beside it |
+
+**The flue.** On its own the flue is capped with a flat stone, and while it burns the smoke leaks out round the door. A mod can lead it into a building on the Firebox's back or either flank (never the door's side): the Smokehouse of *Traditional Preservation (Fish & Meat)* does, with a **clay pipe** from the top or a **trench** in the ground roofed with flat stones from its foot. The Firebox then shows that flue, and the smoke goes where it should.
+
+> ✏ *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
+
+---
+
 ## 6. By the Fire
 
 A fire warms what stands beside it. Mods that ask for it (Dairy's incubator and crock do) count two more places:
@@ -143,7 +165,7 @@ A fire warms what stands beside it. Mods that ask for it (Dairy's incubator and 
 | Place | What makes it | Temperature |
 |---|---|---|
 | **By a fire** | Any lit fire within 2 tiles, on the same floor: a Hearth, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** |
-| **By banked embers** | A banked Hearth within 2 tiles, with no full fire in reach | **24 C** |
+| **By banked embers** | A banked Hearth or Firebox within 2 tiles, with no full fire in reach | **24 C** |
 
 While you're away, the fire counts only for as long as its fuel would have lasted. After that, the station is back in whatever place it stands in without the fire.
 
@@ -255,11 +277,16 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 |---|---|
 | `TPC.kit()` | Gives a mason's trowel, 12 clay bricks, 4 clay and a copper sheet: what a Hearth takes to build (Masonry 2). |
 | `TPC.hearth()` | The nearest Hearth within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the copper's litres, fluid and heat, when it will steam, and until when the fire burns. |
-| `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 20. |
-| `TPC.fuel(minutes)` | Sets its fuel (600, ten hours, if left out); on a banked Hearth, what the embers have left. Vanilla's menu still lights it. |
+| `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 60. |
+| `TPC.fuel(minutes)` | Sets the fuel of the nearest Hearth or Firebox (600, ten hours, if left out); banked, what the embers have left. Vanilla's menu still lights it. |
 | `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Hearth and on your square, your core heat, the firebox's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
 | `TPC.hot()` | Brings its copper to the steam (90 C) now. |
+| `TPC.fireboxKit()` | Gives a mason's trowel, 8 clay bricks and 2 clay: what a Firebox takes to build (Masonry 2). |
+| `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
+| `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
+
+**Typical check of the Firebox:** `TPC.fireboxKit()`, build one, `TPC.fuel()`, light it: the glow shows through the door's vents and smoke leaks round the door. `TPC.flue("Pipe", "Left")` shows a joined flue and the smoke stops.
 
 **Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the mouth shows dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.

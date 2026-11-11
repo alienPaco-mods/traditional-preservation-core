@@ -2,7 +2,7 @@
 
 **Status: experimental, not released.** Back up your save before enabling.
 
-TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, and the series' shared station, the **Hearth**. On its own it adds only the Hearth.
+TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, and the series' shared stations, the **Hearth** and the **Firebox**. On its own it adds only those two.
 
 This file describes the mod as a player meets it. How to work on the code, the tests and the `tp` tool: `DEVGUIDE.md`.
 
@@ -65,13 +65,23 @@ Fluid filled from the copper leaves at the copper's heat. Vanilla cools a carrie
 Two places beyond the series' three, which a mod must ask for (`Hearth.placeOf`; Dairy does):
 
 - **By a fire, 28 C:** any lit fire within 2 tiles on the same floor. A Hearth, a fireplace, an antique stove, a brazier or a campfire counts; an electric or gas stove never does.
-- **By banked embers, 24 C:** a banked Hearth within 2 tiles, when no full fire is in reach.
+- **By banked embers, 24 C:** a banked Hearth or Firebox within 2 tiles, when no full fire is in reach.
 
 A station seen by a fire notes how long the fuel will last. While its area is unloaded the fire counts until then, and after that the place under it does.
 
 ### Picking it up
 
 A Hearth can't be picked up while its fire burns or its copper holds anything; the pick-up cursor says so.
+
+## The Firebox
+
+The Hearth's fire without the copper: the same fieldstone and lime top, knee high, with an iron door on its arched mouth. Its fire shows through the door's vents. It is a vanilla fireplace as the Hearth is, so it lights, burns, cooks in its firebox and warms stations within 2 tiles ("by a fire") the same way.
+
+**Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 8 Clay Bricks, 2 Clay and a mason's trowel (kept). Two facings.
+
+**Right-click it.** Vanilla's Firebox submenu gains **Firebox Info** (fire and fuel, with a note) and **Bank the Fire** / **Stoke the Fire**, which work exactly as on the Hearth (the loot-window button too). Clicking it opens Firebox Info. It can't be picked up while its fire burns.
+
+**Its flue** leaves its top and is capped on its own: smoke leaks round the door while it burns. Another mod can join it to a building beside it, on its back or either flank, never the door's side: Traditional Preservation (Fish & Meat)'s Smokehouse does, with a clay pipe out of the top or a trench roofed with flat stones from its foot. The Firebox's tile then shows that flue on that side, and the smoke goes up it instead of round the door.
 
 ## Places and weather
 
@@ -97,13 +107,13 @@ Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functi
 
 ## Tuning
 
-The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The Hearth's build recipe is `42/media/scripts/entities/entity_TP_Hearth.txt`.
+The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt` and `entity_TP_Firebox.txt`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_container.lua`, `test_recipes.lua`, `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_container.lua`, `test_recipes.lua`, `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 
-In debug mode, `TPC.help()` in the Lua console lists the Hearth's commands. They are described in `DEVHELP.md`.
+In debug mode, `TPC.help()` in the Lua console lists the Hearth's and the Firebox's commands. They are described in `DEVHELP.md`.
 
 ## Known prototype caveats
 

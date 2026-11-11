@@ -150,6 +150,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Hearth.staysIn(name)`: a fluid the copper changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `HearthUI.addMenu(fn)` and `HearthUI.addNotes(fn)`
      put a mod's rows on the Hearth's menu and its lines in Hearth Info.
+   - The Firebox (`Hearth.isFirebox`; `Hearth.isFire` is a Hearth or a Firebox): the Hearth's fire with no copper, in
+     the same state table (`tpHearth`). `Hearth.setFlue(state, "Pipe"|"Stones", "Back"|"Left"|"Right")` joins its
+     flue (nil caps it); `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the door's side or
+     not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES` matches the tile
+     builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the Hearth.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.

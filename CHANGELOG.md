@@ -1,6 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's Put out Fire, while a Hearth burns
+  (`HearthLootControls`, a vanilla loot-window handler; controller menu too). Same action as the right-click menu.
+- Debug only: `TPC.probe(r, c)`, `TPC.unprobe()`, `TPC.probeRead()` try the banked-Hearth design in game (vanilla
+  fire out, a Lua heat source and light, the firebox kept hot by a custom temperature). Not a feature.
 - Empty the Copper (user 2026-11-11): the Hearth's menu pours whatever the copper holds away in one go, with its
   age record (rotten milk above all; before, it went out a container at a time). `TPHearthCopper` mode "empty", no
   item; the time grows with the litres, as a pour does. Hover: how much of what.

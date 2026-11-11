@@ -35,6 +35,9 @@ local function onFireAction(playerObj, hearth, mode)
     ISTimedActionQueue.add(TPHearthFire:new(playerObj, hearth, mode))
 end
 
+HearthUI.fireAction = onFireAction
+HearthUI.FIRE_ICONS = FIRE_ICONS
+
 local function addFireOption(menu, playerObj, hearth)
     if not hearth:isLit() then return end
     local banked = Hearth.isBanked(hearth)

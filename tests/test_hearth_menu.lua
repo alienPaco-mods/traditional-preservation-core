@@ -96,6 +96,47 @@ check("a banked fire can be stoked", named(sub, "ContextMenu_TraditionalPreserva
     and named(sub, "ContextMenu_TraditionalPreservationCore_BankFire") == nil)
 check("Stoke shows the Hearth lit", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire").iconTexture == "media/textures/Item_TPHearthLit.png")
 
+-- The loot window's button, beside vanilla's Put out Fire
+ISLootWindowObjectControlHandler = H.class("ISLootWindowObjectControlHandler")
+function ISLootWindowObjectControlHandler:getButtonControl(title)
+    self.control = self.control or { setTooltip = function(control, text) control.tooltip = text end }
+    self.control.title = title
+    return self.control
+end
+function ISLootWindowObjectControlHandler:addJoypadContextMenuOption(context, text) return context:addOption(text, self, self.perform) end
+ISLootWindowObjectControlHandler_PutOut, ISLootWindowObjectControlHandler_AddFuelOption = {}, {}
+ISLootWindowContainerControls_HandlerList = { ISLootWindowObjectControlHandler_PutOut, ISLootWindowObjectControlHandler_AddFuelOption }
+ISLootWindowContainerControls = { AddHandler = function(handler, toRight)
+    handler.displayToRight = toRight
+    table.insert(ISLootWindowContainerControls_HandlerList, handler)
+end }
+isGamePaused = function() return false end
+local Button = require "TraditionalPreservationCore/HearthLootControls"
+local list = ISLootWindowContainerControls_HandlerList
+check("the button sits just after Put out Fire, on the right", list[2] == Button and list[3] == ISLootWindowObjectControlHandler_AddFuelOption
+    and #list == 3 and Button.displayToRight == true)
+local function button(object)
+    local handler = Button:new()
+    handler.object, handler.playerObj = object, character
+    return handler
+end
+check("no button on a cold Hearth or another fireplace", not button(hearth()):shouldBeVisible()
+    and not button({ getSprite = fireplace.getSprite, isLit = function() return true end }):shouldBeVisible())
+lit:getModData()[Hearth.KEY].banked = nil
+local handler = button(lit)
+check("a lit Hearth's button banks it", handler:shouldBeVisible()
+    and handler:getControl().title == getText("ContextMenu_TraditionalPreservationCore_BankFire")
+    and handler.control.tooltip == getText("IGUI_TraditionalPreservationCore_BankHelp"))
+handler:perform()
+check("pressing it queues the fire action", ui.queued[#ui.queued].Type == "TPHearthFire" and ui.queued[#ui.queued].mode == "bank")
+lit:getModData()[Hearth.KEY].banked = true
+check("a banked Hearth's button stokes it", handler:getControl().title == getText("ContextMenu_TraditionalPreservationCore_StokeFire"))
+local pad = menu()
+handler:handleJoypadContextMenu(pad)
+check("a controller gets it too, with the lit Hearth's icon", pad.options[1].name == getText("ContextMenu_TraditionalPreservationCore_StokeFire")
+    and pad.options[1].iconTexture == "media/textures/Item_TPHearthLit.png")
+lit:getModData()[Hearth.KEY].banked = nil
+
 -- Pouring in
 local milk, water = H.vessel("Pot of Milk", "CowMilk", 3, 5), H.vessel("Bucket of Water", "Water", 8, 10)
 local mixture = H.vessel("Odd Bottle", "Mix", 1, 1)
@@ -120,8 +161,9 @@ check("the copper's own fluid is offered", entries[2].notAvailable == nil and en
 check("a mixture is red too", entries[3].notAvailable == true
     and entries[3].toolTip.description == getText("IGUI_TraditionalPreservationCore_NotOneFluid"))
 entries[2].onSelect(character, unpack(entries[2].args))
-check("choosing one brings it to hand and queues the pour", ui.moved[1] == water and ui.queued[2].Type == "TPHearthCopper"
-    and ui.queued[2].mode == "pourIn" and ui.queued[2].item == water and ui.queued[2].hearth == holdsWater)
+local poured = ui.queued[#ui.queued]
+check("choosing one brings it to hand and queues the pour", ui.moved[1] == water and poured.Type == "TPHearthCopper"
+    and poured.mode == "pourIn" and poured.item == water and poured.hearth == holdsWater)
 
 sub = open(hearth({}))
 entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper").subOption.options
@@ -141,7 +183,8 @@ check("Fill from shows the copper full", fill.iconTexture == "media/textures/Ite
 check("filling lists empty containers and those of the copper's fluid with room", #entries == 2
     and entries[1].args[2] == water and entries[2].args[2] == empty)
 entries[2].onSelect(character, unpack(entries[2].args))
-check("choosing one queues the fill", ui.queued[3].Type == "TPHearthCopper" and ui.queued[3].mode == "fillFrom" and ui.queued[3].item == empty)
+local filled = ui.queued[#ui.queued]
+check("choosing one queues the fill", filled.Type == "TPHearthCopper" and filled.mode == "fillFrom" and filled.item == empty)
 ui.carried = { milk, mixture }
 fill = named(open(holdsWater), "ContextMenu_TraditionalPreservationCore_FillFromCopper")
 check("with nothing to fill, the option is greyed with the reason", fill.isDisabled == true

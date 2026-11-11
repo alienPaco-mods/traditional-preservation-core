@@ -11,6 +11,9 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 20. |
 | `TPC.fuel(minutes)` | Sets its fuel (600, ten hours, if left out). Vanilla's menu still lights it. |
 | `TPC.hot()` | Brings its copper to the steam (90 C) now. |
+| `TPC.probe(r, c)` | Probe for the banked-Hearth design, not a feature: puts the vanilla fire out, adds a heat source (r tiles, c C; 2 and 25 if left out) and a faint light, and keeps the firebox at a lit fire's heat. Not saved. |
+| `TPC.unprobe()` | Undoes the probe: lights the vanilla fire again. |
+| `TPC.probeRead()` | Air C and light 1-6 tiles east of the Hearth and on your square, your core heat, the firebox's heat, and each cookable food's heat and cooking minutes. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 

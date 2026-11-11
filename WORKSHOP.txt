@@ -20,7 +20,7 @@ It is a working fireplace: add fuel and light it as you would any other, cook in
 [*][b]Pour into the Copper[/b]: up to 20 L of one fluid, from any container.
 [*][b]Fill from the Copper[/b]: into your own containers, at the copper's heat.
 [*][b]Empty the Copper[/b]: pour the whole lot away, rotten milk and all.
-[*][b]Bank the Fire[/b]: the fire burns a third of the wood, holds the copper at about 50 C and cooks a third as fast. [b]Stoke the Fire[/b] brings it back.
+[*][b]Bank the Fire[/b]: the fire burns a third of the wood, holds the copper at about 50 C, warms only the 2 tiles round it and cooks a third as fast. [b]Stoke the Fire[/b] brings it back.
 [*][b]Hearth Info[/b] (or just click the Hearth): the fire, the fuel and how long it will burn, the copper's contents and heat, and when it will steam.
 [/list]
 

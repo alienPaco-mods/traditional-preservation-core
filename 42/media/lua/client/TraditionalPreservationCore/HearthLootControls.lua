@@ -1,6 +1,10 @@
 -- Traditional Preservation core: Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's
--- Put out Fire, while a Hearth's fire burns. It queues the same action as the Hearth's right-click menu.
+-- Put out Fire, while a Hearth's fire burns. It queues the same action as the Hearth's right-click menu. A banked
+-- Hearth's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
+-- unbanks).
 require "ISUI/LootWindow/ISLootWindowContainerControls"
+require "ISUI/LootWindow/Handlers/LightFuelOption"
+require "ISUI/LootWindow/Handlers/PutOut"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local HearthUI = require "TraditionalPreservationCore/HearthUI"
 
@@ -12,7 +16,7 @@ local HELP = { bank = "IGUI_TraditionalPreservationCore_BankHelp", stoke = "IGUI
 
 -- "bank" for a lit Hearth, "stoke" for a banked one, nil for anything else.
 local function modeOf(object)
-    if not object or not Hearth.isHearth(object) or not object:isLit() then return nil end
+    if not object or not Hearth.isHearth(object) or not Hearth.isBurning(object) then return nil end
     return Hearth.isBanked(object) and "stoke" or "bank"
 end
 Handler.modeOf = modeOf
@@ -45,6 +49,32 @@ function Handler:new()
     local o = ISLootWindowObjectControlHandler.new(self)
     o.altColor = true -- it works the fire, not what's in the firebox
     return o
+end
+
+local function isBanked(object)
+    return object ~= nil and instanceof(object, "IsoFireplace") and Hearth.isBanked(object)
+end
+
+local LightFire = ISLootWindowObjectControlHandler_LightFireOption
+local lightFireVisible = LightFire.shouldBeVisible
+function LightFire:shouldBeVisible()
+    if isBanked(self.object) then return false end
+    return lightFireVisible(self)
+end
+
+local PutOut = ISLootWindowObjectControlHandler_PutOut
+local putOutVisible, putOutPerform = PutOut.shouldBeVisible, PutOut.perform
+function PutOut:shouldBeVisible()
+    if isBanked(self.object) then return true end
+    return putOutVisible(self)
+end
+
+function PutOut:perform()
+    if isBanked(self.object) then
+        if not isGamePaused() then HearthUI.fireAction(self.playerObj, self.object, "out") end
+        return
+    end
+    return putOutPerform(self)
 end
 
 -- Right-hand buttons are laid out from the right in list order, so just after Put out Fire puts it beside it.

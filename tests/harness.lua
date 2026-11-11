@@ -252,6 +252,11 @@ function H.installMenus()
         getContainers = function() return H.list({ { getItems = function() return H.list(ui.carried) end } }) end,
         transferIfNeeded = function(_, item) table.insert(ui.moved, item) end,
     }
+    -- Vanilla's Light Fire submenu, as one option.
+    ISCampingMenu = {
+        doLightFireOption = function(_, context) return context:addOption("Light Fire") end,
+        timeString = function(minutes) return minutes .. " min" end,
+    }
     InfoPanelFlags = {}
     ISMoveableSpriteProps = {
         canPickUpMoveable = function() return ui.vanillaPickUp end,

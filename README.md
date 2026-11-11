@@ -47,7 +47,7 @@ Fluid filled from the copper leaves at the copper's heat. Vanilla cools a carrie
 
 ### Banking
 
-**Bank the Fire** rakes a lit fire down under its ash. It burns a third of the wood, so the same fuel lasts three times as long; the copper settles at about 50 C; the firebox cooks a third as fast. **Stoke the Fire** brings it back to a full fire. A banked fire put out by hand, or burnt down, is no longer banked: it lights again as a full fire.
+**Bank the Fire** rakes a lit fire down under its ash. It burns a third of the wood, so the same fuel lasts three times as long; the copper settles at about 50 C; the firebox cooks a third as fast; the room warms only within 2 tiles (25 C) and a faint light is left. **Stoke the Fire** brings it back to a full fire. Vanilla's fire is out while banked (its heat and light would reach 8 tiles whatever the fuel), so vanilla's Light Fire gives way to Put out Fire, which unbanks it. A banked fire burnt down goes out. The mod counts the wood from the clock, away time included, and wood added counts in full.
 
 ### By a fire
 
@@ -96,5 +96,7 @@ In debug mode, `TPC.help()` in the Lua console lists the Hearth's commands. They
 
 - While a Hearth's area is unloaded, its copper heats only as far as the fuel it had when last seen would have lasted, then cools.
 - Cooking in a banked firebox is slowed only while the area is loaded, which is also the only time vanilla cooks.
+- A banked Hearth's own heat, light and firebox heat aren't saved by the game; the mod puts them back as soon as the Hearth is refreshed after a load (within a second).
+- Vanilla's fuel info window (from the fuel line in the fireplace menu) says Unlit for a banked Hearth; the menu line and Hearth Info say Banked.
 - The tiledef number 5173 must be unique among your active mods.
 - Multiplayer is not supported. This mod is singleplayer only for now.

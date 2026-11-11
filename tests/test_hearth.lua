@@ -93,23 +93,25 @@ Hearth.advance(fromHot, 2, 20)
 Hearth.advance(outHot, 2, 20)
 check("a hot copper over banked embers cools, slower than with the fire out", fromHot.tempC < 90 and fromHot.tempC > outHot.tempC)
 
+-- Banked, vanilla's fire is out and its fuel stays put: only the mod's count burns.
 local fire = {}
 check("a fire that isn't banked is left alone", Hearth.reckonFuel(fire, 120, true, 0) == nil)
 Hearth.setBanked(fire, true, 120, 0)
-local fuel, relight = Hearth.reckonFuel(fire, 60, true, 1)
-check("banked, an hour burns 20 minutes of fuel", fuel == 100 and not relight)
-fuel = Hearth.reckonFuel(fire, 100 - 30 + 60, true, 1.5)
-check("wood added counts in full", fuel == 100 - 10 + 60 - 30)
+local fuel = Hearth.reckonFuel(fire, 120, false, 1)
+check("banked, an hour burns 20 minutes of fuel", fuel == 100 and fire.banked)
+fuel = Hearth.reckonFuel(fire, 100 + 60, false, 1.5)
+check("wood added counts in full", fuel == 100 - 10 + 60)
 local away = {}
 Hearth.setBanked(away, true, 180, 0)
-fuel, relight = Hearth.reckonFuel(away, 0, false, 5)
-check("burnt out at full speed while away, it is lit again with what embers would have left", fuel == 80 and relight)
-local putOut = {}
-Hearth.setBanked(putOut, true, 180, 0)
-check("put out by hand, it is no longer banked", Hearth.reckonFuel(putOut, 170, false, 0.2) == nil and putOut.banked == nil)
+check("away for five hours, the count burns on", Hearth.reckonFuel(away, 180, false, 5) == 80)
+local relit = {}
+Hearth.setBanked(relit, true, 180, 0)
+check("lit by anything but stoking, it is a lit fire again", Hearth.reckonFuel(relit, 180, true, 0.2) == nil and relit.banked == nil)
 local burnt = {}
 Hearth.setBanked(burnt, true, 30, 0)
-check("burnt down, it goes out and is no longer banked", Hearth.reckonFuel(burnt, 0, true, 2) == 0 and burnt.banked == nil)
+check("burnt down, it is out with no fuel and no longer banked", Hearth.reckonFuel(burnt, 30, false, 2) == 0 and burnt.banked == nil)
+local old = { banked = true }
+check("banked with no count yet, it starts one from vanilla's fuel", Hearth.reckonFuel(old, 90, false, 3) == nil and old.fuel == 90 and old.fuelAt == 3)
 check("a banked firebox cooks a third as fast", near(Hearth.bankedCooking(10, 40), 20) and Hearth.bankedCooking(10, 5) == 5)
 
 -- Tiles

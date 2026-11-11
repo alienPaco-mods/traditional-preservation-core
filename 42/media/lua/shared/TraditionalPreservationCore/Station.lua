@@ -83,6 +83,7 @@ end
 --   entry    function(object): a new station's entry table, or nil to leave the object alone. Default {}.
 --   refresh  function(object, entry), for each loaded station
 --   ticks    ticks between refreshes (default TICKS_PER_REFRESH)
+--   dropped  function(object, entry), optional: a station's area unloaded or it is gone; it won't be refreshed again
 --   scan     true to find stations built or put down this session as soon as a player is near (see above).
 --            entry must then turn down every object that isn't the mod's, and cheaply (Station.kinds).
 function Station.tracker(options)
@@ -119,6 +120,7 @@ function Station.tracker(options)
         for object in pairs(tracker.tracked) do table.insert(objects, object) end
         for _, object in ipairs(objects) do
             if not Station.isLoaded(object) then
+                if options.dropped then options.dropped(object, tracker.tracked[object]) end
                 tracker.tracked[object] = nil
             elseif tracker.tracked[object] then
                 options.refresh(object, tracker.tracked[object])

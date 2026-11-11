@@ -1,6 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Banked Hearth (user 2026-11-11): vanilla's fire is put out while banked, since its room heat and light reach 8 tiles
+  whatever the fuel. In its place the mod adds its own heat source (2 tiles, 25 C), a faint light (radius 1) and a hot
+  firebox (custom container temperature 1.8, cooking slowed to a third as before); none is saved by the game, so each
+  refresh puts them back, and they are taken away when the area unloads (`Station.tracker` option `dropped`). The fuel
+  is the mod's count on the clock, set on vanilla's; burnt down, the fire goes out. `Hearth.isBurning` (lit or banked)
+  replaces `isLit` in every check: by a fire, fuel hours, Hearth Info, the menus, the pick-up rule. Vanilla's Light
+  Fire (menu and loot window) gives way to Put out Fire on a banked Hearth, which unbanks it (`TPHearthFire` mode
+  "out"); vanilla's fuel line says Banked. Logic in `HearthWorld.setFire`; test `test_hearth_world.lua`.
+  A banked firebox's cooking is set back every tick, not each refresh: the cooking bar climbed and snapped back
+  (in-game step 52).
+- Debug: `TPC.probe` and `TPC.unprobe` removed (the build replaces them); `TPC.probeRead` is now `TPC.warmth`.
 - Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's Put out Fire, while a Hearth burns
   (`HearthLootControls`, a vanilla loot-window handler; controller menu too). Same action as the right-click menu.
 - Debug only: `TPC.probe(r, c)`, `TPC.unprobe()`, `TPC.probeRead()` try the banked-Hearth design in game (vanilla

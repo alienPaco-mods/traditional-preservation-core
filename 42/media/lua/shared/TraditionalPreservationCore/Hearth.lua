@@ -10,8 +10,9 @@
 --
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
 -- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
--- one speed, a minute of fuel each minute (caught up in one go when its area loads), so a banked Hearth keeps its
--- own reckoning of the fuel and sets vanilla's to it (Hearth.reckonFuel).
+-- one speed and heats and lights 8 tiles whatever its fuel (ENGINE_NOTES), so a banked Hearth's vanilla fire is out:
+-- the mod counts its fuel from the clock (Hearth.reckonFuel) and sets vanilla's to the count, gives it its own small
+-- heat and faint light, and keeps the firebox hot (HearthWorld). Hearth.isBurning is a fire lit or banked.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -32,6 +33,11 @@ Hearth.BANKED_C = 50               -- the copper's heat over banked embers
 Hearth.BANKED_BURN = 1 / 3         -- of the wood a lit fire burns: a banked fire lasts three times as long
 Hearth.EMBERS = "Embers"           -- the place by a banked Hearth
 Hearth.EMBERS_C = 24
+Hearth.BANKED_HEAT_RADIUS = 2      -- tiles of room heat around banked embers (a lit fire: 8)
+Hearth.BANKED_HEAT_C = 25          -- that heat (a lit fire: 35 C)
+Hearth.BANKED_LIGHT_RADIUS = 1
+Hearth.BANKED_LIGHT = { 0.6, 0.25, 0.1 }
+Hearth.BANKED_FIREBOX = 1.8        -- the firebox's heat (vanilla's container temperature): it cooks, a third as fast
 
 local FIRE_C = { [Hearth.PLACE] = Hearth.FIRE_C, [Hearth.EMBERS] = Hearth.EMBERS_C }
 
@@ -244,23 +250,27 @@ function Hearth.setBanked(state, banked, fuel, now)
     end
 end
 
--- The fuel a banked fire has left now, from vanilla's fuel (minutes) and whether it is lit. Returns the fuel to give
--- vanilla's fireplace (nil to leave it alone) and true when it must be lit again: vanilla burnt it out at full speed
--- while its area was away. Wood added since the last reckoning counts in full. Put out by hand (fuel left), or burnt
--- down, the fire is no longer banked: it lights up again as a lit fire.
+-- The fuel a banked fire has left now, from vanilla's fuel (minutes) and whether vanilla's fire is lit (it is out
+-- while banked). Returns the fuel to give vanilla's fireplace, nil to leave it alone. The count runs on the clock,
+-- away time included; wood added since the last reckoning counts in full. Burnt down, the fire is out and no longer
+-- banked. Lit by anything but stoking, it is a lit fire again.
 function Hearth.reckonFuel(state, fuel, lit, now)
     if not state.banked then return nil end
+    if lit then
+        Hearth.setBanked(state, false)
+        return nil
+    end
     if not state.fuel then
         Hearth.setBanked(state, true, fuel, now)
         return nil
     end
     local left = state.fuel - (now - state.fuelAt) * 60 * Hearth.BANKED_BURN + math.max(fuel - state.fuelSet, 0)
-    if (not lit and fuel > 0) or left < 1 then
+    if left < 1 then
         Hearth.setBanked(state, false)
-        return lit and 0 or nil
+        return 0
     end
     state.fuel, state.fuelAt, state.fuelSet = left, now, math.ceil(left)
-    return state.fuelSet, not lit
+    return state.fuelSet
 end
 
 -- A banked firebox cooks as slowly as it burns: vanilla adds cooking time at full speed, so of the minutes cooked
@@ -342,7 +352,7 @@ end
 -- Fireplaces, antique ovens, braziers, cooking pits and burn barrels are IsoFireplace; a player's campfire is a
 -- plain object named "Campfire" whose lit state the camping system copies into its modData (ENGINE_NOTES).
 local function isLitFire(object)
-    if instanceof(object, "IsoFireplace") then return object:isLit() end
+    if instanceof(object, "IsoFireplace") then return Hearth.isBurning(object) end
     return object:getName() == "Campfire" and object:getModData().isLit == true
 end
 
@@ -365,9 +375,14 @@ function Hearth.near(square, test)
     return list
 end
 
--- A Hearth whose fire is lit and banked.
+-- A Hearth whose fire is banked (vanilla's fire is out meanwhile).
 function Hearth.isBanked(object)
-    return Hearth.isHearth(object) and object:isLit() and Hearth.stateOf(object:getModData()).banked == true
+    return Hearth.isHearth(object) and Hearth.stateOf(object:getModData()).banked == true
+end
+
+-- A fireplace whose fire burns, lit or banked.
+function Hearth.isBurning(object)
+    return object:isLit() or Hearth.isBanked(object)
 end
 
 -- The warmest lit fire within FIRE_RADIUS tiles on the same floor, the nearest of those, with its place (PLACE, or

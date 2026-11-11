@@ -39,7 +39,7 @@ HearthUI.fireAction = onFireAction
 HearthUI.FIRE_ICONS = FIRE_ICONS
 
 local function addFireOption(menu, playerObj, hearth)
-    if not hearth:isLit() then return end
+    if not Hearth.isBurning(hearth) then return end
     local banked = Hearth.isBanked(hearth)
     local mode = banked and "stoke" or "bank"
     local option = menu:addOption(getText(banked and "ContextMenu_TraditionalPreservationCore_StokeFire"
@@ -138,11 +138,35 @@ local function hearthSubMenu(context, hearth)
     return menu
 end
 
+-- A banked Hearth's vanilla fire is out, so vanilla's fuel line says Unlit: it says Banked, with the time the embers
+-- burn on.
+local function fixFuelLine(menu, hearth)
+    if not Hearth.isBanked(hearth) then return end
+    local unlit = " (" .. getText("IGUI_Fireplace_Unlit") .. ")"
+    for _, option in ipairs(menu.options or {}) do
+        if type(option.name) == "string" and option.name:sub(-#unlit) == unlit then
+            option.name = getText("IGUI_BBQ_FuelAmount", ISCampingMenu.timeString(math.floor(Hearth.fuelHours(hearth) * 60 + 0.5)))
+                .. " (" .. getText("IGUI_TraditionalPreservationCore_InfoFireBanked") .. ")"
+        end
+    end
+end
+
+-- Vanilla offers to light a fire that is out: a banked Hearth's is, so Put out Fire takes its place there (in the
+-- right-click menu and the loot window's controller menu), and it unbanks.
+local doLightFireOption = ISCampingMenu.doLightFireOption
+function ISCampingMenu.doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
+    if instanceof(target, "IsoFireplace") and Hearth.isBanked(target) then
+        return context:addOption(getText("ContextMenu_Put_out_fire"), playerObj, onFireAction, target, "out")
+    end
+    return doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
+end
+
 local HearthWindow -- below
 
 local function addHearthMenu(context, playerObj, hearth)
     local copper = Hearth.copperOf(hearth)
     local menu = hearthSubMenu(context, hearth)
+    fixFuelLine(menu, hearth)
 
     local status = menu:addOption(copperStatus(copper))
     status.isDisabled = true
@@ -171,9 +195,9 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
--- Picking the Hearth up while the fire burns or the copper holds anything would lose them.
+-- Picking the Hearth up while the fire burns (lit or banked) or the copper holds anything would lose them.
 UI.keepInPlace(function(object)
-    return Hearth.isHearth(object) and (object:isLit() or (Hearth.stateOf(object:getModData()).ml or 0) > 0)
+    return Hearth.isHearth(object) and (Hearth.isBurning(object) or (Hearth.stateOf(object:getModData()).ml or 0) > 0)
 end)
 
 -- Hearth Info: the fire, its fuel and the copper.
@@ -200,7 +224,7 @@ end
 
 function HearthWindow:refresh()
     local hearth = self.station
-    self.info = { copper = Hearth.copperOf(hearth), lit = hearth:isLit(), banked = Hearth.isBanked(hearth),
+    self.info = { copper = Hearth.copperOf(hearth), lit = Hearth.isBurning(hearth), banked = Hearth.isBanked(hearth),
         fuelMin = hearth:getFuelAmount(), burnHours = Hearth.fuelHours(hearth) }
 end
 

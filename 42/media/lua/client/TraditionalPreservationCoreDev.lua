@@ -11,11 +11,9 @@ function TPC.help()
     say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 20)")
-    say("TPC.fuel(minutes)    set its fuel (default 600, ten hours); vanilla's menu still lights it")
+    say("TPC.fuel(minutes)    set its fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot()            bring its copper to the steam (90 C) now")
-    say("TPC.probe(r, c)      PROBE: put the Hearth's vanilla fire out, add our own heat (r tiles, c C; default 2, 25),")
-    say("                     a faint light, and keep its firebox at a lit fire's heat; TPC.unprobe() undoes it")
-    say("TPC.probeRead()      PROBE: air C and light by the Hearth and on your square, firebox heat, each food's cooking")
+    say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
 end
 
 function TPC.kit()
@@ -63,7 +61,10 @@ end
 function TPC.fuel(minutes)
     local hearth = nearestHearth()
     if not hearth then return end
-    hearth:setFuelAmount(minutes or 600)
+    minutes = minutes or 600
+    hearth:setFuelAmount(minutes)
+    local copper = Hearth.copperOf(hearth)
+    if copper.banked then Hearth.setBanked(copper, true, minutes, getGameTime():getWorldAgeHours()) end
     TPC.hearth()
 end
 
@@ -77,61 +78,23 @@ function TPC.hot()
     TPC.hearth()
 end
 
--- Probe for the banked Hearth (ROADMAP section 4), not a feature: the vanilla fire put out, our own heat source and
--- light in its place, and the firebox kept at a lit fire's heat with a custom temperature. Nothing here is saved.
-
-local probe = {}
-
-function TPC.unprobe()
-    local cell = getCell()
-    if probe.heat then cell:removeHeatSource(probe.heat) end
-    if probe.light then cell:removeLamppost(probe.light) end
-    local hearth = probe.hearth
-    if hearth then
-        hearth:getContainer():setCustomTemperature(0)
-        if hearth:hasFuel() then hearth:turnOn() end
-        say("Probe undone: the vanilla fire lit again, our heat and light gone, the firebox back to vanilla's heat.")
-    end
-    probe = {}
-end
-
-function TPC.probe(radius, celsius)
-    local hearth = nearestHearth()
-    if not hearth then return end
-    TPC.unprobe()
-    radius, celsius = radius or 2, celsius or 25
-    local x, y, z = hearth:getX(), hearth:getY(), hearth:getZ()
-    local cell = getCell()
-    -- setLit, not extinguish: extinguish lets it smoulder (burning fuel) for ten minutes.
-    hearth:setLit(false)
-    local heat = IsoHeatSource.new(x, y, z, radius, celsius)
-    cell:addHeatSource(heat)
-    local light = cell:addLamppost(x, y, z, 0.6, 0.25, 0.1, math.max(1, radius - 1))
-    local container = hearth:getContainer()
-    container:setCustomTemperature(1.8)
-    container:addItemsToProcessItems()
-    probe = { hearth = hearth, heat = heat, light = light }
-    say(string.format("Probe on: vanilla fire out, heat %d tiles at %d C, light %d, firebox custom temperature %.1f.",
-        radius, celsius, math.max(1, radius - 1), container:getCustomTemperature()))
-    TPC.probeRead()
-end
-
 local function squareLine(label, square, playerNum)
     if not square then return end
     say(string.format("  %-14s air %.1f C, light %.2f", label,
         getClimateManager():getAirTemperatureForSquare(square), square:getLightLevel(playerNum)))
 end
 
-function TPC.probeRead()
-    local hearth = probe.hearth or nearestHearth()
+-- What a lit or banked Hearth warms and lights round it, and how its firebox cooks.
+function TPC.warmth()
+    local hearth = nearestHearth()
     if not hearth then return end
     local player = getPlayer()
     local playerNum = player:getPlayerNum()
     local cell = getCell()
     local x, y, z = hearth:getX(), hearth:getY(), hearth:getZ()
-    say(string.format("Hearth %s, vanilla fuel %d min, firebox %.2f (custom %.2f), probe %s",
-        hearth:isLit() and "lit" or "out", hearth:getFuelAmount(), hearth:getContainer():getTemperature(),
-        hearth:getContainer():getCustomTemperature(), probe.hearth and "on" or "off"))
+    say(string.format("Hearth %s, vanilla fire %s, vanilla fuel %d min, firebox %.2f (custom %.2f)",
+        Hearth.isBanked(hearth) and "banked" or hearth:isLit() and "lit" or "out", hearth:isLit() and "lit" or "out",
+        hearth:getFuelAmount(), hearth:getContainer():getTemperature(), hearth:getContainer():getCustomTemperature()))
     for distance = 1, 6 do
         squareLine(distance .. " tile(s) east", cell:getGridSquare(x + distance, y, z), playerNum)
     end

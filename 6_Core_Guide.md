@@ -105,7 +105,7 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 
 ## 5. Banking the Fire
 
-**Bank the Fire** rakes a lit fire down under its own ash. The mouth stops glowing and shows dull embers.
+**Bank the Fire** rakes a lit fire down under its own ash. The flames go out and the mouth shows dull embers.
 
 | | Lit | Banked |
 |---|---|---|
@@ -113,11 +113,13 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 | The same fuel lasts | 1× | **3×** |
 | The copper | heats towards 95 C | settles at about **50 C** |
 | The firebox cooks | at full speed | a third as fast |
+| Warms the room | 8 tiles round | only the **2 tiles** round it |
+| Light | the whole room | a faint glow |
 | Stations within 2 tiles (see 6) | 28 C | 24 C |
 
 **Stoke the Fire** rakes the embers back up into a full fire.
 
-A banked fire you put out by hand, or one that burns down, isn't banked any more. Light it again and it's a full fire.
+The embers keep burning while you're away, at their third. **Put out Fire** works on a banked fire too, and a banked fire that burns down goes out. Either way it isn't banked any more: light it again and it's a full fire. You can add wood to banked embers; it all counts.
 
 > ✏ *Margin note:* a banked copper never steams. It's the overnight setting: warm water in the morning, embers still alive, and a third of the woodpile spent.
 
@@ -207,7 +209,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 ## 9. Tips
 
 - **Fill it up.** A full 20 L copper takes only half an hour longer to steam than 10 L.
-- **Bank it overnight.** A third of the wood, and anything beside it still stands at 24 C.
+- **Bank it overnight.** A third of the wood, and anything beside it still stands at 24 C. The rest of the room cools, so sleep near it.
 - **Build the stations that need it within 2 tiles.** Dairy's incubator and crock pour straight from the copper at that range, and sit "by a fire" at the same time.
 - **Check Hearth Info before you walk off.** If the fuel won't last until the steam, it says "Not yet".
 - **Empty it before you move it.** The Hearth stays put while it's lit or holds a drop.
@@ -224,6 +226,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Steaming says "Not yet (85 C)" | The fire is out, or its fuel won't last until the copper steams. Add wood |
 | Steaming says "Not while banked" | A banked fire holds 50 C. Stoke it |
 | No Bank the Fire option | The fire isn't lit |
+| No Light Fire option on a Hearth that looks out | It's banked: Stoke the Fire, or Put out Fire first |
 | Can't pick the Hearth up | It's lit, or the copper isn't empty |
 | The Hearth or another TP station is missing | Check `~/Zomboid/console.txt`. The tiledef 5173 must be unique among your mods |
 
@@ -240,9 +243,10 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.kit()` | Gives a mason's trowel, 12 clay bricks, 4 clay and a copper sheet: what a Hearth takes to build (Masonry 2). |
 | `TPC.hearth()` | The nearest Hearth within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the copper's litres, fluid and heat, when it will steam, and until when the fire burns. |
 | `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 20. |
-| `TPC.fuel(minutes)` | Sets its fuel (600, ten hours, if left out). Vanilla's menu still lights it. |
+| `TPC.fuel(minutes)` | Sets its fuel (600, ten hours, if left out); on a banked Hearth, what the embers have left. Vanilla's menu still lights it. |
+| `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Hearth and on your square, your core heat, the firebox's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
 | `TPC.hot()` | Brings its copper to the steam (90 C) now. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 
-**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C.
+**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the mouth shows dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.

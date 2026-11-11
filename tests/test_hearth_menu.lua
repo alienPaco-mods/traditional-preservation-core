@@ -95,6 +95,24 @@ sub = open(lit)
 check("a banked fire can be stoked", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire") ~= nil
     and named(sub, "ContextMenu_TraditionalPreservationCore_BankFire") == nil)
 check("Stoke shows the Hearth lit", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire").iconTexture == "media/textures/Item_TPHearthLit.png")
+lit.lit = false
+sub = open(lit)
+check("banked, vanilla's fire is out and Stoke is still offered", named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire") ~= nil)
+context = menu()
+vanilla = context:addOption("Stone Oven")
+context:addSubMenu(vanilla, menu())
+vanilla.subOption:addOption(getText("IGUI_BBQ_FuelAmount", "120 min") .. " (" .. getText("IGUI_Fireplace_Unlit") .. ")")
+sub = open(lit, context)
+check("vanilla's fuel line says Banked, with the time the embers burn", sub.options[1].name
+    == getText("IGUI_BBQ_FuelAmount", "360 min") .. " (" .. getText("IGUI_TraditionalPreservationCore_InfoFireBanked") .. ")")
+local lighting = menu()
+ISCampingMenu.doLightFireOption(character, lighting, nil, true, {}, lit)
+check("a banked Hearth is offered Put out Fire, not Light Fire", #lighting.options == 1
+    and lighting.options[1].name == getText("ContextMenu_Put_out_fire") and lighting.options[1].args[2] == "out")
+lighting = menu()
+ISCampingMenu.doLightFireOption(character, lighting, nil, true, {}, hearth())
+check("a cold one is offered vanilla's Light Fire", lighting.options[1].name == "Light Fire")
+lit.lit = true
 
 -- The loot window's button, beside vanilla's Put out Fire
 ISLootWindowObjectControlHandler = H.class("ISLootWindowObjectControlHandler")
@@ -104,7 +122,12 @@ function ISLootWindowObjectControlHandler:getButtonControl(title)
     return self.control
 end
 function ISLootWindowObjectControlHandler:addJoypadContextMenuOption(context, text) return context:addOption(text, self, self.perform) end
-ISLootWindowObjectControlHandler_PutOut, ISLootWindowObjectControlHandler_AddFuelOption = {}, {}
+ISLootWindowObjectControlHandler_PutOut = {
+    shouldBeVisible = function(self) return self.object:isLit() end,
+    perform = function() ui.vanillaPutOut = true end,
+}
+ISLootWindowObjectControlHandler_LightFireOption = { shouldBeVisible = function(self) return not self.object:isLit() end }
+ISLootWindowObjectControlHandler_AddFuelOption = {}
 ISLootWindowContainerControls_HandlerList = { ISLootWindowObjectControlHandler_PutOut, ISLootWindowObjectControlHandler_AddFuelOption }
 ISLootWindowContainerControls = { AddHandler = function(handler, toRight)
     handler.displayToRight = toRight
@@ -130,12 +153,29 @@ check("a lit Hearth's button banks it", handler:shouldBeVisible()
 handler:perform()
 check("pressing it queues the fire action", ui.queued[#ui.queued].Type == "TPHearthFire" and ui.queued[#ui.queued].mode == "bank")
 lit:getModData()[Hearth.KEY].banked = true
+lit.lit = false
 check("a banked Hearth's button stokes it", handler:getControl().title == getText("ContextMenu_TraditionalPreservationCore_StokeFire"))
 local pad = menu()
 handler:handleJoypadContextMenu(pad)
 check("a controller gets it too, with the lit Hearth's icon", pad.options[1].name == getText("ContextMenu_TraditionalPreservationCore_StokeFire")
     and pad.options[1].iconTexture == "media/textures/Item_TPHearthLit.png")
+local function vanillaButton(class, object)
+    local o = setmetatable({ object = object, playerObj = character }, { __index = class })
+    return o
+end
+local lightFire, putOut = ISLootWindowObjectControlHandler_LightFireOption, ISLootWindowObjectControlHandler_PutOut
+check("banked, vanilla's Light Fire is hidden and its Put out Fire shown", not vanillaButton(lightFire, lit):shouldBeVisible()
+    and vanillaButton(putOut, lit):shouldBeVisible())
+vanillaButton(putOut, lit):perform()
+check("Put out Fire on a banked Hearth queues ours, which unbanks", ui.queued[#ui.queued].Type == "TPHearthFire"
+    and ui.queued[#ui.queued].mode == "out" and not ui.vanillaPutOut)
+local cold = hearth()
+check("on any other fire vanilla's buttons are vanilla's", vanillaButton(lightFire, cold):shouldBeVisible()
+    and not vanillaButton(putOut, cold):shouldBeVisible())
+lit.lit = true
 lit:getModData()[Hearth.KEY].banked = nil
+vanillaButton(putOut, lit):perform()
+check("a lit Hearth's Put out Fire is vanilla's", ui.vanillaPutOut == true)
 
 -- Pouring in
 local milk, water = H.vessel("Pot of Milk", "CowMilk", 3, 5), H.vessel("Bucket of Water", "Water", 8, 10)

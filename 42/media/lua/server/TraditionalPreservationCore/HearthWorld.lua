@@ -78,7 +78,8 @@ local function showEmbers(fire, banked)
     end
 end
 
--- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, its embers' heat and light, notes how long the fire will burn on,
+-- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, its embers' heat and light, notes how long the fire will burn on
+-- and adds to its record (Hearth.logFire),
 -- and shows the copper empty, full or steaming (a Firebox: its flue), and the fire mouth's glow, lit or banked.
 function World.update(fire, now)
     local copper = Hearth.stateOf(fire:getModData())
@@ -94,6 +95,8 @@ function World.update(fire, now)
     showEmbers(fire, banked)
     if banked then slowCooking(fire) else cookSeen[fire] = nil end
     copper.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
+    local mode = banked and Hearth.BANKED or fire:isLit() and Hearth.STOKED or nil
+    Hearth.logFire(copper, now, mode, copper.fireUntil)
     local look = Hearth.look(copper)
     local name, glow = Hearth.showing(fire, copper, Hearth.isBurning(fire), banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end

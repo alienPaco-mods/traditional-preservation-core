@@ -27,7 +27,8 @@ local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
 -- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled, hot, offAt; banked, fuel, fuelAt, fuelSet; a Firebox's flue
--- and flueSide.
+-- and flueSide; the fire's record (Hearth.logFire): fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session,
+-- sessionBase, stokedLast.
 Hearth.KEY = "tpHearth"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
@@ -47,6 +48,45 @@ Hearth.BANKED_LIGHT = { 0.6, 0.25, 0.1 }
 Hearth.BANKED_FIREBOX = 1.8        -- the firebox's heat (vanilla's container temperature): it cooks, a third as fast
 
 local FIRE_C = { [Hearth.PLACE] = Hearth.FIRE_C, [Hearth.EMBERS] = Hearth.EMBERS_C }
+
+-- The fire's record, for whatever hangs over it (Fish & Meat's Smokehouse). Hours of stoked (lit) and banked fire,
+-- and the stoked session now running: unbroken stoking, a gap of up to SESSION_GRACE hours (more wood, a dip) kept.
+Hearth.SESSION_GRACE = 1
+Hearth.STOKED = "stoked"
+Hearth.BANKED = "banked"
+
+-- Adds the time since the last look to the record, as the fire was then (mode, burning until ends), and notes the
+-- fire as it is now. Hours count only up to when the fire was due to go out: vanilla burns a lit fire's time away
+-- in one go when its chunk loads again (ENGINE_NOTES), so its fuel afterwards can't say when it went out. A session
+-- ends once the fire hasn't been stoked for more than SESSION_GRACE hours; stoking again starts a new one (session =
+-- when it began, sessionBase = the stoked hours before it). fireId tells one fire's record from a rebuilt one's.
+function Hearth.logFire(state, now, mode, ends)
+    state.fireId = state.fireId or now
+    local at = state.fireAt
+    if at and now > at and state.fireMode then
+        local stop = math.max(math.min(now, state.fireEnds or now), at)
+        local hours = stop - at
+        if state.fireMode == Hearth.STOKED then
+            state.stokedHours = (state.stokedHours or 0) + hours
+            state.stokedLast = stop
+        else
+            state.bankedHours = (state.bankedHours or 0) + hours
+        end
+    end
+    if state.session and now - (state.stokedLast or now) > Hearth.SESSION_GRACE then
+        state.session, state.sessionBase = nil, nil
+    end
+    if mode == Hearth.STOKED and not state.session then
+        state.session, state.sessionBase, state.stokedLast = now, state.stokedHours or 0, now
+    end
+    state.fireAt, state.fireMode, state.fireEnds = now, mode, ends
+end
+
+-- The stoked hours of the session now running, or 0.
+function Hearth.sessionHours(state)
+    if not state.session then return 0 end
+    return (state.stokedHours or 0) - (state.sessionBase or 0)
+end
 
 -- The heat of a place by a fire, lit or banked; nil for any other place.
 function Hearth.fireC(place)

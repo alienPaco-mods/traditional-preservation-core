@@ -1,6 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **The fire's record** (Smokehouse 5c): `Hearth.logFire(state, now, mode, ends)`, run from HearthWorld's update,
+  keeps on each Hearth and Firebox the hours of stoked and banked fire (`stokedHours`, `bankedHours`) and the stoked
+  session now running (`session`, `sessionBase`, `stokedLast`; `Hearth.sessionHours`): unbroken stoking, a gap of up to
+  `SESSION_GRACE` (1 h) kept. Hours count only up to when the fire was due to go out (`fireEnds`), because vanilla burns
+  a lit fire's away time in one go when its chunk loads (ENGINE_NOTES). `fireId` tells a rebuilt fire's record apart.
 - **Doors keep their front free** (user, Smokehouse 5b-2b test): `Doors` (shared) registers tiles with a door or
   fire mouth and the way it opens: the Hearth's mouth and the Firebox's door, every look; mods add theirs (Fish & Meat's
   Smokehouse). None is built or put down with something in front of its door (an object that blocks placing, or a

@@ -57,7 +57,7 @@ Right-click it. In its **Hearth** submenu you'll find:
 |---|---|
 | *Copper: 10 / 20 L Cow's Milk (Fresh), 62 C* | A grey status line: what the copper holds and how hot it is |
 | **Hearth Info** | A small window: the fire, the fuel, the copper, and when it will steam. **Clicking the Hearth opens it too** |
-| **Bank the Fire** / **Stoke the Fire** | While the fire is lit. See section 5 |
+| **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See section 5 |
 | **Pour into the Copper** | From any container on you or nearby with a fluid in it |
 | **Fill from the Copper** | Into empty containers, or ones holding the same fluid with room left |
 | **Empty the Copper** | Pours away everything in it at once: for rotten milk, or a fluid you're done with. Longer the more there is |

@@ -20,7 +20,7 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 
 - A grey status line: `Copper: 10 / 20 L Cow's Milk (Fresh), 62 C`, or `Copper: empty`.
 - **Hearth Info**: the fire (Lit, Banked or Out), a fuel bar with the time it will burn (a full bar is 12 hours), the copper's litres, what it holds, its heat, and under **Steaming** either "Yes", "in 1.2 hours", "Not yet (85 C)" or "Not while banked". Clicking the Hearth opens it too. It closes when you walk more than 6 squares away.
-- **Bank the Fire** / **Stoke the Fire**, while it is lit.
+- **Bank the Fire** / **Stoke the Fire**, while it is lit. The loot window has it too, as a button beside vanilla's Put out Fire.
 - **Pour into the Copper**: every container on you or nearby with a fluid in it. A mixture, or a fluid that doesn't go with what the copper holds, shows in red with the reason.
 - **Fill from the Copper** (when it holds anything): empty containers, and ones holding the same fluid with room left.
 - **Empty the Copper** (when it holds anything): pours the whole lot away, its age record with it. The hover says how

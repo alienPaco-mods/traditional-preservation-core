@@ -23,6 +23,13 @@ run("kit", "firebox")
 check("kit(\"firebox\") gives what a Firebox is built from", #player.given == before + 11)
 check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"firebox\")", 1, true) ~= nil
     and #player.given == before + 11)
+local multiplier = 1
+getGameTime = function()
+    return { setMultiplier = function(_, x) multiplier = x end, getTrueMultiplier = function() return multiplier end }
+end
+check("speed sets the game's multiplier and says so", run("speed", 60):find("x60", 1, true) ~= nil and multiplier == 60)
+check("speed() only shows it", run("speed"):find("x60", 1, true) ~= nil and multiplier == 60)
+H.installClock(100)
 for _, command in ipairs({ "hearth", "copper", "fuel", "hot" }) do
     check(command .. " says so when no Hearth is near", run(command):find("No Hearth", 1, true) ~= nil)
 end

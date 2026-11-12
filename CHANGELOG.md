@@ -1,6 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Debug console (2026-11-12): `TPC.speed(x)` sets the game speed (`getGameTime():setMultiplier`), past vanilla's 40
+  at the fastest button; `TPC.speed()` shows it. DEVHELP, guide 6.
+- **Station info for plain stations** (2026-11-12, consistency sweep step E): `StationInfo.contents(entity)` lists a
+  CraftLogic station's waiting and finished items and its running batches (with their item counts);
+  `StationInfo.block(options)` builds the series' block from them: Place, Temperature and Working rate (when the
+  station works by the weather), the mod's own rows, a bar a batch with the time left, then what waits, what is done
+  and the note that times assume the temperature holds. Yeast's shelf, Vinegar's floor and vessel and Salt's vat use it.
 - **The cellar runs a month behind** (2026-11-12, consistency sweep step D): the basement follows the ground, the
   season mean's own 30-day mean (`Weather.GROUND_HOURS`, `groundTemperature` in the series' weather, copied into
   each ledger by `Weather.season` and `Weather.getLedger`), at `BASEMENT_SWING` 0.4: about 5 C January to March,

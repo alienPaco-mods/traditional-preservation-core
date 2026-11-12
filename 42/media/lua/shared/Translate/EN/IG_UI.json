@@ -43,5 +43,14 @@
   "IGUI_TraditionalPreservationCore_PlaceBasement": "Basement",
   "IGUI_TraditionalPreservationCore_PlaceHearth": "By a fire",
   "IGUI_TraditionalPreservationCore_PlaceEmbers": "By banked embers",
-  "IGUI_TraditionalPreservationCore_PlaceAt": "%1 C (%2)"
+  "IGUI_TraditionalPreservationCore_PlaceAt": "%1 C (%2)",
+  "IGUI_TraditionalPreservationCore_InfoPlace": "Place",
+  "IGUI_TraditionalPreservationCore_InfoAir": "Temperature",
+  "IGUI_TraditionalPreservationCore_InfoRate": "Working rate",
+  "IGUI_TraditionalPreservationCore_InfoBatch": "%1. %2",
+  "IGUI_TraditionalPreservationCore_InfoLeft": "%1, %2 d %3 h left",
+  "IGUI_TraditionalPreservationCore_InfoWaiting": "Loaded and not started: %1 (press Craft)",
+  "IGUI_TraditionalPreservationCore_InfoFinished": "Finished and waiting to be taken: %1",
+  "IGUI_TraditionalPreservationCore_InfoAssumes": "Times left assume the temperature holds as it is now.",
+  "IGUI_TraditionalPreservationCore_InfoEmpty": "Nothing in it."
 }

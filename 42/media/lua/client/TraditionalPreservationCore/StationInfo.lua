@@ -4,12 +4,15 @@
 --     StationInfo.add(function(entity) return { rows = { { labelKey, value } }, bars = { { text, share, value, colour } },
 --         notes = { "..." } } end)
 -- which returns nil for any entity that isn't its station (cheaply: every crafting window asks). The first provider
--- with an answer when the window opens keeps the station.
+-- with an answer when the window opens keeps the station. StationInfo.contents and StationInfo.block do the common
+-- part for a plain CraftLogic station (Yeast's shelf, Vinegar's floor and vessel, Salt's vat).
 -- Wraps ISWidgetCraftLogicOutputProgress.createDynamicChildren and calculateLayout (the widget grows by the block's
 -- height): compare them with vanilla after a game update.
 require "ISUI/ISPanel"
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local Station = require "TraditionalPreservationCore/Station"
+local UI = require "TraditionalPreservationCore/UI"
 
 local StationInfo = {}
 
@@ -18,6 +21,9 @@ StationInfo.LABEL_WIDTH = 110
 StationInfo.PADDING = 8
 StationInfo.BAR_HEIGHT = 12
 StationInfo.REFRESH_TICKS = 30
+StationInfo.GOOD_COLOUR, StationInfo.SLOW_COLOUR = { 0.35, 0.6, 0.3 }, { 0.75, 0.55, 0.2 }
+
+local KEY = "IGUI_TraditionalPreservationCore_"
 
 local providers = {}
 
@@ -141,6 +147,74 @@ local function hook()
         panel:setHeight(extra)
         self:setHeight(self:getHeight() + extra)
     end
+end
+
+-- The last station asked about and its window logic: one window is open at a time, and the logic is costly to make.
+local cached = { entity = nil, entry = {} }
+
+local function storedItems(resources, group, io)
+    local items = {}
+    local slots = Station.itemSlots(resources, group, io)
+    for i = 0, slots:size() - 1 do
+        local stored = slots:get(i):getStoredItems()
+        for j = 0, stored:size() - 1 do table.insert(items, stored:get(j)) end
+    end
+    return items
+end
+
+-- What a CraftLogic station holds now: the items in its input slots (waiting) and its output slots (finished), and
+-- its running batches furthest along first, each { data = its recipe data, progress = 0 to 1, count = items in it }. Nil for anything
+-- without a CraftLogic, or before there is a player.
+function StationInfo.contents(entity)
+    local resources = entity:getComponent(ComponentType.Resources)
+    local logic = entity:getComponent(ComponentType.CraftLogic)
+    if not (resources and logic) then return nil end
+    if cached.entity ~= entity then cached.entity, cached.entry = entity, {} end
+    local uiLogic = Station.uiLogic(entity, cached.entry, logic)
+    if not uiLogic then return nil end
+    local batches = {}
+    for craftData, items in pairs(uiLogic:getItemsInProgress()) do
+        local count = 0
+        for _, amount in pairs(items) do count = count + tonumber(tostring(amount)) end
+        table.insert(batches, { data = craftData, progress = logic:getProgress(craftData), count = count })
+    end
+    table.sort(batches, function(a, b) return a.progress > b.progress end)
+    return { logic = logic, batches = batches,
+        waiting = storedItems(resources, logic:getInputsGroupName(), ResourceIO.Input),
+        finished = storedItems(resources, logic:getOutputsGroupName(), ResourceIO.Output) }
+end
+
+-- A block for a plain station, in the series' order. options:
+--   place: Weather's or the Hearth's place word; temperature and rate (0 to 1), when the station works by the
+--     weather (the rate in the slow colour under UI.SLOW_RATE); rows: the mod's own { labelKey, value } after them;
+--   batches: { name, progress, hoursLeft }, a bar each, numbered when numbered is true;
+--   waiting, finished: counts for the notes (0 or nil for none); notes: the mod's own, last.
+-- The note that times assume the temperature holds comes with a temperature and a running batch.
+function StationInfo.block(options)
+    local rows, bars, notes = {}, {}, {}
+    table.insert(rows, { KEY .. "InfoPlace", UI.placeName(options.place) })
+    local rate = options.rate
+    if options.temperature then
+        table.insert(rows, { KEY .. "InfoAir", UI.say(KEY .. "InfoDegrees", UI.degrees(options.temperature)) })
+        table.insert(rows, { KEY .. "InfoRate", UI.percent(rate) })
+    end
+    for _, row in ipairs(options.rows or {}) do table.insert(rows, row) end
+    local slow = rate and rate < UI.SLOW_RATE
+    for index, batch in ipairs(options.batches or {}) do
+        local hours = math.ceil(batch.hoursLeft)
+        table.insert(bars, {
+            text = options.numbered and UI.say(KEY .. "InfoBatch", tostring(index), batch.name) or batch.name,
+            share = batch.progress,
+            value = UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), tostring(math.floor(hours / 24)), tostring(hours % 24)),
+            colour = slow and StationInfo.SLOW_COLOUR or StationInfo.GOOD_COLOUR,
+        })
+    end
+    if (options.waiting or 0) > 0 then table.insert(notes, UI.say(KEY .. "InfoWaiting", tostring(options.waiting))) end
+    if (options.finished or 0) > 0 then table.insert(notes, UI.say(KEY .. "InfoFinished", tostring(options.finished))) end
+    for _, note in ipairs(options.notes or {}) do table.insert(notes, note) end
+    if options.temperature and #bars > 0 then table.insert(notes, getText(KEY .. "InfoAssumes")) end
+    if #bars == 0 and #notes == 0 then table.insert(notes, getText(KEY .. "InfoEmpty")) end
+    return { rows = rows, bars = bars, notes = notes }
 end
 
 -- Adds a provider (see above). The first call installs the wraps.

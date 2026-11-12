@@ -98,4 +98,15 @@ info.bars = {}
 for _ = 1, StationInfo.REFRESH_TICKS do panel:update() end
 check("one that shrank gives the height back", frame.relaid[2] == -28)
 
+-- The plain station's block (StationInfo.block), keys shown as they are.
+local shown = StationInfo.block({ place = "Basement", temperature = 9.6, rate = 0.3,
+    rows = { { "T_Place", "own" } }, batches = { { name = "Malt", progress = 0.5, hoursLeft = 49.2 } }, numbered = true,
+    waiting = 2, notes = { "mine" } })
+check("place, temperature and rate first, then the mod's rows", #shown.rows == 4 and shown.rows[2][2] ~= nil
+    and shown.rows[3][2] == "30%" and shown.rows[4][2] == "own")
+check("a numbered bar, slow below half speed", shown.bars[1].share == 0.5
+    and shown.bars[1].colour == StationInfo.SLOW_COLOUR and #shown.notes == 3)
+local bare = StationInfo.block({ place = "Open" })
+check("by the clock: one row, and nothing in it", #bare.rows == 1 and #bare.bars == 0 and #bare.notes == 1)
+
 H.done()

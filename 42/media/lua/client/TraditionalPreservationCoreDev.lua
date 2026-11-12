@@ -11,6 +11,7 @@ local function say(text) print("[TPC] " .. text) end
 function TPC.help()
     say("TPC.weather()        the series' weather: temperature now, the season's mean, and each place's temperature")
     say("TPC.here()           which place you're standing in, and its temperature")
+    say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default) or \"firebox\" (Masonry 2). TPC.kit(\"?\") lists them")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
@@ -64,6 +65,14 @@ function TPC.here()
     local place = Hearth.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
         Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
+end
+
+-- Game speed, past vanilla's 40 at the fastest button: getGameTime():setMultiplier(x). Clicking a speed button
+-- sets vanilla's own again.
+function TPC.speed(x)
+    local time = getGameTime()
+    if x then time:setMultiplier(x) end
+    say(string.format("Game speed x%g.", time:getTrueMultiplier()))
 end
 
 -- Hearth

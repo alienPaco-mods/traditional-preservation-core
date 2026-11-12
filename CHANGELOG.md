@@ -1,6 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Sweep step F** (2026-11-12): Needs Build 42.22 or newer (`versionMin`, was 42.20: everything is checked on 42.22). Workshop text and the template's mod.info and Workshop text too.
+  DEVGUIDE: "Which kind of station?", the station rule (counted items in batches: `CraftLogic`, read by its window's
+  info block; a liquid, one pool or a state with a past: Lua state, read by an Info window on click; storage: a
+  container or the item's clock).
 - **A sixth place, Enclosed: *In a shed*** (step J, 2026-11-12). A closed shed in the outside air: out of the rain and
   wind, by the day's temperature as the open air, and not warmed by the power grid. No square says it, so
   `Weather.placeOf` never returns it: a station claims it in its World entry (only Fish & Meat's Smokehouse).

@@ -2,7 +2,7 @@
 
 TEMPLATE: one paragraph on the real technique and what the mod adds.
 
-[b]Build 42 only (42.20 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
+[b]Build 42 only (42.22 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
 
 [h2]Features[/h2]
 [list]

@@ -2,7 +2,7 @@
 
 The shared mod of the Traditional Preservation series. Every Traditional Preservation mod (Salt, Fish, Yeast, Vinegar, Dairy) requires it. It holds what they share, and two stations of its own: the Hearth and the Firebox.
 
-[b]Build 42 only (42.20 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
+[b]Build 42 only (42.22 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
 
 [h2]What it adds[/h2]
 [list]

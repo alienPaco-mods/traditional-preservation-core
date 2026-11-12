@@ -364,6 +364,24 @@ them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hear
 place under the fire its share of the gap by time. A station's World calls `Hearth.notePlace`, which catches a run up
 at its old place before writing the new one.
 
+**Which kind of station? (the station rule, consistency sweep step F)**
+Three kinds, by what the station holds:
+- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Yeast's Shelf, Vinegar's
+  Floor, Salt's Vat, Fish & Meat's Tub; `DryingCraftLogic` for a frame of stacks: the Frame, Beams, Gantry and
+  Smokehouse). It gives slots, the vanilla window, Take All, a bar and each run's save and load. The timer is always
+  set from Lua (`OnStart` / `OnUpdate`, below). It is read by **an info block in the crafting window**
+  (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a hover popup on each running batch.
+- **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
+  timed actions** (the Orleans Cask, the Hearth and Firebox, Dairy's Incubator and Crock). The engine can't be
+  trusted with fluid amounts in a station (ENGINE_NOTES "Fluids"), a cask is one pool with no batch, and the
+  incubator's milk cools from what it was. It is read by **an Info window on click** (`InfoWindow.clickOpens`) and
+  its right-click line.
+- **Storage that only changes how a finished item keeps or ripens: a container or the item's own clock**, no run at
+  all (the Stockfish Pallet and Bale, the Crock of Potted Meat, maturing and ageing). It is read by the item's name
+  and tooltip, and a right-click line where the place matters (the Pallet's speed).
+Vinegar's Fermentation Vessel is the one hybrid: a `CraftLogic` run of a marker item while Lua moves the wort. A
+new station picks its kind by this rule and is read the way its kind is.
+
 **Why override the craft timers?**
 The engine's craft timers tick at the speed of a 60-minute day whatever Day Length says, and stop while the area is
 unloaded. So a recipe's `OnStart` notes where the run begins, and `OnUpdate` sets the elapsed time from the game clock

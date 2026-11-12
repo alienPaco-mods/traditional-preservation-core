@@ -109,7 +109,7 @@ The window updates while it's open, and closes when you walk more than 6 squares
 
 Water steams sooner than milk: nobody holds it back from the boil.
 
-> ✏ *Margin note:* six times the fluid doesn't take six times the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: a full 60 L copper takes less than twice as long as 10 L.
+> *Margin note:* six times the fluid doesn't take six times the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: a full 60 L copper takes less than twice as long as 10 L.
 
 What you fill from the copper leaves at the copper's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Yogurt Pot holds it for hours.
 
@@ -135,7 +135,7 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 
 The embers keep burning while you're away, at their third. **Put out Fire** works on a banked fire too, and a banked fire that burns down goes out. Either way it isn't banked any more: light it again and it's a full fire. You can add wood to banked embers; it all counts.
 
-> ✏ *Margin note:* a banked copper never steams. It's the overnight setting: warm water in the morning, embers still alive, and a third of the woodpile spent.
+> *Margin note:* a banked copper never steams. It's the overnight setting: warm water in the morning, embers still alive, and a third of the woodpile spent.
 
 ---
 
@@ -158,7 +158,7 @@ The Hearth without its copper: the same fieldstone and lime top, built knee high
 
 **The flue.** On its own the flue is capped with a flat stone, and while it burns the smoke leaks out round the door. A mod can lead it into a building on the Firebox's back or either flank (never the door's side): the Smokehouse of *Traditional Preservation (Fish & Meat)* does, with a **clay pipe** from the top or a **trench** in the ground roofed with flat stones from its foot. The Firebox then shows that flue, and the smoke goes where it should.
 
-> ✏ *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
+> *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
 
 ---
 
@@ -186,11 +186,11 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 
-> ✏ *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.
+> *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.
 
-> ✏ *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
+> *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
 
-> ✏ *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
+> *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
 
 | Month | Open air and indoors (the 10-day average) | Basement |
 |---|---|---|
@@ -292,7 +292,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 *For testers, modders and the curious. These commands exist only when the game is started in debug mode (Steam launch option `-debug`). Type them into the in-game **Command Console** and press Enter. `TPC.help()` lists them in the game.*
 
-> ⚠ They change your save directly, so try them on a test save, not a playthrough you care about.
+> **Warning:** They change your save directly, so try them on a test save, not a playthrough you care about.
 
 | Command | What it does |
 |---|---|

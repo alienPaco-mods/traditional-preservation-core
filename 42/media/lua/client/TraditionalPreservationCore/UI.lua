@@ -188,6 +188,44 @@ function UI.progressTooltips(draws)
     end)
 end
 
+-- The Output slot of a station's window names the script's one output (Charque) for a recipe whose OnCreate may
+-- make others. draws maps recipe short names to draw(tooltip, name, entity), the popup in its place; other
+-- recipes keep vanilla's. Wraps ISWidgetCraftLogicInputControl.createChildren, which the recipe panel runs anew
+-- whenever the selected recipe changes: compare it with vanilla after a game update. Slots copy the panel's
+-- drawTooltip when made, so the output slots are made again.
+local outputDraws = {}
+local outputHooked = false
+function UI.outputTooltips(draws)
+    if not outputHooked then
+        outputHooked = true
+        local vanillaCreateChildren = ISWidgetCraftLogicInputControl.createChildren
+        function ISWidgetCraftLogicInputControl:createChildren()
+            vanillaCreateChildren(self)
+            local name = self.recipe and UI.shortName(self.recipe)
+            local draw = name and self.outputItems and outputDraws[name]
+            if not draw then return end
+            local entity = self.entity
+            self.outputItems.drawTooltip = function(_itemSlot, tooltip) draw(tooltip, name, entity) end
+            self:updateOutputItems()
+        end
+    end
+    for name, draw in pairs(draws) do outputDraws[name] = draw end
+end
+
+-- A popup with its own title and plain lines of finished text, for UI.outputTooltips.
+function UI.drawListTooltip(tooltip, title, lines)
+    tooltip:DrawText(tooltip:getFont(), title, UI.TOOLTIP_PADDING, UI.TOOLTIP_PADDING, 1, 1, 0.8, 1)
+    tooltip:adjustWidth(UI.TOOLTIP_PADDING, title)
+    local y = UI.TOOLTIP_PADDING + tooltip:getLineSpacing()
+    for _, line in ipairs(lines) do
+        tooltip:DrawText(tooltip:getFont(), line, UI.TOOLTIP_PADDING, y, 1, 1, 1, 1)
+        tooltip:adjustWidth(UI.TOOLTIP_PADDING, line)
+        y = y + tooltip:getLineSpacing()
+    end
+    tooltip:setHeight(y + UI.TOOLTIP_PADDING)
+    tooltip:setWidth(math.max(tooltip:getWidth(), UI.TOOLTIP_MIN_WIDTH))
+end
+
 -- A station's own input rules in place of vanilla's free-slot limit. One refusal decides adding (each queued
 -- action asks again when it runs, as the slot may have filled since), the slot's green border while dragging,
 -- and the halo when a drop is refused, so the border never promises what adding then refuses.

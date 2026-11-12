@@ -78,6 +78,9 @@ local function wrapped(text, width)
     return lines
 end
 
+-- For a panel that wraps its own notes (StationInfo).
+InfoWindow.wrapped = wrapped
+
 -- The y of the first row, under the title bar.
 function InfoWindow:top()
     return self:titleBarHeight() + InfoWindow.PADDING

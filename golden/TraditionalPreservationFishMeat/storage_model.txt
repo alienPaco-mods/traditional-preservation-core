@@ -2,9 +2,9 @@ Fresh fish: 875 kcal per kg for every species. A survivor eating 2500 kcal a day
 
 | Station | Fresh fish per cold load | Cold route: Nov 1 to Mar 15 | Share of a year's fish | Salt route under a roof, all year | Share |
 |---|---|---|---|---|---|
-| Fish Drying Frame (Carpentry 2) | 11.4 kg | 61498 kcal from 80 kg | 20% | 119250 kcal from 152 kg | 39% |
-| Fish Hanging Beam (Carpentry 4) | 34.1 kg | 184494 kcal from 239 kg | 61% | 357750 kcal from 455 kg | 118% |
-| Fish Gantry (Carpentry 6) | 56.8 kg | 307491 kcal from 398 kg | 101% | 596250 kcal from 758 kg | 196% |
+| Drying Frame (Carpentry 2) | 11.4 kg | 61498 kcal from 80 kg | 20% | 119250 kcal from 152 kg | 39% |
+| Hanging Beam (Carpentry 4) | 34.1 kg | 184494 kcal from 239 kg | 61% | 357750 kcal from 455 kg | 118% |
+| Gantry (Carpentry 6) | 56.8 kg | 307491 kcal from 398 kg | 101% | 596250 kcal from 758 kg | 196% |
 
 Salt fish keeps 4 to 6 months, so a year of salt drying can't all be stored at once; cold fish keeps 1 to 2 years.
 exit=0

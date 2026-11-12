@@ -106,7 +106,7 @@ mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
 `OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper),
-`.../Action.lua` and `.../Log.lua`, with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`,
+`.../Action.lua` and `.../Log.lua`, with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
 `HearthUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
@@ -133,6 +133,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
    makes a click on the station open it.
+   **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
+   `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
+   shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a
+   station without one keeps an InfoWindow.
 6. **What the core already does, so a mod doesn't write it again:**
    - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `fluidName`, and
      `keepInPlace(test)` for a station that mustn't be picked up while it holds something.
@@ -212,6 +216,7 @@ of all:
 | `ISWidgetCraftLogicControl.startCraft` | Vinegar `...UI` | Says why the vessel can't start, and stops a second run |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (Vinegar, the Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit, banked or holds fluid, and the cursor says why |
 | `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Hearth) | Clicking a cask, a Hearth, an incubator or a crock opens its info window |
+| `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `FluidAgeingWorld` (Dairy's milk) | Poured fluid takes the source's age (older wins); both ends are looked at as it ends, so names change at once |
 | `ISFluidTransferAction.start`, `stop`, `complete` | Dairy `World` | Poured milk carries its heat record (`tpdCarry`) over, mixed by volume |

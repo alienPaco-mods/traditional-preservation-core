@@ -1,6 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **`StationInfo`: a station's info inside vanilla's crafting window** (2026-11-12, for Fish & Meat 0.4.19): new client
+  module `TraditionalPreservationCore/StationInfo`. `StationInfo.add(provider)`; `provider(entity)` returns
+  `{ rows = { { labelKey, value } }, bars = { { text, share, value, colour } }, notes = { ... } }` or nil. The block
+  sits under In Progress, Done and Take All, asks its provider again twice a second and has the window laid out
+  again when its height changes. Wraps `ISWidgetCraftLogicOutputProgress.createDynamicChildren` and
+  `.calculateLayout`, only once a mod adds a provider; a window with no block goes straight to vanilla's.
+  `InfoWindow.wrapped` is shared with it. Tests in `tests/test_station_info.lua`.
 - **One wrap of `ISInventoryTransferAction.transferItem` for every mod** (2026-11-12, user's pick): new client module
   `TraditionalPreservationCore/Transfer`, `Transfer.before(fn)` (the item still where it was) and `Transfer.after(fn)`
   (once vanilla has moved it), `fn(action, item)`, run in the order added. FluidAgeing's look and Dairy's heat stamp

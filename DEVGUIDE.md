@@ -314,8 +314,10 @@ They are what a survivor can actually choose, and each behaves the way a real ce
 day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
 (a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
 the outdoor temperature. While the grid is on a room is 22 C (`Weather.GRID_ROOM_C`, vanilla's figure; the ledger
-copies `gridOn` from the series' weather). A basement swings a third as far as the season from 10 C
-(`basementTemperature`): the ground's mean, damped. Ten days is long enough that one warm afternoon in January does
+copies `gridOn` from the series' weather). A basement swings two fifths as far as the ground from 10 C
+(`basementTemperature`); the ground is the season mean's own 30-day mean (`GROUND_HOURS`, `groundTemperature` in the
+series' weather and copied into each ledger by `Weather.season`), so a cellar is coldest in March and warmest in August.
+Season tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. Ten days is long enough that one warm afternoon in January does
 nothing, and short enough that spring arrives within a fortnight. Until 2026-11 a room was the mean + 10 C (capped at
 28) and a basement 15 C flat: a heated house, which most players don't keep (consistency sweep, step C).
 More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them. Covered

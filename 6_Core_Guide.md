@@ -184,18 +184,24 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Open air** | Nothing overhead | The day's weather, hour by hour |
 | **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The average outdoor temperature of the last 10 days |
 | **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
-| **Basement** | Any level below ground | 10 C, plus a third of how far the 10-day average is from 10 C: about **5 C in January, 9 C in April, 14 C in July** |
+| **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 
 > ✏ *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.
 
 > ✏ *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
 
+> ✏ *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
+
 | Month | Open air and indoors (the 10-day average) | Basement |
 |---|---|---|
 | January | −4 C | 5 C |
-| April | 6 C | 9 C |
-| July | 20 C | 14 C |
-| October | 10 C | 10 C |
+| March | 1 C | 5 C |
+| April | 6 C | 7 C |
+| May | 13 C | 9 C |
+| July | 21 C | 13 C |
+| September | 15 C | 13 C |
+| October | 9 C | 12 C |
+| November | 3 C | 9 C |
 
 *(The game's own sampled year, which runs colder than real Kentucky.)*
 
@@ -244,7 +250,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 - **Why doesn't milk boil?** The dairymaid kept it off the boil: milk is scalded at about 85 C, not boiled, or it catches and skins over. The copper holds it at 95 C at most. Water is another matter: it was boiled in the copper for the wash, the brew and the scalding of pails.
 - **Why 60 L?** Real farmhouse coppers held 40 to 100 L (ten to twenty gallons). Sixty is the middle of the range: a wash day's water, or a whole morning's milking.
 - **Why bank a fire?** Ash keeps the air off the coals, so they glow instead of flaming. A banked fire could be woken with a poker in the morning, which mattered when the alternative was flint and tinder.
-- **Why does a cellar swing so little?** A few feet of earth take the edge off the seasons: a cellar runs a third of the way from the ground's mean towards the season, cool in August and above frost in January. That's why cheese, beer and roots were kept below ground.
+- **Why does a cellar swing so little, and run late?** A few feet of earth take the edge off the seasons and slow them down: a cellar runs two fifths of the way from the ground's mean towards the season, a month or so behind it, cool in May and above frost in March. That's why cheese, beer and roots were kept below ground.
 
 ### Old names, old ways
 
@@ -291,7 +297,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Command | What it does |
 |---|---|
 | `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 12 clay bricks, 4 clay and a copper sheet) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
-| `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, and each place's temperature. |
+| `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.hearth()` | The nearest Hearth within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the copper's litres, fluid and heat, when it will steam, and until when the fire burns. |
 | `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 60. |

@@ -1,109 +1,109 @@
-Jan, outdoors: first bottles on day 217
-  day  80.6  malt ready
-  day 156.5  vessel done: 19.0 L fermented wort
-  day 156.5  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 178.9  vessel done: 19.0 L fermented wort
-  day 216.5  bottled 12, 3.6 L left as starter, mother layers 1
-  day 216.6  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 243.6  bottled 16, 3.1 L left as starter, mother layers 2
-  day 243.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Jan, indoors: first bottles on day 232
-  day 100.0  malt ready
-  day 186.9  vessel done: 19.0 L fermented wort
-  day 186.9  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 199.5  vessel done: 19.0 L fermented wort
-  day 232.1  bottled 12, 3.6 L left as starter, mother layers 1
-  day 232.2  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 256.2  bottled 16, 3.1 L left as starter, mother layers 2
-  day 256.2  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Jan, in a basement: first bottles on day 255
-  day  40.6  malt ready
-  day 182.2  vessel done: 19.0 L fermented wort
-  day 182.2  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 202.6  vessel done: 19.0 L fermented wort
-  day 255.2  bottled 12, 3.6 L left as starter, mother layers 1
-  day 255.3  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 296.6  bottled 16, 3.1 L left as starter, mother layers 2
-  day 296.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Apr, outdoors: first bottles on day 103
-  day  12.9  malt ready
-  day  50.2  vessel done: 19.0 L fermented wort
-  day  50.2  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day  67.9  vessel done: 19.0 L fermented wort
-  day 102.7  bottled 12, 3.6 L left as starter, mother layers 1
-  day 102.7  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 129.7  bottled 16, 3.1 L left as starter, mother layers 2
-  day 129.7  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Apr, indoors: first bottles on day 114
-  day  19.9  malt ready
-  day  69.9  vessel done: 19.0 L fermented wort
-  day  69.9  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day  81.8  vessel done: 19.0 L fermented wort
-  day 113.8  bottled 12, 3.6 L left as starter, mother layers 1
-  day 113.9  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 138.0  bottled 16, 3.1 L left as starter, mother layers 2
-  day 138.0  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Apr, in a basement: first bottles on day 142
-  day   8.0  malt ready
-  day  71.8  vessel done: 19.0 L fermented wort
-  day  71.8  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day  91.1  vessel done: 19.0 L fermented wort
-  day 141.8  bottled 12, 3.6 L left as starter, mother layers 1
-  day 141.9  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 184.4  bottled 16, 3.1 L left as starter, mother layers 2
-  day 184.4  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Jul, outdoors: first bottles on day 61
-  day   6.2  malt ready
-  day  18.3  vessel done: 19.0 L fermented wort
-  day  18.3  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day  29.3  vessel done: 19.0 L fermented wort
-  day  61.0  bottled 12, 3.6 L left as starter, mother layers 1
-  day  61.0  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day  92.9  bottled 16, 3.1 L left as starter, mother layers 2
-  day  92.9  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Jul, indoors: first bottles on day 50
+Jan, outdoors: first bottles on day 170
+  day  68.5  malt ready
+  day 121.5  vessel done: 19.0 L fermented wort
+  day 121.5  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 138.2  vessel done: 19.0 L fermented wort
+  day 169.8  bottled 12, 3.6 L left as starter, mother layers 1
+  day 169.9  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 195.6  bottled 16, 3.1 L left as starter, mother layers 2
+  day 195.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Jan, indoors: first bottles on day 182
+  day  92.9  malt ready
+  day 141.0  vessel done: 19.0 L fermented wort
+  day 141.0  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 152.5  vessel done: 19.0 L fermented wort
+  day 181.8  bottled 12, 3.6 L left as starter, mother layers 1
+  day 181.8  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 205.0  bottled 16, 3.1 L left as starter, mother layers 2
+  day 205.0  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Jan, in a basement: first bottles on day 230
+  day  14.6  malt ready
+  day 157.9  vessel done: 19.0 L fermented wort
+  day 157.9  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 179.2  vessel done: 19.0 L fermented wort
+  day 229.8  bottled 12, 3.6 L left as starter, mother layers 1
+  day 229.8  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 275.0  bottled 16, 3.1 L left as starter, mother layers 2
+  day 275.0  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Apr, outdoors: first bottles on day 84
+  day  11.2  malt ready
+  day  39.0  vessel done: 19.0 L fermented wort
+  day  39.0  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day  53.0  vessel done: 19.0 L fermented wort
+  day  84.1  bottled 12, 3.6 L left as starter, mother layers 1
+  day  84.1  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 110.1  bottled 16, 3.1 L left as starter, mother layers 2
+  day 110.1  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Apr, indoors: first bottles on day 92
+  day  17.0  malt ready
+  day  51.9  vessel done: 19.0 L fermented wort
+  day  51.9  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day  63.2  vessel done: 19.0 L fermented wort
+  day  92.5  bottled 12, 3.6 L left as starter, mother layers 1
+  day  92.5  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 115.6  bottled 16, 3.1 L left as starter, mother layers 2
+  day 115.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Apr, in a basement: first bottles on day 147
+  day  11.7  malt ready
+  day  77.7  vessel done: 19.0 L fermented wort
+  day  77.7  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day  97.2  vessel done: 19.0 L fermented wort
+  day 146.6  bottled 12, 3.6 L left as starter, mother layers 1
+  day 146.6  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 193.5  bottled 16, 3.1 L left as starter, mother layers 2
+  day 193.5  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Jul, outdoors: first bottles on day 65
+  day   6.3  malt ready
+  day  17.3  vessel done: 19.0 L fermented wort
+  day  17.3  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day  28.3  vessel done: 19.0 L fermented wort
+  day  64.5  bottled 12, 3.6 L left as starter, mother layers 1
+  day  64.6  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 193.4  bottled 16, 3.1 L left as starter, mother layers 2
+  day 193.4  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Jul, indoors: first bottles on day 53
   day   5.0  malt ready
   day  15.3  vessel done: 19.0 L fermented wort
   day  15.3  hose pumped 19.0 L, cask now 19.0 L at 0%
   day  25.3  vessel done: 19.0 L fermented wort
-  day  50.4  bottled 12, 3.6 L left as starter, mother layers 1
-  day  50.5  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day  77.0  bottled 16, 3.1 L left as starter, mother layers 2
-  day  77.0  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Jul, in a basement: first bottles on day 89
+  day  52.7  bottled 12, 3.6 L left as starter, mother layers 1
+  day  52.8  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day  85.9  bottled 16, 3.1 L left as starter, mother layers 2
+  day  85.9  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Jul, in a basement: first bottles on day 88
   day   5.0  malt ready
-  day  21.5  vessel done: 19.0 L fermented wort
-  day  21.5  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day  36.4  vessel done: 19.0 L fermented wort
-  day  88.6  bottled 12, 3.6 L left as starter, mother layers 1
-  day  88.7  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 189.4  bottled 16, 3.1 L left as starter, mother layers 2
-  day 189.4  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Oct, outdoors: first bottles on day 310
-  day   5.8  malt ready
-  day  47.8  vessel done: 19.0 L fermented wort
-  day  47.8  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 225.5  vessel done: 19.0 L fermented wort
-  day 310.2  bottled 12, 3.6 L left as starter, mother layers 1
-  day 310.3  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 342.7  bottled 16, 3.1 L left as starter, mother layers 2
-  day 342.7  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Oct, indoors: first bottles on day 336
-  day   6.1  malt ready
-  day 125.8  vessel done: 19.0 L fermented wort
-  day 125.8  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 286.2  vessel done: 19.0 L fermented wort
-  day 336.0  bottled 12, 3.6 L left as starter, mother layers 1
-  day 336.0  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 361.8  bottled 16, 3.1 L left as starter, mother layers 2
-  day 361.8  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
-Oct, in a basement: first bottles on day 352
-  day   6.2  malt ready
-  day 139.9  vessel done: 19.0 L fermented wort
-  day 139.9  hose pumped 19.0 L, cask now 19.0 L at 0%
-  day 287.5  vessel done: 19.0 L fermented wort
-  day 351.9  bottled 12, 3.6 L left as starter, mother layers 1
-  day 352.0  hose pumped 19.0 L, cask now 22.6 L at 16%
-  day 394.6  bottled 16, 3.1 L left as starter, mother layers 2
-  day 394.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+  day  22.0  vessel done: 19.0 L fermented wort
+  day  22.0  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day  37.5  vessel done: 19.0 L fermented wort
+  day  87.8  bottled 12, 3.6 L left as starter, mother layers 1
+  day  87.9  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 264.4  bottled 16, 3.1 L left as starter, mother layers 2
+  day 264.4  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Oct, outdoors: first bottles on day 247
+  day   8.6  malt ready
+  day 138.3  vessel done: 19.0 L fermented wort
+  day 138.3  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 205.8  vessel done: 19.0 L fermented wort
+  day 246.7  bottled 12, 3.6 L left as starter, mother layers 1
+  day 246.7  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 274.6  bottled 16, 3.1 L left as starter, mother layers 2
+  day 274.6  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Oct, indoors: first bottles on day 261
+  day   5.0  malt ready
+  day 179.9  vessel done: 19.0 L fermented wort
+  day 179.9  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 226.8  vessel done: 19.0 L fermented wort
+  day 261.5  bottled 12, 3.6 L left as starter, mother layers 1
+  day 261.5  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 286.1  bottled 16, 3.1 L left as starter, mother layers 2
+  day 286.1  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
+Oct, in a basement: first bottles on day 289
+  day   5.0  malt ready
+  day  26.6  vessel done: 19.0 L fermented wort
+  day  26.6  hose pumped 19.0 L, cask now 19.0 L at 0%
+  day 144.5  vessel done: 19.0 L fermented wort
+  day 288.6  bottled 12, 3.6 L left as starter, mother layers 1
+  day 288.7  hose pumped 19.0 L, cask now 22.6 L at 16%
+  day 331.0  bottled 16, 3.1 L left as starter, mother layers 2
+  day 331.0  in: 40 L wort -> out: 28 bottles + 3.1 L starter = 31.1 L (78%)
 exit=0

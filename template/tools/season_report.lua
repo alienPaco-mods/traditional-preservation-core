@@ -19,8 +19,9 @@ local function readDays(path)
     for line in io.lines(path) do
         local f = {}
         for value in line:gmatch("%S+") do table.insert(f, value) end
-        if #f >= 6 then
-            table.insert(days, { month = tonumber(f[2]), low = tonumber(f[4]), mean = tonumber(f[5]), high = tonumber(f[6]) })
+        -- Each month's forecast also holds the 10 days before it (offset below 0): skipped, so a month is 30 days.
+        if #f >= 6 and tonumber(f[3]) >= 0 then
+            table.insert(days, { world = tonumber(f[1]), offset = tonumber(f[3]), month = tonumber(f[2]), low = tonumber(f[4]), mean = tonumber(f[5]), high = tonumber(f[6]) })
         end
     end
     return days
@@ -41,7 +42,18 @@ local function recipeData(seconds)
     return data
 end
 
+-- The first sampled world's calendar year, settled (Weather.settledMeans).
+local function settle(days)
+    local year = {}
+    for _, day in ipairs(days) do
+        if day.world == days[1].world then table.insert(year, day) end
+    end
+    return require("TraditionalPreservationCore/Weather").settledMeans(year)
+end
+
 local days = readDays(arg[1] or "tools/climate_year.csv")
+-- The ledger starts as a long-running save's would on 1 January.
+M.getLedger().seasonTemperature, M.getLedger().groundTemperature = settle(days)(days[1].month, days[1].offset)
 local seconds = M.PROCESS_HOURS * SECONDS_PER_HOUR
 
 -- One batch per place, started on the first day of each month, plus one that goes down to the basement

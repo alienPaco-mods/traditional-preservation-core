@@ -33,7 +33,7 @@ check("slower in the cold, never stopped", M.processRate(-20) > 0 and M.processR
 M.SENSITIVITY = 0
 check("sensitivity off runs at full speed in any weather", M.processRate(-20) == 1)
 M.SENSITIVITY = 1
-check("a basement swings a third as far as the season", M.placeTemperature({ temperature = -15, seasonTemperature = -10 }, "Basement") == 3)
+check("a basement swings two fifths as far as the ground", M.placeTemperature({ temperature = -15, seasonTemperature = -5, groundTemperature = -10 }, "Basement") == 2)
 
 -- Timer
 local TIME = M.PROCESS_HOURS * 3600

@@ -16,9 +16,11 @@ local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
 check("place: a room by the season, nothing added", Weather.placeTemperature(ledger, "Sheltered") == 12)
 check("place: an open roof by the season too", Weather.placeTemperature(ledger, "Covered") == 12)
-check("place: a basement swings a third as far", near(Weather.placeTemperature(ledger, "Basement"), 10.7))
-check("basement: about 5 C in a January, 14 in a July", near(Weather.basementTemperature(-4.4), 4.96)
-    and near(Weather.basementTemperature(21.8), 14.13))
+check("place: a basement with no ground mean yet swings two fifths as far as the season", near(Weather.placeTemperature(ledger, "Basement"), 10.8))
+check("place: a basement goes by the ground once there is one", near(Weather.placeTemperature({ temperature = 30, seasonTemperature = 12,
+    groundTemperature = 20 }, "Basement"), 14))
+check("basement: about 5 C at the ground's coldest (March), 13 at its warmest (August)", near(Weather.basementTemperature(-2.6), 4.96)
+    and near(Weather.basementTemperature(18.6), 13.44))
 check("place: a room is 22 C while the grid is on, an open roof and a basement are not",
     Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Sheltered") == Weather.GRID_ROOM_C
     and Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Covered") == -5

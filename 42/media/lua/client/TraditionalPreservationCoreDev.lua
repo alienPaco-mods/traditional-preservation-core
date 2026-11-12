@@ -48,8 +48,9 @@ end
 -- The series' weather, as every TP mod reads it: the temperature now, the season's mean, and each place's.
 function TPC.weather()
     local state = Weather.shared()
-    say(string.format("Temperature now %.1f C, season (10-day average) %.1f C, season humidity %.0f%%.",
-        state.temperature or 0, state.seasonTemperature or 0, (state.seasonHumidity or 0) * 100))
+    say(string.format("Temperature now %.1f C, season (10-day average) %.1f C, ground (the season a month behind) %.1f C, season humidity %.0f%%.",
+        state.temperature or 0, state.seasonTemperature or 0, state.groundTemperature or state.seasonTemperature or 0,
+        (state.seasonHumidity or 0) * 100))
     for _, place in ipairs(Weather.PLACES) do
         say(string.format("%-9s %.1f C", place, Weather.placeTemperature(state, place)))
     end

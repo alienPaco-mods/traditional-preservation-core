@@ -7,7 +7,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | Command | What it does |
 |---|---|
 | `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 12 clay bricks, 4 clay and a copper sheet) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
-| `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, and each place's temperature. |
+| `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.hearth()` | The nearest Hearth within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the copper's litres, fluid and heat, when it will steam, and until when the fire burns. |
 | `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 60. |

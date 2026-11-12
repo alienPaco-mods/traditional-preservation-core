@@ -1,6 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **The cellar runs a month behind** (2026-11-12, consistency sweep step D): the basement follows the ground, the
+  season mean's own 30-day mean (`Weather.GROUND_HOURS`, `groundTemperature` in the series' weather, copied into
+  each ledger by `Weather.season` and `Weather.getLedger`), at `BASEMENT_SWING` 0.4: about 5 C January to March,
+  9 in May, 13 July to September, 9 in November. Old saves start the ground at the season they have.
+  `Weather.seasonMean` takes a length. `Weather.settledMeans(year)` gives tools a long-running save's means for any
+  day; every season tool starts from it. Guide 6, README, DEVGUIDE, Workshop text, template test.
 - **Places, one set for the series** (2026-11-12, consistency sweep step C): a room (Sheltered) is the season's mean,
   no +10 C and no 28 C cap; **22 C while the power grid is on**, as vanilla's rooms (`Weather.GRID_ROOM_C`, `gridOn`
   copied from the series' weather). **Covered** (a roof, not a room) is a place for every mod: `Weather.placeOf`

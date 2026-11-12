@@ -9,12 +9,15 @@
 local Weather = {}
 
 -- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
--- the mean of the last ten days or so, as an unheated house or shed would; a basement follows the season too, but
--- only a third as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost in winter.
+-- the mean of the last ten days or so, as an unheated house or shed would. A basement follows the ground: the
+-- season's mean over a further GROUND_HOURS (a month behind, so a cellar is coldest in March and warmest in August),
+-- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
+-- in winter (about 5 C to 13).
 Weather.PLACES = { "Open", "Covered", "Sheltered", "Basement" }
 Weather.SEASON_HOURS = 240
+Weather.GROUND_HOURS = 720
 Weather.BASEMENT_ANCHOR = 10
-Weather.BASEMENT_SWING = 0.35
+Weather.BASEMENT_SWING = 0.4
 -- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room does
 -- here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
 Weather.GRID_ROOM_C = 22
@@ -68,9 +71,9 @@ function Weather.placeOf(object)
     return "Open"
 end
 
--- A basement by the season's mean: BASEMENT_ANCHOR plus BASEMENT_SWING of the season's distance from it.
-function Weather.basementTemperature(seasonTemperature)
-    return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (seasonTemperature - Weather.BASEMENT_ANCHOR)
+-- A basement by the ground's temperature: BASEMENT_ANCHOR plus BASEMENT_SWING of the ground's distance from it.
+function Weather.basementTemperature(groundTemperature)
+    return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (groundTemperature - Weather.BASEMENT_ANCHOR)
 end
 
 -- The temperature a place has now, from the ledger's last reading.
@@ -78,19 +81,40 @@ function Weather.placeTemperature(ledger, place)
     if Weather.FIXED_C[place] then return Weather.FIXED_C[place] end
     local temperature = ledger.temperature or 0
     local season = ledger.seasonTemperature or temperature
-    if place == "Basement" then return Weather.basementTemperature(season) end
+    -- A ledger from before the ground's mean (or a test's) goes by the season.
+    if place == "Basement" then return Weather.basementTemperature(ledger.groundTemperature or season) end
     if place == "Sheltered" and ledger.gridOn then return Weather.GRID_ROOM_C end
     if place == "Sheltered" or place == "Covered" then return season end
     return temperature
 end
 
--- Moves ledger[field] towards value as a running mean over SEASON_HOURS.
-function Weather.seasonMean(ledger, field, value, hours)
-    local share = math.min(hours / Weather.SEASON_HOURS, 1)
+-- Moves ledger[field] towards value as a running mean over length hours (SEASON_HOURS if not given).
+function Weather.seasonMean(ledger, field, value, hours, length)
+    local share = math.min(hours / (length or Weather.SEASON_HOURS), 1)
     ledger[field] = (ledger[field] or value) * (1 - share) + value * share
 end
 
--- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity, gridOn }, in the core's global ModData.
+-- For tools: a year of daily means in calendar order (each with .month and .mean), settled as a long-running save
+-- has them: the year goes round twice first, so January follows December. Returns at(month, offset), the season's
+-- and the ground's means at the start of that day of the month; an offset below 0 counts back into the month before.
+function Weather.settledMeans(year)
+    local state = { seasonTemperature = year[#year].mean }
+    local season, ground, first = {}, {}, {}
+    for index, day in ipairs(year) do first[day.month] = first[day.month] or index end
+    for round = 1, 3 do
+        for index, day in ipairs(year) do
+            if round == 3 then season[index], ground[index] = state.seasonTemperature, state.groundTemperature end
+            Weather.seasonMean(state, "seasonTemperature", day.mean, 24)
+            Weather.seasonMean(state, "groundTemperature", state.seasonTemperature, 24, Weather.GROUND_HOURS)
+        end
+    end
+    return function(month, offset)
+        local index = (first[month] - 1 + offset) % #year + 1
+        return season[index], ground[index]
+    end
+end
+
+-- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity, groundTemperature, gridOn }, in the core's global ModData.
 -- Save key: never rename it.
 Weather.SHARED_KEY = "TraditionalPreservationCore"
 
@@ -104,6 +128,7 @@ function Weather.observe(state, now, temperature, humidity, gridOn)
     state.temperature = temperature
     state.gridOn = gridOn or nil
     Weather.seasonMean(state, "seasonTemperature", temperature, hours)
+    Weather.seasonMean(state, "groundTemperature", state.seasonTemperature, hours, Weather.GROUND_HOURS)
     if humidity then Weather.seasonMean(state, "seasonHumidity", humidity, hours) end
 end
 
@@ -126,13 +151,17 @@ function Weather.share(state)
 end
 
 -- A ledger's season mean (field is "seasonTemperature" or "seasonHumidity"): the series' own where there is one,
--- else a running mean of the ledger's own. The season's temperature brings the grid's state along.
+-- else a running mean of the ledger's own. The season's temperature brings the grid's state and the ground's
+-- along.
 function Weather.season(ledger, field, value, hours)
-    if shared and field == "seasonTemperature" then ledger.gridOn = shared.gridOn end
+    local temperature = field == "seasonTemperature"
+    if shared and temperature then ledger.gridOn = shared.gridOn end
     if shared and shared[field] ~= nil then
         ledger[field] = shared[field]
+        if temperature then ledger.groundTemperature = shared.groundTemperature end
     else
         Weather.seasonMean(ledger, field, value, hours)
+        if temperature then Weather.seasonMean(ledger, "groundTemperature", ledger.seasonTemperature, hours, Weather.GROUND_HOURS) end
     end
 end
 
@@ -180,6 +209,7 @@ function Weather.getLedger(key, newLedger)
         if data.ledger.temperature == nil then
             data.ledger.temperature = state.temperature
             data.ledger.seasonTemperature = data.ledger.seasonTemperature or state.seasonTemperature
+            data.ledger.groundTemperature = data.ledger.groundTemperature or state.groundTemperature
         end
     end
     return data.ledger

@@ -98,7 +98,7 @@ Every TP station works by the temperature of the place it stands in, from one we
 | **Open air** | Nothing overhead | The day's weather |
 | **Under an open roof** (Covered) | A roof or floor overhead, not a room: a porch, an open shed | The average outdoor temperature of the last 10 days |
 | **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same; **22 C while the power grid is on**, as vanilla's rooms are |
-| **Basement** | Any level below ground | `10 + 0.35 x (10-day average - 10)`: about 5 C in January, 9 in April, 14 in July |
+| **Basement** | Any level below ground | `10 + 0.4 x (ground - 10)`, the ground being the 10-day average's own 30-day mean (`Weather.GROUND_HOURS`, a month behind): about 5 C January to March, 9 in May, 13 July to September, 9 in November |
 | **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Hearth) | 28 C / 24 C, for as long as the fuel lasts |
 
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Hearth.placeOf`); Fish & Meat dries by its own rates.

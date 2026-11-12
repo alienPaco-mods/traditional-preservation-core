@@ -40,7 +40,7 @@ The tile in front of the Hearth's mouth and the Firebox's door must stay clear: 
 [list]
 [*][b]Open air[/b]: the day's weather.
 [*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors. A room is 22 C while the power grid is on.
-[*][b]In a basement[/b]: follows the season a third as far: about 5 C in January, 14 C in July.
+[*][b]In a basement[/b]: follows the ground, a month behind the season and two fifths as far: about 5 C from January to March, 13 C from July to September.
 [/list]
 Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and banked embers (a Hearth's or a Firebox's) 24 C.
 

@@ -1,6 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Slot rules by recipe** (Fish & Meat 6a): `UI.slotRules{ recipeRefusal = fn(slot, item) }`, optional. `slot.recipe`
+  is the short name of the window's selected recipe (the station's `CraftLogic:getCurrentRecipe()`). A refused item gets the red border and a halo on drop,
+  as with `refusal`; and Craft (`ISWidgetCraftLogicControl.startCraft`, wrapped only when a mod passes the rule)
+  refuses to start while any stored input fails it, since the recipe can change after loading. Found in game: with
+  OnTest alone, vanilla started the recipe and left the refused item in its slot.
 - **The fire's record** (Smokehouse 5c): `Hearth.logFire(state, now, mode, ends)`, run from HearthWorld's update,
   keeps on each Hearth and Firebox the hours of stoked and banked fire (`stokedHours`, `bankedHours`) and the stoked
   session now running (`session`, `sessionBase`, `stokedLast`; `Hearth.sessionHours`): unbroken stoking, a gap of up to

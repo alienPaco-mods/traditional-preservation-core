@@ -200,6 +200,7 @@ of all:
 | `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, Yeast, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
 | `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (Fish, Vinegar, Yeast, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
+| `ISWidgetCraftLogicControl.startCraft` | core `UI.slotRules` with `recipeRefusal` (Fish & Meat) | Craft refuses stored inputs the selected recipe can't take |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox; Fish's beams and Smokehouse) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
@@ -298,6 +299,11 @@ Vanilla's slots take any item and only limit by free slots, so a wrong item leav
 station that limits by weight or by stacks can't be expressed. Our slot rules check before the item goes in, and the
 same check sets the slot's green border, so it never promises what adding then refuses. It is one core function,
 `UI.slotRules`, whose add loop is a copy of vanilla's: compare that one copy with vanilla after a game update.
+A rule that depends on the **selected recipe** goes in `recipeRefusal(slot, item)` (slot.recipe is the recipe's
+short name, read from the station's `CraftLogic:getCurrentRecipe()`, which the window sets when a recipe is selected): the border turns red and a drop says
+why, and because the recipe can change after loading, Craft refuses to start while a stored input fails it. Vanilla
+alone would start the recipe on the inputs its OnTest passes and leave the rest in the slots, with Craft enabled.
+Fish & Meat's tub uses it: Corn Salted Meat refuses a Leg of Pork.
 
 **Why is the core one required mod instead of a copy in each mod?**
 It began as a copy in each mod, so a player could subscribe to one with no dependency (PZ loads only one file per Lua

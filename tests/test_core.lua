@@ -319,6 +319,53 @@ ISItemSlot.onMouseUp(caskSlot, 0, 0)
 check("slotRules: a drag that can partly go in says nothing", #halos == 0 and vanillaUps == 2)
 ISMouseDrag.dragging = nil
 
+-- recipeRefusal: what the selected recipe can't take. The station's CraftLogic says which recipe, by its full name.
+local vanillaStarts = 0
+ISWidgetCraftLogicControl = { startCraft = function() vanillaStarts = vanillaStarts + 1 end }
+ComponentType = { Resources = "resources" }
+ResourceType = { Item = "item" }
+ArrayList = { new = function() return H.list({}) end }
+UI.slotRules{
+    station = function(entity) if entity and entity.name == "tub" then return entity.component, "tub" end end,
+    refusal = function() return nil end,
+    recipeRefusal = function(s, item) if s.recipe == "Short" and item == "leg" then return "T_TooThick" end end,
+}
+local tubSlot, tub = station("tub", 5)
+local function select(name)
+    tub.component.getCurrentRecipe = function() return name and { getName = function() return "Mod." .. name end } end
+end
+select("Short")
+check("recipeRefusal: the selected recipe turns the border red, by its short name", not ISItemSlot.defaultVerifyItem({}, tubSlot, "leg")
+    and ISItemSlot.defaultVerifyItem({}, tubSlot, "cut"))
+select("Long")
+check("recipeRefusal: another recipe takes it", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
+select(nil)
+check("recipeRefusal: no recipe, no recipe rule", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
+tub.component.getCurrentRecipe = nil
+check("recipeRefusal: a station that can't say is left alone", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
+halos = {}
+select("Short")
+ISMouseDrag.dragging = { "leg" }
+ISItemSlot.onMouseUp(tubSlot, 0, 0)
+check("recipeRefusal: a refused drop says why", halos[1] == getText("T_TooThick"))
+ISMouseDrag.dragging = nil
+local stored = { "cut" }
+local inputSlot = { getStoredItems = function() return H.list(stored) end }
+tub.getComponent = function(_, kind)
+    return kind == ComponentType.Resources and { getResourcesFromGroup = function() return H.list({ inputSlot }) end } or nil
+end
+local logic = { getCraftLogic = function() return { getInputsGroupName = function() return "inputs" end } end }
+halos = {}
+ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
+check("recipeRefusal: Craft starts when every stored input fits", vanillaStarts == 1)
+stored = { "cut", "leg" }
+ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
+check("recipeRefusal: loaded under one recipe, Craft under another says why", vanillaStarts == 1 and halos[1] == getText("T_TooThick"))
+select("Long")
+ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
+ISWidgetCraftLogicControl.startCraft({ entity = cask, player = "player", logic = logic })
+check("recipeRefusal: other recipes and stations start as vanilla", vanillaStarts == 3)
+
 -- Yeast, Fish and Vinegar were checked here against their old code when each moved onto the core (2026-11-09).
 -- Their golden outputs and their own tests keep them in step now.
 

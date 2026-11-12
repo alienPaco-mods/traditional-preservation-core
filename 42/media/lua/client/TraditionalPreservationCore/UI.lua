@@ -1,6 +1,7 @@
 -- Traditional Preservation core: text and popups for the station windows, and what the right-click menus share.
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
+require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicControl"
 require "Entity/ISUI/Controls/ISItemSlot"
 require "Moveables/ISMoveableSpriteProps"
 
@@ -184,9 +185,14 @@ end
 --   refusal(slot, item, queued)  a translation key, or nil if item may go in. slot = { entity, component,
 --                                resource, extra }; queued lists the items already on their way in this add
 --   added(entity)                optional, before an add: start tracking a station built this session
--- Wraps ISCraftLogicPanel.ItemSlotAddItems (its add loop is copied here), ISItemSlot.defaultVerifyItem and
--- ISItemSlot.onMouseUp: compare them with vanilla after a game update. Each mod's call wraps the last, so
--- other entities pass through every mod to vanilla.
+--   recipeRefusal(slot, item)    optional: a translation key if item can't go in for the window's selected recipe
+--                                (slot.recipe, its short name, from the station's CraftLogic; never called
+--                                without one). The slot's border goes red and a
+--                                drop says why, as for refusal; and since the recipe can change after loading,
+--                                Craft also refuses to start while any stored input fails it.
+-- Wraps ISCraftLogicPanel.ItemSlotAddItems (its add loop is copied here), ISItemSlot.defaultVerifyItem,
+-- ISItemSlot.onMouseUp and, with recipeRefusal, ISWidgetCraftLogicControl.startCraft: compare them with vanilla
+-- after a game update. Each mod's call wraps the last, so other entities pass through every mod to vanilla.
 function UI.slotRules(rules)
     -- An item can be a crafting entity too, and has no sprite for a mod's station() to read.
     local modStation = rules.station
@@ -198,8 +204,23 @@ function UI.slotRules(rules)
     local vanillaVerifyItem = ISItemSlot.defaultVerifyItem
     local vanillaMouseUp = ISItemSlot.onMouseUp
 
+    -- The station's own rules, then the selected recipe's.
+    local function refusal(slot, item, queued)
+        local reason = rules.refusal(slot, item, queued)
+        if reason or not rules.recipeRefusal or not slot.recipe then return reason end
+        return rules.recipeRefusal(slot, item)
+    end
+
+    -- The name of the recipe selected in the window an item slot belongs to, if any.
+    -- The short name of the recipe selected in the station's window: selecting one sets it on the station's
+    -- CraftLogic too (its craft test data, which getCurrentRecipe reads). Guarded: another station may lack it.
+    local function selectedRecipe(component)
+        local ok, recipe = pcall(function() return component:getCurrentRecipe() end)
+        return ok and recipe and UI.shortName(recipe) or nil
+    end
+
     local function canAdd(action)
-        return not rules.refusal(action.tpSlot, action.item, {})
+        return not refusal(action.tpSlot, action.item, {})
     end
 
     function ISCraftLogicPanel.ItemSlotAddItems(player, entity, itemSlot, itemList, component)
@@ -207,10 +228,11 @@ function UI.slotRules(rules)
         if not ours then return vanillaAddItems(player, entity, itemSlot, itemList, component) end
         if rules.added then rules.added(entity) end
 
-        local slot = { entity = entity, component = component, resource = itemSlot.resource, extra = extra }
+        local slot = { entity = entity, component = component, resource = itemSlot.resource, extra = extra,
+            recipe = selectedRecipe(component) }
         local queued = {}
         for index, item in ipairs(itemList) do
-            local reason = rules.refusal(slot, item, queued)
+            local reason = refusal(slot, item, queued)
             if reason then
                 HaloTextHelper.addBadText(player, getText(reason))
                 return
@@ -233,13 +255,14 @@ function UI.slotRules(rules)
         local entity = resource:getGameEntity()
         local component, extra = station(entity)
         if not component then return nil end
-        return { entity = entity, component = component, resource = resource, extra = extra }
+        return { entity = entity, component = component, resource = resource, extra = extra,
+            recipe = selectedRecipe(component) }
     end
 
     function ISItemSlot:defaultVerifyItem(itemSlot, item)
         if not vanillaVerifyItem(self, itemSlot, item) then return false end
         local slot = slotOf(itemSlot)
-        return not slot or not rules.refusal(slot, item, {})
+        return not slot or not refusal(slot, item, {})
     end
 
     -- The reason to show when nothing being dragged can go in this slot.
@@ -250,7 +273,7 @@ function UI.slotRules(rules)
 
         local reason
         for _, item in ipairs(ISInventoryPane.getActualItems(ISMouseDrag.dragging)) do
-            local itemReason = rules.refusal(slot, item, {})
+            local itemReason = refusal(slot, item, {})
             if not itemReason then return nil end
             reason = reason or itemReason
         end
@@ -262,6 +285,33 @@ function UI.slotRules(rules)
         local reason = dropRefusal(self)
         if reason then HaloTextHelper.addBadText(getPlayer(), getText(reason)) end
         return vanillaMouseUp(self, x, y)
+    end
+
+    if not rules.recipeRefusal then return end
+    -- Loaded under one recipe, started under another: vanilla would run the new one on what it accepts and leave
+    -- the rest in the slots, so Craft says why instead.
+    local vanillaStartCraft = ISWidgetCraftLogicControl.startCraft
+    function ISWidgetCraftLogicControl:startCraft()
+        local component, extra = station(self.entity)
+        local recipe = component and selectedRecipe(component)
+        local resources = recipe and self.entity:getComponent(ComponentType.Resources)
+        if resources then
+            local slot = { entity = self.entity, component = component, extra = extra, recipe = recipe }
+            local group = self.logic:getCraftLogic():getInputsGroupName()
+            local inputs = resources:getResourcesFromGroup(group, ArrayList.new(), ResourceIO.Input, ResourceType.Item)
+            for i = 0, inputs:size() - 1 do
+                slot.resource = inputs:get(i)
+                local stored = slot.resource:getStoredItems()
+                for j = 0, stored:size() - 1 do
+                    local reason = rules.recipeRefusal(slot, stored:get(j))
+                    if reason then
+                        HaloTextHelper.addBadText(self.player, getText(reason))
+                        return
+                    end
+                end
+            end
+        end
+        return vanillaStartCraft(self)
     end
 end
 

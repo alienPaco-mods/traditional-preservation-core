@@ -184,6 +184,7 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Open air** | Nothing overhead | The day's weather, hour by hour |
 | **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The average outdoor temperature of the last 10 days |
 | **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
+| **Loft** | The top storey: a room upstairs with no room over it | As indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 
 > *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.

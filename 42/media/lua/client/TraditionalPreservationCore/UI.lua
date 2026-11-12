@@ -29,7 +29,7 @@ function UI.percent(share)
 end
 
 -- A place's word, one set for the series: Weather's places and the Hearth's (Open air, Under an open roof, Indoors,
--- Basement, By a fire, By banked embers).
+-- Loft, Basement, By a fire, By banked embers).
 function UI.placeName(place)
     return getText("IGUI_TraditionalPreservationCore_Place" .. tostring(place))
 end

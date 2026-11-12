@@ -34,6 +34,20 @@ end
 check("placeOf: below ground", Weather.placeOf(object(-1, false)) == "Basement")
 check("placeOf: in a room", Weather.placeOf(object(0, false)) == "Sheltered")
 check("placeOf: outdoors", Weather.placeOf(object(1, true)) == "Open")
+local function storey(z, roomAbove)
+    local above = roomAbove ~= nil and { isInARoom = function() return roomAbove end } or nil
+    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return false end,
+        isInARoom = function() return true end, getSquareAbove = function() return above end } end }
+end
+check("placeOf: the top storey is a loft, under a roof's square or under nothing", Weather.placeOf(storey(1, false)) == "Loft"
+    and Weather.placeOf(storey(3)) == "Loft")
+check("placeOf: a storey with a room over it is a room", Weather.placeOf(storey(1, true)) == "Sheltered")
+check("placeOf: the ground floor is a room, whatever is over it", Weather.placeOf(storey(0, false)) == "Sheltered"
+    and Weather.placeOf(storey(0, true)) == "Sheltered")
+check("a loft is a room's temperature in the cold months", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4 }, "Loft") == 4
+    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 10 }, "Loft") == 10)
+check("and warmer under the roof in summer", math.abs(Weather.placeTemperature({ temperature = 25, seasonTemperature = 20 }, "Loft") - 23) < 1e-9)
+check("a loft is 22 C while the grid is on", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4, gridOn = true }, "Loft") == Weather.GRID_ROOM_C)
 -- A player under a floor with no walls: the player's own isOutside() says yes (not in a room), the square says no.
 local player = object(0, false)
 function player:isOutside() return true end

@@ -40,6 +40,7 @@
   "IGUI_TraditionalPreservationCore_PlaceOpen": "Open air",
   "IGUI_TraditionalPreservationCore_PlaceCovered": "Under an open roof",
   "IGUI_TraditionalPreservationCore_PlaceSheltered": "Indoors",
+  "IGUI_TraditionalPreservationCore_PlaceLoft": "Loft",
   "IGUI_TraditionalPreservationCore_PlaceBasement": "Basement",
   "IGUI_TraditionalPreservationCore_PlaceHearth": "By a fire",
   "IGUI_TraditionalPreservationCore_PlaceEmbers": "By banked embers",

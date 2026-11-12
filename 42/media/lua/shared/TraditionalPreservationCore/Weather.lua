@@ -12,14 +12,18 @@ local Weather = {}
 -- the mean of the last ten days or so, as an unheated house or shed would. A basement follows the ground: the
 -- season's mean over a further GROUND_HOURS (a month behind, so a cellar is coldest in March and warmest in August),
 -- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
--- in winter (about 5 C to 13).
-Weather.PLACES = { "Open", "Covered", "Sheltered", "Basement" }
+-- in winter (about 5 C to 13). A loft (a room above the ground floor with no room over it: the top storey, under the roof) is the basement's mirror: a room in the cold
+-- months, and under the sun on the roof LOFT_LIFT of the season's distance above LOFT_ANCHOR warmer (about 24 C in
+-- a 21 C July).
+Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement" }
 Weather.SEASON_HOURS = 240
 Weather.GROUND_HOURS = 720
 Weather.BASEMENT_ANCHOR = 10
 Weather.BASEMENT_SWING = 0.4
--- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room does
--- here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
+Weather.LOFT_ANCHOR = 10
+Weather.LOFT_LIFT = 0.3
+-- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room and a
+-- loft do here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
 Weather.GRID_ROOM_C = 22
 -- Places at a temperature of their own, whatever the weather: Hearth adds by a fire and by banked embers. The
 -- ledger keeps no totals for them; work there counts by the clock (Hearth.catchUp).
@@ -66,6 +70,9 @@ function Weather.placeOf(object)
     if square:getZ() < 0 then return "Basement" end
     if not square:isOutside() then
         if not square:isInARoom() then return "Covered" end
+        -- A loft is the top storey: upstairs, with no room on the square above (a roof's square is in none).
+        local above = square:getZ() >= 1 and square:getSquareAbove()
+        if square:getZ() >= 1 and not (above and above:isInARoom()) then return "Loft" end
         return "Sheltered"
     end
     return "Open"
@@ -76,6 +83,11 @@ function Weather.basementTemperature(groundTemperature)
     return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (groundTemperature - Weather.BASEMENT_ANCHOR)
 end
 
+-- A loft by the season's mean: a room's, plus LOFT_LIFT of what the season is above LOFT_ANCHOR.
+function Weather.loftTemperature(seasonTemperature)
+    return seasonTemperature + Weather.LOFT_LIFT * math.max(seasonTemperature - Weather.LOFT_ANCHOR, 0)
+end
+
 -- The temperature a place has now, from the ledger's last reading.
 function Weather.placeTemperature(ledger, place)
     if Weather.FIXED_C[place] then return Weather.FIXED_C[place] end
@@ -83,7 +95,8 @@ function Weather.placeTemperature(ledger, place)
     local season = ledger.seasonTemperature or temperature
     -- A ledger from before the ground's mean (or a test's) goes by the season.
     if place == "Basement" then return Weather.basementTemperature(ledger.groundTemperature or season) end
-    if place == "Sheltered" and ledger.gridOn then return Weather.GRID_ROOM_C end
+    if (place == "Sheltered" or place == "Loft") and ledger.gridOn then return Weather.GRID_ROOM_C end
+    if place == "Loft" then return Weather.loftTemperature(season) end
     if place == "Sheltered" or place == "Covered" then return season end
     return temperature
 end

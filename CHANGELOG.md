@@ -1,6 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **The loft is a place** (2026-11-12, consistency sweep step H): the top storey, a room at floor 1 or higher with
+  no room on the square above (`Weather.placeOf` returns `Loft`; a middle storey and a bungalow's ground floor stay
+  Indoors). It reads the season's mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the
+  sun on the roof: about 24 C in a 21 C July, a room's from October to April; 22 C while the grid is on
+  (`Weather.loftTemperature`, `placeTemperature`). Every ledger keeps Loft totals; the place word is "Loft". Rule
+  written into DEVGUIDE: one place, one temperature for every mod. Tests, README, guide 6, Workshop text.
 - Debug console (2026-11-12): `TPC.setWeather(c, season, ground)` pretends the weather for a test (the engine's own
   temperature override, and the series' season and ground means set outright); `TPC.setWeather()` ends it. Test,
   DEVHELP, guide 6.

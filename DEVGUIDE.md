@@ -309,7 +309,7 @@ however long it was away. That costs one small table per mod, never grows with t
 catch-up simulation. The reading itself and the season's means are kept once, in TP Core's ModData, and copied into
 each mod's ledger: a mod added to a save in July then agrees with the others about the cellar at once.
 
-**Why four places (Open, Covered, Sheltered, Basement), and why a 240-hour season mean?**
+**Why five places (Open, Covered, Sheltered, Loft, Basement), and why a 240-hour season mean?**
 They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
 day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
 (a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
@@ -320,7 +320,14 @@ series' weather and copied into each ledger by `Weather.season`), so a cellar is
 Season tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. Ten days is long enough that one warm afternoon in January does
 nothing, and short enough that spring arrives within a fortnight. Until 2026-11 a room was the mean + 10 C (capped at
 28) and a basement 15 C flat: a heated house, which most players don't keep (consistency sweep, step C).
-More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them. Covered
+A loft (sweep step H, 2026-11-12) is the basement's mirror: the top storey, a room at z >= 1 whose square above is in
+no room (so a middle storey of a tall building and a bungalow's ground floor stay Sheltered). It reads the season's
+mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the sun on the roof, and 22 C while the
+grid is on. It came from the Stockfish Pallet, which had a loft of its own.
+**One place, one temperature (user, 2026-11-12):** a station or a stored item reads a place's temperature from
+`Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
+(its curve, its hours), never the temperature it is given.
+More places (north wall, near the stove) would ask the player to learn rules the game can't show them. Covered
 and Sheltered read the same temperature; Fish & Meat tells them apart for its drying rates (moving air and shade).
 By a fire and by banked embers are `Weather.FIXED_C` places that Hearth registers: the ledger keeps no totals for
 them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hearth.noteFire` runs out, then gives the

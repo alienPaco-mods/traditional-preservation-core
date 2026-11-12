@@ -35,7 +35,7 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
   **10 minutes** turns to clean water (`Hearth.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
   `boiled` in the copper's state and starts over when the fire goes out or more is poured in). Being let boil, water
   also steams sooner than milk.
-- **Fire out:** it cools towards the temperature of the place the Hearth stands in (open air, an open roof, indoors or a basement), slowly, as the stone holds heat.
+- **Fire out:** it cools towards the temperature of the place the Hearth stands in (open air, an open roof, indoors, a loft or a basement), slowly, as the stone holds heat.
 - **Banked fire:** it settles at 50 C.
 - More fluid heats and cools more slowly (by the cube root of the volume; a splash counts as a litre).
 
@@ -62,7 +62,7 @@ Fluid filled from the copper leaves at the copper's heat. Vanilla cools a carrie
 
 ### By a fire
 
-Two places beyond the series' three, which a mod must ask for (`Hearth.placeOf`; Dairy does):
+Two places beyond the six of `Weather.PLACES`, which a mod must ask for (`Hearth.placeOf`; Yeast, Vinegar and Dairy do):
 
 - **By a fire, 28 C:** any lit fire within 2 tiles on the same floor. A Hearth, a fireplace, an antique stove, a brazier or a campfire counts; an electric or gas stove never does.
 - **By banked embers, 24 C:** a banked Hearth or Firebox within 2 tiles, when no full fire is in reach.

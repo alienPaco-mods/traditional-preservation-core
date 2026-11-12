@@ -3,6 +3,7 @@
     "tools/season_report.lua"
   ],
   "TraditionalPreservationFishMeat": [
+    "tools/charque_report.lua",
     "tools/season_report.lua",
     "tools/storage_model.lua"
   ],

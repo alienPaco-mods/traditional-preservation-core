@@ -44,7 +44,9 @@ TEMPLATE
 
 - **Each press of Craft starts its own timer.**
 - **Temperature matters.** In open air it follows the day's weather; under an open roof or indoors the average of the
-  last ten days (a room is 22 C while the grid is on); in a basement a third of the season's swing from 10 C.
+  last ten days (a room is 22 C while the grid is on); in a loft (the top storey) as indoors, plus three tenths of
+  whatever that average is above 10 C; in a basement it follows the ground, a month behind the season and two fifths
+  as far from 10 C (about 5 C from January to March, 13 C from July to September); by a fire 28 C, banked embers 24 C.
 
 > **Margin note:** TEMPLATE: a real-world note.
 

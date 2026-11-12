@@ -179,6 +179,8 @@ While you're away, the fire counts only for as long as its fuel would have laste
 
 Every station in the series works by the temperature of **where it stands**. The weather is noted every 10 in-game minutes for the whole world, so a station you left a month ago has had exactly the weather it should have had when you come back.
 
+**The station tells you.** A station's own window (Yeast's shelf, Vinegar's floor and vessel, Salt's vat, Fish & Meat's frames, tub and Smokehouse) lists its place, the temperature there and how fast it is working (Salt's vat, which minds no weather, the brine it will give), with a bar and the time left for each batch. A station without a crafting window (a Hearth, a Firebox, Vinegar's cask, Dairy's incubator and crock) opens an Info window when you click it. Hover a running batch for the real time left at today's weather.
+
 | Place | When | Temperature |
 |---|---|---|
 | **Open air** | Nothing overhead | The day's weather, hour by hour |

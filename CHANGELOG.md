@@ -1,6 +1,7 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Docs pass, sweep step G** (2026-11-12): guide 6 says what a station's window and Info window show; README: six places plus the two fire places, the loft where the Hearth cools; Workshop text: eight places with *In a shed*, the Firebox in "Good to know"; the template guide's places (two fifths, a month behind, the loft, by a fire). Golden: Fish & Meat's season report gains its loft column, and its charque report is recorded too.
 - **Sweep step F** (2026-11-12): Needs Build 42.22 or newer (`versionMin`, was 42.20: everything is checked on 42.22). Workshop text and the template's mod.info and Workshop text too.
   DEVGUIDE: "Which kind of station?", the station rule (counted items in batches: `CraftLogic`, read by its window's
   info block; a liquid, one pool or a state with a past: Lua state, read by an Info window on click; storage: a

@@ -327,8 +327,19 @@ grid is on. It came from the Stockfish Pallet, which had a loft of its own.
 **One place, one temperature (user, 2026-11-12):** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
 (its curve, its hours), never the temperature it is given.
+**Exceptions (user, 2026-11-12):** an exception to that rule must rest on **realism**, and must **keep every process's
+path open** (no process shut out of the year by the place model; stockfish keeps its winter in the open and a longer
+season under a roof). Write each one down here with its reason. The ones there are (Fish & Meat, sweep step I):
+- **The Smokehouse is a shed in the outside air:** it reads the day's temperature plus its fire, not Covered's season
+  mean (a closed plank shed has no thermal mass to speak of). Planned as a Core place of its own, **Enclosed**.
+- **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
+  were aged through the summer heat on purpose.
+- **Unsalted fish's warm rot is weighted by its wetness squared** (a process number, not a temperature: a dried skin
+  protects the flesh), which keeps open-air stockfish possible from November to February while it reads the day's
+  temperature as the open air must.
 More places (north wall, near the stove) would ask the player to learn rules the game can't show them. Covered
-and Sheltered read the same temperature; Fish & Meat tells them apart for its drying rates (moving air and shade).
+and Sheltered read the same temperature off the grid (a room is 22 C on it; a generator does not count, as in
+vanilla); Fish & Meat tells them apart for its drying rates (moving air and shade).
 By a fire and by banked embers are `Weather.FIXED_C` places that Hearth registers: the ledger keeps no totals for
 them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hearth.noteFire` runs out, then gives the
 place under the fire its share of the gap by time. A station's World calls `Hearth.notePlace`, which catches a run up

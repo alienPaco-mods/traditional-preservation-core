@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Debug console (2026-11-12, consistency sweep): `TPC.weather()` (the series' weather and each place's temperature),
+  `TPC.here()`, and `TPC.kit(kind)` for `"hearth"` (default) or `"firebox"` (`TPC.fireboxKit()` is gone). DEVGUIDE
+  has the console convention every TP mod follows. Tests, DEVHELP, guide.
 - Docs (2026-11-12, consistency sweep): the guide and DEVGUIDE use the series' new names (Yogurt, Lard (Melted)).
 - **`StationInfo`: a station's info inside vanilla's crafting window** (2026-11-12, for Fish & Meat 0.4.19): new client
   module `TraditionalPreservationCore/StationInfo`. `StationInfo.add(provider)`; `provider(entity)` returns

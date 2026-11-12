@@ -587,7 +587,7 @@ def cmd_new(args):
     print(f"""
 next:
   1. Settle the design questions in ~/MODS/WIP/TPCore/SERIES.md, then replace every TEMPLATE mark (grep -rn TEMPLATE {mod}).
-  2. tp install {short(mod)}, restart the game, build the {station}, {short_name}.batches(4), Craft, {short_name}.age(72).
+  2. tp install {short(mod)}, restart the game, build the {station}, {short_name}.give("batch", 4), Craft, {short_name}.age(72).
   3. Commit: the new repo ({mod}), and TraditionalPreservationCore (golden.json, golden/{mod}) and guides/.
   4. Add the mod to ~/MODS/WIP/TPCore/SERIES.md's table.""")
     return 0 if ok else 1

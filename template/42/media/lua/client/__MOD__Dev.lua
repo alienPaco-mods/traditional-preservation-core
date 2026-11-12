@@ -15,7 +15,7 @@ function __SHORT__.help()
     say("__SHORT__.here()           which place you're standing in (outdoors, under a roof or a basement)")
     say("__SHORT__.age(hours)       give every station this many hours of perfect weather")
     say("__SHORT__.fast(hours)      test timer: a batch takes this many hours. __SHORT__.fast() goes back to the sandbox time")
-    say("__SHORT__.batches(n)       spawn n raw batches")
+    say("__SHORT__.give(name, n)    spawn n of: batch (a raw batch). __SHORT__.give() lists them")
 end
 
 function __SHORT__.weather()
@@ -50,10 +50,14 @@ function __SHORT__.fast(hours)
     say(string.format("Test timer on: a batch takes %s hours at full speed.", tostring(hours)))
 end
 
-function __SHORT__.batches(count)
+local GIVES = { batch = "__MOD__.RawBatch" }
+
+function __SHORT__.give(name, count)
+    local fullType = GIVES[name]
+    if not fullType then return say("Things: batch (a raw batch)") end
     local inventory = getPlayer():getInventory()
-    for _ = 1, count or 1 do inventory:AddItem("__MOD__.RawBatch") end
-    say("Gave " .. (count or 1) .. " raw batch(es).")
+    for _ = 1, count or 1 do inventory:AddItem(fullType) end
+    say("Gave " .. (count or 1) .. " " .. name .. ".")
 end
 
 say("Debug commands loaded. Type __SHORT__.help() in the Lua console.")

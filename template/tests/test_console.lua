@@ -40,7 +40,7 @@ check("fast sets the test timer and reloads the recipe", M.PROCESS_HOURS == 2 an
 run("fast")
 check("fast with no number goes back to the sandbox time", M.PROCESS_HOURS == 48)
 
-run("batches", 3)
+run("give", "batch", 3)
 check("batches land in the inventory", #player.given == 3 and player.given[1] == "__MOD__.RawBatch")
 
 H.done()

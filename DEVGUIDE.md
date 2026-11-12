@@ -90,6 +90,23 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installMenus()` | What a right-click menu file touches: vanilla's classes, the inventory in reach, the action queue, the pick-up check. Returns the record (`.carried` to set; `.queued`, `.moved`, `.probes`, `.walks` to read). |
 | `H.menu()`, `H.vessel(name, fluid, litres, capacity)`, `H.class(name)` | A context menu that keeps its options and submenus, an item with a fluid container, a vanilla class to derive from. |
 
+**The console convention** (2026-11-12; every TP mod, and the template):
+
+| Command | Means |
+|---|---|
+| `help()` | One line a command; the test fails if a command isn't listed or a listed one is missing. |
+| `weather()` | The temperature by place and the mod's rates there. `TPC.weather()` is the series' own reading. |
+| `here()` | The weather place the player stands in. Never anything else (Salt's lick tile is `TPS.tile()`). |
+| `age(hours)` | Every station of the mod on by that many good hours. Stored food has its own verb, in days where its clock is days (`TPFM.mature(days)`, `TPFM.keep(days)`, `TPD.sour(hours)`). |
+| `fast(hours)` | A test timer where the sandbox sets a time; no number goes back to the sandbox. |
+| `give(name, n, option)` | Spawns things by a short name; no name lists them. The count always follows the name. A thing with many kinds and stages gets its own command of the same shape: `TPFM.fish(name, n, weight, stage)`, `TPFM.meat(name, n, stage)`, with `"all"` for one of each. |
+| `kit(kind)` | What a test or a build needs in one go; `kit("?")` lists the kinds. |
+
+A noun looks and a verb changes (`cask()`, `setCask()`); singular is the nearest station, plural every loaded one
+(`pallet()`, `pots()`). Hours for stations, days for stored food, and the help line says which. A renamed or
+removed command is changed in four places: the Dev file, `tests/test_console.lua`, `DEVHELP.md` and the guide's
+Tester's Toolkit (edit `~/MODS/guides`, then `tp guides`).
+
 Every mod has a `tests/test_console.lua`: it calls each console command its stand-ins can carry, so a command can't
 break unseen (Yeast's `TPY.here()` did). Add a line there with each new command. A file with a right-click menu
 gets a menu test on `H.installMenus` (`TraditionalPreservationCore/tests/test_hearth_menu.lua`, Dairy's

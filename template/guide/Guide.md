@@ -89,4 +89,4 @@ Copied from `DEVHELP.md`; change both together.
 | `__SHORT__.here()` | Which kind of place you're standing in. |
 | `__SHORT__.age(hours)` | Hours of perfect weather for every station. |
 | `__SHORT__.fast(hours)` | Test timer. `__SHORT__.fast()` goes back to the sandbox time. |
-| `__SHORT__.batches(n)` | Spawns raw batches. |
+| `__SHORT__.give(name, n)` | Spawns `n` of: `"batch"` (a raw batch). `__SHORT__.give()` lists them. |

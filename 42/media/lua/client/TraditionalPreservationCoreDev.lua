@@ -3,30 +3,66 @@
 if not isDebugEnabled() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
+local Weather = require "TraditionalPreservationCore/Weather"
 TPC = {}
 
 local function say(text) print("[TPC] " .. text) end
 
 function TPC.help()
-    say("TPC.kit()            a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)")
+    say("TPC.weather()        the series' weather: temperature now, the season's mean, and each place's temperature")
+    say("TPC.here()           which place you're standing in, and its temperature")
+    say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default) or \"firebox\" (Masonry 2). TPC.kit(\"?\") lists them")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot()            bring its copper to the steam (90 C) now")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
-    say("TPC.fireboxKit()     a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)")
     say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
 
-function TPC.kit()
+-- What building each of the core's stations takes.
+local KITS = {
+    hearth = { about = "a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)",
+        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 12, ["Base.Clay"] = 4, ["Base.CopperSheet"] = 1 },
+    firebox = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)",
+        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2 },
+}
+
+function TPC.kit(kind)
+    local kit = KITS[kind or "hearth"]
+    if not kit then
+        for name, entry in pairs(KITS) do say("TPC.kit(\"" .. name .. "\"): " .. entry.about) end
+        return
+    end
     local inventory = getPlayer():getInventory()
-    inventory:AddItem("Base.MasonsTrowel_Wood")
-    for _ = 1, 12 do inventory:AddItem("Base.ClayBrick") end
-    for _ = 1, 4 do inventory:AddItem("Base.Clay") end
-    inventory:AddItem("Base.CopperSheet")
-    say("Gave a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2).")
+    for fullType, count in pairs(kit) do
+        if fullType ~= "about" then
+            for _ = 1, count do inventory:AddItem(fullType) end
+        end
+    end
+    say("Gave " .. kit.about .. ".")
+end
+
+-- The series' weather, as every TP mod reads it: the temperature now, the season's mean, and each place's.
+function TPC.weather()
+    local state = Weather.shared()
+    say(string.format("Temperature now %.1f C, season (10-day average) %.1f C, season humidity %.0f%%.",
+        state.temperature or 0, state.seasonTemperature or 0, (state.seasonHumidity or 0) * 100))
+    for _, place in ipairs(Weather.PLACES) do
+        say(string.format("%-9s %.1f C", place, Weather.placeTemperature(state, place)))
+    end
+    say(string.format("By a fire %d C, by banked embers %d C (within %d tiles; the mods that ask for it).", Hearth.FIRE_C,
+        Hearth.EMBERS_C, Hearth.FIRE_RADIUS))
+end
+
+-- Where the player stands, as a station there would read it.
+function TPC.here()
+    local player = getPlayer()
+    local place = Hearth.placeOf(player)
+    say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
+        Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player, true))))
 end
 
 -- Hearth
@@ -118,14 +154,6 @@ function TPC.warmth()
 end
 
 -- Firebox
-
-function TPC.fireboxKit()
-    local inventory = getPlayer():getInventory()
-    inventory:AddItem("Base.MasonsTrowel_Wood")
-    for _ = 1, 8 do inventory:AddItem("Base.ClayBrick") end
-    for _ = 1, 2 do inventory:AddItem("Base.Clay") end
-    say("Gave a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2).")
-end
 
 local function nearestFirebox()
     local firebox = Hearth.near(getPlayer():getSquare(), Hearth.isFirebox)[1]

@@ -10,6 +10,6 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `__SHORT__.here()` | Which kind of place you're standing in. |
 | `__SHORT__.age(hours)` | Gives every station this many hours of perfect weather. `__SHORT__.age(72)` finishes a batch. |
 | `__SHORT__.fast(hours)` | Test timer: a batch takes this many hours. `__SHORT__.fast()` goes back to the sandbox time. |
-| `__SHORT__.batches(n)` | Spawns raw batches. |
+| `__SHORT__.give(name, n)` | Spawns `n` of: `"batch"` (a raw batch). `__SHORT__.give()` lists them. |
 
-**Typical check:** `__SHORT__.batches(4)`, load the station and press Craft, then `__SHORT__.age(72)`.
+**Typical check:** `__SHORT__.give("batch", 4)`, load the station and press Craft, then `__SHORT__.age(72)`.

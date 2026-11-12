@@ -13,6 +13,7 @@ end
 local loaded = {}
 ScriptManager = { instance = { getCraftRecipe = function() return { Load = function(_, name, text) loaded[name] = text end } end } }
 SandboxVars = { __MOD__ = { ProcessDays = 2 } }
+function getCell() return { getGridSquare = function() return nil end } end
 local player = H.player({ z = -1 })
 function getPlayer() return player end
 

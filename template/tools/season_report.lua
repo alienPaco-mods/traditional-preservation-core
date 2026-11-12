@@ -87,7 +87,7 @@ local function cell(month, place)
 end
 
 print(string.format("Days for one batch (%d hours at full speed), started on the first of the month", M.PROCESS_HOURS))
-print("| Month | Outdoors | Under a roof | Basement | Roof, then basement |")
+print("| Month | Outdoors | Indoors | Basement | Indoors, then basement |")
 print("|---|---|---|---|---|")
 for month = 1, 12 do
     print(string.format("| %s | %s | %s | %s | %s |", MONTHS[month],

@@ -28,6 +28,17 @@ function UI.percent(share)
     return string.format("%.0f%%", share * 100)
 end
 
+-- A place's word, one set for the series: Weather's places and the Hearth's (Open air, Under an open roof, Indoors,
+-- Basement, By a fire, By banked embers).
+function UI.placeName(place)
+    return getText("IGUI_TraditionalPreservationCore_Place" .. tostring(place))
+end
+
+-- A place's temperature with its word: "12 C (Indoors)".
+function UI.placeText(place, celsius)
+    return UI.say("IGUI_TraditionalPreservationCore_PlaceAt", UI.degrees(celsius), UI.placeName(place))
+end
+
 -- Days and hours, rounded up to the hour, through a text with %1 days and %2 hours.
 function UI.timeText(hours, key)
     local whole = math.ceil(hours)

@@ -8,13 +8,19 @@
 -- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
 local Weather = {}
 
--- Outdoors goes by the day, a roof by the season (the mean of the last ten days or so, a bit warmer,
--- never hotter than thick walls allow), and a basement stays near the year's average all year.
-Weather.PLACES = { "Open", "Sheltered", "Basement" }
+-- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
+-- the mean of the last ten days or so, as an unheated house or shed would; a basement follows the season too, but
+-- only a third as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost in winter.
+Weather.PLACES = { "Open", "Covered", "Sheltered", "Basement" }
 Weather.SEASON_HOURS = 240
-Weather.SHELTER_WARMTH = 10
-Weather.SHELTER_MAX = 28
-Weather.BASEMENT_TEMPERATURE = 15
+Weather.BASEMENT_ANCHOR = 10
+Weather.BASEMENT_SWING = 0.35
+-- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room does
+-- here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
+Weather.GRID_ROOM_C = 22
+-- Places at a temperature of their own, whatever the weather: Hearth adds by a fire and by banked embers. The
+-- ledger keeps no totals for them; work there counts by the clock (Hearth.catchUp).
+Weather.FIXED_C = {}
 
 local SECONDS_PER_HOUR = 3600
 
@@ -47,33 +53,34 @@ function Weather.scaled(rate, sensitivity, minRate)
     return math.max(1 - (1 - rate) * sensitivity, minRate)
 end
 
--- Below ground is a basement, under a roof sheltered, anything else open. Asks the square, not the object: a
--- player's isOutside() only means "not in a room", while the square's exterior flag also clears under a floor
--- with no walls round it, as a station's isOutside() and the game's rain both see. A mod that asks for it
--- (withCovered) gets "Covered" for a roof that isn't a room: a porch, an open shed. The rest read that as sheltered.
-function Weather.placeOf(object, withCovered)
+-- Below ground is a basement, in a room sheltered, under a roof that isn't a room covered (a porch, an open shed),
+-- anything else open. Asks the square, not the object: a player's isOutside() only means "not in a room", while
+-- the square's exterior flag also clears under a floor with no walls round it, as a station's isOutside() and the
+-- game's rain both see. A player-built shed with walls and a whole roof is a room.
+function Weather.placeOf(object)
     local square = object and object:getSquare()
     if not square then return "Open" end
     if square:getZ() < 0 then return "Basement" end
     if not square:isOutside() then
-        if withCovered and not square:isInARoom() then return "Covered" end
+        if not square:isInARoom() then return "Covered" end
         return "Sheltered"
     end
     return "Open"
 end
 
--- A roof gives the season's mean plus SHELTER_WARMTH, capped at SHELTER_MAX.
-function Weather.shelterTemperature(seasonTemperature)
-    return math.min(seasonTemperature + Weather.SHELTER_WARMTH, Weather.SHELTER_MAX)
+-- A basement by the season's mean: BASEMENT_ANCHOR plus BASEMENT_SWING of the season's distance from it.
+function Weather.basementTemperature(seasonTemperature)
+    return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (seasonTemperature - Weather.BASEMENT_ANCHOR)
 end
 
 -- The temperature a place has now, from the ledger's last reading.
 function Weather.placeTemperature(ledger, place)
-    if place == "Basement" then return Weather.BASEMENT_TEMPERATURE end
+    if Weather.FIXED_C[place] then return Weather.FIXED_C[place] end
     local temperature = ledger.temperature or 0
-    if place == "Sheltered" then
-        temperature = Weather.shelterTemperature(ledger.seasonTemperature or temperature)
-    end
+    local season = ledger.seasonTemperature or temperature
+    if place == "Basement" then return Weather.basementTemperature(season) end
+    if place == "Sheltered" and ledger.gridOn then return Weather.GRID_ROOM_C end
+    if place == "Sheltered" or place == "Covered" then return season end
     return temperature
 end
 
@@ -83,18 +90,19 @@ function Weather.seasonMean(ledger, field, value, hours)
     ledger[field] = (ledger[field] or value) * (1 - share) + value * share
 end
 
--- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity }, in the core's global ModData.
+-- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity, gridOn }, in the core's global ModData.
 -- Save key: never rename it.
 Weather.SHARED_KEY = "TraditionalPreservationCore"
 
 -- The state in use: the game's, once it runs. Nil in tests and tools, where each ledger grows its own means.
 local shared
 
--- One reading into the series' weather.
-function Weather.observe(state, now, temperature, humidity)
+-- One reading into the series' weather. gridOn: the power grid is still on.
+function Weather.observe(state, now, temperature, humidity, gridOn)
     local hours = math.max(now - (state.lastHour or now), 0)
     state.lastHour = now
     state.temperature = temperature
+    state.gridOn = gridOn or nil
     Weather.seasonMean(state, "seasonTemperature", temperature, hours)
     if humidity then Weather.seasonMean(state, "seasonHumidity", humidity, hours) end
 end
@@ -118,8 +126,9 @@ function Weather.share(state)
 end
 
 -- A ledger's season mean (field is "seasonTemperature" or "seasonHumidity"): the series' own where there is one,
--- else a running mean of the ledger's own.
+-- else a running mean of the ledger's own. The season's temperature brings the grid's state along.
 function Weather.season(ledger, field, value, hours)
+    if shared and field == "seasonTemperature" then ledger.gridOn = shared.gridOn end
     if shared and shared[field] ~= nil then
         ledger[field] = shared[field]
     else
@@ -184,7 +193,8 @@ local started = false
 local function onTenMinutes()
     local now, climate = getGameTime():getWorldAgeHours(), getClimateManager()
     shared = Weather.shared()
-    Weather.observe(shared, now, climate:getTemperature(), climate:getHumidity())
+    local world = getWorld and getWorld()
+    Weather.observe(shared, now, climate:getTemperature(), climate:getHumidity(), world and world:isHydroPowerOn())
     for _, record in ipairs(recorders) do record(now, climate) end
 end
 
@@ -201,10 +211,11 @@ function Weather.record(record)
     table.insert(recorders, record)
 end
 
--- Marks are each place's total when a run or cask was last brought up to date. Work since then is the
--- difference, so a station catches up however long it was away.
+-- Marks are each place's total when a run or cask was last brought up to date, and the ledger's hour then (for
+-- time by a fire, Hearth.catchUp). Work since then is the difference, so a station catches up however long it was away.
 function Weather.mark(marks, ledger, kind)
     for _, place in ipairs(Weather.PLACES) do marks[place] = ledger[kind .. place] end
+    marks.hour = ledger.lastHour
     return marks
 end
 
@@ -220,15 +231,17 @@ end
 function Weather.startRun(modData, ledger, kind)
     modData.done = 0
     modData.last = Weather.mark({}, ledger, kind)
-    modData.place = nil
+    modData.place, modData.fireUntil, modData.under = nil, nil, nil
 end
 
 -- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the work
 -- done. Weather is only recorded every ten minutes, so the bar carries on at the last rate between
--- records. That part is only shown, and the next record replaces it.
-function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now)
+-- records. That part is only shown, and the next record replaces it. rateAt gives the rate at a fixed place
+-- (Weather.FIXED_C), which the ledger keeps none for.
+function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now, rateAt)
     local modData = craftRecipeData:getModData()
-    local rate = ledger[kind .. place .. "Rate"] or 0
+    local fixed = Weather.FIXED_C[place]
+    local rate = fixed and rateAt and rateAt(fixed) or ledger[kind .. place .. "Rate"] or 0
     local sinceRecord = math.max(now - ledger.lastHour, 0)
     local elapsed = (modData.done + sinceRecord * rate) * speed * SECONDS_PER_HOUR
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))

@@ -48,6 +48,7 @@ Hearth.BANKED_LIGHT = { 0.6, 0.25, 0.1 }
 Hearth.BANKED_FIREBOX = 1.8        -- the firebox's heat (vanilla's container temperature): it cooks, a third as fast
 
 local FIRE_C = { [Hearth.PLACE] = Hearth.FIRE_C, [Hearth.EMBERS] = Hearth.EMBERS_C }
+Weather.FIXED_C[Hearth.PLACE], Weather.FIXED_C[Hearth.EMBERS] = Hearth.FIRE_C, Hearth.EMBERS_C
 
 -- The fire's record, for whatever hangs over it (Fish & Meat's Smokehouse). Hours of stoked (lit) and banked fire,
 -- and the stoked session now running: unbroken stoking, a gap of up to SESSION_GRACE hours (more wood, a dip) kept.
@@ -675,9 +676,42 @@ function Hearth.placeOf(object)
     return Weather.placeOf(object)
 end
 
-function Hearth.placeTemperature(ledger, place)
-    if FIRE_C[place] then return FIRE_C[place] end
-    return Weather.placeTemperature(ledger, place)
+-- Weather.placeTemperature knows the fire's places too (Weather.FIXED_C); kept for the mods that call it here.
+Hearth.placeTemperature = Weather.placeTemperature
+
+-- Marks for Hearth.catchUp: Weather's, which keep the hour they were taken.
+Hearth.mark = Weather.mark
+
+-- The work done since the marks at place, which may be by a fire (Hearth.placeOf), and moves the marks on. The
+-- ledger keeps totals for the weather's places only, so time by a fire counts by the clock at its heat, rateAt
+-- the work's rate at a temperature, until the fire's noted fuel ran out (state.fireUntil, Hearth.noteFire). The
+-- ledger's totals can't be split at that hour, so the place under the fire (state.under) gets its share of the
+-- gap's weather by time. Marks taken without an hour count from the ledger's last record.
+function Hearth.catchUp(state, marks, ledger, kind, place, rateAt)
+    local work
+    if Hearth.isFirePlace(place) then
+        local from, to = marks.hour or ledger.lastHour, ledger.lastHour
+        local byFire = math.max(math.min(state.fireUntil or to, to) - from, 0)
+        work = byFire * rateAt(Hearth.fireC(place))
+        if to - from > byFire then
+            work = work + Weather.catchUp(marks, ledger, kind, state.under or "Sheltered") * (to - from - byFire) / (to - from)
+        end
+    else
+        work = Weather.catchUp(marks, ledger, kind, place)
+    end
+    Hearth.mark(marks, ledger, kind)
+    return work
+end
+
+-- Where a station stands for its work, written into state (a run's or a station's modData): its place now, with
+-- the fire's fuel noted when it is by one. A move brings the work up to now first, at the place it left
+-- (catchUp(state), the mod's own), so the hours by a fire count even when the station is seen again after it went out.
+function Hearth.notePlace(state, object, now, catchUp)
+    local place, fire = Hearth.placeOf(object)
+    if state.place ~= nil and state.place ~= place and catchUp then catchUp(state) end
+    state.place = place
+    Hearth.noteFire(state, object, fire, now)
+    return place
 end
 
 -- Notes on a station's state where it stands: by a fire, until when the fuel lasts and what it stands in without

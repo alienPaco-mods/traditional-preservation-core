@@ -164,7 +164,7 @@ The Hearth without its copper: the same fieldstone and lime top, built knee high
 
 ## 6. By the Fire
 
-A fire warms what stands beside it. Mods that ask for it (Dairy's incubator and crock do) count two more places:
+A fire warms what stands beside it. Yeast's shelf, Vinegar's floor, vessel and cask, and Dairy's incubator and crock count two more places:
 
 | Place | What makes it | Temperature |
 |---|---|---|
@@ -181,13 +181,23 @@ Every station in the series works by the temperature of **where it stands**. The
 
 | Place | When | Temperature |
 |---|---|---|
-| **Outdoors** | Nothing overhead | The day's weather, hour by hour |
-| **Under a roof** | Any roof or floor overhead, walls or not | The average outdoor temperature of the last 10 days, plus 10 C, never above 28 C |
-| **Basement** | Any level below ground | **15 C all year** |
+| **Open air** | Nothing overhead | The day's weather, hour by hour |
+| **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The average outdoor temperature of the last 10 days |
+| **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
+| **Basement** | Any level below ground | 10 C, plus a third of how far the 10-day average is from 10 C: about **5 C in January, 9 C in April, 14 C in July** |
 
-> ✏ *Margin note:* a porch roof or a floor laid on the level above is enough to count as "under a roof". Four walls with no roof are still outdoors.
+> ✏ *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.
 
-> ✏ *Margin note:* why ten days? Thick walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight.
+> ✏ *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
+
+| Month | Open air and indoors (the 10-day average) | Basement |
+|---|---|---|
+| January | −4 C | 5 C |
+| April | 6 C | 9 C |
+| July | 20 C | 14 C |
+| October | 10 C | 10 C |
+
+*(The game's own sampled year, which runs colder than real Kentucky.)*
 
 Each mod has its own idea of a good temperature, and its own **Temperature sensitivity** in the sandbox options:
 
@@ -198,7 +208,7 @@ Each mod has its own idea of a good temperature, and its own **Temperature sensi
 | Normal | As written in each guide |
 | Harsh | Half as much again |
 
-Rooms aren't heated by anything but a fire beside the station: a warm house doesn't speed a cask.
+Rooms aren't heated by anything but the grid's power (22 C, as vanilla's rooms are) or a fire beside the station. Once the grid is off, a winter batch wants a fire.
 
 ---
 
@@ -206,7 +216,7 @@ Rooms aren't heated by anything but a fire beside the station: a warm house does
 
 In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and keeps its age for it wherever it sits: a bucket, a bottle, the Hearth's copper.
 
-- **It ages by its place**, like a station: outdoors, under a roof, in a basement. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
+- **It ages by its place**, like a station: open air, under an open roof, indoors, in a basement, by a fire. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
 - **Pouring never makes it young.** Mix two lots and the older age wins.
 - **In the copper it ages too**, and a steaming copper scalds it.
 - Today only Dairy uses this, for milk. Without Dairy, nothing ages. Its guide has the times.
@@ -234,7 +244,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 - **Why doesn't milk boil?** The dairymaid kept it off the boil: milk is scalded at about 85 C, not boiled, or it catches and skins over. The copper holds it at 95 C at most. Water is another matter: it was boiled in the copper for the wash, the brew and the scalding of pails.
 - **Why 60 L?** Real farmhouse coppers held 40 to 100 L (ten to twenty gallons). Sixty is the middle of the range: a wash day's water, or a whole morning's milking.
 - **Why bank a fire?** Ash keeps the air off the coals, so they glow instead of flaming. A banked fire could be woken with a poker in the morning, which mattered when the alternative was flint and tinder.
-- **Why is a cellar 15 C?** A few feet of earth average out the whole year. It's cool in August and mild in January, and it's why cheese, beer and roots were kept below ground.
+- **Why does a cellar swing so little?** A few feet of earth take the edge off the seasons: a cellar runs a third of the way from the ground's mean towards the season, cool in August and above frost in January. That's why cheese, beer and roots were kept below ground.
 
 ### Old names, old ways
 

@@ -33,21 +33,21 @@ check("slower in the cold, never stopped", M.processRate(-20) > 0 and M.processR
 M.SENSITIVITY = 0
 check("sensitivity off runs at full speed in any weather", M.processRate(-20) == 1)
 M.SENSITIVITY = 1
-check("a basement is 15 C all year", M.placeTemperature({ temperature = -15, seasonTemperature = -10 }, "Basement") == 15)
+check("a basement swings a third as far as the season", M.placeTemperature({ temperature = -15, seasonTemperature = -10 }, "Basement") == 3)
 
 -- Timer
 local TIME = M.PROCESS_HOURS * 3600
 local data = recipeData(TIME)
 M.onProcessStart(data)
-data.modData.place = "Basement"
-weather(24, -10)
+data.modData.place = "Open"
+weather(24, 10)
 M.onProcessUpdate(data)
-local rate = M.processRate(15)
+local rate = M.processRate(10)
 check("a batch counts the work at its place's temperature", near(data.modData.done, 24 * rate))
 check("the bar shows it in game seconds", near(data.elapsed, 24 * rate * 3600))
 local status = M.batchStatus(data.modData, M.PROCESS_HOURS, M.getLedger())
 check("the popup's time left assumes the rate holds", near(status.hoursLeft, (M.PROCESS_HOURS - 24 * rate) / rate))
-weather(M.PROCESS_HOURS * 2, -10)
+weather(M.PROCESS_HOURS * 2, 22)
 M.onProcessUpdate(data)
 check("the bar stops at the recipe's time", data.elapsed == TIME)
 
@@ -63,6 +63,6 @@ check("and the sensitivity", M.SENSITIVITY == 0)
 
 -- Translations
 check("the popup's texts are translated", getText("IGUI___MOD___Time", 1, 2) == "1d 2h, if the temperature holds"
-    and getText("IGUI___MOD___Open", "7") == "7 C outdoors")
+    and getText("IGUI___MOD___Temperature") == "Temperature")
 check("with no formatter errors", #H.textWarnings == 0)
 H.done()

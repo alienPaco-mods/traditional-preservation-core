@@ -13,7 +13,7 @@ rewrite it as the mod takes shape. Settle the questions in `~/MODS/WIP/TPCore/SE
 2. Put up to 4 Raw __NAME__ Batches in it and press **Craft**.
 3. After 3 in-game days at the best temperature, take out the Finished __NAME__ Batches.
 
-A batch works by the temperature where the station stands (outdoors, under a roof, in a basement), through the
+A batch works by the temperature where the station stands (open air, under an open roof, indoors, in a basement), through the
 shared weather ledger, and keeps working while the area is unloaded. Hover a running batch for its progress, time
 left, temperature and rate.
 

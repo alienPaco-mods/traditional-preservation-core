@@ -269,6 +269,27 @@ local state = {}
 Hearth.noteFire(state, nil, nil, 5)
 check("no fire, no notes", state.fireUntil == nil and state.under == nil)
 
+-- Catching up by a fire: by the clock at its heat until the fuel ran out, then the place under it by its share.
+local Weather = require "TraditionalPreservationCore/Weather"
+local half = function(celsius) return celsius >= 20 and 1 or 0.5 end
+local kinds = { work = half }
+local book = Weather.newLedger(0, kinds)
+local marks = Hearth.mark({}, book, "work")
+for hour = 1, 10 do Weather.advance(book, hour, 0, kinds) end
+local byFire = { fireUntil = 4, under = "Sheltered" }
+check("by a fire 4 hours at full speed, then 6 in a cold room at half", near(Hearth.catchUp(byFire, marks, book, "work", Hearth.PLACE, half), 4 + 3)
+    and marks.hour == 10)
+check("a fire still burning counts all of it", near(Hearth.catchUp({ fireUntil = 99 }, Hearth.mark({}, book, "work"), book, "work",
+    Hearth.PLACE, half), 0))
+local away = Hearth.mark({}, book, "work")
+for hour = 11, 20 do Weather.advance(book, hour, 0, kinds) end
+check("away from a fire it is Weather's catch-up", near(Hearth.catchUp({}, away, book, "work", "Open", half), 5))
+local seen = { place = Hearth.PLACE, fireUntil = 22 }
+local caught
+Hearth.placeOf = function() return "Sheltered" end
+Hearth.notePlace(seen, {}, 30, function(s) caught = s.place end)
+check("a move catches up at the place it left first", caught == Hearth.PLACE and seen.place == "Sheltered" and seen.fireUntil == nil)
+
 -- Hooks
 local function item(heat)
     local modData = {}

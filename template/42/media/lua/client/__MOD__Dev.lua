@@ -12,7 +12,7 @@ local function say(text) print("[__SHORT__] " .. text) end
 
 function __SHORT__.help()
     say("__SHORT__.weather()        the temperature by place, and how fast a batch works there")
-    say("__SHORT__.here()           which place you're standing in (outdoors, under a roof or a basement)")
+    say("__SHORT__.here()           which place you're standing in (open air, an open roof, indoors or a basement)")
     say("__SHORT__.age(hours)       give every station this many hours of perfect weather")
     say("__SHORT__.fast(hours)      test timer: a batch takes this many hours. __SHORT__.fast() goes back to the sandbox time")
     say("__SHORT__.give(name, n)    spawn n of: batch (a raw batch). __SHORT__.give() lists them")

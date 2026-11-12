@@ -9,7 +9,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [*][b]The Hearth[/b]: a stone fireplace with a 60 L copper set in its top, for heating any fluid
 [*][b]The Firebox[/b]: a low stone firebox with an iron door, for heat and cooking
 [*]One weather record for the whole series, so every station keeps working while you are away
-[*]Three kinds of place a station can stand in: outdoors, under a roof and in a basement
+[*]Six kinds of place a station can stand in: open air, under an open roof, indoors, a basement, by a fire and by banked embers
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
 [/list]
 
@@ -38,11 +38,11 @@ The tile in front of the Hearth's mouth and the Firebox's door must stay clear: 
 
 [h2]Places[/h2]
 [list]
-[*][b]Outdoors[/b]: the day's weather.
-[*][b]Under a roof[/b] (any roof overhead, walls or not): the last 10 days' average outdoors plus 10 C, never over 28 C.
-[*][b]In a basement[/b]: 15 C all year.
+[*][b]Open air[/b]: the day's weather.
+[*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors. A room is 22 C while the power grid is on.
+[*][b]In a basement[/b]: follows the season a third as far: about 5 C in January, 14 C in July.
 [/list]
-Mods that ask for it (Dairy) also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and banked embers (a Hearth's or a Firebox's) 24 C.
+Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and banked embers (a Hearth's or a Firebox's) 24 C.
 
 [h2]Good to know[/h2]
 [list]

@@ -43,8 +43,8 @@ TEMPLATE
 ## 4. The __STATION__
 
 - **Each press of Craft starts its own timer.**
-- **Temperature matters.** Outdoors it follows the day's weather; under a roof the average of the last ten days
-  plus 10 C (never above 28 C); in a basement 15 C all year.
+- **Temperature matters.** In open air it follows the day's weather; under an open roof or indoors the average of the
+  last ten days (a room is 22 C while the grid is on); in a basement a third of the season's swing from 10 C.
 
 > **Margin note:** TEMPLATE: a real-world note.
 

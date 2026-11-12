@@ -1,6 +1,16 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Places, one set for the series** (2026-11-12, consistency sweep step C): a room (Sheltered) is the season's mean,
+  no +10 C and no 28 C cap; **22 C while the power grid is on**, as vanilla's rooms (`Weather.GRID_ROOM_C`, `gridOn`
+  copied from the series' weather). **Covered** (a roof, not a room) is a place for every mod: `Weather.placeOf`
+  returns it itself (the `withCovered` flag is gone) and it reads the season's mean. The basement is
+  `10 + 0.35 x (season - 10)` (`Weather.basementTemperature`; `BASEMENT_TEMPERATURE`, `SHELTER_WARMTH`,
+  `SHELTER_MAX` and `shelterTemperature` are gone). By a fire and by banked embers are `Weather.FIXED_C` places;
+  `Hearth.catchUp` counts them by the clock until the noted fuel runs out (lifted from Dairy's crock),
+  `Hearth.notePlace` catches a run up at its old place before writing a new one; `Weather.mark` keeps the hour.
+  One set of place words (`UI.placeName`, `UI.placeText`: Open air, Under an open roof, Indoors, Basement, By a fire,
+  By banked embers). The test harness loads Core's translations under each mod's. Template, README, guide 6, DEVGUIDE.
 - Debug console (2026-11-12, consistency sweep): `TPC.weather()` (the series' weather and each place's temperature),
   `TPC.here()`, and `TPC.kit(kind)` for `"hearth"` (default) or `"firebox"` (`TPC.fireboxKit()` is gone). DEVGUIDE
   has the console convention every TP mod follows. Tests, DEVHELP, guide.

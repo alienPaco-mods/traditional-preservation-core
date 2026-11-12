@@ -62,7 +62,7 @@ function TPC.here()
     local player = getPlayer()
     local place = Hearth.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
-        Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player, true))))
+        Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
 end
 
 -- Hearth

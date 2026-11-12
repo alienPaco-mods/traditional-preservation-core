@@ -35,7 +35,7 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
   **10 minutes** turns to clean water (`Hearth.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
   `boiled` in the copper's state and starts over when the fire goes out or more is poured in). Being let boil, water
   also steams sooner than milk.
-- **Fire out:** it cools towards the temperature of the place the Hearth stands in (outdoors, under a roof or a basement), slowly, as the stone holds heat.
+- **Fire out:** it cools towards the temperature of the place the Hearth stands in (open air, an open roof, indoors or a basement), slowly, as the stone holds heat.
 - **Banked fire:** it settles at 50 C.
 - More fluid heats and cools more slowly (by the cube root of the volume; a splash counts as a litre).
 
@@ -95,11 +95,13 @@ Every TP station works by the temperature of the place it stands in, from one we
 
 | Place | When | Temperature |
 |---|---|---|
-| **Outdoors** | Nothing overhead | The day's weather |
-| **Under a roof** | Any roof or floor overhead, walls or not | The average outdoor temperature of the last 10 days, plus 10 C, never above 28 C |
-| **Basement** | Any level below ground | 15 C all year |
+| **Open air** | Nothing overhead | The day's weather |
+| **Under an open roof** (Covered) | A roof or floor overhead, not a room: a porch, an open shed | The average outdoor temperature of the last 10 days |
+| **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same; **22 C while the power grid is on**, as vanilla's rooms are |
+| **Basement** | Any level below ground | `10 + 0.35 x (10-day average - 10)`: about 5 C in January, 9 in April, 14 in July |
+| **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Hearth) | 28 C / 24 C, for as long as the fuel lasts |
 
-A mod can ask to tell **covered** from under a roof (`Weather.placeOf(object, true)`; Fish does, for its drying frames): a roof over a square that isn't in a room, such as a porch or an open shed. A room is a map building's, or a space you built with walls all round and every square roofed. Other mods read covered as under a roof.
+Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Hearth.placeOf`); Fish & Meat dries by its own rates.
 
 Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again.
 

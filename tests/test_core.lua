@@ -12,18 +12,25 @@ check("curve: flat past the last point", Weather.curve(points, 30) == 1)
 check("curve: straight between points", near(Weather.curve(points, 5), 0.3) and near(Weather.curve(points, 15), 0.75))
 check("scaled: off runs at full speed", Weather.scaled(0.2, 0, 0.02) == 1)
 check("scaled: harsh slows more, down to the floor", near(Weather.scaled(0.8, 1.5, 0.02), 0.7) and Weather.scaled(0, 1.5, 0.02) == 0.02)
-check("shelter: ten degrees over the season", Weather.shelterTemperature(5) == 15)
-check("shelter: thick walls cap it", Weather.shelterTemperature(30) == Weather.SHELTER_MAX)
 local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
-check("place: a roof by the season", Weather.placeTemperature(ledger, "Sheltered") == 22)
-check("place: a basement holds still", Weather.placeTemperature(ledger, "Basement") == Weather.BASEMENT_TEMPERATURE)
+check("place: a room by the season, nothing added", Weather.placeTemperature(ledger, "Sheltered") == 12)
+check("place: an open roof by the season too", Weather.placeTemperature(ledger, "Covered") == 12)
+check("place: a basement swings a third as far", near(Weather.placeTemperature(ledger, "Basement"), 10.7))
+check("basement: about 5 C in a January, 14 in a July", near(Weather.basementTemperature(-4.4), 4.96)
+    and near(Weather.basementTemperature(21.8), 14.13))
+check("place: a room is 22 C while the grid is on, an open roof and a basement are not",
+    Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Sheltered") == Weather.GRID_ROOM_C
+    and Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Covered") == -5
+    and Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Basement") < 10)
+check("basement: the anchor holds still", Weather.basementTemperature(Weather.BASEMENT_ANCHOR) == Weather.BASEMENT_ANCHOR)
 
 local function object(z, outside)
-    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return outside end } end }
+    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return outside end,
+        isInARoom = function() return not outside end } end }
 end
 check("placeOf: below ground", Weather.placeOf(object(-1, false)) == "Basement")
-check("placeOf: under a roof", Weather.placeOf(object(0, false)) == "Sheltered")
+check("placeOf: in a room", Weather.placeOf(object(0, false)) == "Sheltered")
 check("placeOf: outdoors", Weather.placeOf(object(1, true)) == "Open")
 -- A player under a floor with no walls: the player's own isOutside() says yes (not in a room), the square says no.
 local player = object(0, false)
@@ -34,17 +41,17 @@ local function roofed(inRoom)
     return { getSquare = function() return { getZ = function() return 0 end, isOutside = function() return false end,
         isInARoom = function() return inRoom end } end }
 end
-check("placeOf: a porch is covered when asked", Weather.placeOf(roofed(false), true) == "Covered")
-check("placeOf: a room is sheltered when asked", Weather.placeOf(roofed(true), true) == "Sheltered")
-check("placeOf: a porch is sheltered when not asked", Weather.placeOf(roofed(false)) == "Sheltered")
+check("placeOf: a porch is covered", Weather.placeOf(roofed(false)) == "Covered")
+check("placeOf: a room is sheltered", Weather.placeOf(roofed(true)) == "Sheltered")
 
 local kinds = { [""] = function(celsius) return celsius >= 10 and 1 or 0.5 end }
 ledger = Weather.newLedger(0, kinds)
-check("ledger: zero totals for every place", ledger.Open == 0 and ledger.Sheltered == 0 and ledger.Basement == 0)
+check("ledger: zero totals for every place", ledger.Open == 0 and ledger.Covered == 0
+    and ledger.Sheltered == 0 and ledger.Basement == 0)
 check("advance: nothing when no time has passed", Weather.advance(ledger, 0, 20, kinds) == nil)
 check("advance: returns its hours", Weather.advance(ledger, 2, 5, kinds) == 2)
 check("advance: open counts the day", ledger.Open == 1 and ledger.OpenRate == 0.5)
-check("advance: a roof counts the season, warmer", ledger.Sheltered == 2 and ledger.ShelteredRate == 1)
+check("advance: a room and an open roof count the season", ledger.Sheltered == 1 and ledger.Covered == 1)
 check("advance: the first record is the season", near(ledger.seasonTemperature, 5))
 Weather.advance(ledger, 2 + Weather.SEASON_HOURS * 2, 25, kinds)
 check("season: a gap longer than a season replaces it", near(ledger.seasonTemperature, 25))
@@ -88,7 +95,7 @@ getClimateManager = function()
 end
 local seeded = Weather.getLedger("Seeded", newLedger)
 check("getLedger: a new ledger starts on the weather there is", Weather.placeTemperature(seeded, "Open") == 12
-    and Weather.placeTemperature(seeded, "Sheltered") == Weather.shelterTemperature(12))
+    and Weather.placeTemperature(seeded, "Sheltered") == 12)
 
 -- One weather for the series: every mod's ledger copies its season means at each record.
 H.installEvents()
@@ -117,6 +124,12 @@ check("a mod added later agrees with the others from its first day", late.temper
 local own = { lastHour = 0 }
 Weather.season(own, "seasonHumidity", 40, 1)
 check("season: the series' humidity too", own.seasonHumidity == series.seasonHumidity)
+Weather.observe(series, series.lastHour + 1, 5, 50, true)
+Weather.season(own, "seasonTemperature", 5, 1)
+check("season: a ledger learns the grid is on from the series", own.gridOn == true)
+Weather.observe(series, series.lastHour + 1, 5, 50, false)
+Weather.season(own, "seasonTemperature", 5, 1)
+check("and that it went off", own.gridOn == nil)
 Weather.share(nil)
 Weather.season(own, "seasonHumidity", 40, Weather.SEASON_HOURS)
 check("season: with no series' weather a ledger grows its own mean", own.seasonHumidity == 40)
@@ -203,6 +216,14 @@ check("say: values go in after the translator", UI.say("T_Soured", UI.percent(0.
 check("say: a text with no values", UI.say("T_None") == "plain")
 check("timeText: rounds up to the hour", UI.timeText(25.2, "T_Time") == "1 d 2 h")
 check("timeText: whole days", UI.timeText(48, "T_Time") == "2 d 0 h")
+local fakeTexts = H.texts
+H.installGetText()
+local words = {}
+for _, place in ipairs({ "Open", "Covered", "Sheltered", "Basement", "Hearth", "Embers" }) do table.insert(words, UI.placeName(place)) end
+check("place words: one set for the series", table.concat(words, ", ")
+    == "Open air, Under an open roof, Indoors, Basement, By a fire, By banked embers")
+check("placeText: the temperature, then the place", UI.placeText("Sheltered", 12.4) == "12 C (Indoors)" and #H.textWarnings == 0)
+H.installGetText(fakeTexts)
 
 local function slot(name)
     local recipe = name and { getName = function() return "Mod." .. name end }

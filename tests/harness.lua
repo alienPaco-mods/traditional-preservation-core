@@ -119,9 +119,14 @@ function H.jsonStrings(json)
     end
 end
 
--- The mod's real EN translations, from every JSON file in Translate/EN.
+-- The mod's real EN translations, from every JSON file in Translate/EN. With no folder, TP Core's come first, as
+-- the game has them loaded for every TP mod (the place words, UI.placeText).
 function H.loadTranslations(folder)
-    folder = folder or "42/media/lua/shared/Translate/EN"
+    if not folder then
+        local texts = H.loadTranslations((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/42/media/lua/shared/Translate/EN")
+        for key, value in pairs(H.loadTranslations("42/media/lua/shared/Translate/EN")) do texts[key] = value end
+        return texts
+    end
     local texts = {}
     local pipe = io.popen('ls "' .. folder .. '"/*.json 2>/dev/null')
     for path in pipe:lines() do
@@ -156,13 +161,13 @@ function H.installGetText(texts)
     end
 end
 
--- A player for a Dev console or a menu: stands at at.x, at.y, at.z (indoors unless at.outside) and keeps the
+-- A player for a Dev console or a menu: stands at at.x, at.y, at.z (in a room unless at.outside) and keeps the
 -- full types it was given in .given.
 function H.player(at)
     at = at or {}
     local x, y, z = at.x or 0, at.y or 0, at.z or 0
     local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end,
-        isOutside = function() return at.outside == true end }
+        isOutside = function() return at.outside == true end, isInARoom = function() return at.outside ~= true end }
     local player = { given = {} }
     local inventory = { AddItem = function(_, fullType) table.insert(player.given, fullType) return {} end }
     function player:getInventory() return inventory end

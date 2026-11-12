@@ -13,9 +13,9 @@ local function refresh(station, entry)
     if not logic then return end
     local uiLogic = Station.uiLogic(station, entry, logic)
     if not uiLogic then return end
-    local place = Weather.placeOf(station)
+    local now = getGameTime():getWorldAgeHours()
     for craftData in pairs(uiLogic:getItemsInProgress()) do
-        craftData:getModData().place = place
+        __MOD__.notePlace(craftData:getModData(), station, now)
     end
 end
 

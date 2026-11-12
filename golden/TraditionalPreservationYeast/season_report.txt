@@ -1,76 +1,80 @@
 Days for one culture (120 hours at full speed), started on the first of the month
-| Month | Outdoors | Under a roof | Basement | Roof, then basement |
+| Month | Outdoors | Indoors | Basement | Indoors, then basement |
 |---|---|---|---|---|
-| Jan | 59.33 | 29.08 | 6.46 | 6.92 |
-| Feb | 52.29 | 18.96 | 6.46 | 6.83 |
-| Mar | 33.71 | 15.42 | 6.46 | 6.75 |
-| Apr | 19.71 | 7.29 | 6.46 | 6.50 |
-| May | 11.08 | 5.04 | 6.46 | 6.33 |
-| Jun | 7.92 | 5.00 | 6.46 | 6.33 |
-| Jul | 5.29 | 5.00 | 6.46 | 6.33 |
-| Aug | 5.50 | 5.00 | 6.46 | 6.33 |
-| Sep | 6.13 | 5.00 | 6.46 | 6.33 |
-| Oct | 7.71 | 5.04 | 6.46 | 6.33 |
-| Nov | 18.29 | 5.29 | 6.46 | 6.33 |
-| Dec | 58.62 | 15.62 | 6.46 | 6.75 |
+| Jan | 59.33 | 82.29 | 27.08 | 27.37 |
+| Feb | 52.29 | 65.54 | 23.17 | 23.50 |
+| Mar | 33.71 | 43.08 | 20.87 | 21.12 |
+| Apr | 19.71 | 24.67 | 15.58 | 15.79 |
+| May | 11.08 | 13.29 | 12.79 | 12.79 |
+| Jun | 7.92 | 6.21 | 9.21 | 8.92 |
+| Jul | 5.29 | 5.00 | 7.67 | 7.42 |
+| Aug | 5.50 | 5.00 | 7.54 | 7.33 |
+| Sep | 6.13 | 5.38 | 8.58 | 8.29 |
+| Oct | 7.71 | 8.17 | 10.58 | 10.46 |
+| Nov | 18.29 | 18.71 | 13.87 | 13.96 |
+| Dec | 58.62 | 75.83 | 22.25 | 22.62 |
+Hearth (28 C), any month: 5.00 days
+Embers (24 C), any month: 5.00 days
 
 Popup after one day: progress, hours left, temperature, rate
 Jan Open      0.012429 2370.170074 -9.738255 0.050000 Open
-Jan Sheltered 0.021004 1070.313994 0.488089 0.109762 Sheltered
-Jan Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Jan Moved     0.087736 141.253796 15.000000 0.775000 Basement
+Jan Sheltered 0.010000 2376.000000 -9.511911 0.050000 Sheltered
+Jan Basement  0.032351 710.563262 3.170831 0.163417 Basement
+Jan Moved     0.021269 718.701405 3.170831 0.163417 Basement
 Feb Open      0.010473 2374.865177 -13.640223 0.050000 Open
-Feb Sheltered 0.049833 498.015774 5.723716 0.228949 Sheltered
-Feb Basement  0.161458 129.838710 15.000000 0.775000 Basement
-Feb Moved     0.108343 138.063096 15.000000 0.775000 Basement
+Feb Sheltered 0.012458 2070.420838 -4.276284 0.057237 Sheltered
+Feb Basement  0.042442 574.156048 5.003301 0.200132 Basement
+Feb Moved     0.028003 582.813383 5.003301 0.200132 Basement
 Mar Open      0.024732 1947.062777 -3.989295 0.060107 Open
-Mar Sheltered 0.059876 367.424393 7.676065 0.307043 Sheltered
-Mar Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Mar Moved     0.110985 137.653899 15.000000 0.775000 Basement
+Mar Sheltered 0.014969 1539.900183 -2.323935 0.076761 Sheltered
+Mar Basement  0.044956 503.836965 5.686623 0.227465 Basement
+Mar Moved     0.031254 511.065873 5.686623 0.227465 Basement
 Apr Open      0.053614 1190.688393 -0.462133 0.095379 Open
-Apr Sheltered 0.149928 140.137904 14.372219 0.727916 Sheltered
-Apr Basement  0.161458 129.838710 15.000000 0.775000 Basement
-Apr Moved     0.155293 130.793346 15.000000 0.775000 Basement
+Apr Sheltered 0.038592 615.483827 4.372219 0.187444 Sheltered
+Apr Basement  0.066598 348.706193 8.030277 0.321211 Basement
+Apr Moved     0.053104 353.747077 8.030277 0.321211 Basement
 May Open      0.050071 881.037745 1.469162 0.129383 Open
-May Sheltered 0.208333 95.000000 18.844622 1.000000 Sheltered
-May Basement  0.161458 129.838710 15.000000 0.775000 Basement
-May Moved     0.183958 126.354839 15.000000 0.775000 Basement
+May Sheltered 0.074900 313.783885 8.844622 0.353785 Sheltered
+May Basement  0.080382 287.511970 9.595618 0.383825 Basement
+May Moved     0.077903 288.286954 9.595618 0.383825 Basement
 Jun Open      0.091428 393.537936 6.926182 0.277047 Open
-Jun Sheltered 0.200000 96.000000 26.522571 1.000000 Sheltered
-Jun Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Jun Moved     0.175625 127.645161 15.000000 0.775000 Basement
+Jun Sheltered 0.181976 110.395436 16.522571 0.889193 Sheltered
+Jun Basement  0.115692 185.773356 12.282900 0.571217 Basement
+Jun Moved     0.146737 179.251398 12.282900 0.571217 Basement
 Jul Open      0.171711 145.433586 13.779161 0.683437 Open
-Jul Sheltered 0.200000 96.000000 28.000000 1.000000 Sheltered
-Jul Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Jul Moved     0.175625 127.645161 15.000000 0.775000 Basement
+Jul Sheltered 0.200000 96.000000 19.165341 1.000000 Sheltered
+Jul Basement  0.128080 163.334374 13.207869 0.640590 Basement
+Jul Moved     0.161067 157.154940 13.207869 0.640590 Basement
 Aug Open      0.172746 142.406906 13.961207 0.697091 Open
-Aug Sheltered 0.200000 96.000000 28.000000 1.000000 Sheltered
-Aug Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Aug Moved     0.175625 127.645161 15.000000 0.775000 Basement
+Aug Sheltered 0.200000 96.000000 20.305291 1.000000 Sheltered
+Aug Basement  0.134466 154.902267 13.606852 0.670514 Basement
+Aug Moved     0.164423 149.540827 13.606852 0.670514 Basement
 Sep Open      0.182331 122.552642 15.341832 0.800637 Open
-Sep Sheltered 0.200000 96.000000 27.071619 1.000000 Sheltered
-Sep Basement  0.155000 130.838710 15.000000 0.775000 Basement
-Sep Moved     0.175625 127.645161 15.000000 0.775000 Basement
+Sep Sheltered 0.183778 105.276953 17.071619 0.930371 Sheltered
+Sep Basement  0.116322 181.072236 12.475067 0.585630 Basement
+Sep Moved     0.146834 174.820072 12.475067 0.585630 Basement
 Oct Open      0.086861 406.345431 6.741597 0.269664 Open
-Oct Sheltered 0.208333 95.000000 22.297858 1.000000 Sheltered
-Oct Basement  0.161458 129.838710 15.000000 0.775000 Basement
-Oct Moved     0.183958 126.354839 15.000000 0.775000 Basement
+Oct Sheltered 0.120988 184.298791 12.297858 0.572339 Sheltered
+Oct Basement  0.096512 235.529190 10.804250 0.460319 Basement
+Oct Moved     0.108464 232.413606 10.804250 0.460319 Basement
 Nov Open      0.102817 537.085496 5.011398 0.200456 Open
-Nov Sheltered 0.202781 96.860369 17.835631 0.987672 Sheltered
-Nov Basement  0.161458 129.838710 15.000000 0.775000 Basement
-Nov Moved     0.180344 126.914500 15.000000 0.775000 Basement
+Nov Sheltered 0.063705 358.475791 7.835631 0.313425 Sheltered
+Nov Basement  0.076464 299.769343 9.242471 0.369699 Basement
+Nov Moved     0.070011 301.863919 9.242471 0.369699 Basement
 Dec Open      0.033704 1632.909023 -2.898839 0.071012 Open
-Dec Sheltered 0.072670 311.126573 8.941669 0.357667 Sheltered
-Dec Basement  0.161458 129.838710 15.000000 0.775000 Basement
-Dec Moved     0.118275 136.525114 15.000000 0.775000 Basement
+Dec Sheltered 0.018167 1317.650089 -1.058331 0.089417 Sheltered
+Dec Basement  0.050434 464.745524 6.129584 0.245183 Basement
+Dec Moved     0.035003 472.298254 6.129584 0.245183 Basement
 
 Ledger at the end
-Basement           15623.999999986
-BasementRate       0.775000000
+Basement           8458.421233247
+BasementRate       0.523763933
+Covered            9863.078429539
+CoveredRate        0.753611237
 Open               9732.807201206
 OpenRate           0.512840314
-Sheltered          14916.716483428
-ShelteredRate      1.000000000
+Sheltered          9863.078429539
+ShelteredRate      0.753611237
 lastHour           20160.000000004
 seasonTemperature  14.714816487
 temperature        11.504537521

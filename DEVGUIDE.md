@@ -309,14 +309,21 @@ however long it was away. That costs one small table per mod, never grows with t
 catch-up simulation. The reading itself and the season's means are kept once, in TP Core's ModData, and copied into
 each mod's ledger: a mod added to a save in July then agrees with the others about the cellar at once.
 
-**Why three places (Open, Sheltered, Basement), and why a 240-hour season mean?**
+**Why four places (Open, Covered, Sheltered, Basement), and why a 240-hour season mean?**
 They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
-day's weather. A roof doesn't follow the hour: thick walls follow the season, so Sheltered is the mean of the last ten
-days or so plus 10 C, capped at 28 C. A basement is near the year's average all year, so 15 C. Ten days is long
-enough that one warm afternoon in January does nothing, and short enough that spring arrives within a fortnight.
-More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them.
-Fish alone asks for a fourth, Covered (a roof, not a room: `placeOf(object, true)`), because drying fish turns on
-moving air and shade, which a porch has and a room doesn't. The others read it as Sheltered.
+day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
+(a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
+the outdoor temperature. While the grid is on a room is 22 C (`Weather.GRID_ROOM_C`, vanilla's figure; the ledger
+copies `gridOn` from the series' weather). A basement swings a third as far as the season from 10 C
+(`basementTemperature`): the ground's mean, damped. Ten days is long enough that one warm afternoon in January does
+nothing, and short enough that spring arrives within a fortnight. Until 2026-11 a room was the mean + 10 C (capped at
+28) and a basement 15 C flat: a heated house, which most players don't keep (consistency sweep, step C).
+More places (north wall, attic, near the stove) would ask the player to learn rules the game can't show them. Covered
+and Sheltered read the same temperature; Fish & Meat tells them apart for its drying rates (moving air and shade).
+By a fire and by banked embers are `Weather.FIXED_C` places that Hearth registers: the ledger keeps no totals for
+them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hearth.noteFire` runs out, then gives the
+place under the fire its share of the gap by time. A station's World calls `Hearth.notePlace`, which catches a run up
+at its old place before writing the new one.
 
 **Why override the craft timers?**
 The engine's craft timers tick at the speed of a 60-minute day whatever Day Length says, and stop while the area is

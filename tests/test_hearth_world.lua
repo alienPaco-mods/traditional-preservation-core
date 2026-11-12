@@ -39,7 +39,7 @@ local World = require "TraditionalPreservationCore/HearthWorld"
 getSprite = function(name) return { getName = function() return name end } end
 
 local square = { getX = function() return 5 end, getY = function() return 6 end, getZ = function() return 0 end,
-    isOutside = function() return false end }
+    isOutside = function() return false end, isInARoom = function() return true end }
 cell.squares["5,6,0"] = square
 local container = { custom = 0, processed = 0, getItems = function() return H.list({}) end }
 function container:getCustomTemperature() return self.custom end

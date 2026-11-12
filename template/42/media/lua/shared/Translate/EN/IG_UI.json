@@ -6,8 +6,5 @@
   "IGUI___MOD___TimeLeft": "Time Remaining",
   "IGUI___MOD___Time": "%1d %2h, if the temperature holds",
   "IGUI___MOD___Temperature": "Temperature",
-  "IGUI___MOD___Open": "%1 C outdoors",
-  "IGUI___MOD___Roof": "%1 C under a roof",
-  "IGUI___MOD___Basement": "%1 C in a basement",
   "IGUI___MOD___Rate": "Working Rate"
 }

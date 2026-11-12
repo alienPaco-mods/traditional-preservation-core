@@ -32,8 +32,6 @@ UI.slotRules{
     end,
 }
 
-local PLACE_TEXT = { Open = "IGUI___MOD___Open", Sheltered = "IGUI___MOD___Roof", Basement = "IGUI___MOD___Basement" }
-
 -- Vanilla's popup on a running batch goes by the recipe's time alone, so it gets the real time left at the
 -- station's temperature instead.
 local function drawBatchTooltip(slot, tooltip)
@@ -43,7 +41,7 @@ local function drawBatchTooltip(slot, tooltip)
     UI.drawTooltip(tooltip, function(layout)
         UI.addLine(layout, "IGUI___MOD___Progress", UI.percent(status.progress))
         UI.addLine(layout, "IGUI___MOD___TimeLeft", UI.timeText(status.hoursLeft, "IGUI___MOD___Time"))
-        UI.addLine(layout, "IGUI___MOD___Temperature", UI.say(PLACE_TEXT[status.place], string.format("%.0f", status.temperature)))
+        UI.addLine(layout, "IGUI___MOD___Temperature", UI.placeText(status.place, status.temperature))
         UI.addRateLine(layout, "IGUI___MOD___Rate", status.rate)
     end)
 end

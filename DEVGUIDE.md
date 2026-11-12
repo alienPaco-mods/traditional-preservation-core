@@ -90,6 +90,20 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installMenus()` | What a right-click menu file touches: vanilla's classes, the inventory in reach, the action queue, the pick-up check. Returns the record (`.carried` to set; `.queued`, `.moved`, `.probes`, `.walks` to read). |
 | `H.menu()`, `H.vessel(name, fluid, litres, capacity)`, `H.class(name)` | A context menu that keeps its options and submenus, an item with a fluid container, a vanilla class to derive from. |
 
+**How things are named** (2026-11-12; display text only, ids and save keys never follow):
+
+- A state the same piece passes through goes in brackets after its name, as vanilla's do (`Basil (Dried)`, `Clay Jar
+  (Unfired)`), several joined by commas: `Walleye (Salt Cured)`, `Steak (Corned)`, `Beef (Hot Smoked)`, `Lard
+  (Melted)`, `Cow's Milk (Soured)`, `Yogurt Pot (Unfired)`. Vanilla adds its own `(Fresh)` or `(Rotten)` after.
+- A finished product with a trade name is named, fish or animal first: `Walleye Stockfish`, `Beef Charque`,
+  `Bresaola`, `Country Ham`. What happens to it later is a bracket again: `(Matured)`, `(Aged)`, `(Soaked)`.
+- A part cut from it is a noun after the name: `Walleye Half`, `Walleye Head`, `Beef Slice (Hot Smoked)`.
+- `Gutted` is the one prefix (a fish that went through Gut Fish).
+- No hyphen in a state: Hot Smoked, Dry Cured, Salt Dried. Vanilla's spelling where it has one: Yogurt.
+- Containers read `Pot of X`, `Bucket of X`, `Crock of X`. A name must not read like another thing's plain
+  description (Salt's item on the heat is a `Bucket of Boiling Brine`; "a bucket of brine" is a bucket holding Brine).
+- A recipe is named for what it gives: `Soak Fish` gives `(Soaked)`.
+
 **The console convention** (2026-11-12; every TP mod, and the template):
 
 | Command | Means |

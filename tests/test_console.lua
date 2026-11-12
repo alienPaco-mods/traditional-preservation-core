@@ -30,6 +30,27 @@ end
 check("speed sets the game's multiplier and says so", run("speed", 60):find("x60", 1, true) ~= nil and multiplier == 60)
 check("speed() only shows it", run("speed"):find("x60", 1, true) ~= nil and multiplier == 60)
 H.installClock(100)
+
+-- The engine's temperature override, as the debug menu's Climate debugger uses it.
+local override = {}
+function override:setEnableAdmin(on) self.on = on end
+function override:setAdminValue(value) self.value = value end
+ClimateManager = { FLOAT_TEMPERATURE = 4 }
+function getClimateManager()
+    return { getClimateFloat = function(_, id) return id == 4 and override or nil end,
+        getTemperature = function() return 18 end, getHumidity = function() return 0.5 end }
+end
+local Weather = require("TraditionalPreservationCore/Weather")
+local state = Weather.shared()
+state.groundTemperature = 9
+run("setWeather", 4)
+check("setWeather sets the engine's override and the season's mean", override.on == true and override.value == 4
+    and state.seasonTemperature == 4 and state.groundTemperature == 9)
+run("setWeather", 12, 6, 5)
+check("and takes a season and a ground of their own", override.value == 12 and state.seasonTemperature == 6 and state.groundTemperature == 5)
+run("setWeather")
+check("setWeather() ends the override and leaves the means to drift", override.on == false and state.seasonTemperature == 6)
+
 for _, command in ipairs({ "hearth", "copper", "fuel", "hot" }) do
     check(command .. " says so when no Hearth is near", run(command):find("No Hearth", 1, true) ~= nil)
 end

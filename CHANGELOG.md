@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Debug console (2026-11-12): `TPC.setWeather(c, season, ground)` pretends the weather for a test (the engine's own
+  temperature override, and the series' season and ground means set outright); `TPC.setWeather()` ends it. Test,
+  DEVHELP, guide 6.
 - Guide: no emojis (2026-11-12): the decorative bullets and margin-note marks are gone, warning signs read **Warning:**.
 - Debug console (2026-11-12): `TPC.speed(x)` sets the game speed (`getGameTime():setMultiplier`), past vanilla's 40
   at the fastest button; `TPC.speed()` shows it. DEVHELP, guide 6.

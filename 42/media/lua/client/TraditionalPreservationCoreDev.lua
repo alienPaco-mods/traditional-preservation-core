@@ -11,6 +11,7 @@ local function say(text) print("[TPC] " .. text) end
 function TPC.help()
     say("TPC.weather()        the series' weather: temperature now, the season's mean, and each place's temperature")
     say("TPC.here()           which place you're standing in, and its temperature")
+    say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default) or \"firebox\" (Masonry 2). TPC.kit(\"?\") lists them")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
@@ -65,6 +66,25 @@ function TPC.here()
     local place = Hearth.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
         Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
+end
+
+-- Pretends the weather for a test that wants a cold month or a warm day. The day's temperature goes through the
+-- engine's own override (the debug menu's Climate debugger sets the same one), so every mod's next reading and the
+-- player feel it; the season's mean and the ground's are the series' own and are set outright. The season then
+-- drifts towards the day again, as it would. Not saved by the engine: set it again after a load.
+function TPC.setWeather(celsius, season, ground)
+    local temperature = getClimateManager():getClimateFloat(ClimateManager.FLOAT_TEMPERATURE)
+    if not celsius then
+        temperature:setEnableAdmin(false)
+        return say("Weather override off: the day's temperature is the game's again, and the season's mean follows it over about ten days.")
+    end
+    temperature:setEnableAdmin(true)
+    temperature:setAdminValue(celsius)
+    local state = Weather.shared()
+    state.seasonTemperature = season or celsius
+    if ground then state.groundTemperature = ground end
+    say(string.format("Weather set: %.1f C now, season %.1f C, ground %.1f C. The mods read it at the next ten game minutes (run the clock); TPC.weather() shows it then.",
+        celsius, state.seasonTemperature, state.groundTemperature or state.seasonTemperature))
 end
 
 -- Game speed, past vanilla's 40 at the fastest button: getGameTime():setMultiplier(x). Clicking a speed button

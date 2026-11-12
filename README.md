@@ -112,13 +112,13 @@ Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAg
 
 ## What it changes in vanilla
 
-Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update.
+Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update.
 
 ## Tuning
 
 The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt` and `entity_TP_Firebox.txt`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 

@@ -53,5 +53,7 @@
   "IGUI_TraditionalPreservationCore_InfoWaiting": "Loaded and not started: %1 (press Craft)",
   "IGUI_TraditionalPreservationCore_InfoFinished": "Finished and waiting to be taken: %1",
   "IGUI_TraditionalPreservationCore_InfoAssumes": "Times left assume the temperature holds as it is now.",
-  "IGUI_TraditionalPreservationCore_InfoEmpty": "Nothing in it."
+  "IGUI_TraditionalPreservationCore_InfoEmpty": "Nothing in it.",
+  "IGUI_TraditionalPreservationCore_Portions": "%1 (%2 portions)",
+  "IGUI_TraditionalPreservationCore_OnePortion": "%1 (1 portion)"
 }

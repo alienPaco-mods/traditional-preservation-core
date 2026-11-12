@@ -1,6 +1,22 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **One wrap each, and what two mods wrote twice** (2026-11-12; nothing a player sees). New modules: `Portions` (food
+  eaten from a vessel a portion at a time: `set`, `left`, `text`, `name`, `label`, `used`, and `onEat`, the one wrap
+  of `ISEatFoodAction.complete` and `serverStop`; Dairy's jar and Fish & Meat's crock each wrapped it), `Handcraft`
+  (`around`, `after`: the one wrap of `ISHandcraftAction.performRecipe`; Salt's shakers and Vinegar's bottles each
+  wrapped it) and `Pour` (`before`, `after`, `owner`: the one wrap of `ISFluidTransferAction` start, stop and
+  complete; the core's own `FluidAgeingWorld` and Dairy's World each wrapped it). Handlers run in the order nested
+  wraps ran. Also `Station.near` and `Station.nearAt` (objects round a square, nearest first; `Hearth.near` is it at
+  the fire's reach), `Hearth.catchUpRun` and `Hearth.updateRun` (a weather-timed craft run's catch-up and bar, as
+  Yeast, Vinegar and the template each wrote them), `Container.ml` and `Container.isEmptyVessel`, and
+  `Recipes.created` and `Recipes.consumed` (an OnCreate's own items). The portion texts ("%1 (%2 portions)") are the
+  core's. Tests `test_portions.lua` and `test_wraps.lua`; DEVGUIDE (the list of modules, what the core already does,
+  the table of vanilla wraps), README, the template. In-game steps 10 and 101 of `TESTING_GUIDE.md`.
+- Guide (2026-11-12): checked line by line against the code. Hearth Info's Copper row reads of 60 L (the guide said
+  20); a banked fire's wood lasts three times as long (it said 6 hours); a Firebox counts as a fire to stand by; the
+  month table has a Loft column; whole chapter numbers (the Firebox is chapter 6), one form for margin notes, a
+  Credits page.
 - **The loft is a place** (2026-11-12, consistency sweep step H): the top storey, a room at floor 1 or higher with
   no room on the square above (`Weather.placeOf` returns `Loft`; a middle storey and a bungalow's ground floor stay
   Indoors). It reads the season's mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the

@@ -137,7 +137,9 @@ mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
 `OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper),
-`.../Action.lua` and `.../Log.lua`, with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
+`.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
+vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
+wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
 `HearthUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
@@ -195,6 +197,20 @@ local Weather = require "TraditionalPreservationCore/Weather"
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
+   - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
+     nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
+   - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,
+     place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
+     default and old-save migration (Yeast, Vinegar, the template).
+   - `Portions`: food eaten from a vessel a portion at a time. `set`, `left`, `text`, `name`, `label` and `used` do
+     the sums, the name ("Jar of Yogurt (3 portions)", the core's text), the weight and the empty vessel;
+     `Portions.onEat(fullType, before, after)` hangs a mod's handlers on the one wrap of the eat action.
+   - `Handcraft.around(before, after)` / `Handcraft.after(after)`: handlers on the one wrap of the hand craft
+     action, for a mod that gives something back for what a craft used up.
+   - `Pour.before(name, fn)` / `Pour.after(name, fn)` (name is `start`, `stop` or `complete`) and `Pour.owner`:
+     handlers on the one wrap of the fluid transfer, for what rides along with a fluid.
+   - `Container.ml(container)` and `Container.isEmptyVessel(item)`; `Recipes.created(craftRecipeData, wanted)` and
+     `Recipes.consumed(...)`: an OnCreate's own items as a Lua list, by full type or a set of them.
    - `Log`: `log("TPV", "format", ...)` prints only in debug mode. Lines the test steps read go through it; a
      normal game's console stays clean.
 
@@ -241,7 +257,7 @@ of all:
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox; Fish's beams and Smokehouse) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
-| `ISHandcraftAction.performRecipe` | Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |
+| `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |
 | `ISCraftLogicPanel.createChildren` | Vinegar `...UI` | Fluid tank columns in the vessel's window |
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicControl.startCraft` | Vinegar `...UI` | Says why the vessel can't start, and stops a second run |
@@ -249,20 +265,19 @@ of all:
 | `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Hearth) | Clicking a cask, a Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
-| `ISFluidTransferAction.start`, `stop`, `complete` | core `FluidAgeingWorld` (Dairy's milk) | Poured fluid takes the source's age (older wins); both ends are looked at as it ends, so names change at once |
-| `ISFluidTransferAction.start`, `stop`, `complete` | Dairy `World` | Poured milk carries its heat record (`tpdCarry`) over, mixed by volume |
+| `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
 | `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
-| `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yogurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
-| `ISEatFoodAction.complete`, `serverStop` | Fish & Meat `...Potted` | A Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives its Clay Jar or Clay Pot back |
+| `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Clay Jar or Clay Pot back; a crock's first portion opens it |
 | `ISCampingMenu.doLightFireOption` | core `HearthUI` | A banked Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `HearthLootControls` | The same in the loot window's buttons |
 | `ISTakeGenerator.isValid` | FuelBarrel `ISFuelBarrelHose` | A generator with a barrel can't be picked up |
 | `ISGeneratorInfoWindow.getRichText` | FuelBarrel `...Menu` | Barrel level in the generator's info |
 
 Two mods wrapping the same function each call the one before, so load order doesn't matter. A new wrap goes in this
-table.
+table. **When a second mod needs a vanilla function a first one wraps, the wrap moves to the core** and both add
+handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`): one place to compare with vanilla after a game update.
 
 ## Tile numbers: the generated Tiles.lua
 

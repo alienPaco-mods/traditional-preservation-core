@@ -613,21 +613,7 @@ end
 
 -- Every object within FIRE_RADIUS tiles on the same floor that passes test, nearest first.
 function Hearth.near(square, test)
-    local found, cell = {}, getCell()
-    for dx = -Hearth.FIRE_RADIUS, Hearth.FIRE_RADIUS do
-        for dy = -Hearth.FIRE_RADIUS, Hearth.FIRE_RADIUS do
-            local there = cell:getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
-            local objects = there and there:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                if test(object) then table.insert(found, { object = object, distance = dx * dx + dy * dy }) end
-            end
-        end
-    end
-    table.sort(found, function(a, b) return a.distance < b.distance end)
-    local list = {}
-    for index, entry in ipairs(found) do list[index] = entry.object end
-    return list
+    return Station.near(square, Hearth.FIRE_RADIUS, test)
 end
 
 -- A Hearth or Firebox whose fire is banked (vanilla's fire is out meanwhile).
@@ -701,6 +687,22 @@ function Hearth.catchUp(state, marks, ledger, kind, place, rateAt)
     end
     Hearth.mark(marks, ledger, kind)
     return work
+end
+
+-- A weather-timed craft run (Yeast's culture, Vinegar's malt and wort, the template's batch): its recipe data's
+-- modData keeps done (hours of work), last (the marks) and the place Hearth.notePlace wrote. These bring one up to
+-- now at that place, by a fire or not; a run not yet started (no done or no marks) is left alone.
+function Hearth.catchUpRun(modData, ledger, kind, place, rateAt)
+    if not (modData.done and modData.last) then return end
+    modData.done = modData.done + Hearth.catchUp(modData, modData.last, ledger, kind, place, rateAt)
+end
+
+-- A run's OnUpdate: catches it up and sets the craft's bar from the work done (Weather.showProgress).
+function Hearth.updateRun(craftRecipeData, ledger, kind, place, rateAt, speed)
+    local modData = craftRecipeData:getModData()
+    if not (modData.done and modData.last) then return end
+    Hearth.catchUpRun(modData, ledger, kind, place, rateAt)
+    Weather.showProgress(craftRecipeData, ledger, kind, place, speed or 1, getGameTime():getWorldAgeHours(), rateAt)
 end
 
 -- Where a station stands for its work, written into state (a run's or a station's modData): its place now, with

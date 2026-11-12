@@ -1,4 +1,4 @@
--- Traditional Preservation core: fluid containers. What one holds (fluidIn), and a bucket that goes through
+-- Traditional Preservation core: fluid containers. What one holds (fluidIn, ml, isEmptyVessel), and a bucket that goes through
 -- several items coming back as the bucket it was: a recipe that uses a container up turns it into another item,
 -- so its type is noted on that item and handed on at each step, until the last recipe gives the container back.
 local Container = {}
@@ -9,6 +9,17 @@ function Container.fluidIn(container)
     local fluid = container:getPrimaryFluid()
     if not fluid or container:getPrimaryFluidAmount() < container:getAmount() - 0.001 then return nil end
     return fluid:getFluidTypeString()
+end
+
+-- Whole millilitres in a fluid container.
+function Container.ml(container)
+    return math.floor(container:getAmount() * 1000 + 0.5)
+end
+
+-- An item that can take a fluid and holds none: only these are filled, so nothing is ever topped up into a mixture.
+function Container.isEmptyVessel(item)
+    local container = item:getFluidContainer()
+    return container ~= nil and container:isEmpty() and container:getCapacity() > 0
 end
 
 -- The engine's cooking swap (ReplaceOnCooked) carries over only the modData keys that start with "condition:"

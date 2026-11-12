@@ -58,17 +58,12 @@ end
 -- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the
 -- work done at the station's temperature. It goes by where the station stood when last looked at (M.notePlace).
 function M.onProcessUpdate(craftRecipeData)
-    local ledger = M.getLedger()
-    local modData = craftRecipeData:getModData()
-    local place = runPlace(modData)
-    modData.done = modData.done + Hearth.catchUp(modData, modData.last, ledger, KIND, place, M.processRate)
-    Weather.showProgress(craftRecipeData, ledger, KIND, place, 1, getGameTime():getWorldAgeHours(), M.processRate)
+    Hearth.updateRun(craftRecipeData, M.getLedger(), KIND, runPlace(craftRecipeData:getModData()), M.processRate)
 end
 
 -- Brings a running batch up to now at the place it was last told.
 local function catchUpRun(modData)
-    if not (modData.done and modData.last) then return end
-    modData.done = modData.done + Hearth.catchUp(modData, modData.last, M.getLedger(), KIND, runPlace(modData), M.processRate)
+    Hearth.catchUpRun(modData, M.getLedger(), KIND, runPlace(modData), M.processRate)
 end
 
 -- Tells a running batch where its station stands (the station's World, at each look): the place, and the fire's

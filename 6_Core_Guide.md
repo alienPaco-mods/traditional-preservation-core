@@ -11,22 +11,22 @@
 3. The Hearth
 4. The Copper
 5. Banking the Fire
-5½. The Firebox
-6. By the Fire
-7. Places and Weather
-8. Milk and Other Fluids That Go Off
-8½. The Mason's Notebook
-9. Tips
-10. Troubleshooting
-11. Appendix: The Tester's Toolkit
+6. The Firebox
+7. By the Fire
+8. Places and Weather
+9. Milk and Other Fluids That Go Off
+10. The Mason's Notebook
+11. Tips
+12. Troubleshooting
+13. Appendix: The Tester's Toolkit
 
 ---
 
 ## 1. What This Mod Does
 
-**Traditional Preservation (Core)**, TP Core for short, is the mod every Traditional Preservation mod needs: Salt, Fish, Yeast, Vinegar and Dairy. It carries the rules they share, so they all agree about the weather, the cellar and the time you were away.
+**Traditional Preservation (Core)**, TP Core for short, is the mod every Traditional Preservation mod needs: Salt, Fish & Meat, Yeast, Vinegar and Dairy. It carries the rules they share, so they all agree about the weather, the cellar and the time you were away.
 
-It also adds two stations of its own, shared by the series: the **Hearth**, a stone fireplace with a 60 L copper in its top for heating whatever you pour into it, and the **Firebox**, the same fire without the copper (chapter 5½).
+It also adds two stations of its own, shared by the series: the **Hearth**, a stone fireplace with a 60 L copper in its top for heating whatever you pour into it, and the **Firebox**, the same fire without the copper (chapter 6).
 
 On its own it adds only those two, and changes no vanilla recipe, item or loot.
 
@@ -59,7 +59,7 @@ Right-click it. In its **Hearth** submenu you'll find:
 |---|---|
 | *Copper: 10 / 60 L Cow's Milk (Fresh), 62 C* | A grey status line: what the copper holds and how hot it is |
 | **Hearth Info** | A small window: the fire, the fuel, the copper, and when it will steam. **Clicking the Hearth opens it too** |
-| **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See section 5 |
+| **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Pour into the Copper** | From any container on you or nearby with a fluid in it |
 | **Fill from the Copper** | Into empty containers, or ones holding the same fluid with room left |
 | **Empty the Copper** | Pours away everything in it at once: for rotten milk, or a fluid you're done with. Longer the more there is |
@@ -70,7 +70,7 @@ Right-click it. In its **Hearth** submenu you'll find:
 |---|---|
 | Fire | Lit, Banked or Out |
 | Fuel | A bar (full is 12 hours of wood) and the time it will burn |
-| Copper | A bar and the litres, of 20 |
+| Copper | A bar and the litres, of 60 |
 | Holds | The fluid, or each fluid of a blend |
 | Heat | Its temperature |
 | Steaming | "Yes", "in 1.2 hours", "Not yet (85 C)" or "Not while banked" |
@@ -129,7 +129,7 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 | The firebox cooks | at full speed | a third as fast |
 | Warms the room | 8 tiles round | only the **2 tiles** round it |
 | Light | the whole room | a faint glow |
-| Stations within 2 tiles (see 6) | 28 C | 24 C |
+| Stations within 2 tiles (chapter 7) | 28 C | 24 C |
 
 **Stoke the Fire** rakes the embers back up into a full fire.
 
@@ -139,7 +139,7 @@ The embers keep burning while you're away, at their third. **Put out Fire** work
 
 ---
 
-## 5½. The Firebox
+## 6. The Firebox
 
 The Hearth without its copper: the same fieldstone and lime top, built knee high, with an **iron door** over the fire mouth. You see the fire only through the door's vents, three draught holes low down and two slits under the arch.
 
@@ -162,20 +162,20 @@ The Hearth without its copper: the same fieldstone and lime top, built knee high
 
 ---
 
-## 6. By the Fire
+## 7. By the Fire
 
 A fire warms what stands beside it. Yeast's shelf, Vinegar's floor, vessel and cask, and Dairy's incubator and crock count two more places:
 
 | Place | What makes it | Temperature |
 |---|---|---|
-| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Hearth, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** |
+| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Hearth, a Firebox, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** |
 | **By banked embers** | A banked Hearth or Firebox within 2 tiles, with no full fire in reach | **24 C** |
 
 While you're away, the fire counts only for as long as its fuel would have lasted. After that, the station is back in whatever place it stands in without the fire.
 
 ---
 
-## 7. Places and Weather
+## 8. Places and Weather
 
 Every station in the series works by the temperature of **where it stands**. The weather is noted every 10 in-game minutes for the whole world, so a station you left a month ago has had exactly the weather it should have had when you come back.
 
@@ -193,16 +193,16 @@ Every station in the series works by the temperature of **where it stands**. The
 
 > *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
 
-| Month | Open air and indoors (the 10-day average) | Basement |
-|---|---|---|
-| January | −4 C | 5 C |
-| March | 1 C | 5 C |
-| April | 6 C | 7 C |
-| May | 13 C | 9 C |
-| July | 21 C | 13 C |
-| September | 15 C | 13 C |
-| October | 9 C | 12 C |
-| November | 3 C | 9 C |
+| Month | Open air and indoors (the 10-day average) | Loft | Basement |
+|---|---|---|---|
+| January | −4 C | −4 C | 5 C |
+| March | 1 C | 1 C | 5 C |
+| April | 6 C | 6 C | 7 C |
+| May | 13 C | 14 C | 9 C |
+| July | 21 C | 24 C | 13 C |
+| September | 15 C | 16 C | 13 C |
+| October | 9 C | 9 C | 12 C |
+| November | 3 C | 3 C | 9 C |
 
 *(The game's own sampled year, which runs colder than real Kentucky.)*
 
@@ -219,18 +219,18 @@ Rooms aren't heated by anything but the grid's power (22 C, as vanilla's rooms a
 
 ---
 
-## 8. Milk and Other Fluids That Go Off
+## 9. Milk and Other Fluids That Go Off
 
 In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and keeps its age for it wherever it sits: a bucket, a bottle, the Hearth's copper.
 
-- **It ages by its place**, like a station: open air, under an open roof, indoors, in a basement, by a fire. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
+- **It ages by its place**, like a station: open air, under an open roof, indoors, in a loft or in a basement. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
 - **Pouring never makes it young.** Mix two lots and the older age wins.
 - **In the copper it ages too**, and a steaming copper scalds it.
 - Today only Dairy uses this, for milk. Without Dairy, nothing ages. Its guide has the times.
 
 ---
 
-## 8½. The Mason's Notebook
+## 10. The Mason's Notebook
 
 *Chalked on a slate by the kiln, half rubbed out.*
 
@@ -243,7 +243,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Skill | Masonry 2 |
 | Holds | 60 L |
 | Wood for a full copper | about 2¾ hours of fire to the steam, 3¼ to boil water clean |
-| Banked | the same wood for 6 hours, the copper at 50 C |
+| Banked | the same wood lasts three times as long, the copper at 50 C |
 
 ### Why it works the way it does
 
@@ -261,7 +261,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 ---
 
-## 9. Tips
+## 11. Tips
 
 - **Fill it up.** A full 60 L copper takes only about an hour and a quarter longer to steam than 10 L.
 - **Boil your water by the copperful.** A rain barrel's tainted water, boiled clean 60 L at a time, saves a stove a whole afternoon of pots.
@@ -272,7 +272,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 ---
 
-## 10. Troubleshooting
+## 12. Troubleshooting
 
 | Problem | Why |
 |---|---|
@@ -285,11 +285,11 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | No Light Fire option on a Hearth that looks out | It's banked: Stoke the Fire, or Put out Fire first |
 | Can't pick the Hearth up | It's lit, or the copper isn't empty |
 | A Hearth or Firebox won't build or go down there | Something stands in front of its mouth or door (or it would stand in front of another one's), or a wall is on that edge. Turn it, or clear the tile. `TPC.doors()` names what is in the way |
-| The Hearth or another TP station is missing | Check `~/Zomboid/console.txt`. The tiledef 5173 must be unique among your mods |
+| The Hearth or another TP station is missing | Check `~/Zomboid/console.txt`. The tile number 5173 must be unique among your mods |
 
 ---
 
-## 11. Appendix: The Tester's Toolkit
+## 13. Appendix: The Tester's Toolkit
 
 *For testers, modders and the curious. These commands exist only when the game is started in debug mode (Steam launch option `-debug`). Type them into the in-game **Command Console** and press Enter. `TPC.help()` lists them in the game.*
 
@@ -316,3 +316,13 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 **Typical check of the Firebox:** `TPC.kit("firebox")`, build one, `TPC.fuel()`, light it: the glow shows through the door's vents and smoke leaks round the door. `TPC.flue("Pipe", "Left")` shows a joined flue and the smoke stops.
 
 **Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the mouth shows dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
+
+---
+
+## Credits
+
+**Design and code:** alienPaco
+
+**Made for:** Project Zomboid, Build 42. Singleplayer.
+
+*Traditional Preservation is a fan-made modification. It is not made or endorsed by The Indie Stone.*

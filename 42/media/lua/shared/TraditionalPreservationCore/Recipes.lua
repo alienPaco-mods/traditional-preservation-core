@@ -6,6 +6,7 @@
 -- Run it from OnInitWorld: the game builds each fluid line's filter after that (WorldDictionary init) and seals it.
 -- A line that already names every fluid is left alone, so a second world in one session changes nothing.
 --     Recipes.addFluids("Base.MakeCakeBatter", { CowMilk = { "SourCowMilk" } }, "TPD")
+-- Also what every OnCreate asks of its recipe data: the items it made and the ones it used up (created, consumed).
 local log = require "TraditionalPreservationCore/Log"
 
 local Recipes = {}
@@ -32,6 +33,26 @@ function Recipes.widenLine(line, extra)
         end
     end
     return added and head .. table.concat(names, ";") .. tail or nil
+end
+
+-- What a craft made or used up, as a Lua list. wanted is a full type, a set of them ({ [fullType] = true }) or nil
+-- for every item: a recipe's OnCreate reads its own items out of all of them.
+local function listed(items, wanted)
+    local found = {}
+    for i = 0, items:size() - 1 do
+        local item = items:get(i)
+        local fullType = item:getFullType()
+        if not wanted or wanted == fullType or (type(wanted) == "table" and wanted[fullType]) then table.insert(found, item) end
+    end
+    return found
+end
+
+function Recipes.created(craftRecipeData, wanted)
+    return listed(craftRecipeData:getAllCreatedItems(), wanted)
+end
+
+function Recipes.consumed(craftRecipeData, wanted)
+    return listed(craftRecipeData:getAllConsumedItems(), wanted)
 end
 
 -- Engine parts

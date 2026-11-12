@@ -51,6 +51,35 @@ function Station.players()
     return list
 end
 
+-- Every object within radius tiles of the square at x, y on level z that passes test, nearest first; of two as near,
+-- the one the scan meets first (west to east, then north to south, then by its place on the square).
+function Station.nearAt(x, y, z, radius, test)
+    local found, cell = {}, getCell()
+    for dx = -radius, radius do
+        for dy = -radius, radius do
+            local there = cell:getGridSquare(x + dx, y + dy, z)
+            local objects = there and there:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do
+                local object = objects:get(i)
+                if test(object) then table.insert(found, { object = object, distance = dx * dx + dy * dy, order = #found }) end
+            end
+        end
+    end
+    table.sort(found, function(a, b)
+        if a.distance ~= b.distance then return a.distance < b.distance end
+        return a.order < b.order
+    end)
+    local list = {}
+    for index, entry in ipairs(found) do list[index] = entry.object end
+    return list
+end
+
+-- The same round a square.
+function Station.near(square, radius, test)
+    if not square then return {} end
+    return Station.nearAt(square:getX(), square:getY(), square:getZ(), radius, test)
+end
+
 -- Calls fn(container, object) for every item container at heat or hotter (vanilla's container temperature: 1.0 is
 -- cold, a lit stove or fire more) on any object within radius tiles of square on its level.
 function Station.hotContainers(square, radius, heat, fn)

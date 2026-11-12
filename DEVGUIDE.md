@@ -223,7 +223,7 @@ of all:
 | `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
-| `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yoghurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
+| `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yogurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
 | `ISEatFoodAction.complete`, `serverStop` | Fish & Meat `...Potted` | A Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives its Clay Jar or Clay Pot back |
 | `ISCampingMenu.doLightFireOption` | core `HearthUI` | A banked Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `HearthLootControls` | The same in the loot window's buttons |

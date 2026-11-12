@@ -1,6 +1,7 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- Docs (2026-11-12, consistency sweep): the guide and DEVGUIDE use the series' new names (Yogurt, Lard (Melted)).
 - **`StationInfo`: a station's info inside vanilla's crafting window** (2026-11-12, for Fish & Meat 0.4.19): new client
   module `TraditionalPreservationCore/StationInfo`. `StationInfo.add(provider)`; `provider(entity)` returns
   `{ rows = { { labelKey, value } }, bars = { { text, share, value, colour } }, notes = { ... } }` or nil. The block

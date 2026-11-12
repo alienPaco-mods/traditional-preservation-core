@@ -43,7 +43,7 @@ On its own it adds only those two, and changes no vanilla recipe, item or loot.
 | **Pour into the Copper** | Any one fluid, up to 60 L | The copper heating towards 95 C |
 | Wait | About 1.5 hours for 10 L | The copper **steaming** at 85 C |
 | **Fill from the Copper** | Empty containers | Your fluid back, hot |
-| With Fish & Meat: **Put Fat in the Copper** | Raw fat from butchering | Melted Lard or Tallow after an hour of steaming; it never burns here |
+| With Fish & Meat: **Put Fat in the Copper** | Raw fat from butchering | Lard (Melted) or Tallow after an hour of steaming; it never burns here |
 
 ---
 
@@ -111,7 +111,7 @@ Water steams sooner than milk: nobody holds it back from the boil.
 
 > ✏ *Margin note:* six times the fluid doesn't take six times the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: a full 60 L copper takes less than twice as long as 10 L.
 
-What you fill from the copper leaves at the copper's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Yoghurt Pot holds it for hours.
+What you fill from the copper leaves at the copper's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Yogurt Pot holds it for hours.
 
 **While you're away** the copper carries on: it heats for as long as the fuel it had would have lasted, then cools.
 

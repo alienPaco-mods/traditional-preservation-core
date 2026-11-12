@@ -47,6 +47,9 @@ check("placeOf: the ground floor is a room, whatever is over it", Weather.placeO
 check("a loft is a room's temperature in the cold months", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4 }, "Loft") == 4
     and Weather.placeTemperature({ temperature = 2, seasonTemperature = 10 }, "Loft") == 10)
 check("and warmer under the roof in summer", math.abs(Weather.placeTemperature({ temperature = 25, seasonTemperature = 20 }, "Loft") - 23) < 1e-9)
+check("a shed in the open air (Enclosed) goes by the day, grid or not",
+    Weather.placeTemperature({ temperature = 2, seasonTemperature = 8, gridOn = true }, "Enclosed") == 2)
+check("a square is never Enclosed: a station claims it", Weather.placeOf(object(0, true)) ~= "Enclosed")
 check("a loft is 22 C while the grid is on", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4, gridOn = true }, "Loft") == Weather.GRID_ROOM_C)
 -- A player under a floor with no walls: the player's own isOutside() says yes (not in a room), the square says no.
 local player = object(0, false)
@@ -73,6 +76,7 @@ Weather.advance(ledger, 2 + Weather.SEASON_HOURS * 2, 25, kinds)
 check("season: a gap longer than a season replaces it", near(ledger.seasonTemperature, 25))
 local filled = Weather.fillLedger({ malting = nil }, { malting = true, acetic = true })
 check("fillLedger: adds missing totals", filled.maltingBasement == 0 and filled.aceticOpen == 0)
+check("fillLedger: an old save gains the shed's totals", Weather.fillLedger({ maltingOpen = 5 }, { malting = true }).maltingEnclosed == 0)
 
 -- Catching up
 ledger = { Open = 10, Sheltered = 20, Basement = 30 }
@@ -235,9 +239,9 @@ check("timeText: whole days", UI.timeText(48, "T_Time") == "2 d 0 h")
 local fakeTexts = H.texts
 H.installGetText()
 local words = {}
-for _, place in ipairs({ "Open", "Covered", "Sheltered", "Basement", "Hearth", "Embers" }) do table.insert(words, UI.placeName(place)) end
+for _, place in ipairs({ "Open", "Covered", "Sheltered", "Basement", "Enclosed", "Hearth", "Embers" }) do table.insert(words, UI.placeName(place)) end
 check("place words: one set for the series", table.concat(words, ", ")
-    == "Open air, Under an open roof, Indoors, Basement, By a fire, By banked embers")
+    == "Open air, Under an open roof, Indoors, Basement, In a shed, By a fire, By banked embers")
 check("placeText: the temperature, then the place", UI.placeText("Sheltered", 12.4) == "12 C (Indoors)" and #H.textWarnings == 0)
 H.installGetText(fakeTexts)
 

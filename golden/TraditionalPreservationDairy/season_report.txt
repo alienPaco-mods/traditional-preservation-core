@@ -70,6 +70,8 @@ cultureBasement      1759.955297588
 cultureBasementRate  0.214062651
 cultureCovered       3528.912573800
 cultureCoveredRate   0.292084061
+cultureEnclosed      4000.975826895
+cultureEnclosedRate  0.160181501
 cultureLoft          4591.339421997
 cultureLoftRate      0.374563919
 cultureOpen          4000.975826895
@@ -82,6 +84,8 @@ milkBasement         4859.181776830
 milkBasementRate     0.426953253
 milkCovered          6146.399862057
 milkCoveredRate      0.493271452
+milkEnclosed         6627.432682649
+milkEnclosedRate     0.381154276
 milkLoft             7271.003693203
 milkLoftRate         0.624273198
 milkOpen             6627.432682649

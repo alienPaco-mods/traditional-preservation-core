@@ -83,6 +83,8 @@ Basement           6104.559220476
 BasementRate       0.613867470
 Covered            7533.994407444
 CoveredRate        0.760157614
+Enclosed           7433.878622020
+EnclosedRate       0.512840314
 Loft               7830.676723684
 LoftRate           0.868204899
 Open               7433.878622020

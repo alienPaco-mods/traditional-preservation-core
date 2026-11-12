@@ -1,6 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **A sixth place, Enclosed: *In a shed*** (step J, 2026-11-12). A closed shed in the outside air: out of the rain and
+  wind, by the day's temperature as the open air, and not warmed by the power grid. No square says it, so
+  `Weather.placeOf` never returns it: a station claims it in its World entry (only Fish & Meat's Smokehouse).
+  `Weather.PLACES` gains it, so every ledger built on `Weather.newLedger` gains `...Enclosed` totals, and
+  `fillLedger` adds them to old saves. The place word *In a shed* (`IGUI_TraditionalPreservationCore_PlaceEnclosed`).
+  Tests in `test_core.lua`; the Yeast and Dairy season reports' ledger dumps re-recorded (two new totals, the tables
+  unchanged). README's place table, the guide's (page 6), DEVGUIDE (six places; the Smokehouse is no longer an
+  exception). In-game step 105 of `TESTING_GUIDE.md`.
 - **One wrap each, and what two mods wrote twice** (2026-11-12; nothing a player sees). New modules: `Portions` (food
   eaten from a vessel a portion at a time: `set`, `left`, `text`, `name`, `label`, `used`, and `onEat`, the one wrap
   of `ISEatFoodAction.complete` and `serverStop`; Dairy's jar and Fish & Meat's crock each wrapped it), `Handcraft`

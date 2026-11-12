@@ -324,7 +324,7 @@ however long it was away. That costs one small table per mod, never grows with t
 catch-up simulation. The reading itself and the season's means are kept once, in TP Core's ModData, and copied into
 each mod's ledger: a mod added to a save in July then agrees with the others about the cellar at once.
 
-**Why five places (Open, Covered, Sheltered, Loft, Basement), and why a 240-hour season mean?**
+**Why six places (Open, Covered, Sheltered, Loft, Basement, Enclosed), and why a 240-hour season mean?**
 They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
 day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
 (a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
@@ -339,14 +339,18 @@ A loft (sweep step H, 2026-11-12) is the basement's mirror: the top storey, a ro
 no room (so a middle storey of a tall building and a bungalow's ground floor stay Sheltered). It reads the season's
 mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the sun on the roof, and 22 C while the
 grid is on. It came from the Stockfish Pallet, which had a loft of its own.
+Enclosed (step J, 2026-11-12; the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
+wind, but a box of planks with no thermal mass, so it reads the day's temperature as Open does, and the grid doesn't
+warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its World
+entry. Only Fish & Meat's Smokehouse does (user, 2026-11-12); the Yeast, Vinegar and Dairy season reports show no
+column for it.
 **One place, one temperature (user, 2026-11-12):** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
 (its curve, its hours), never the temperature it is given.
 **Exceptions (user, 2026-11-12):** an exception to that rule must rest on **realism**, and must **keep every process's
 path open** (no process shut out of the year by the place model; stockfish keeps its winter in the open and a longer
-season under a roof). Write each one down here with its reason. The ones there are (Fish & Meat, sweep step I):
-- **The Smokehouse is a shed in the outside air:** it reads the day's temperature plus its fire, not Covered's season
-  mean (a closed plank shed has no thermal mass to speak of). Planned as a Core place of its own, **Enclosed**.
+season under a roof). Write each one down here with its reason. The ones there are (Fish & Meat, sweep step I; the
+Smokehouse's day's temperature was one until it became the Enclosed place, step J):
 - **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
   were aged through the summer heat on purpose.
 - **Unsalted fish's warm rot is weighted by its wetness squared** (a process number, not a temperature: a dried skin

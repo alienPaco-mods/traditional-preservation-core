@@ -14,8 +14,10 @@ local Weather = {}
 -- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
 -- in winter (about 5 C to 13). A loft (a room above the ground floor with no room over it: the top storey, under the roof) is the basement's mirror: a room in the cold
 -- months, and under the sun on the roof LOFT_LIFT of the season's distance above LOFT_ANCHOR warmer (about 24 C in
--- a 21 C July).
-Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement" }
+-- a 21 C July). Enclosed is a closed shed in the outside air (the Smokehouse): out of the rain and wind but not a room,
+-- and with no thermal mass to speak of, so it goes by the day as the open air does, and the grid doesn't warm it. No
+-- square says it: a station claims it (Fish & Meat's World entry), so Weather.placeOf never returns it.
+Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement", "Enclosed" }
 Weather.SEASON_HOURS = 240
 Weather.GROUND_HOURS = 720
 Weather.BASEMENT_ANCHOR = 10
@@ -98,6 +100,7 @@ function Weather.placeTemperature(ledger, place)
     if (place == "Sheltered" or place == "Loft") and ledger.gridOn then return Weather.GRID_ROOM_C end
     if place == "Loft" then return Weather.loftTemperature(season) end
     if place == "Sheltered" or place == "Covered" then return season end
+    -- The open air and a shed in it (Enclosed) by the day's.
     return temperature
 end
 

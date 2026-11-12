@@ -186,8 +186,9 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
 | **Loft** | The top storey: a room upstairs with no room over it | As indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
+| **In a shed** | Inside the Smokehouse: a closed plank shed standing out of doors | The day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it |
 
-> *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it.
+> *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it. *In a shed* is the Smokehouse's own: a box of thin planks has no walls' worth of warmth to hold, so a frost at night reaches it by morning.
 
 > *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
 

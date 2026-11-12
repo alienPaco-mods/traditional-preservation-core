@@ -215,7 +215,8 @@ of all:
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `FluidAgeingWorld` (Dairy's milk) | Poured fluid takes the source's age (older wins); both ends are looked at as it ends, so names change at once |
 | `ISFluidTransferAction.start`, `stop`, `complete` | Dairy `World` | Poured milk carries its heat record (`tpdCarry`) over, mixed by volume |
-| `ISInventoryTransferAction.transferItem` | core `FluidAgeingUI`; Dairy `UI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy) |
+| `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
+| `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
 | `ISEatFoodAction.complete`, `serverStop` | Dairy `...Yoghurt` | A Jar of Yoghurt eaten from is relabelled with its portions, and the last bite gives the empty jar back |
 | `ISEatFoodAction.complete`, `serverStop` | Fish & Meat `...Potted` | A Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives its Clay Jar or Clay Pot back |

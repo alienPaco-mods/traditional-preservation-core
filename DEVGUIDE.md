@@ -107,7 +107,8 @@ mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
 `OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper),
 `.../Action.lua` and `.../Log.lua`, with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`,
-`HearthUI.lua` and `FluidAgeingUI.lua`, and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
+`HearthUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
 require=\TraditionalPreservationCore

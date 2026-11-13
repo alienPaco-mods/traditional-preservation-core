@@ -340,9 +340,17 @@ check("taken hooks hear how much left", took == 250)
 
 -- Save key
 local modData = {}
-local saved = Hearth.stateOf(modData)
+local saved = Hearth.copperState(modData)
 Hearth.pourInto(saved, "Water", 1000, 20, 0)
-check("the copper lives under one prefixed key", modData.tpHearth.ml == 1000 and modData.ml == nil and Hearth.stateOf(modData) == saved)
+check("the copper lives under its id inside one prefixed key", modData.tpHearth.copper.ml == 1000 and modData.tpHearth.ml == nil
+    and modData.ml == nil and Hearth.copperState(modData) == saved)
+
+-- The attachment registry
+local first = Hearth.attach({ id = "testPan", look = function() return "Full" end })
+local later = Hearth.attach({ id = "testPan", menu = function() end })
+check("attaching an id again adds its fields to the one registered", first == later and Hearth.attachment("testPan") == first
+    and first.look ~= nil and first.menu ~= nil and first.id == "testPan")
+check("each attachment's state is its own", Hearth.partState(modData, "testPan") ~= saved and modData.tpHearth.testPan ~= nil)
 -- The fire's record (Smokehouse 5c)
 local fire = {}
 Hearth.logFire(fire, 10, Hearth.STOKED, 16)

@@ -10,6 +10,10 @@
 -- "Open"; a campfire in a January field is cold at the back). It is opt-in: Weather.placeOf never returns it, Hearth.placeOf does, so only a mod that asks
 -- for it gets it. Mods hook into the copper with Hearth.hook (see HOOKS below).
 --
+-- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the copper is the first, written in
+-- Copper.lua, CopperUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
+-- One at a time; its state is kept under its id in the fire's state.
+--
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
 -- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
 -- one speed and heats and lights 8 tiles whatever its fuel (ENGINE_NOTES), so a banked Hearth's vanilla fire is out:
@@ -28,10 +32,12 @@ local Doors = require "TraditionalPreservationCore/Doors"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: ml, fluid, parts, tempC, last, fireUntil, boiled, hot, offAt; banked, fuel, fuelAt, fuelSet; a Firebox's flue
--- and flueSide; the fire's record (Hearth.logFire): fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session,
--- sessionBase, stokedLast.
+-- Inside: fireUntil; banked, fuel, fuelAt, fuelSet; a Firebox's flue and flueSide; the fire's record (Hearth.logFire):
+-- fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session, sessionBase, stokedLast; and each attachment's
+-- state under its id: the copper's (COPPER) ml, fluid, parts, tempC, last, boiled, hot, held, offAt, with fireUntil and
+-- banked copied from the fire as it heats.
 Hearth.KEY = "tpHearth"
+Hearth.COPPER = "copper"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
 Hearth.PLACE = "Hearth"
@@ -169,6 +175,44 @@ end
 function Hearth.stateOf(modData)
     modData[Hearth.KEY] = modData[Hearth.KEY] or {}
     return modData[Hearth.KEY]
+end
+
+-- An attachment's own state, under its id in the fire's.
+function Hearth.partState(modData, id)
+    local state = Hearth.stateOf(modData)
+    state[id] = state[id] or {}
+    return state[id]
+end
+
+function Hearth.copperState(modData)
+    return Hearth.partState(modData, Hearth.COPPER)
+end
+
+-- Attachments: what is fitted on a fire, one at a time. Hearth.attach(spec) registers one by spec.id, or adds the
+-- fields given to one already registered, so its rules can be given in shared Lua and its menu in client Lua. Each
+-- function gets the attachment's own state (part) and the fireplace; fireState is the fire's.
+--   name                                  its text key
+--   fit                                   what fitting takes: { items, tools, skill, ticks, kept, lost } (the hub's
+--                                         Fit / Remove, to come)
+--   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
+--   look(part, fire)                      the look its tile shows (Hearth.LOOKS)
+--   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
+--   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
+--   status(part)                          client: the menu's first row, text and icon
+--   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
+--   rows(window, y, info) -> y            client: its rows in the Info window; info.copper is the part
+--   notes(info, notes)                    client: its Info notes, before HearthUI.addNotes'
+local ATTACHMENTS = {}
+
+function Hearth.attach(spec)
+    local known = ATTACHMENTS[spec.id] or {}
+    for key, value in pairs(spec) do known[key] = value end
+    ATTACHMENTS[spec.id] = known
+    return known
+end
+
+function Hearth.attachment(id)
+    return ATTACHMENTS[id]
 end
 
 -- Copper rules
@@ -577,6 +621,24 @@ function Hearth.isFire(object)
     return Hearth.isHearth(object) or Hearth.isFirebox(object)
 end
 
+-- What is fitted on a fire: its spec and state, or nil. Until the Stone Hearth a Hearth's tile is the fire with
+-- the copper fitted.
+function Hearth.attachmentOf(fire)
+    local id = Hearth.isHearth(fire) and Hearth.COPPER or nil
+    local spec = id and ATTACHMENTS[id]
+    if not spec then return nil end
+    return spec, Hearth.partState(fire:getModData(), id)
+end
+
+-- Whether what is fitted may come off (or the fire be picked up): never while the fire burns; else the
+-- attachment's say. A fire with nothing fitted may.
+function Hearth.canRemove(fire)
+    if Hearth.isBurning(fire) then return false, "Burning" end
+    local spec, part = Hearth.attachmentOf(fire)
+    if not (spec and spec.canRemove) then return true end
+    return spec.canRemove(part, fire)
+end
+
 -- Every Hearth and Firebox tile.
 Hearth.FIRE_SPRITES = {}
 for _, list in ipairs({ Hearth.SPRITES, Hearth.FIREBOX_SPRITES }) do
@@ -620,21 +682,32 @@ function Hearth.flueSquare(firebox, side)
     return getCell():getGridSquare(here:getX() + step[1], here:getY() + step[2], here:getZ())
 end
 
--- The sprite and glow a Hearth or Firebox shows now: its copper or its flue, and its fire. nil for anything else.
+-- The sprite and glow a Hearth or Firebox shows now: its attachment's look or its flue, and its fire. nil for
+-- anything else.
 function Hearth.showing(fire, state, burning, banked)
     local name = fire:getSprite():getName()
     local face = Hearth.face(name)
-    if face then return Hearth.sprite(Hearth.look(state), face), Hearth.glowSprite(burning, banked, face) end
+    if face then
+        local spec, part = Hearth.attachmentOf(fire)
+        local look = spec and spec.look and spec.look(part, fire) or "Empty"
+        return Hearth.sprite(look, face), Hearth.glowSprite(burning, banked, face)
+    end
     face = Hearth.fireboxFace(name)
     if face then
         return Hearth.fireboxSprite(state.flue, state.flueSide, face), Hearth.fireboxGlow(burning, banked, state.flue, face)
     end
 end
 
--- The copper's state, brought up to now where the World runs (a server or single player).
-function Hearth.copperOf(fire)
+-- The fire's state, brought up to now where the World runs (a server or single player).
+function Hearth.fireStateOf(fire)
     if Hearth.World then return Hearth.World.update(fire, getGameTime():getWorldAgeHours()) end
     return Hearth.stateOf(fire:getModData())
+end
+
+-- The copper's state, brought up to now the same way.
+function Hearth.copperOf(fire)
+    Hearth.fireStateOf(fire)
+    return Hearth.copperState(fire:getModData())
 end
 
 -- Fires

@@ -30,11 +30,11 @@ TPHearthCopper.canFillFrom = canFillFrom
 
 function TPHearthCopper:isValid()
     if self.mode == "empty" then
-        return self.hearth:getSquare() ~= nil and (Hearth.stateOf(self.hearth:getModData()).ml or 0) > 0
+        return self.hearth:getSquare() ~= nil and (Hearth.copperState(self.hearth:getModData()).ml or 0) > 0
     end
     if not self.hearth:getSquare() or not self.character:getInventory():containsRecursive(self.item) then return false end
     local container = self.item:getFluidContainer()
-    local copper = Hearth.stateOf(self.hearth:getModData())
+    local copper = Hearth.copperState(self.hearth:getModData())
     if self.mode == "pourIn" then
         local parts = Hearth.partsIn(container)
         return parts ~= nil and Hearth.copperRoom(copper, parts, 1) > 0
@@ -99,7 +99,7 @@ end
 
 function TPHearthCopper:getDuration()
     if self.mode == "empty" then
-        return Action.pourDuration(self.character, (Hearth.stateOf(self.hearth:getModData()).ml or 0) / 1000, 10)
+        return Action.pourDuration(self.character, (Hearth.copperState(self.hearth:getModData()).ml or 0) / 1000, 10)
     end
     local container = self.item:getFluidContainer()
     local litres = 0

@@ -137,7 +137,7 @@ function box:getModData() return boxData end
 World.track(box)
 World.update(box, 110)
 check("a lit Firebox is tracked, capped, with smoke round its door", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, 0) and boxData[Hearth.KEY].ml == nil)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, 0) and boxData[Hearth.KEY].copper == nil)
 World.setFire(box, "bank", 110)
 check("it banks as the Hearth does", not box:isLit() and Hearth.isBanked(box) and count(cell.heat) >= 1
     and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, 0))
@@ -145,7 +145,28 @@ Hearth.setFlue(boxData[Hearth.KEY], "Pipe", "Back")
 World.update(box, 111)
 check("its flue joined, its tile shows the pipe and the smoke goes up it", box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", 0)
     and box.overlay:getName() == Hearth.fireboxGlow(true, true, "Pipe", 0))
-check("and it never grows a copper", boxData[Hearth.KEY].ml == nil and boxData[Hearth.KEY].tempC == nil)
+check("and it never grows a copper", boxData[Hearth.KEY].copper == nil and boxData[Hearth.KEY].ml == nil
+    and Hearth.attachmentOf(box) == nil and Hearth.canRemove(box) == false)
 World.setFire(box, "stoke", 111)
+
+-- The copper, fitted through the attachment registry
+fire.fuel, fire.lit = 600, true
+H.setHours(120)
+World.setFire(fire, "stoke", 120)
+local spec, copper = Hearth.attachmentOf(fire)
+check("a Hearth's attachment is the copper, its state under its id", spec == Hearth.attachment(Hearth.COPPER)
+    and copper == modData[Hearth.KEY].copper and spec.heats ~= nil and spec.onFire ~= nil)
+check("the fire's own state stays outside the copper's", modData[Hearth.KEY].fireUntil ~= nil and copper.ml == nil)
+Hearth.pourInto(copper, "Water", 10000, 20, 120)
+H.setHours(120.5)
+World.update(fire, 120.5)
+check("the copper heats by the fire through its heats, as the fire was until now", copper.tempC > 40
+    and copper.last == 120.5 and copper.fireUntil ~= nil and copper.banked == nil)
+check("lit, nothing may come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Burning")
+World.setFire(fire, "out", 120.5)
+fire.lit = false
+check("out, a copper holding fluid may not come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Full")
+Hearth.take(copper)
+check("out and empty, it may", Hearth.canRemove(fire) == true)
 
 H.done()

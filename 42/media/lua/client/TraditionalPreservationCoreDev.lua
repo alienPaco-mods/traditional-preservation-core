@@ -120,13 +120,14 @@ function TPC.hearth()
     local hearth = nearestHearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
+    local state = Hearth.stateOf(hearth:getModData())
     local hotIn = Hearth.hoursToHot(copper)
     say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; copper %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         hearth:getX(), hearth:getY(), hearth:getZ(),
-        Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", copper.fuel or 0)
+        Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", state.fuel or 0)
             or hearth:isLit() and "lit" or "out", hearth:getFuelAmount(),
         hearth:getSprite():getName(), (copper.ml or 0) / 1000, tostring(copper.fluid), copper.tempC or 0, Hearth.look(copper),
-        hotIn and string.format("in %.1f h", hotIn) or "never", copper.fireUntil and string.format("%.2f", copper.fireUntil) or "-",
+        hotIn and string.format("in %.1f h", hotIn) or "never", state.fireUntil and string.format("%.2f", state.fireUntil) or "-",
         (copper.boiled or 0) * 60))
 end
 
@@ -148,7 +149,7 @@ function TPC.fuel(minutes)
     if Hearth.World then Hearth.World.track(fire) end
     minutes = minutes or 600
     fire:setFuelAmount(minutes)
-    local state = Hearth.copperOf(fire)
+    local state = Hearth.fireStateOf(fire)
     if state.banked then Hearth.setBanked(state, true, minutes, getGameTime():getWorldAgeHours()) end
     if Hearth.isFirebox(fire) then TPC.firebox() else TPC.hearth() end
 end
@@ -210,7 +211,7 @@ end
 function TPC.firebox()
     local firebox = nearestFirebox()
     if not firebox then return end
-    local state = Hearth.copperOf(firebox)
+    local state = Hearth.fireStateOf(firebox)
     local sides = {}
     for _, side in ipairs({ "Back", "Left", "Right" }) do
         local square = Hearth.flueSquare(firebox, side)
@@ -224,7 +225,7 @@ end
 function TPC.flue(kind, side)
     local firebox = nearestFirebox()
     if not firebox then return end
-    Hearth.setFlue(Hearth.copperOf(firebox), kind, side or "Back")
+    Hearth.setFlue(Hearth.fireStateOf(firebox), kind, side or "Back")
     Hearth.World.refresh(firebox)
     TPC.firebox()
 end

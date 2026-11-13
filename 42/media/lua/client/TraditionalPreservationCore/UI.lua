@@ -410,17 +410,19 @@ function UI.slotRules(rules)
     end
 end
 
--- Picking a station up can break it, and one that holds something would lose it. mustStay(object) is true for a
--- station that has to stay where it is; the pick-up cursor then says why, with vanilla's own line for a full
--- container. Wraps ISMoveableSpriteProps.canPickUpMoveable and getInfoPanelFlagsPerTile, once for every mod.
+-- Picking a station up can break it, and one that holds something would lose it. mustStay(object) names the
+-- vanilla pick-up line for a station that has to stay where it is (a test returns true for hasItems, vanilla's line
+-- for a full container, or an InfoPanelFlags name: "tooHot" for a fire); nil when it may go. Wraps
+-- ISMoveableSpriteProps.canPickUpMoveable and getInfoPanelFlagsPerTile, once for every mod.
 local stayTests = {}
 
 local function mustStay(object)
-    if not object then return false end
+    if not object then return nil end
     for _, test in ipairs(stayTests) do
-        if test(object) then return true end
+        local why = test(object)
+        if why then return why == true and "hasItems" or why end
     end
-    return false
+    return nil
 end
 
 local function wrapPickUp()
@@ -434,7 +436,8 @@ local function wrapPickUp()
 
     function ISMoveableSpriteProps:getInfoPanelFlagsPerTile(square, object, player, mode)
         vanillaInfoFlags(self, square, object, player, mode)
-        if mode == "pickup" and mustStay(object) then InfoPanelFlags.hasItems = true end
+        local why = mode == "pickup" and mustStay(object)
+        if why then InfoPanelFlags[why] = true end
     end
 end
 

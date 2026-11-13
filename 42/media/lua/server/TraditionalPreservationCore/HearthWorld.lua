@@ -1,4 +1,4 @@
--- Traditional Preservation core: keeps track of every Hearth and Firebox and brings a Hearth's copper up to the hour: heated while
+-- Traditional Preservation core: keeps track of every Hearth and Firebox and brings what is fitted (the copper) up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
 -- the hearth tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
 -- weather (Weather.shared), so the Hearth works whichever TP mods are on. A banked Hearth's vanilla fire is out: its
@@ -11,7 +11,7 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local log = require "TraditionalPreservationCore/Log"
-local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
+require "TraditionalPreservationCore/Copper"
 
 local World = {}
 Hearth.World = World
@@ -95,36 +95,34 @@ local function simmer(fire, on)
     if emitter then simmers[fire] = { emitter = emitter, id = emitter:playSoundLooped(World.SIMMER_SOUND) } end
 end
 
--- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, its embers' heat and light, notes how long the fire will burn on
--- and adds to its record (Hearth.logFire),
--- and shows the copper empty, full or steaming (a Firebox: its flue), and the fire mouth's glow, lit or banked.
+Hearth.attach({ id = Hearth.COPPER, onFire = function(copper, fire) simmer(fire, Hearth.isHot(copper)) end })
+
+-- Brings what is fitted up to now (Hearth.attach's heats), keeps a banked fire's fuel and cooking slow, its embers'
+-- heat and light, notes how long the fire will burn on and adds to its record (Hearth.logFire), and shows the
+-- attachment's look (a Firebox: its flue) and the fire mouth's glow, lit or banked. Returns the fire's state.
 function World.update(fire, now)
-    local copper = Hearth.stateOf(fire:getModData())
-    local hasCopper = Hearth.isHearth(fire)
-    local before = Hearth.look(copper)
-    if hasCopper then
-        Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
-        FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.heldHours(copper))
+    local state = Hearth.stateOf(fire:getModData())
+    local spec, part = Hearth.attachmentOf(fire)
+    local before = spec and spec.look and spec.look(part, fire)
+    if spec and spec.heats then
+        spec.heats(part, fire, now, state, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
     end
-    local fuel = Hearth.reckonFuel(copper, fire:getFuelAmount(), fire:isLit(), now)
+    local fuel = Hearth.reckonFuel(state, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end
     local banked = Hearth.isBanked(fire)
     showEmbers(fire, banked)
     if banked then slowCooking(fire) else cookSeen[fire] = nil end
-    copper.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
+    state.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
     local mode = banked and Hearth.BANKED or fire:isLit() and Hearth.STOKED or nil
-    Hearth.logFire(copper, now, mode, copper.fireUntil)
-    local look = Hearth.look(copper)
-    local name, glow = Hearth.showing(fire, copper, Hearth.isBurning(fire), banked)
+    Hearth.logFire(state, now, mode, state.fireUntil)
+    local name, glow = Hearth.showing(fire, state, Hearth.isBurning(fire), banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
     local shown = fire:getOverlaySprite()
     if (shown and shown:getName()) ~= glow then fire:setOverlaySprite(glow) end
-    simmer(fire, hasCopper and Hearth.isHot(copper))
-    if hasCopper and look ~= before then
-        log("TP", "hearth copper %s -> %s: %.1f L %s at %.1f C", before, look, (copper.ml or 0) / 1000,
-            tostring(copper.fluid), copper.tempC or 0)
-    end
-    return copper
+    if spec and spec.onFire then spec.onFire(part, fire, now, state) end
+    local look = spec and spec.look and spec.look(part, fire)
+    if look ~= before then log("TP", "hearth %s %s -> %s", spec.id, tostring(before), tostring(look)) end
+    return state
 end
 
 local function refresh(fire)
@@ -149,13 +147,13 @@ World.track = tracker.track
 -- Banks a lit fire (vanilla's fire put out), stokes a banked one up again (lit), or puts a banked one out. The copper
 -- is brought up to now first, so it heated as the fire was until now.
 function World.setFire(fire, mode, now)
-    local copper = World.update(fire, now)
+    local state = World.update(fire, now)
     if mode == "bank" then
-        Hearth.setBanked(copper, true, fire:getFuelAmount(), now)
+        Hearth.setBanked(state, true, fire:getFuelAmount(), now)
         -- setLit, not extinguish: extinguish lets it smoulder, burning fuel, for ten minutes.
         fire:setLit(false)
     else
-        Hearth.setBanked(copper, false)
+        Hearth.setBanked(state, false)
         if mode == "stoke" and fire:hasFuel() then fire:turnOn() end
     end
     World.refresh(fire)

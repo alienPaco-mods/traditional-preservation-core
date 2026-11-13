@@ -18,6 +18,7 @@ local ui = H.installMenus()
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
 require "TraditionalPreservationCore/HearthUI"
+require "TraditionalPreservationCore/CopperUI"
 local onFillMenu = H.handlers.OnFillWorldObjectContextMenu[1]
 
 local menu = H.menu
@@ -27,7 +28,7 @@ local function named(aMenu, key)
 end
 
 local function hearth(copper, lit)
-    local modData = { [Hearth.KEY] = copper or {} }
+    local modData = { [Hearth.KEY] = { [Hearth.COPPER] = copper or {} } }
     local square = { getX = function() return 5 end, getY = function() return 5 end, getZ = function() return 0 end }
     return {
         class = "IsoFireplace",
@@ -269,7 +270,10 @@ check("a cold, empty Hearth can be picked up", ISMoveableSpriteProps.canPickUpMo
 check("not while it burns", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth({}, true)) == false)
 check("nor while the copper holds anything", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, holdsWater) == false)
 ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, holdsWater, character, "pickup")
-check("and the pick-up cursor says why", InfoPanelFlags.hasItems == true)
+check("and the pick-up cursor says why", InfoPanelFlags.hasItems == true and not InfoPanelFlags.tooHot)
+InfoPanelFlags.tooHot = nil
+ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, hearth({}, true), character, "pickup")
+check("a burning one is too hot, not full", InfoPanelFlags.tooHot == true and InfoPanelFlags.hasItems == false)
 ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, hearth(), character, "pickup")
 check("but not for one that can go", InfoPanelFlags.hasItems == false)
 ui.vanillaPickUp = false

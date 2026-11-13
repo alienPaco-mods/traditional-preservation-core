@@ -106,6 +106,10 @@ check("place, temperature and rate first, then the mod's rows", #shown.rows == 4
     and shown.rows[3][2] == "30%" and shown.rows[4][2] == "own")
 check("a numbered bar, slow below half speed", shown.bars[1].share == 0.5
     and shown.bars[1].colour == StationInfo.SLOW_COLOUR and #shown.notes == 3)
+local frozen = StationInfo.block({ place = "Open", temperature = -8, rate = 0,
+    batches = { { name = "Malt", progress = 0.5 } } })
+check("a frozen batch has no time left: its bar says paused", frozen.bars[1].value:find("InfoPaused") ~= nil
+    and frozen.bars[1].colour == StationInfo.SLOW_COLOUR)
 local bare = StationInfo.block({ place = "Open" })
 check("by the clock: one row, and nothing in it", #bare.rows == 1 and #bare.bars == 0 and #bare.notes == 1)
 

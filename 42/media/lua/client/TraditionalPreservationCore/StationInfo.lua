@@ -187,7 +187,7 @@ end
 -- A block for a plain station, in the series' order. options:
 --   place: Weather's or the Hearth's place word; temperature and rate (0 to 1), when the station works by the
 --     weather (the rate in the slow colour under UI.SLOW_RATE); rows: the mod's own { labelKey, value } after them;
---   batches: { name, progress, hoursLeft }, a bar each, numbered when numbered is true;
+--   batches: { name, progress, hoursLeft }, a bar each (hoursLeft nil: paused, frozen), numbered when numbered is true;
 --   waiting, finished: counts for the notes (0 or nil for none); notes: the mod's own, last.
 -- The note that times assume the temperature holds comes with a temperature and a running batch.
 function StationInfo.block(options)
@@ -201,11 +201,12 @@ function StationInfo.block(options)
     for _, row in ipairs(options.rows or {}) do table.insert(rows, row) end
     local slow = rate and rate < UI.SLOW_RATE
     for index, batch in ipairs(options.batches or {}) do
-        local hours = math.ceil(batch.hoursLeft)
+        local hours = batch.hoursLeft and math.ceil(batch.hoursLeft)
         table.insert(bars, {
             text = options.numbered and UI.say(KEY .. "InfoBatch", tostring(index), batch.name) or batch.name,
             share = batch.progress,
-            value = UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), tostring(math.floor(hours / 24)), tostring(hours % 24)),
+            value = hours and UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), tostring(math.floor(hours / 24)), tostring(hours % 24))
+                or UI.say(KEY .. "InfoPaused", UI.percent(batch.progress)),
             colour = slow and StationInfo.SLOW_COLOUR or StationInfo.GOOD_COLOUR,
         })
     end

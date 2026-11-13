@@ -55,6 +55,8 @@
   "IGUI_TraditionalPreservationCore_InfoRate": "Working rate",
   "IGUI_TraditionalPreservationCore_InfoBatch": "%1. %2",
   "IGUI_TraditionalPreservationCore_InfoLeft": "%1, %2 d %3 h left",
+  "IGUI_TraditionalPreservationCore_InfoPaused": "%1, paused here (frozen)",
+  "IGUI_TraditionalPreservationCore_Paused": "Paused here (frozen)",
   "IGUI_TraditionalPreservationCore_InfoWaiting": "Loaded and not started: %1 (press Craft)",
   "IGUI_TraditionalPreservationCore_InfoFinished": "Finished and waiting to be taken: %1",
   "IGUI_TraditionalPreservationCore_InfoAssumes": "Times left assume the temperature holds as it is now.",

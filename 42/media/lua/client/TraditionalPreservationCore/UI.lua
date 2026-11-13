@@ -41,6 +41,7 @@ end
 
 -- Days and hours, rounded up to the hour, through a text with %1 days and %2 hours.
 function UI.timeText(hours, key)
+    if not hours then return getText("IGUI_TraditionalPreservationCore_Paused") end
     local whole = math.ceil(hours)
     return UI.say(key, string.format("%.0f", math.floor(whole / 24)), string.format("%.0f", whole % 24))
 end

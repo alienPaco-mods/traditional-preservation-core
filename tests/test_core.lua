@@ -14,6 +14,8 @@ check("scaled: off runs at full speed", Weather.scaled(0.2, 0, 0.02) == 1)
 check("scaled: harsh slows more, down to the floor", near(Weather.scaled(0.8, 1.5, 0.02), 0.7) and Weather.scaled(0, 1.5, 0.02) == 0.02)
 check("frozen: at or below the freezing point on any sensitivity but Off", Weather.frozen(0, 1) and Weather.frozen(-5, 0.5)
     and Weather.frozen(-3, 1.5, -3) and not Weather.frozen(-2, 1, -3) and not Weather.frozen(0.5, 1) and not Weather.frozen(-20, 0))
+check("a batch paused there has no time left", Weather.batchStatus(5, 10, { temperature = -5, seasonTemperature = -5 }, "Open",
+    function() return 0 end).hoursLeft == nil)
 local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
 check("place: a room by the season, a little warmer in a cool one", near(Weather.placeTemperature(ledger, "Sheltered"), 13.5))

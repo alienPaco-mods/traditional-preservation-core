@@ -346,13 +346,14 @@ function Weather.showClock(craftRecipeData, key, now, speed)
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
 end
 
--- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds.
+-- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds; nil when the batch is
+-- paused there (frozen).
 function Weather.batchStatus(done, recipeHours, ledger, place, rateAt)
     local temperature = Weather.placeTemperature(ledger, place)
     local rate = rateAt(temperature)
     return {
         progress = math.min(done / recipeHours, 1),
-        hoursLeft = math.max(recipeHours - done, 0) / rate,
+        hoursLeft = rate > 0 and math.max(recipeHours - done, 0) / rate or nil,
         temperature = temperature,
         place = place,
         rate = rate,

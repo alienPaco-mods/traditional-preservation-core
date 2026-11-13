@@ -227,20 +227,34 @@ check("banked with no count yet, it starts one from vanilla's fuel", Hearth.reck
 check("a banked firebox cooks a third as fast", near(Hearth.bankedCooking(10, 40), 20) and Hearth.bankedCooking(10, 5) == 5)
 
 -- Tiles
-check("every hearth tile is known with its facing", #Hearth.SPRITES == 6 and Hearth.face(Hearth.sprite("Hot", 1)) == 1
+check("every hearth tile is known with its facing", #Hearth.SPRITES == 12 and Hearth.face(Hearth.sprite("Hot", 1)) == 1
     and Hearth.face(Hearth.sprite("Empty", 0)) == 0 and Hearth.face("traditionalpreservationcore_01_6") == nil
     and Hearth.face("traditionalpreservationdairy_01_20") == nil)
-check("the fire mouth glows while lit, dimly when banked, not at all when out",
-    Hearth.glowSprite(true, false, 1) == "traditionalpreservationcore_01_7"
-    and Hearth.glowSprite(true, true, 0) == "traditionalpreservationcore_01_8"
-    and Hearth.glowSprite(false, true, 0) == nil and Hearth.face(Hearth.glowSprite(true, false, 0)) == nil)
+check("its tile by the fire, its glow drawn in, steaming when hot", Hearth.sprite("Full", 0) == "traditionalpreservationcore_01_0"
+    and Hearth.sprite("Hot", 1) == "traditionalpreservationcore_01_3" and Hearth.sprite("Full", 0, true, false) == "traditionalpreservationcore_01_4"
+    and Hearth.sprite("Hot", 1, true, true) == "traditionalpreservationcore_01_75"
+    and Hearth.sprite("Empty", 0, false, true) == Hearth.sprite("Empty", 0))
+local overlay, tint = Hearth.liquidOverlay({ ml = 1000, fluid = "Water" }, 1)
+check("what it holds is the overlay, tinted (white when a fluid has no colour); none when empty",
+    overlay == "traditionalpreservationcore_01_7" and tint[1] == 1 and tint[3] == 1
+    and Hearth.liquidOverlay({ ml = 0, fluid = "Water" }, 0) == nil and Hearth.face(overlay) == nil)
+local savedFluid = Fluid
+Fluid = {}
+local function colour(r, g, b) return { getRedFloat = function() return r end, getGreenFloat = function() return g end, getBlueFloat = function() return b end } end
+Fluid.Get = function(name)
+    local c = ({ TestRed = colour(1, 0, 0), TestBlue = colour(0, 0, 1) })[name]
+    return c and { getColor = function() return c end }
+end
+local mixed = Hearth.liquidColour({ ml = 1000, fluid = "TestRed", parts = { TestRed = 3, TestBlue = 1 } })
+check("a blend's colour is its fluids' mixed by their shares", near(mixed[1], 0.75) and mixed[2] == 0 and near(mixed[3], 0.25))
+Fluid = savedFluid
 
 -- The Stone Hearth with nothing fitted (the Firebox)
 local fireboxTile = Hearth.fireboxSprite(nil, nil, nil, 1)
 check("every Stone Hearth tile is known with its facing, apart from the copper's", #Hearth.FIREBOX_SPRITES == 30
     and Hearth.fireboxFace(fireboxTile) == 1 and Hearth.face(fireboxTile) == nil and Hearth.fireFace(fireboxTile) == 1
     and Hearth.fireboxFace(Hearth.sprite("Empty", 0)) == nil and Hearth.fireFace(Hearth.sprite("Hot", 1)) == 1
-    and #Hearth.FIRE_SPRITES == 36)
+    and #Hearth.FIRE_SPRITES == 42)
 check("its tile by flue, side and hole; open when nothing is joined or in it",
     fireboxTile == "traditionalpreservationcore_01_11"
     and Hearth.fireboxSprite(nil, nil, "Pot", 0) == "traditionalpreservationcore_01_14"

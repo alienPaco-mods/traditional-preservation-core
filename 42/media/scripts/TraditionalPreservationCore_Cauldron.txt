@@ -1,5 +1,13 @@
 module TraditionalPreservationCore
 {
+    /* The kettle alone on the ground, its bail dropped over the rim, from tools/build_model.py. */
+    model ForgedCauldronGround
+    {
+        mesh = ForgedCauldron,
+        texture = ForgedCauldronModel,
+        scale = 0.54,
+    }
+
     /* A 60 L cauldron of forged sheet iron, its bail of wire, greased and blacked against rust. Not a fluid
        container in the hand: Fit Cauldron hangs it over a Stone Hearth's hole (Hearth.attach's fit), where its
        fluid lives in the fireplace's modData. Learned as the forged pot is (SmithingMag2, TraditionalPreservationCore
@@ -10,6 +18,7 @@ module TraditionalPreservationCore
         ItemType = base:normal,
         Weight = 4.0,
         Icon = TPCauldron,
+        WorldStaticModel = TraditionalPreservationCore.ForgedCauldronGround,
         MetalValue = 80.0,
         Tags = base:hasmetal,
         Tooltip = Tooltip_TraditionalPreservationCore_ForgedCauldron,

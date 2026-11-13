@@ -10,15 +10,15 @@ return {
     },
     FACE_COUNT = 2,
     HEARTH_LOOKS = {
-        Empty = 0,
-        Full = 2,
-        Hot = 4,
+        Cold = 0,
+        Steam = 2,
+        Lit = 4,
+        LitSteam = 70,
+        Banked = 72,
+        BankedSteam = 74,
     },
-    HEARTHS = { "traditionalpreservationcore_01_0", "traditionalpreservationcore_01_1", "traditionalpreservationcore_01_2", "traditionalpreservationcore_01_3", "traditionalpreservationcore_01_4", "traditionalpreservationcore_01_5" },
-    GLOWS = {
-        Lit = 6,
-        Banked = 8,
-    },
+    HEARTHS = { "traditionalpreservationcore_01_0", "traditionalpreservationcore_01_1", "traditionalpreservationcore_01_2", "traditionalpreservationcore_01_3", "traditionalpreservationcore_01_4", "traditionalpreservationcore_01_5", "traditionalpreservationcore_01_70", "traditionalpreservationcore_01_71", "traditionalpreservationcore_01_72", "traditionalpreservationcore_01_73", "traditionalpreservationcore_01_74", "traditionalpreservationcore_01_75" },
+    LIQUID = 6,
     FIREBOX_LOOKS = {
         Open = 10,
         Lid = 12,

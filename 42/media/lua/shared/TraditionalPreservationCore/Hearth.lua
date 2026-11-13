@@ -204,9 +204,11 @@ end
 --                                         = true } }; Remove gives the items back, all but lost ones
 --   fitHelp, fitIcon                      client: Fit's tooltip line (a text key) and Fit / Remove's icon path
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
---   look(part, fire)                      the look its tile shows (Hearth.LOOKS)
---   sprite(look, face), glow(burning, banked, face)   its tile and glow overlay by look and facing (the copper's
---                                         Hearth.sprite and Hearth.glowSprite if left out)
+--   look(part, fire)                      the look its tile shows (the copper's: Empty, Full, Hot)
+--   sprite(look, face, burning, banked)   its tile by look, facing and fire, the fire's glow drawn in it (the
+--                                         copper's Hearth.sprite if left out)
+--   overlay(part, face, burning, banked)  its overlay sprite and, to tint it, { r, g, b } (0-1), or nil (the
+--                                         copper's Hearth.liquidOverlay if left out: what it holds, coloured)
 --   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
 --   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
 --   status(part)                          client: the menu's first row, text and icon
@@ -572,7 +574,8 @@ function Hearth.filledFrom(item, fill)
     if not handled then item:setItemHeat(Hearth.itemHeat(fill.tempC)) end
 end
 
--- Tiles: one per look of the copper and facing, all of them fireplaces.
+-- Tiles: one per fire (out, lit, banked), still or steaming, and facing, all of them fireplaces. The fire's glow is
+-- drawn in them, so the overlay is free for the liquid: the one thing the game tints per object (ENGINE_NOTES).
 Hearth.LOOKS = Tiles.HEARTH_LOOKS or {}
 Hearth.SPRITES = Tiles.HEARTHS or {}
 Hearth.FACE_COUNT = Tiles.FACE_COUNT or 2
@@ -585,16 +588,40 @@ function Hearth.face(spriteName)
     return spriteName and HEARTH_TILES.face[spriteName]
 end
 
-function Hearth.sprite(look, face)
-    return Tiles.PREFIX .. (Hearth.LOOKS[look] + face)
+-- The tile for the copper's look (Empty, Full, Hot: Hot steams) and the fire, lit or banked; out if neither is given.
+function Hearth.sprite(look, face, burning, banked)
+    local tile = (burning and (banked and "Banked" or "Lit") or "") .. (look == "Hot" and "Steam" or "")
+    return Tiles.PREFIX .. (Hearth.LOOKS[tile ~= "" and tile or "Cold"] + face)
 end
 
--- The fire mouth's glow, the hearth's overlay sprite (as vanilla lights its kilns): nil while the fire is out.
-Hearth.GLOWS = Tiles.GLOWS or {}
+-- What the copper holds, as the overlay: a pale surface in the kettle's mouth, tinted the colour of its fluids (each
+-- vanilla fluid's own, mixed by their shares). Nil when it is empty.
+Hearth.LIQUID = Tiles.LIQUID
+local fluidColours = {}
 
-function Hearth.glowSprite(lit, banked, face)
-    local base = lit and Hearth.GLOWS[banked and "Banked" or "Lit"]
-    return base and Tiles.PREFIX .. (base + face) or nil
+function Hearth.fluidColour(name)
+    if fluidColours[name] == nil then
+        local fluid = Fluid and Fluid.Get and Fluid.Get(name)
+        local c = fluid and fluid:getColor()
+        fluidColours[name] = c and { c:getRedFloat(), c:getGreenFloat(), c:getBlueFloat() } or false
+    end
+    return fluidColours[name] or nil
+end
+
+function Hearth.liquidColour(state)
+    local total, mix = 0, { 0, 0, 0 }
+    for name, ml in pairs(Hearth.partsOf(state)) do
+        local c = Hearth.fluidColour(name) or { 1, 1, 1 }
+        for i = 1, 3 do mix[i] = mix[i] + c[i] * ml end
+        total = total + ml
+    end
+    if total <= 0 then return nil end
+    return { mix[1] / total, mix[2] / total, mix[3] / total }
+end
+
+function Hearth.liquidOverlay(copper, face)
+    if not Hearth.LIQUID or (copper.ml or 0) <= 0 then return nil end
+    return Tiles.PREFIX .. (Hearth.LIQUID + face), Hearth.liquidColour(copper)
 end
 
 -- The Stone Hearth with nothing fitted: one tile per flue, side, hole look and facing (FIREBOX_LOOKS: Open, Lid, Pot,
@@ -799,7 +826,8 @@ function Hearth.showing(fire, state, burning, banked)
     local spec, part = Hearth.attachmentOf(fire)
     if spec then
         local look = spec.look and spec.look(part, fire) or "Empty"
-        return (spec.sprite or Hearth.sprite)(look, face), (spec.glow or Hearth.glowSprite)(burning, banked, face)
+        local overlay, colour = (spec.overlay or Hearth.liquidOverlay)(part, face, burning, banked)
+        return (spec.sprite or Hearth.sprite)(look, face, burning, banked), overlay, colour
     end
     local container = fire:getContainer()
     local hole = Hearth.holeLook(container and container:getItems())

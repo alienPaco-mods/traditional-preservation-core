@@ -63,7 +63,7 @@ function fire:getContainer() return container end
 function fire:getSprite() return self.sprite end
 function fire:setSprite(sprite) self.sprite = sprite end
 function fire:getOverlaySprite() return self.overlay end
-function fire:setOverlaySprite(name) self.overlay = name and getSprite(name) end
+function fire:setOverlaySprite(name, r, g, b) self.overlay, self.tint = name and getSprite(name), r and { r, g, b } end
 
 World.track(fire)
 World.update(fire, 100)
@@ -78,7 +78,8 @@ check("its own heat: two tiles at 25 C, on the Hearth", count(cell.heat) == 1 an
     and heat.celsius == Hearth.BANKED_HEAT_C and heat.x == 5 and heat.y == 6)
 check("and a faint light", count(cell.lights) == 1 and light.radius == Hearth.BANKED_LIGHT_RADIUS)
 check("its firebox kept hot enough to cook", container.custom == Hearth.BANKED_FIREBOX and container.processed == 1)
-check("the fire mouth glows banked", fire.overlay:getName() == Hearth.glowSprite(true, true, 0))
+check("banked, its tile glows dimly; empty, no overlay", fire.sprite:getName() == Hearth.sprite("Empty", 0, true, true)
+    and fire.overlay == nil)
 check("its fuel burns three times as long", near(modData[Hearth.KEY].fireUntil, 106))
 
 World.update(fire, 101)
@@ -109,12 +110,12 @@ check("the firebox's heat is put back after a reload", container.custom == Heart
 World.setFire(fire, "stoke", 101)
 check("stoked, vanilla's fire burns again, the embers' heat, light and firebox gone", fire:isLit() and not Hearth.isBanked(fire)
     and count(cell.heat) == 0 and count(cell.lights) == 0 and container.custom == 0)
-check("the fire mouth glows lit", fire.overlay:getName() == Hearth.glowSprite(true, false, 0))
+check("lit, its tile glows lit", fire.sprite:getName() == Hearth.sprite("Empty", 0, true, false))
 
 World.setFire(fire, "bank", 101)
 World.setFire(fire, "out", 101.5)
 check("put out while banked, it is out with its fuel, nothing of the embers left", not fire:isLit() and not Hearth.isBurning(fire)
-    and fire.fuel == 90 and count(cell.heat) == 0 and container.custom == 0 and fire.overlay == nil)
+    and fire.fuel == 90 and count(cell.heat) == 0 and container.custom == 0 and fire.sprite:getName() == Hearth.sprite("Empty", 0))
 
 fire:turnOn()
 World.setFire(fire, "bank", 102)
@@ -184,6 +185,12 @@ H.setHours(120.5)
 World.update(fire, 120.5)
 check("the copper heats by the fire through its heats, as the fire was until now", copper.tempC > 40
     and copper.last == 120.5 and copper.fireUntil ~= nil and copper.banked == nil)
+check("what it holds shows as the overlay, tinted", fire.overlay:getName() == Hearth.liquidOverlay(copper, 0)
+    and fire.tint ~= nil and fire.tint[1] == 1)
+fire.tint = nil
+fire.overlay = getSprite(Hearth.liquidOverlay(copper, 0))
+World.update(fire, 120.5)
+check("an overlay already shown is not tinted again", fire.tint == nil)
 check("lit, nothing may come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Burning")
 World.setFire(fire, "out", 120.5)
 fire.lit = false

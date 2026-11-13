@@ -133,6 +133,7 @@ end
 
 Hearth.attach({
     id = Hearth.COPPER,
+    fitIcon = "media/textures/Item_TPCauldronFit.png",
     status = function(copper) return copperStatus(copper), (copper.ml or 0) > 0 and COPPER_FULL_ICON or COPPER_ICON end,
     menu = function(menu, playerObj, hearth, copper)
         addPourInMenu(menu, playerObj, hearth, copper)

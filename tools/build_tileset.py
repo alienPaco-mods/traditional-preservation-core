@@ -3,19 +3,22 @@
 the mod icon, the Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse chamber (from tile CHAMBER),
 moved from Fish & Meat 2026-11-13 with its art unchanged.
 
-The Hearth: a farmhouse cheese copper (user's design, 2026-11-13, after Alpine cheese kettles on a crane). The
-Firebox's knee-high block of split fieldstone, as vanilla's kilns are built, with its iron door on the side it faces,
-closed on top but for a small round hole in the centre; over it an iron gallows (two posts set in the stone and a bar
-across, along the door's side) and, nearly on the hole, a round-bellied copper kettle sooted black below its shoulder,
-hanging by its bail from a Large Hook. The bail runs towards the door (the user's pick, for later). The copper is
-drawn as a 100-120 L kettle; it holds 60 L (Hearth.lua). The game turns it into a vanilla fireplace when it is built. Vanilla draws the fireplace's flames and fuel as attached
-sprites, so HearthWorld swaps the hearth's own sprite among whole-hearth tiles, the copper empty, full or steaming
-(HEARTH_LOOKS), and every one of them carries the fireplace's tile properties. The fire's glow is the object's
-overlay sprite (GLOWS), the way vanilla lights its kilns: the door's vents, the hole and flames curling up round the
-kettle while it burns, a dull red when banked. The game draws the overlay over the whole object, so the kettle's
-outline is cut out of it.
+The Hearth: a Stone Hearth with the Forged Cauldron fitted (user's design, 2026-11-13, after Alpine cheese kettles on a
+crane). The Stone Hearth's knee-high block of split fieldstone, as vanilla's kilns are built, four fifths of a tile
+across, with its iron door on the side it faces, closed on top but for a small round hole in the centre; over it
+what the fitting takes: two Metal Pipes set in the stone along the door's side, a Heavy Chain slung between their
+tops and a Large Hook in its middle, all sooted; nearly on the hole, a round-bellied kettle of dark forged iron,
+greased and blacked, sooted below its shoulder, hanging by its bail from the hook. The bail runs towards the door. It
+is drawn as a 100-120 L kettle; it holds 60 L (Hearth.lua). The game turns it into a vanilla fireplace when it is
+built. Vanilla draws the fireplace's flames and fuel as attached sprites, so HearthWorld swaps the hearth's own sprite
+among whole-hearth tiles (HEARTH_LOOKS), the fire out, lit or banked and the kettle still or steaming, and every one
+of them carries the fireplace's tile properties. The fire's glow is baked into them (the door's vents, the hole and
+flames curling up round the kettle while it burns, a dull red when banked), as vanilla's kilns would have it as their
+overlay: the overlay is the one thing the game tints per object, so it is kept for the liquid (LIQUID), a pale
+surface in the kettle's mouth that HearthWorld colours with the fluid's colour. The Smokehouse's entry overlay draws
+the joined flue (below), so these tiles draw none.
 
-The stone and the copper have hard edges (pzart.hard_edges); the steam and the glow are soft.
+The stone and the kettle have hard edges (pzart.hard_edges); the steam and the glow are soft.
 
 Usage: python3 tools/build_tileset.py [contact-sheet.png]
 Needs Pillow. Deterministic: a rerun with no change gives byte-identical files.
@@ -42,16 +45,20 @@ SS = 4  # supersampling
 
 # Facings, S and E, as the entity scripts' faces. Each look takes len(FACES) tiles from its number.
 FACES = ["S", "E"]
-HEARTH_LOOKS = {"Empty": 0, "Full": 2, "Hot": 4}
-HEARTH = HEARTH_LOOKS["Empty"]
-# The fire mouth's glow, an overlay: lit, and banked (embers under ash, almost no light).
-GLOWS = {"Lit": 6, "Banked": 8}
+# The Hearth (the Forged Cauldron fitted): its fire baked in, out, lit or banked (embers under ash, almost no light),
+# each still or steaming. The overlay is left for the liquid, the one thing the game tints per object (ENGINE_NOTES):
+# a pale surface in the kettle's mouth, coloured by the fluid it holds (Hearth.liquidOverlay).
+HEARTH_LOOKS = {"Cold": 0, "Steam": 2, "Lit": 4, "LitSteam": 70, "Banked": 72, "BankedSteam": 74}
+HEARTH = HEARTH_LOOKS["Cold"]
+FIRE_KINDS = ("Lit", "Banked")
+LIQUID = 6
 # The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no copper and an
 # iron door on its mouth, and a stone-lined hole in its top (HOLE_D): a cooking source. What shows in the hole is a look
 # (Hearth.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
 # food only, or joined to a flue with nothing for the pot). Joined, its flue leaves for the building on one side,
-# never the door's: a clay pipe out of the stone's side low down, climbing past the top into the wall, or a trench
-# in the ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
+# never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
+# into the wall (user, 2026-11-13: it climbed past the top before, and met the cauldron's pipes), or a trench in the
+# ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
 # generator's). Sides by facing, as world steps (+x east, +y south), the same table as Hearth.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
               "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
@@ -69,18 +76,20 @@ FIREBOX_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30,
                  "LitOpen": 46, "BankedOpen": 48, "LitPot": 50, "BankedPot": 52}
 
 # Colours.
-STONE = (158, 132, 104)
-MORTAR = (92, 78, 64)
-ARCH = (128, 106, 84)
-RENDER = (196, 186, 166)       # lime render on the top
+# The stone as vanilla's stone mill (user's style guide, 2026-11-13; WIP/TPCore/art/stone_style_guide.png).
+STONE = (124, 116, 108)
+MORTAR = (46, 41, 38)          # the joints
+ARCH = (112, 106, 98)
+RENDER = (140, 133, 124)       # the slab on top, as the walls' light stones
 BED = (64, 54, 46)             # the mortar the copper is bedded in
-METAL = (150, 82, 50)          # tarnished copper
-METAL_LIT = (196, 112, 78)     # the copper's lit inside
-KETTLE = (168, 92, 54)         # the kettle's outside, above the soot
-KETTLE_SOOT = (34, 28, 25)
-HAMMER = (230, 150, 110)
-SPECULAR = (255, 226, 196)
-VERDIGRIS = (92, 140, 118)
+METAL = (82, 80, 80)           # the Forged Cauldron: iron, greased and blacked, grey where the soot hasn't reached
+METAL_LIT = (110, 108, 108)    # its lit inside
+KETTLE = (96, 94, 94)          # its outside, above the soot
+KETTLE_SOOT = (26, 24, 24)
+HAMMER = (70, 68, 68)          # forging marks inside, faint
+SPECULAR = (170, 170, 176)     # the grease's cool sheen on the rim
+VERDIGRIS = (44, 42, 42)       # flecks of old soot on the rim (the copper's verdigris)
+PIPE = (128, 128, 124)         # vanilla's Metal Pipe: plain grey steel, under the soot
 MILK = (226, 220, 200)
 DARK = (22, 15, 11)
 GRATE = (60, 56, 52)
@@ -88,11 +97,12 @@ STEAM = (244, 244, 240)
 WEATHER = 0.2
 FOOT_SHADE = 0.8               # the stone darkens this far towards the ground
 
-# The stone body, the Firebox's and the Hearth's: knee high (a cask is 85 px), a little under a tile across.
-H = 0.32                       # half the footprint, in tiles
+# The stone body, the Firebox's and the Hearth's: knee high (a cask is 85 px), four fifths of a tile across.
+H = 0.40                       # half the footprint, in tiles (0.32 until 2026-11-13; the user's pick)
 TOP = 36                       # stone, px high
 CAP = 4                        # the rendered top
-CAP_OVER = 0.015               # how far the top overhangs, in tiles
+CAP_OVER = 0.05                # how far the slab overhangs, in tiles
+SLAB = 7                       # the slab's thickness, px: it sits down over the walls' top
 MOUTH_W, MOUTH_SILL, MOUTH_SPRING = 0.16, 1.5, 11.5   # half width in tiles; sill and springing height, px
 ARCH_RISE = 0.55               # the arch's height for its width
 FACE_LEN = math.hypot(pzart.DIAMOND_HALF_W, pzart.DIAMOND_HALF_H)   # px along a face per tile
@@ -107,8 +117,11 @@ KETTLE_GAP = 2                 # px between the stone and the kettle's bottom: n
 KETTLE_H = 34                  # px from bottom to lip
 KETTLE_BOTTOM = TOP + CAP + KETTLE_GAP
 KETTLE_TOP = KETTLE_BOTTOM + KETTLE_H
-BAR_Z = KETTLE_TOP + 30        # the gallows bar, px
+BAR_Z = KETTLE_TOP + 30        # the gallows pipes' tops, px
 POST_IN = 0.015                # how far in from the stone's edge the posts stand, in tiles
+SAG = 9                        # px the chain hangs below the pipes' tops at its middle
+LINKS = 11
+APEX = KETTLE_TOP + 14         # the bail's top, where the hook takes it
 # The kettle's profile, bottom to lip: (height share, radius share). An Alpine cheese kettle: a rounded bottom, the
 # belly low and wide, drawn in to a narrow neck, the lip flared out again.
 PROFILE = [(0.0, 0.42), (0.07, 0.74), (0.18, 0.93), (0.32, 1.0), (0.46, 0.98), (0.6, 0.88), (0.72, 0.76),
@@ -130,7 +143,7 @@ for look, base in HEARTH_LOOKS.items():
         TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "15"), ("ContainerPosition", "Low"),
                                             ("CustomName", "Hearth"), ("Facing", facing),
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "100"),
-                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Empty"))
+                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Cold"))
 for look, base in FIREBOX_LOOKS.items():
     for offset, facing in enumerate(FACES):
         TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
@@ -144,9 +157,10 @@ DAUB = (150, 124, 98)
 SMOKE = (150, 146, 140)
 FIRE_GLOW = (255, 150, 60)
 FLUE_R = 4.5                   # the flue's half width, px
-FLUE_RISE = 24                 # where the pipe enters the wall, px over the top
-PIPE_EXIT = 14                 # px up the stone where the pipe leaves its side
-PIPE_OUT = 0.43                # how far out from the middle it runs before climbing, in tiles
+PIPE_Z = 8                     # the clay pipe's middle where it leaves the stone, px, low down (user, 2026-11-13)
+PIPE_OUT = 0.49                # how far out from the middle it runs before climbing, in tiles: clear of the slab
+PIPE_TOP = 54                  # px up where it enters the wall: a short climb, over the slab's back edge
+PIPE_SHIFT = 0.2               # how far off the stone's middle it runs, towards the viewer (the front), in tiles
 HOLE_D = 0.09                  # the Stone Hearth's hole, in tiles (the user's pick "D", 2026-11-13)
 POT = (62, 62, 64)             # vanilla's forged pot: dark, mottled cast iron
 LID = (64, 64, 66)
@@ -158,12 +172,13 @@ CHAMBER = 32
 CHAMBER_STACKS = 6
 CHAMBER_HALF = 0.46       # half the shed's width, and how far each end wall stands from its tile's middle, in tiles
 CHAMBER_OVERHANG = 0.06   # the roof past the walls
-CHAMBER_FRONT = 136       # px up to the roof's high edge, over the door
-CHAMBER_BACK = 108        # and its low edge at the back
+CHAMBER_EAVE = 132        # px up to the roof: flat (user, 2026-11-13; was one slope along the shed)
 CHAMBER_SILL = 7          # the stone sill under the planks
-CHAMBER_DOOR = 112        # the door's top
-CHAMBER_DOOR_HALF = 0.17
-CHAMBER_PLANK = 0.11      # a plank's width, in tiles
+CHAMBER_DOOR = 106        # the door's top
+CHAMBER_DOOR_HALF = 0.3   # wider (user, 2026-11-13; was 0.17)
+CHAMBER_PLANK = 0.15      # a plank's width, in tiles: thick boards, as vanilla's barricades
+CHAMBER_GAP = 0.2         # the share of joins left open a crack (the roof's and the door's)
+CHAMBER_WALL_GAP = 0.45   # the walls': more of them, as boards nailed up on a smokehouse are
 CHAMBER_JOIN = 0.02       # the back tile runs this far under the front one, so no seam shows
 CHAMBER_WOOD = (112, 78, 50)
 CHAMBER_ROOF = (90, 64, 44)
@@ -174,14 +189,14 @@ CHAMBER_IRON = (70, 71, 75)
 CHAMBER_WEATHER = 0.3
 CHAMBER_FOOT_SHADE = 0.5
 # Where a joined Firebox's flue enters the chamber, on the long side the camera sees: one overlay per flue kind, face
-# and part (chamber_entry_index). The Firebox's pipe ends at its tile's edge this high, its trench at ground level.
+# and part (chamber_entry_index). The Firebox's pipe comes in at PIPE_TOP, PIPE_SHIFT towards the viewer; its trench
+# at ground level, in the middle.
 CHAMBER_ENTRY = 36
 FLUE_KINDS = ["Pipe", "Stones"]
-CHAMBER_FLUE_Z = TOP + CAP + FLUE_RISE
 # A ham hung by the door while finished stacks wait in the chamber (user's idea): one overlay per face, on the
 # door's tile, on the door's end wall beside the door.
 CHAMBER_HAM = 44
-HAM_A = -0.37             # across the end wall, on the door's far side from the long wall in view: it overhangs the corner
+HAM_A = -0.44             # across the end wall (was -0.37, moved out for the wider door), on the door's far side from the long wall in view: it overhangs the corner
 HAM_TOP = 98              # px up to the bone's knob; the nail is above it
 HAM_SCALE = 1.35          # its width against the first ham's
 HAM_STEP = 6.6            # px between its outline's steps down (the first ham's were 5)
@@ -231,32 +246,39 @@ def face_quad(draw, face, u0, u1, z0, z1, fill):
 # --- The stone ---------------------------------------------------------------------------------------------------
 
 def fieldstone(draw, face, rng, light):
-    """Split stone in uneven courses, each stone a lumpy quad with a lit top and a shadowed foot."""
+    """As vanilla's stone mill: dressed blocks in courses, about five up the wall, a fifth to a third of a tile long,
+    joints staggered and dark; each block lighter at its top and darker at its foot, with a few soft blotches."""
     span = 2 * H
     face_quad(draw, face, 0, span, 0, TOP, shade(MORTAR, light))
-    z = 0.0
-    while z < TOP - 0.5:
-        top = min(TOP, z + rng.uniform(5.0, 9.0))
-        u = -rng.uniform(0, 0.12)
+    courses = [0.0]
+    while courses[-1] < TOP:
+        courses.append(min(TOP, courses[-1] + rng.uniform(7.0, 9.0)))
+    if TOP - courses[-2] < 6:
+        courses.pop(-2)
+    for row, (z0, z1) in enumerate(zip(courses, courses[1:])):
+        u = -rng.uniform(0.05, 0.2) if row % 2 else -rng.uniform(0.0, 0.08)
         while u < span:
-            length = rng.uniform(0.1, 0.26)
-            a, b = max(0, u + 0.018), min(span, u + length - 0.018)
-            if b > a:
-                tone = rng.uniform(0.78, 1.12)
-                warm = rng.choice([(1, 1, 1), (1.06, 1, 0.9), (0.94, 0.96, 1.0), (1.02, 0.98, 0.94)])
-                colour = tuple(int(c * w) for c, w in zip(STONE, warm))
-                zb, zt = z + 0.7, top - 0.5
-                j = [rng.uniform(-1.1, 1.1) for _ in range(6)]
-                points = [face_px(face, a + 0.01, zb + j[0]), face_px(face, b - 0.01, zb + j[1]),
-                          face_px(face, b, (zb + zt) / 2 + j[2]), face_px(face, b - 0.015, zt + j[3] * 0.6),
-                          face_px(face, a + 0.015, zt + j[4] * 0.6), face_px(face, a, (zb + zt) / 2 + j[5])]
-                draw.polygon(points, fill=shade(colour, light * tone))
-                draw.polygon([face_px(face, a + 0.02, zt - 1.6), face_px(face, b - 0.02, zt - 1.6), points[3], points[4]],
-                             fill=shade(colour, light * tone * 1.14))
-                draw.polygon([points[0], points[1], face_px(face, b - 0.02, zb + 1.2), face_px(face, a + 0.02, zb + 1.2)],
-                             fill=shade(colour, light * tone * 0.74))
+            length = rng.uniform(0.19, 0.3)
+            a, b = max(0.0, u + 0.011), min(span, u + length - 0.011)
             u += length
-        z = top
+            if b - a < 0.04:
+                continue
+            tone = rng.uniform(0.74, 1.14)
+            tint = rng.choice([(1, 1, 1), (1.03, 1.0, 0.97), (0.97, 0.98, 1.0)])
+            colour = tuple(int(c * w) for c, w in zip(STONE, tint))
+            zb, zt = z0 + 0.7, z1 - 0.7
+            r, steps = 0.012, 10
+            for i in range(steps):
+                za, zc = zb + (zt - zb) * i / steps, zb + (zt - zb) * (i + 1) / steps
+                inset = r if i in (0, steps - 1) else 0
+                face_quad(draw, face, a + inset, b - inset, za, zc, shade(colour, light * tone * (0.82 + 0.3 * i / steps)))
+            for _ in range(3):
+                cu, cz = rng.uniform(a + 0.03, b - 0.03), rng.uniform(zb + 2, zt - 2)
+                ru, rz = rng.uniform(0.03, 0.07), rng.uniform(1.5, 3.0)
+                draw.polygon([face_px(face, cu + ru * math.cos(k * math.pi / 4), cz + rz * math.sin(k * math.pi / 4)) for k in range(8)],
+                             fill=shade(colour, light * tone * rng.choice([0.92, 1.06])))
+            draw.line([face_px(face, a + r, zt - 0.4), face_px(face, b - r, zt - 0.4)], fill=shade(colour, light * tone * 1.2),
+                      width=SS)
 
 
 def soot(layer, face):
@@ -298,11 +320,36 @@ def mouth(draw, face, rng, light):
     face_quad(draw, face, cu - w - 0.02, cu + w + 0.02, z0 - 1.2, z0, shade(GRATE, light))
 
 
-def render_top(draw):
-    h, z0, z1 = H + CAP_OVER, TOP, TOP + CAP
-    draw.polygon([tile_px(-h, h, z0), tile_px(h, h, z0), tile_px(h, h, z1), tile_px(-h, h, z1)], fill=shade(RENDER, 0.95))
-    draw.polygon([tile_px(h, -h, z0), tile_px(h, h, z0), tile_px(h, h, z1), tile_px(h, -h, z1)], fill=shade(RENDER, 0.72))
-    draw.polygon([tile_px(-h, -h, z1), tile_px(h, -h, z1), tile_px(h, h, z1), tile_px(-h, h, z1)], fill=shade(RENDER, 1.12))
+def slab_top(layer):
+    """One large flat stone over the top: square, overhanging the walls alike all round (CAP_OVER), SLAB thick, a
+    chipped, uneven edge, its face softly mottled; it drops a soft shadow on the walls under its overhang."""
+    rng = random.Random(91)
+    shadow = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(shadow)
+    for k in range(6):
+        depth = 5 - k * 0.6
+        draw.polygon([tile_px(-H, H, TOP), tile_px(H, H, TOP), tile_px(H, -H, TOP),
+                      tile_px(H, -H, TOP - depth), tile_px(H, H, TOP - depth), tile_px(-H, H, TOP - depth)], fill=(20, 16, 14, 34))
+    shadow.putalpha(ImageChops.multiply(shadow.getchannel("A"), layer.getchannel("A")))
+    layer.alpha_composite(shadow)
+    draw = ImageDraw.Draw(layer)
+    h, z1 = H + CAP_OVER, TOP + CAP
+    corners = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    outline = []
+    for (xa, ya), (xb, yb) in zip(corners, corners[1:] + corners[:1]):
+        for k in range(9):
+            x, y = xa + (xb - xa) * k / 9, ya + (yb - ya) * k / 9
+            inset = rng.uniform(0, 0.02) + (0.008 if k == 0 else 0)
+            reach = max(abs(x), abs(y)) or 1
+            outline.append((x * (1 - inset / reach), y * (1 - inset / reach)))
+    for i in range(SLAB * 2 + 1):
+        draw.polygon([tile_px(x, y, z1 - SLAB + i / 2) for x, y in outline], fill=shade(RENDER, 0.6 + 0.12 * i / (SLAB * 2)))
+    draw.polygon([tile_px(x, y, z1) for x, y in outline], fill=shade(RENDER, 1.08))
+    for _ in range(26):
+        x, y = rng.uniform(-h * 0.85, h * 0.85), rng.uniform(-h * 0.85, h * 0.85)
+        r = rng.uniform(0.03, 0.08)
+        draw.polygon([tile_px(x + r * math.cos(a) * rng.uniform(0.7, 1.2), y + r * math.sin(a) * rng.uniform(0.7, 1.2), z1)
+                      for a in [2 * math.pi * k / 7 for k in range(7)]], fill=shade(RENDER, rng.choice([1.0, 1.07, 0.97])))
 
 
 # --- The copper --------------------------------------------------------------------------------------------------
@@ -359,8 +406,8 @@ def paint_copper(layer, look, rng):
 
 
 def body(face, hole):
-    """The stone body the Firebox and the Hearth share: split fieldstone, soot over the mouth, the iron door and the
-    rendered top; with hole, a small round one in the top's centre, ringed with soot, for the Hearth's kettle."""
+    """The stone body the Firebox and the Hearth share: dressed stone as vanilla's mill, soot over the mouth, the iron
+    door and the slab on top; with hole, a small round one in the top's centre, ringed with soot, for the Hearth's kettle."""
     rng = random.Random(160 + face)
     side = FACES[face]
     light = {"S": 1.0, "E": 0.72}
@@ -372,7 +419,8 @@ def body(face, hole):
     draw = ImageDraw.Draw(layer)
     mouth(draw, side, rng, light[side])
     door(draw, side, random.Random(175 + face), light[side])
-    render_top(draw)
+    slab_top(layer)
+    draw = ImageDraw.Draw(layer)
     if hole:
         cx, cy = pzart.project(0, 0, TOP + CAP)
         rx, ry = ellipse_r(HOLE_R)
@@ -456,45 +504,73 @@ def post_points(face):
     return [(-ax * h, -ay * h), (ax * h, ay * h)]
 
 
+def sooted(colour, share, light):
+    """A colour gone towards soot by share (0 clean, 1 all soot), lit."""
+    return shade(tuple(int(c0 * (1 - share) + c1 * share) for c0, c1 in zip(colour, KETTLE_SOOT)), light)
+
+
 def paint_post(draw, x, y, light):
-    """An iron bar from the stone's top up to the gallows bar: lit on its left, set in mortar, an eye at the top."""
+    """A Metal Pipe from the stone's top up past the chain, set in mortar, an open end at the top: lit on its left,
+    sooted black where the smoke climbs past it, the grey showing only near the foot."""
     bx, by = pzart.project(x, y, TOP + CAP)
-    _, ty = pzart.project(x, y, BAR_Z + 2)
-    draw.ellipse(box(bx, by + 0.3, 2.2, 1.1), fill=shade(MORTAR, 0.7))
-    draw.rectangle([(bx - 1.1) * SS, ty * SS, (bx + 1.1) * SS, by * SS], fill=shade(IRON, 0.75 * light))
-    draw.rectangle([(bx - 1.1) * SS, ty * SS, (bx - 0.2) * SS, by * SS], fill=shade(IRON, 1.35 * light))
-    draw.ellipse(box(bx, ty, 1.8, 1.8), outline=shade(IRON, 1.2 * light), width=int(0.8 * SS))
+    _, ty = pzart.project(x, y, BAR_Z + 3)
+    draw.ellipse(box(bx, by + 0.3, 2.4, 1.2), fill=shade(MORTAR, 0.7))
+    steps = 24
+    for i in range(steps):
+        y0, y1 = by + (ty - by) * i / steps, by + (ty - by) * (i + 1) / steps
+        share = 0.55 + 0.4 * (i / steps) ** 0.6
+        draw.rectangle([(bx - 1.3) * SS, y1 * SS, (bx + 1.3) * SS, y0 * SS], fill=sooted(PIPE, share, 0.7 * light))
+        draw.rectangle([(bx - 1.3) * SS, y1 * SS, (bx - 0.4) * SS, y0 * SS], fill=sooted(PIPE, share, 1.3 * light))
+    draw.ellipse(box(bx, ty, 1.3, 0.6), fill=shade(DARK, 1))
 
 
-def paint_bar(draw, face):
+def chain_points(face):
     (x0, y0), (x1, y1) = post_points(face)
-    ax, ay = bar_axis(face)
-    over = 0.03
-    p0 = pzart.project(x0 - ax * over, y0 - ay * over, BAR_Z)
-    p1 = pzart.project(x1 + ax * over, y1 + ay * over, BAR_Z)
-    draw.line([(p0[0] * SS, p0[1] * SS), (p1[0] * SS, p1[1] * SS)], fill=shade(IRON, 0.8), width=int(2.0 * SS))
-    draw.line([(p0[0] * SS, (p0[1] - 0.7) * SS), (p1[0] * SS, (p1[1] - 0.7) * SS)], fill=shade(IRON, 1.4),
-              width=int(0.6 * SS))
+    points = []
+    for i in range(LINKS + 1):
+        t = i / LINKS
+        z = BAR_Z + 1 - SAG * 4 * t * (1 - t)
+        points.append(pzart.project(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z))
+    return points
 
 
-def paint_bail(draw, ends):
-    """The iron bail, a half hoop from the lugs up to the hook, the Large Hook and its short rod to the bar. Below
-    the lip at the back the bail is behind the kettle, so it starts where it clears the lip."""
+def paint_chain(draw, face):
+    """The Heavy Chain round the pipes' tops and sagging to the middle, oval links flat and edge on by turns, sooted.
+    Returns its middle, where the hook hangs."""
+    points = chain_points(face)
+    dark, bright = sooted(IRON, 0.5, 0.6), sooted(IRON, 0.5, 1.3)
+    for i, ((xa, ya), (xb, yb)) in enumerate(zip(points, points[1:])):
+        cx, cy = (xa + xb) / 2, (ya + yb) / 2
+        length = math.hypot(xb - xa, yb - ya)
+        if i % 2 == 0:
+            draw.ellipse(box(cx, cy + 0.3, length * 0.66, 1.6), outline=dark, width=int(1.0 * SS))
+            draw.ellipse(box(cx, cy, length * 0.66, 1.6), outline=bright, width=int(0.9 * SS))
+        else:
+            draw.line([((cx - length * 0.66) * SS, (cy + 0.4) * SS), ((cx + length * 0.66) * SS, (cy + 0.4) * SS)],
+                      fill=dark, width=int(1.4 * SS))
+            draw.line([((cx - length * 0.66) * SS, cy * SS), ((cx + length * 0.66) * SS, cy * SS)],
+                      fill=sooted(IRON, 0.5, 1.1), width=int(1.0 * SS))
+    return points[LINKS // 2]
+
+
+def paint_bail(draw, ends, low):
+    """The iron bail, a half hoop from the lugs up to the hook, and the Large Hook from the chain's middle down to
+    it, its curve under the bail. Below the lip at the back the bail is behind the kettle, so it starts where it
+    clears the lip."""
     (x0, y0), (x1, y1) = ends
-    apex = KETTLE_TOP + 14
     points = []
     for i in range(41):
         t = i / 40
-        z = KETTLE_TOP - 4 + (apex - KETTLE_TOP + 4) * math.sin(math.pi * t)
+        z = KETTLE_TOP - 4 + (APEX - KETTLE_TOP + 4) * math.sin(math.pi * t)
         if t < 0.5 and z < KETTLE_TOP + 0.5:
             continue
         px, py = pzart.project(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z)
         points.append((px * SS, py * SS))
-    draw.line(points, fill=shade(IRON, 0.85), width=int(1.2 * SS), joint="curve")
-    hx, hy = pzart.project(0, 0, apex)
-    bx, by = pzart.project(0, 0, BAR_Z)
-    draw.line([(hx * SS, (hy - 3) * SS), (bx * SS, by * SS)], fill=shade(IRON, 0.9), width=int(1.0 * SS))
-    draw.arc(box(hx, hy - 1.2, 2.0, 2.0), 300, 200, fill=shade(IRON, 1.25), width=int(1.0 * SS))
+    draw.line(points, fill=sooted(IRON, 0.6, 0.85), width=int(1.2 * SS), joint="curve")
+    hx, hy = pzart.project(0, 0, APEX)
+    draw.line([(low[0] * SS, low[1] * SS), (hx * SS, (hy - 3) * SS)], fill=sooted(IRON, 0.5, 0.9), width=int(1.0 * SS))
+    draw.arc(box(hx, hy - 1.2, 2.0, 2.0), 300, 200, fill=sooted(IRON, 0.5, 1.2), width=int(1.0 * SS))
+    draw.ellipse(box(low[0], low[1] + 0.5, 0.9, 0.9), outline=sooted(IRON, 0.5, 1.2), width=int(0.6 * SS))
 
 
 def steam():
@@ -511,7 +587,8 @@ def steam():
 
 
 def paint_hearth(look, face):
-    """The body with its hole, the far post, the kettle, then the near post, the bar and the bail in front of it."""
+    """The body with its hole, the far pipe, the kettle, then the near pipe, the chain, the hook and the bail in front
+    of it."""
     light = 1.0 if FACES[face] == "S" else 0.85
     layer = body(face, True)
     back, near = post_points(face)
@@ -520,8 +597,7 @@ def paint_hearth(look, face):
     layer.alpha_composite(kettle)
     draw = ImageDraw.Draw(layer)
     paint_post(draw, near[0], near[1], light)
-    paint_bar(draw, face)
-    paint_bail(draw, ends)
+    paint_bail(draw, ends, paint_chain(draw, face))
     tile = pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
     if look == "Hot":
         tile.alpha_composite(shrink(steam()))
@@ -604,65 +680,6 @@ def door(draw, side, rng, light):
 
 
 TRENCH_W = 0.07                # the trench's half width, in tiles
-
-
-def trench(layer, face, side, rng):
-    """A smoke trench from the foot of the firebox to the wall on its side: a low bank of clay along the ground,
-    roofed with flat stones laid edge to edge, a dark gap between them."""
-    draw = ImageDraw.Draw(layer)
-    dx, dy = FLUE_SIDES[FACES[face]][side]
-    px, py = -dy, dx
-
-    def ground(along, across, z):
-        return tile_px(dx * along + px * across, dy * along + py * across, z)
-
-    a0, a1 = H - 0.01, 0.5
-    draw.polygon([ground(a0, -TRENCH_W - 0.03, 0), ground(a1, -TRENCH_W - 0.03, 0), ground(a1, TRENCH_W + 0.03, 0),
-                  ground(a0, TRENCH_W + 0.03, 0)], fill=shade(DAUB, 0.7))
-    draw.polygon([ground(a0, -TRENCH_W - 0.02, 2.2), ground(a1, -TRENCH_W - 0.02, 2.2), ground(a1, TRENCH_W + 0.02, 2.2),
-                  ground(a0, TRENCH_W + 0.02, 2.2)], fill=shade(DAUB, 0.95))
-    a = a0
-    while a < a1 - 0.01:
-        length = min(rng.uniform(0.045, 0.07), a1 - a)
-        b = a + length
-        j = [rng.uniform(-0.008, 0.008) for _ in range(4)]
-        tone = rng.uniform(0.85, 1.12)
-        draw.polygon([ground(a + 0.004, -TRENCH_W + j[0], 2.8), ground(b - 0.004, -TRENCH_W + j[1], 3.0),
-                      ground(b - 0.004, TRENCH_W + j[2], 3.0), ground(a + 0.004, TRENCH_W + j[3], 2.8)],
-                     fill=shade(STONE, 1.08 * tone))
-        a = b
-
-
-def back_pipe(face, side):
-    """The clay pipe out of the stone's side (Back, Left or Right): bedded in clay where it leaves the stone low down, a
-    short run out, an elbow, up past the top and into the wall at CHAMBER_FLUE_Z, two collars on the way. Returns the
-    layer and whether it is in front of the stone (towards the viewer)."""
-    layer = pzart.new_layer(SS)
-    draw = ImageDraw.Draw(layer)
-    dx, dy = FLUE_SIDES[FACES[face]][side]
-    path = [(H, PIPE_EXIT), (PIPE_OUT, PIPE_EXIT), (PIPE_OUT, CHAMBER_FLUE_Z - 2), (0.5, CHAMBER_FLUE_Z)]
-    points = []
-    for (a0, z0), (a1, z1) in zip(path, path[1:]):
-        n = max(4, int(abs(a1 - a0) * 120 + abs(z1 - z0)))
-        points += [(a0 + (a1 - a0) * k / n, z0 + (z1 - z0) * k / n) for k in range(n)]
-    points.append(path[-1])
-    total = len(points)
-    # Far end first: towards the viewer (south or east) the wall end is the near one.
-    order = range(total) if dx + dy > 0 else range(total - 1, -1, -1)
-    for i in order:
-        a, z = points[i]
-        x, y = tile_px(dx * a, dy * a, z)
-        t = i / total
-        collar = any(abs(t - c) < 0.02 for c in (0.3, 0.75))
-        r = FLUE_R + (0.8 if collar else 0)
-        tone = 0.62 if collar else 0.78
-        draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, tone))
-        draw.ellipse([x - (r - 1.6) * SS, y - (r - 0.6) * 0.85 * SS, x + (r - 2.6) * SS, y + (r - 2.4) * 0.85 * SS],
-                     fill=shade(CLAY_PIPE, tone + 0.38))
-    x, y = tile_px(dx * H, dy * H, PIPE_EXIT)
-    draw.ellipse([x - (FLUE_R + 2.5) * SS, y - (FLUE_R + 2) * SS, x + (FLUE_R + 2.5) * SS, y + (FLUE_R + 2) * SS],
-                 fill=shade(DAUB, 0.95))
-    return layer, dx + dy > 0
 
 
 HOLE_Z = TOP + CAP
@@ -760,11 +777,10 @@ def pot(layer):
 
 
 def paint_firebox(look, face):
-    """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot), and the flue joined to
-    one side: the trench on the ground, or the pipe out of the side, behind or in front of the stone."""
-    parts = look.split("_")
-    hole = parts[-1]
-    kind, side = (parts[0], parts[1]) if len(parts) == 3 else (None, None)
+    """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot). The flue's looks
+    (Pipe_ and Stones_) draw the same: the Smokehouse's entry overlay draws the whole flue from the stone to its wall,
+    so it shows by a fitted Hearth too and is never drawn twice (user, 2026-11-13)."""
+    hole = look.split("_")[-1]
     layer = body(face, False)
     top = pzart.new_layer(SS)
     lining(top, random.Random(300 + face))
@@ -773,19 +789,6 @@ def paint_firebox(look, face):
     elif hole == "Lid":
         lid(top, random.Random(310 + face))
     layer.alpha_composite(top)
-    if kind:
-        dx, dy = FLUE_SIDES[FACES[face]][side]
-        if kind == "Stones":
-            ground = pzart.new_layer(SS)
-            trench(ground, face, side, random.Random(185 + face))
-            front = dx + dy > 0
-        else:
-            ground, front = back_pipe(face, side)
-        if front:
-            layer.alpha_composite(ground)      # in front of the stone
-        else:
-            ground.alpha_composite(layer)      # behind it
-            layer = ground
     return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
 
 
@@ -876,15 +879,25 @@ def icon_box(cx, cy, rx, ry):
     return [cx - rx, cy - ry, cx + rx, cy + ry]
 
 
-def copper_icon(full):
+ICON_IRON = (122, 120, 120)    # the cauldron's iron above the soot, lighter than the tile's, as ICON_METAL
+ICON_LIQUID = MILK              # a full cauldron's icon: milk, its first use, whatever it holds
+ICON_IRON_OUTLINE = (16, 16, 18)  # near black, as vanilla's forged pot icon
+
+
+def copper_icon(full, metal=ICON_METAL, liquid=MILK, lip=1.0, speck=SPECULAR, scale=1.0, centre=None, rim=1.0,
+                outline=ICON_OUTLINE):
     """The Hearth's kettle from the side, for its menus: the Alpine belly sooted black below and blending into bright
-    copper at the shoulder, a rolled lip catching the light from the left and the iron bail over it; full, a skin of
-    milk in its mouth. Drawn at ICON_SS times the size, shrunk, then given a dark one-pixel outline so it reads on
-    the menu's dark strip."""
+    metal at the shoulder, a rolled lip (lip times as thick) catching the light from the left and the iron bail over
+    it; full, a skin of liquid in its mouth. Drawn at ICON_SS times the size, shrunk, then given a dark one-pixel
+    outline so it reads on the menu's dark strip. scale and centre (x, bottom, in icon px) draw it smaller elsewhere,
+    unshrunk and unoutlined, for another icon to take in."""
     n, s = MENU_ICON * ICON_SS, ICON_SS
     icon = Image.new("RGBA", (n, n), (0, 0, 0, 0))
     draw = ImageDraw.Draw(icon)
-    cx, bottom, height, widest = n / 2, 30 * s, 19 * s, 14.5 * s
+    ICON_METAL = metal
+    cx, bottom = (n / 2, 30 * s) if centre is None else (centre[0] * s, centre[1] * s)
+    s *= scale
+    height, widest = 19 * s, 14.5 * s
     top = bottom - height
     for row in range(int(height) + 1):
         t = row / height
@@ -899,37 +912,104 @@ def copper_icon(full):
             draw.point((x, y), fill=colour + (255,))
     lip_half, ry = widest * PROFILE[-1][1], 3.2 * s
     draw.ellipse(icon_box(cx, top, lip_half, ry), fill=shade(ICON_METAL, 0.35))
-    draw.ellipse(icon_box(cx, top + 0.2 * s, lip_half - 1.4 * s, ry - 0.8 * s),
-                 fill=MILK + (255,) if full else shade(ICON_METAL, 0.3))
+    draw.ellipse(icon_box(cx, top + 0.2 * s, lip_half - 1.4 * s * lip, ry - 0.8 * s * lip),
+                 fill=liquid + (255,) if full else shade(ICON_METAL, 0.3))
     for i in range(160):
         a = 2 * math.pi * i / 160
-        light = 0.7 + 0.8 * max(0.0, math.cos(a - 2.4)) ** 2
-        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.2 * s, 0.8 * s),
-                     fill=shade(ICON_METAL, light))
+        light = (0.7 + 0.8 * max(0.0, math.cos(a - 2.4)) ** 2) * rim
+        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.2 * s * lip,
+                              0.8 * s * lip), fill=shade(ICON_METAL, light))
     for i in range(30):
         a = 2.3 + 0.9 * i / 29
-        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s,
-                              0.7 * s, 0.35 * s), fill=SPECULAR + (255,))
+        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s * lip,
+                              0.7 * s, 0.35 * s), fill=speck + (255,))
     bail = [(cx + lip_half * math.cos(math.pi * i / 40), top - 1 * s - 9 * s * math.sin(math.pi * i / 40)) for i in range(41)]
     draw.line(bail, fill=shade(IRON, 1.3), width=int(1.3 * s), joint="curve")
     for side in (-1, 1):
         draw.rectangle(icon_box(cx + side * lip_half, top + 0.5 * s, 0.9 * s, 1.6 * s), fill=shade(IRON, 1.1))
-    return outlined(icon.resize((MENU_ICON, MENU_ICON), Image.LANCZOS))
+    if centre is not None:
+        return icon
+    return outlined(icon.resize((MENU_ICON, MENU_ICON), Image.LANCZOS), outline)
 
 
-def outlined(icon):
+def cauldron_icon(full, **kw):
+    """The Forged Cauldron, as copper_icon draws a kettle: dark forged iron sooted black below, grey above with a cool
+    sheen, the thick rolled lip of its tiles and model; full, a pale surface."""
+    return copper_icon(full, metal=ICON_IRON, liquid=ICON_LIQUID, lip=1.7, speck=(150, 152, 158), rim=0.78,
+                       outline=ICON_IRON_OUTLINE, **kw)
+
+
+def fit_icon():
+    """Fit Cauldron / Remove Cauldron: the cauldron in front of what the fitting takes, two Metal Pipes with a Heavy
+    Chain sagging between their tops and the Large Hook in its middle, all sooted as on the tile."""
+    n, s = MENU_ICON * ICON_SS, ICON_SS
+    back = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(back)
+    pipe, pipe_lit = sooted(PIPE, 0.6, 0.85), sooted(PIPE, 0.6, 1.4)
+    chain, chain_lit = sooted(IRON, 0.4, 0.9), sooted(IRON, 0.4, 1.7)
+    for x in (3 * s, 29 * s):
+        draw.rectangle([x - 1.1 * s, 2 * s, x + 1.1 * s, 31 * s], fill=pipe)
+        draw.rectangle([x - 1.1 * s, 2 * s, x - 0.2 * s, 31 * s], fill=pipe_lit)
+    links = 7
+    pts = [(3 * s + 26 * s * k / links, 3.4 * s + 2.4 * s * 4 * (k / links) * (1 - k / links)) for k in range(links + 1)]
+    for k, ((xa, ya), (xb, yb)) in enumerate(zip(pts, pts[1:])):
+        cx, cy, half = (xa + xb) / 2, (ya + yb) / 2, (xb - xa) * 0.62
+        if k % 2 == 0:
+            draw.ellipse([cx - half, cy - 1.1 * s, cx + half, cy + 1.1 * s], outline=chain_lit, width=int(0.8 * s))
+        else:
+            draw.line([(cx - half, cy), (cx + half, cy)], fill=chain, width=int(1.1 * s))
+    low = max(y for _, y in pts)
+    draw.line([(16 * s, low), (16 * s, 9.5 * s)], fill=chain_lit, width=int(1.2 * s))
+    draw.arc([14.2 * s, 8.5 * s, 17.8 * s, 11.9 * s], 300, 180, fill=chain_lit, width=int(1.2 * s))
+    back.alpha_composite(cauldron_icon(False, scale=0.72, centre=(16, 31)))
+    return outlined(back.resize((MENU_ICON, MENU_ICON), Image.LANCZOS), ICON_IRON_OUTLINE)
+
+
+def outlined(icon, colour=ICON_OUTLINE):
     """icon on a dark ring one pixel wider than its solid part."""
     ring = icon.getchannel("A").point(lambda v: 255 if v >= 100 else 0).filter(ImageFilter.MaxFilter(3))
-    out = Image.composite(Image.new("RGBA", icon.size, ICON_OUTLINE + (255,)), Image.new("RGBA", icon.size), ring)
+    out = Image.composite(Image.new("RGBA", icon.size, colour + (255,)), Image.new("RGBA", icon.size), ring)
     out.alpha_composite(icon)
     return out
 
 
 def hearth_icon(kind):
     """The Hearth with its fire lit or banked, for Stoke and Bank."""
-    tile = paint_hearth("Empty", 0)
-    tile.alpha_composite(paint_glow(kind, 0))
+    return paint_cauldron(kind, 0)
+
+
+def paint_cauldron(look, face):
+    """A Hearth tile (HEARTH_LOOKS): the kettle with nothing in it, its fire's glow baked in, steam over it."""
+    fire = look.replace("Steam", "")
+    tile = paint_hearth("Empty", face)
+    if fire in FIRE_KINDS:
+        tile.alpha_composite(paint_glow(fire, face))
+    if look.endswith("Steam"):
+        tile.alpha_composite(shrink(steam()))
     return tile
+
+
+def paint_liquid(face):
+    """The overlay: what the kettle holds, a pale surface in its mouth (a skin with a lighter middle and a shadowed far
+    rim) that the game tints with the fluid's colour. The bail, the hook and the near pipe are cut out of it, as they
+    pass in front of the mouth."""
+    layer = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, KETTLE_TOP)
+    rx, ry = ellipse_r(kettle_radius(1.0) * 0.97)
+    irx, iry = rx - 1.4, ry - 0.9
+    sy = cy + 2.0
+    draw.ellipse(box(cx, sy, irx - 1.2, iry - 1.0), fill=(222, 222, 222, 255))
+    draw.ellipse(box(cx - 2, sy - 0.6, irx - 5, iry - 3), fill=(244, 244, 244, 255))
+    draw.arc(box(cx, sy, irx - 1.2, iry - 1.0), 190, 350, fill=(176, 176, 176, 255), width=SS)
+    front = pzart.new_layer(SS)
+    fd = ImageDraw.Draw(front)
+    _, ends = paint_kettle("Empty", face)
+    paint_bail(fd, ends, paint_chain(fd, face))
+    near = post_points(face)[1]
+    paint_post(fd, near[0], near[1], 1.0)
+    layer.putalpha(ImageChops.multiply(layer.getchannel("A"), ImageChops.invert(front.getchannel("A"))))
+    return pzart.hard_edges(shrink(layer).convert("RGBA"))
 
 
 # --- Output ------------------------------------------------------------------------------------------------------
@@ -975,19 +1055,35 @@ def chamber_px(face, part, a, b, z):
     return (sx * SS, sy * SS)
 
 
-def chamber_planks(draw, rng, quad, start, stop, width, colour, light, clip=None):
-    """Planks from start to stop along a wall or roof; quad(u0, u1) gives each one's polygon, each a tone of its own
-    with a dark seam between. clip (u0, u1) paints only that stretch: the planks are laid from start all the same,
-    so a run over both tiles matches where they meet."""
+def chamber_planks(draw, rng, quad, start, stop, width, colour, light, clip=None, gaps=None):
+    """Boards from start to stop across a wall or roof, as vanilla's barricade planks: quad(u0, u1) gives each one's
+    polygon (its first two points one end, the last two the other), each a tone of its own, lit along one edge and
+    shadowed along the other, grain running its length; the joins mostly tight, a dark seam, now and then
+    (CHAMBER_GAP) a crack open to the dark inside. clip (u0, u1) paints only that stretch: the boards are laid from
+    start all the same, so a run over both tiles matches where they meet."""
     low, high = clip or (start, stop)
     u = start
     while u < stop - 1e-6:
         u1 = min(u + width * rng.uniform(0.85, 1.15), stop)
-        tone = rng.uniform(0.86, 1.1)
-        if max(u, low) < min(u1, high):
-            draw.polygon(quad(max(u, low), min(u1, high)), fill=shade(colour, light * tone))
+        tone = rng.uniform(0.84, 1.12)
+        gap = rng.random() < (CHAMBER_GAP if gaps is None else gaps)
+        grain = [(rng.uniform(0.15, 0.85), rng.uniform(0.7, 0.9)) for _ in range(rng.randint(1, 3))]
+        a, b = max(u, low), min(u1, high)
+        if a < b:
+            draw.polygon(quad(a, b), fill=shade(colour, light * tone))
+            w = u1 - u
+            for f0, f1, k in ((0.0, 0.14, 1.14), (0.86, 1.0, 0.8)):
+                ea, eb = max(u + w * f0, low), min(u + w * f1, high)
+                if ea < eb:
+                    draw.polygon(quad(ea, eb), fill=shade(colour, light * tone * k))
+            for f, k in grain:
+                g = u + w * f
+                if low < g < high:
+                    p = quad(g, min(g + 0.006, high))
+                    draw.line([p[0], p[3]], fill=shade(colour, light * tone * k), width=SS)
         if low < u1 < min(stop, high) - 1e-6:
-            draw.polygon(quad(u1 - 0.006, u1 + 0.006), fill=shade(CHAMBER_EDGE, light * 0.8))
+            seam = rng.uniform(0.016, 0.026) if gap else 0.006
+            draw.polygon(quad(u1 - seam, u1 + seam), fill=shade(CHAMBER_DARK if gap else CHAMBER_EDGE, 1 if gap else light * 0.8))
         u = u1
 
 
@@ -999,45 +1095,67 @@ def paint_chamber(face, part):
     # This tile's stretch of the shed along b, and its walls' lights by the way the world face looks.
     b0, b1 = (-1 - h, -0.5 + CHAMBER_JOIN) if part == 0 else (-0.5, h)
     door_light, side_light = (1.0, 0.72) if face == "S" else (0.72, 1.0)
-    back, front = -1 - h - o, h + o
 
     def px(a, b, z):
         return chamber_px(face, part, a, b, z)
 
-    def roof_z(b):
-        """One slope, high over the door's end and falling to the back."""
-        return CHAMBER_BACK + (CHAMBER_FRONT - CHAMBER_BACK) * (b - back) / (front - back)
+    def roof_z(a):
+        """Flat: the roof's height anywhere across the shed."""
+        return CHAMBER_EAVE
 
-    # The visible long side, its top following the roof, then the stone sill and two battens along it.
-    side = lambda u0, u1: [px(h, u0, 0), px(h, u1, 0), px(h, u1, roof_z(u1) - 2), px(h, u0, roof_z(u0) - 2)]
-    chamber_planks(draw, random.Random(210 + FACES.index(face)), side, -1 - h, h, CHAMBER_PLANK, CHAMBER_WOOD, side_light, (b0, b1))
+    def nails(points, light):
+        for x, y in points:
+            draw.ellipse([x - 0.7 * SS, y - 0.6 * SS, x + 0.7 * SS, y + 0.6 * SS], fill=shade(CHAMBER_DARK, light * 1.6))
+
+    # The long side in view, up to the eave, then the stone sill and two battens across its boards, nailed.
+    eave = roof_z(h) - 2
+    side = lambda u0, u1: [px(h, u0, 0), px(h, u1, 0), px(h, u1, eave), px(h, u0, eave)]
+    chamber_planks(draw, random.Random(210 + FACES.index(face)), side, -1 - h, h, CHAMBER_PLANK, CHAMBER_WOOD, side_light, (b0, b1),
+                   CHAMBER_WALL_GAP)
     draw.polygon([px(h, b0, 0), px(h, b1, 0), px(h, b1, CHAMBER_SILL), px(h, b0, CHAMBER_SILL)], fill=shade(CHAMBER_STONE, side_light * 0.8))
-    for z in (CHAMBER_SILL + 4, CHAMBER_BACK - 12):
-        draw.polygon([px(h + 0.004, b0, z), px(h + 0.004, b1, z), px(h + 0.004, b1, z + 4), px(h + 0.004, b0, z + 4)],
-                     fill=shade(CHAMBER_WOOD, side_light * 0.78))
+    for z in (CHAMBER_SILL + 6, eave - 14):
+        draw.polygon([px(h + 0.004, b0, z), px(h + 0.004, b1, z), px(h + 0.004, b1, z + 5), px(h + 0.004, b0, z + 5)],
+                     fill=shade(CHAMBER_WOOD, side_light * 0.8))
+        draw.line([px(h + 0.005, b0, z + 5), px(h + 0.005, b1, z + 5)], fill=shade(CHAMBER_EDGE, side_light), width=SS)
+        u = -1 - h + CHAMBER_PLANK / 2
+        while u < h:
+            if b0 < u < b1:
+                nails([px(h + 0.006, u, z + 2.5)], side_light)
+            u += CHAMBER_PLANK
 
     if part == 1:
-        # The door's end: planks up to the high eave, the smoke slot under it with two slats, a sill and the door.
-        top = roof_z(h) - 2
-        end = lambda u0, u1: [px(u0, h, 0), px(u1, h, 0), px(u1, h, top), px(u0, h, top)]
-        chamber_planks(draw, random.Random(220 + FACES.index(face)), end, -h, h, CHAMBER_PLANK, CHAMBER_WOOD, door_light)
-        slot_low, slot_high = top - 14, top - 3
-        draw.polygon([px(-h + 0.05, h, slot_low), px(h - 0.05, h, slot_low), px(h - 0.05, h, slot_high), px(-h + 0.05, h, slot_high)],
+        # The door's end: boards up to the roof's slope, the smoke slot under it with two slats, a sill and the door.
+        end = lambda u0, u1: [px(u0, h, 0), px(u1, h, 0), px(u1, h, roof_z(u1) - 2), px(u0, h, roof_z(u0) - 2)]
+        chamber_planks(draw, random.Random(220 + FACES.index(face)), end, -h, h, CHAMBER_PLANK, CHAMBER_WOOD, door_light,
+                       gaps=CHAMBER_WALL_GAP)
+        a0, a1 = -h + 0.05, h - 0.05
+        draw.polygon([px(a0, h, roof_z(a0) - 14), px(a1, h, roof_z(a1) - 14), px(a1, h, roof_z(a1) - 4), px(a0, h, roof_z(a0) - 4)],
                      fill=shade(CHAMBER_DARK, 1))
-        for z in (slot_low + 3, slot_low + 7):
-            draw.polygon([px(-h + 0.05, h + 0.004, z), px(h - 0.05, h + 0.004, z), px(h - 0.05, h + 0.004, z + 2), px(-h + 0.05, h + 0.004, z + 2)],
-                         fill=shade(CHAMBER_WOOD, door_light * 0.7))
+        for dz in (11, 7):
+            draw.polygon([px(a0, h + 0.004, roof_z(a0) - dz), px(a1, h + 0.004, roof_z(a1) - dz), px(a1, h + 0.004, roof_z(a1) - dz + 2),
+                          px(a0, h + 0.004, roof_z(a0) - dz + 2)], fill=shade(CHAMBER_WOOD, door_light * 0.7))
         draw.polygon([px(-h, h, 0), px(h, h, 0), px(h, h, CHAMBER_SILL), px(-h, h, CHAMBER_SILL)], fill=shade(CHAMBER_STONE, door_light * 0.8))
         # The door: darker boards in a frame, two ledges and a brace, strap hinges on its left and a wooden latch.
         d = CHAMBER_DOOR_HALF
         draw.polygon([px(-d - 0.03, h + 0.003, CHAMBER_SILL), px(d + 0.03, h + 0.003, CHAMBER_SILL),
                       px(d + 0.03, h + 0.003, CHAMBER_DOOR + 4), px(-d - 0.03, h + 0.003, CHAMBER_DOOR + 4)], fill=shade(CHAMBER_EDGE, door_light))
+        # Uneven cracks where the latch side and the top meet the frame, the dark inside showing through.
+        crack = random.Random(235 + FACES.index(face))
+        zs = [CHAMBER_SILL + 1 + (CHAMBER_DOOR - CHAMBER_SILL - 1) * k / 8 for k in range(9)]
+        widths = [crack.uniform(0.006, 0.028) for _ in zs]
+        draw.polygon([px(d, h + 0.004, z) for z in zs] + [px(d + w, h + 0.004, z) for z, w in reversed(list(zip(zs, widths)))],
+                     fill=shade(CHAMBER_DARK, 1))
+        us = [-d + 2 * d * k / 8 for k in range(9)]
+        heights = [crack.uniform(0.6, 2.4) for _ in us]
+        draw.polygon([px(u, h + 0.004, CHAMBER_DOOR) for u in us] + [px(u, h + 0.004, CHAMBER_DOOR + z) for u, z in reversed(list(zip(us, heights)))],
+                     fill=shade(CHAMBER_DARK, 1))
         door = lambda u0, u1: [px(u0, h + 0.006, CHAMBER_SILL + 1), px(u1, h + 0.006, CHAMBER_SILL + 1),
                                px(u1, h + 0.006, CHAMBER_DOOR), px(u0, h + 0.006, CHAMBER_DOOR)]
         chamber_planks(draw, random.Random(230 + FACES.index(face)), door, -d, d, CHAMBER_PLANK * 0.8, CHAMBER_WOOD, door_light * 0.82)
         for z0 in (CHAMBER_SILL + 12, CHAMBER_DOOR - 16):
             draw.polygon([px(-d, h + 0.008, z0), px(d, h + 0.008, z0), px(d, h + 0.008, z0 + 6), px(-d, h + 0.008, z0 + 6)],
                          fill=shade(CHAMBER_WOOD, door_light * 0.68))
+            nails([px(u, h + 0.009, z0 + 3) for u in (-d + 0.04, -d / 3, d / 3, d - 0.04)], door_light)
         draw.polygon([px(-d, h + 0.008, CHAMBER_SILL + 18), px(-d + 0.05, h + 0.008, CHAMBER_SILL + 18),
                       px(d, h + 0.008, CHAMBER_DOOR - 16), px(d - 0.05, h + 0.008, CHAMBER_DOOR - 16)], fill=shade(CHAMBER_WOOD, door_light * 0.72))
         for z0 in (CHAMBER_SILL + 13, CHAMBER_DOOR - 15):
@@ -1046,19 +1164,32 @@ def paint_chamber(face, part):
         latch = CHAMBER_DOOR * 0.55
         draw.polygon([px(d - 0.06, h + 0.01, latch), px(d + 0.02, h + 0.01, latch), px(d + 0.02, h + 0.01, latch + 3),
                       px(d - 0.06, h + 0.01, latch + 3)], fill=shade(CHAMBER_WOOD, door_light * 0.6))
+        # A rope handle under the latch (user, 2026-11-13; not in the recipe): through two holes, hanging in a loop.
+        holes, z0 = (d - 0.2, d - 0.06), latch - 3
+        for u in holes:
+            x, y = px(u, h + 0.01, z0)
+            draw.ellipse([x - 1.1 * SS, y - 1.0 * SS, x + 1.1 * SS, y + 1.0 * SS], fill=shade(CHAMBER_DARK, 1))
+        # A U: the rope drops from each hole, then rounds under, sagging a little more on its far side.
+        loop = []
+        for k in range(17):
+            f = k / 16
+            sag = 6 * math.sin(math.pi * f) ** 0.6 + 0.6 * f
+            loop.append(px(holes[0] + (holes[1] - holes[0]) * (0.5 - 0.5 * math.cos(math.pi * f)), h + 0.014, z0 - sag))
+        draw.line([(x, y + 0.5 * SS) for x, y in loop], fill=shade(HAM_CORD, door_light * 0.55), width=int(1.8 * SS), joint="curve")
+        draw.line(loop, fill=shade(HAM_CORD, door_light * 0.95), width=int(1.2 * SS), joint="curve")
 
-    # The roof: boards running down the slope, laid across the shed, over the walls and past them; a fascia board
-    # on the high front edge and along the visible side.
-    low, high = b0 - (o if part == 0 else 0), b1 + (o if part == 1 else 0)
+    # The roof: boards running across the shed, laid side by side along it and past its walls; a fascia board along the
+    # edge in view and another over the door's end.
+    lo, hi = b0 - (o if part == 0 else 0), b1 + (o if part == 1 else 0)
+    roof = lambda u0, u1: [px(-h - o, u0, roof_z(-h - o)), px(-h - o, u1, roof_z(-h - o)), px(h + o, u1, roof_z(h + o)),
+                           px(h + o, u0, roof_z(h + o))]
+    chamber_planks(draw, random.Random(240 + FACES.index(face)), roof, -1 - h - o, h + o, CHAMBER_PLANK, CHAMBER_ROOF, 1.0, (lo, hi))
+    z = roof_z(h + o)
+    draw.polygon([px(h + o, lo, z), px(h + o, hi, z), px(h + o, hi, z - 5), px(h + o, lo, z - 5)], fill=shade(CHAMBER_EDGE, side_light * 0.9))
     if part == 1:
-        high = front
-    roof = lambda u0, u1: [px(u0, low, roof_z(low)), px(u1, low, roof_z(low)), px(u1, high, roof_z(high)), px(u0, high, roof_z(high))]
-    chamber_planks(draw, random.Random(240 + FACES.index(face) + 4 * part), roof, -h - o, h + o, CHAMBER_PLANK, CHAMBER_ROOF, 1.0)
-    draw.polygon([px(h + o, low, roof_z(low)), px(h + o, high, roof_z(high)), px(h + o, high, roof_z(high) - 5), px(h + o, low, roof_z(low) - 5)],
-                 fill=shade(CHAMBER_EDGE, side_light * 0.9))
-    if part == 1:
-        draw.polygon([px(-h - o, front, roof_z(front)), px(h + o, front, roof_z(front)), px(h + o, front, roof_z(front) - 5),
-                      px(-h - o, front, roof_z(front) - 5)], fill=shade(CHAMBER_EDGE, door_light * 0.9))
+        f = h + o
+        draw.polygon([px(-h - o, f, roof_z(-h - o)), px(h + o, f, roof_z(h + o)), px(h + o, f, roof_z(h + o) - 5),
+                      px(-h - o, f, roof_z(-h - o) - 5)], fill=shade(CHAMBER_EDGE, door_light * 0.9))
 
     layer = pzart.darken_down(layer, pzart.FOOT[1] - 60, pzart.FOOT[1] + 30, CHAMBER_FOOT_SHADE, SS)
     return pzart.hard_edges(pzart.weather(shrink(layer), random.Random((250 + 2 * FACES.index(face) + part) * 31 + 7), CHAMBER_WEATHER, True).convert("RGBA"))
@@ -1079,16 +1210,34 @@ def paint_chamber_entry(kind, face, part):
         return [px(h, mid + b0, z0), px(h, mid + b1, z0), px(h, mid + b1, z1), px(h, mid + b0, z1)]
 
     if kind == "Pipe":
-        draw.polygon(wall(-0.075, 0.075, CHAMBER_FLUE_Z - 8, CHAMBER_FLUE_Z + 9), fill=shade(DAUB, light * 0.95))
-        draw.polygon(wall(-0.06, 0.06, CHAMBER_FLUE_Z - 6, CHAMBER_FLUE_Z + 7), fill=shade(DAUB, light * 1.08))
-        steps = 8
-        for i in range(steps + 1):
-            a = h + (0.5 - h) * i / steps
-            x, y = px(a, mid, CHAMBER_FLUE_Z)
-            r = FLUE_R + (0.8 if i == 0 else 0)
-            draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, 0.78))
+        # The whole pipe from the stone's side to the wall (the Stone Hearth's middle is a = 1): bedded in clay where it
+        # leaves the stone low down, a short run out, an elbow, a short climb to PIPE_TOP and into the wall. The Stone
+        # Hearth's tiles draw no flue, and the Hearth, drawn after the shed, hides the pipe's foot behind its stone
+        # wherever the stone is in front.
+        s = PIPE_SHIFT
+        draw.polygon(wall(s - 0.075, s + 0.075, PIPE_TOP - 8, PIPE_TOP + 9), fill=shade(DAUB, light * 0.95))
+        draw.polygon(wall(s - 0.06, s + 0.06, PIPE_TOP - 6, PIPE_TOP + 7), fill=shade(DAUB, light * 1.08))
+        path = [(h, PIPE_TOP), (1 - PIPE_OUT, PIPE_TOP - 2), (1 - PIPE_OUT, PIPE_Z), (1 - H, PIPE_Z)]
+        run = []
+        for (a0, z0), (a1, z1) in zip(path, path[1:]):
+            n = max(4, int(abs(a1 - a0) * 120 + abs(z1 - z0)))
+            run += [(a0 + (a1 - a0) * k / n, z0 + (z1 - z0) * k / n) for k in range(n)]
+        run.append(path[-1])
+        # Two-tone clay, a collar at the wall, the elbow and partway along, weathered below.
+        total = len(run)
+        for i, (a, z) in enumerate(run):
+            x, y = px(a, mid + s, z)
+            u = 1 - i / total
+            collar = i == 0 or any(abs(u - c) < 0.02 for c in (0.3, 0.75))
+            r = FLUE_R + (0.8 if collar else 0)
+            tone = 0.62 if collar else 0.78
+            draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, tone))
             draw.ellipse([x - (r - 1.6) * SS, y - (r - 0.6) * 0.85 * SS, x + (r - 2.6) * SS, y + (r - 2.4) * 0.85 * SS],
-                         fill=shade(CLAY_PIPE, 1.16))
+                         fill=shade(CLAY_PIPE, tone + 0.38))
+        x, y = px(1 - H, mid + s, PIPE_Z)
+        draw.ellipse([x - (FLUE_R + 2.5) * SS, y - (FLUE_R + 2) * SS, x + (FLUE_R + 2.5) * SS, y + (FLUE_R + 2) * SS],
+                     fill=shade(DAUB, 0.95))
+        return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(195 + FACES.index(face) * 2 + part), WEATHER).convert("RGBA"))
     else:
         w = TRENCH_W
         draw.polygon(wall(-w - 0.03, w + 0.03, 0, CHAMBER_SILL + 2), fill=shade(DAUB, light * 0.9))
@@ -1098,13 +1247,20 @@ def paint_chamber_entry(kind, face, part):
         def ground(a, across, z):
             return px(a, mid + across, z)
 
-        a0, a1 = h, 0.5
+        # From the wall right up to the Stone Hearth's foot (its middle is a = 1), so it shows by a fitted Hearth too.
+        a0, a1 = h, 1 - H + 0.01
         draw.polygon([ground(a0, -w - 0.03, 0), ground(a1, -w - 0.03, 0), ground(a1, w + 0.03, 0), ground(a0, w + 0.03, 0)],
                      fill=shade(DAUB, 0.7))
         draw.polygon([ground(a0, -w - 0.02, 2.2), ground(a1, -w - 0.02, 2.2), ground(a1, w + 0.02, 2.2), ground(a0, w + 0.02, 2.2)],
                      fill=shade(DAUB, 0.95))
-        draw.polygon([ground(a0 + 0.004, -w, 2.8), ground(a1, -w, 3.0), ground(a1, w, 3.0), ground(a0 + 0.004, w, 2.8)],
-                     fill=shade(CHAMBER_STONE, 1.1))
+        rng = random.Random(185 + FACES.index(face) * 2 + part)
+        a = a0
+        while a < a1 - 0.01:
+            b = a + min(rng.uniform(0.045, 0.07), a1 - a)
+            j = [rng.uniform(-0.008, 0.008) for _ in range(4)]
+            draw.polygon([ground(a + 0.004, -w + j[0], 2.8), ground(b - 0.004, -w + j[1], 3.0), ground(b - 0.004, w + j[2], 3.0),
+                          ground(a + 0.004, w + j[3], 2.8)], fill=shade(STONE, 1.08 * rng.uniform(0.85, 1.12)))
+            a = b
     return pzart.hard_edges(shrink(layer).convert("RGBA"))
 
 
@@ -1218,7 +1374,7 @@ def lua_tiles():
         "FACE_COUNT": len(FACES),
         "HEARTH_LOOKS": HEARTH_LOOKS,
         "HEARTHS": [prefix + str(base + offset) for base in HEARTH_LOOKS.values() for offset in range(len(FACES))],
-        "GLOWS": GLOWS,
+        "LIQUID": LIQUID,
         "FIREBOX_LOOKS": FIREBOX_LOOKS,
         "FIREBOXES": [prefix + str(base + offset) for base in FIREBOX_LOOKS.values() for offset in range(len(FACES))],
         "FIREBOX_GLOWS": FIREBOX_GLOWS,
@@ -1236,7 +1392,7 @@ def contact_sheet(tiles, path):
     """Every hearth tile in a row, then each face lit and banked, then the Firebox's the same way (each flue, then
     capped and joined lit and banked), for checking the art by eye; kept out of the mod."""
     cells = [(index + face, None) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
-    cells += [(HEARTH + face, GLOWS[kind] + face) for kind in GLOWS for face in range(len(FACES))]
+    cells += [(index + face, LIQUID + face) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
     cells += [(index + face, None) for index in FIREBOX_LOOKS.values() for face in range(len(FACES))]
     glow_looks = {"": "Lid", "Flue": "Pipe_Back_Lid", "Open": "Open", "Pot": "Pot"}
     cells += [(FIREBOX_LOOKS[glow_looks[kind.replace("Lit", "").replace("Banked", "")]] + face, FIREBOX_GLOWS[kind] + face)
@@ -1256,9 +1412,8 @@ def main():
     tiles = {}
     for face in range(len(FACES)):
         for look, index in HEARTH_LOOKS.items():
-            tiles[index + face] = paint_hearth(look, face)
-        for kind, index in GLOWS.items():
-            tiles[index + face] = paint_glow(kind, face)
+            tiles[index + face] = paint_cauldron(look, face)
+        tiles[LIQUID + face] = paint_liquid(face)
         for look, index in FIREBOX_LOOKS.items():
             tiles[index + face] = paint_firebox(look, face)
         for kind, index in FIREBOX_GLOWS.items():
@@ -1276,7 +1431,11 @@ def main():
     # Menu icons: the copper empty and full, the Hearth lit and banked.
     copper_icon(False).save(media / "textures" / "Item_TPCopper.png")
     copper_icon(True).save(media / "textures" / "Item_TPCopperFull.png")
-    for kind in GLOWS:
+    # The Forged Cauldron's: empty and full (the item, the Hearth's status row) and Fit / Remove.
+    cauldron_icon(False).save(media / "textures" / "Item_TPCauldron.png")
+    cauldron_icon(True).save(media / "textures" / "Item_TPCauldronFull.png")
+    fit_icon().save(media / "textures" / "Item_TPCauldronFit.png")
+    for kind in FIRE_KINDS:
         pzart.write_build_icon(hearth_icon(kind), media / "textures" / f"Item_TPHearth{kind}.png", MENU_ICON)
     pzart.write_build_icon(tiles[FIREBOX], media / "textures" / "Item_TPFirebox.png")
     for kind in ("Lit", "Banked"):
@@ -1285,7 +1444,7 @@ def main():
         pzart.write_build_icon(icon, media / "textures" / f"Item_TPFirebox{kind}.png", MENU_ICON)
     pzart.write_build_icon(chamber_icon(tiles), media / "textures" / "Item_SmokehouseChamber.png")
     # The mod list shows the copper steaming.
-    pzart.write_mod_icon(tiles[HEARTH_LOOKS["Hot"]], media.parent / "icon.png")
+    pzart.write_mod_icon(tiles[HEARTH_LOOKS["Steam"]], media.parent / "icon.png")
     if len(sys.argv) > 1:
         contact_sheet(tiles, sys.argv[1])
     print(f"wrote {NAME}.pack and {NAME}.tiles to {media}")

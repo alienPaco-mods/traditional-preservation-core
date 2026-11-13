@@ -97,6 +97,22 @@ end
 
 Hearth.attach({ id = Hearth.COPPER, onFire = function(copper, fire) simmer(fire, Hearth.isHot(copper)) end })
 
+-- The overlay (a Stone Hearth's glow, or what the cauldron holds) and its tint. The tint isn't saved, so it is set
+-- again the first time a fire is seen after a load (tints starts empty), and whenever it changes.
+local tints = setmetatable({}, { __mode = "k" })
+
+local function showOverlay(fire, overlay, colour)
+    local shown = fire:getOverlaySprite()
+    local key = overlay and colour and string.format("%.3f %.3f %.3f", colour[1], colour[2], colour[3]) or ""
+    if (shown and shown:getName()) == overlay and tints[fire] == key then return end
+    if overlay and colour then
+        fire:setOverlaySprite(overlay, colour[1], colour[2], colour[3], 1)
+    else
+        fire:setOverlaySprite(overlay)
+    end
+    tints[fire] = key
+end
+
 -- Brings what is fitted up to now (Hearth.attach's heats), keeps a banked fire's fuel and cooking slow, its embers'
 -- heat and light, notes how long the fire will burn on and adds to its record (Hearth.logFire), and shows the
 -- attachment's look (a Firebox: its flue and what is in the hole) and the fire mouth's glow, lit or banked. Returns the fire's state.
@@ -117,10 +133,9 @@ function World.update(fire, now)
     state.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
     local mode = banked and Hearth.BANKED or fire:isLit() and Hearth.STOKED or nil
     Hearth.logFire(state, now, mode, state.fireUntil)
-    local name, glow = Hearth.showing(fire, state, Hearth.isBurning(fire), banked)
+    local name, overlay, colour = Hearth.showing(fire, state, Hearth.isBurning(fire), banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
-    local shown = fire:getOverlaySprite()
-    if (shown and shown:getName()) ~= glow then fire:setOverlaySprite(glow) end
+    showOverlay(fire, overlay, colour)
     if spec and spec.onFire then spec.onFire(part, fire, now, state) end
     local look = spec and spec.look and spec.look(part, fire)
     if look ~= before then log("TP", "hearth %s %s -> %s", spec.id, tostring(before), tostring(look)) end

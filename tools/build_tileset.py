@@ -2,12 +2,17 @@
 """Builds the TP Core art: the shared stations' tileset (42/media/*.tiles and texturepacks/*.pack), their build icons,
 the mod icon, the Hearth's menu icons and the generated Tiles.lua.
 
-The Hearth: a farmhouse copper. A block of split fieldstone, as vanilla's kilns are built, waist high with a lime
-render on top, and a copper pan set into it over its own firebox, whose arched mouth is on the side it faces. The
-game turns it into a vanilla fireplace when it is built. Vanilla draws the fireplace's flames and fuel as attached
+The Hearth: a farmhouse cheese copper (user's design, 2026-11-13, after Alpine cheese kettles on a crane). The
+Firebox's knee-high block of split fieldstone, as vanilla's kilns are built, with its iron door on the side it faces,
+closed on top but for a small round hole in the centre; over it an iron gallows (two posts set in the stone and a bar
+across, along the door's side) and, nearly on the hole, a round-bellied copper kettle sooted black below its shoulder,
+hanging by its bail from a Large Hook. The bail runs towards the door (the user's pick, for later). The copper is
+drawn as a 100-120 L kettle; it holds 60 L (Hearth.lua). The game turns it into a vanilla fireplace when it is built. Vanilla draws the fireplace's flames and fuel as attached
 sprites, so HearthWorld swaps the hearth's own sprite among whole-hearth tiles, the copper empty, full or steaming
-(HEARTH_LOOKS), and every one of them carries the fireplace's tile properties. The fire mouth's glow is the object's
-overlay sprite (GLOWS), the way vanilla lights its kilns: a bright one while it burns, a few embers when banked.
+(HEARTH_LOOKS), and every one of them carries the fireplace's tile properties. The fire's glow is the object's
+overlay sprite (GLOWS), the way vanilla lights its kilns: the door's vents, the hole and flames curling up round the
+kettle while it burns, a dull red when banked. The game draws the overlay over the whole object, so the kettle's
+outline is cut out of it.
 
 The stone and the copper have hard edges (pzart.hard_edges); the steam and the glow are soft.
 
@@ -63,6 +68,8 @@ RENDER = (196, 186, 166)       # lime render on the top
 BED = (64, 54, 46)             # the mortar the copper is bedded in
 METAL = (150, 82, 50)          # tarnished copper
 METAL_LIT = (196, 112, 78)     # the copper's lit inside
+KETTLE = (168, 92, 54)         # the kettle's outside, above the soot
+KETTLE_SOOT = (34, 28, 25)
 HAMMER = (230, 150, 110)
 SPECULAR = (255, 226, 196)
 VERDIGRIS = (92, 140, 118)
@@ -73,16 +80,31 @@ STEAM = (244, 244, 240)
 WEATHER = 0.2
 FOOT_SHADE = 0.8               # the stone darkens this far towards the ground
 
-# The hearth: about waist high (a cask is 85 px), most of a tile across, with a copper of about 10 L.
-H = 0.40                       # half the footprint, in tiles
-TOP = 60                       # stone, px high
+# The stone body, the Firebox's and the Hearth's: knee high (a cask is 85 px), a little under a tile across.
+H = 0.32                       # half the footprint, in tiles
+TOP = 36                       # stone, px high
 CAP = 4                        # the rendered top
 CAP_OVER = 0.015               # how far the top overhangs, in tiles
-CU_R = 0.27                    # the copper's radius, in tiles
-LIP = 2                        # how far its rolled lip stands above the top, px
-MOUTH_W, MOUTH_SILL, MOUTH_SPRING = 0.17, 1.5, 13.0   # half width in tiles; sill and springing height, px
+MOUTH_W, MOUTH_SILL, MOUTH_SPRING = 0.16, 1.5, 11.5   # half width in tiles; sill and springing height, px
 ARCH_RISE = 0.55               # the arch's height for its width
 FACE_LEN = math.hypot(pzart.DIAMOND_HALF_W, pzart.DIAMOND_HALF_H)   # px along a face per tile
+# The copper's mouth, as paint_copper draws it: the kettle sets these to its lip (shape()).
+CU_R = 0.27                    # its radius, in tiles
+LIP = 2                        # how far its rolled lip stands above TOP + CAP, px
+
+# The Hearth over the body: the hole, the kettle and the gallows.
+HOLE_R = 0.075                 # the hole in the top, in tiles
+KETTLE_R = 0.265               # the belly's radius, in tiles
+KETTLE_GAP = 2                 # px between the stone and the kettle's bottom: nearly on the hole
+KETTLE_H = 34                  # px from bottom to lip
+KETTLE_BOTTOM = TOP + CAP + KETTLE_GAP
+KETTLE_TOP = KETTLE_BOTTOM + KETTLE_H
+BAR_Z = KETTLE_TOP + 30        # the gallows bar, px
+POST_IN = 0.015                # how far in from the stone's edge the posts stand, in tiles
+# The kettle's profile, bottom to lip: (height share, radius share). An Alpine cheese kettle: a rounded bottom, the
+# belly low and wide, drawn in to a narrow neck, the lip flared out again.
+PROFILE = [(0.0, 0.42), (0.07, 0.74), (0.18, 0.93), (0.32, 1.0), (0.46, 0.98), (0.6, 0.88), (0.72, 0.76),
+           (0.82, 0.71), (0.91, 0.73), (1.0, 0.8)]
 
 TILE_PROPS = {}
 
@@ -108,12 +130,11 @@ for look, base in FIREBOX_LOOKS.items():
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
                                             ("container", "woodstove"), ("solidtrans", "")] + group(look, "Capped"))
 
-# The Firebox's body: knee high, a little narrower, its mouth smaller (shape() swaps these in while it is drawn).
-FIREBOX_SHAPE = {"H": 0.32, "TOP": 36, "MOUTH_W": 0.16, "MOUTH_SPRING": 11.5}
 IRON = (58, 54, 52)
 CLAY_PIPE = (172, 96, 64)
 DAUB = (150, 124, 98)
 SMOKE = (150, 146, 140)
+FIRE_GLOW = (255, 150, 60)
 FLUE_R = 4.5                   # the flue's half width, px
 FLUE_RISE = 16                 # how far it climbs from the top to the wall, px
 FLUE_ELBOW = 9                 # of which straight up out of the top, before it turns towards the wall
@@ -121,7 +142,8 @@ FLUE_ELBOW = 9                 # of which straight up out of the top, before it 
 
 @contextmanager
 def shape(values):
-    """Draws with another body's sizes (the Firebox's): the drawing below reads them as module globals."""
+    """Draws with other sizes (the kettle's mouth for paint_copper and steam): the drawing reads them as module
+    globals."""
     saved = {name: globals()[name] for name in values}
     globals().update(values)
     try:
@@ -231,8 +253,9 @@ def render_top(draw):
 # --- The copper --------------------------------------------------------------------------------------------------
 
 def paint_copper(layer, look, rng):
-    """A hammered copper pan bedded in the top: a rolled lip that catches the light, tarnished metal with rivets on
-    its seam and a little verdigris, the bowl lit on its far wall. Full, a skin of milk; hot, wrinkles in the skin."""
+    """The copper's mouth from above (the kettle's, through shape()): a rolled lip that catches the light, tarnished
+    metal with rivets on its seam and a little verdigris, the bowl lit on its far wall, set on a ring of BED. Full, a
+    skin of milk; hot, wrinkles in the skin."""
     draw = ImageDraw.Draw(layer)
     cx, cy = pzart.project(0, 0, TOP + CAP)
     rx = CU_R * pzart.DIAMOND_HALF_W * math.sqrt(2)
@@ -280,11 +303,150 @@ def paint_copper(layer, look, rng):
             draw.arc(box(x, y, 3, 1.2), 200, 340, fill=shade(MILK, 0.8), width=SS)
 
 
-def steam():
-    """Three wisps rising off the copper, soft."""
+def body(face, hole):
+    """The stone body the Firebox and the Hearth share: split fieldstone, soot over the mouth, the iron door and the
+    rendered top; with hole, a small round one in the top's centre, ringed with soot, for the Hearth's kettle."""
+    rng = random.Random(160 + face)
+    side = FACES[face]
+    light = {"S": 1.0, "E": 0.72}
     layer = pzart.new_layer(SS)
     draw = ImageDraw.Draw(layer)
-    cx, cy = pzart.project(0, 0, TOP + CAP + 2)
+    for name in ("S", "E"):
+        fieldstone(draw, name, random.Random(170 + (name == "E")), light[name])
+    soot(layer, side)
+    draw = ImageDraw.Draw(layer)
+    mouth(draw, side, rng, light[side])
+    door(draw, side, random.Random(175 + face), light[side])
+    render_top(draw)
+    if hole:
+        cx, cy = pzart.project(0, 0, TOP + CAP)
+        rx, ry = ellipse_r(HOLE_R)
+        draw.ellipse(box(cx, cy + 0.4, rx + 1.6, ry + 0.9), fill=shade(MORTAR, 0.6))
+        draw.ellipse(box(cx, cy, rx, ry), fill=DARK + (255,))
+    return pzart.darken_down(layer, pzart.FOOT[1] - TOP * 0.5, pzart.FOOT[1] + 30, FOOT_SHADE, SS)
+
+
+def ellipse_r(r):
+    """A circle of radius r tiles on the ground, as a screen ellipse's half width and height in px."""
+    return r * pzart.DIAMOND_HALF_W * math.sqrt(2), r * pzart.DIAMOND_HALF_H * math.sqrt(2)
+
+
+def bar_axis(face):
+    """The gallows bar runs along the side the door is on: x for S, y for E, as a unit step in tiles."""
+    return (1, 0) if FACES[face] == "S" else (0, 1)
+
+
+def handle_axis(face):
+    """The bail's plane: across the bar, towards the door (+y for S, +x for E)."""
+    ax, ay = bar_axis(face)
+    return ay, ax
+
+
+def kettle_radius(t):
+    """The kettle's radius in tiles at t, 0 at its bottom and 1 at its lip, smoothed between the PROFILE points."""
+    for (t0, r0), (t1, r1) in zip(PROFILE, PROFILE[1:]):
+        if t <= t1:
+            u = (t - t0) / (t1 - t0)
+            u = u * u * (3 - 2 * u)
+            return KETTLE_R * (r0 + (r1 - r0) * u)
+    return KETTLE_R * PROFILE[-1][1]
+
+
+def soot_share(t, a, phase):
+    """How sooted the kettle is at height t and angle a, 0 to 1: black at the bottom, thinning up the belly into the
+    copper over a wide band with a mottled, uneven edge, as smoke leaves it; a few worn patches low down."""
+    line = 0.76 + 0.05 * math.sin(a * 5 + phase) + 0.03 * math.sin(a * 13 + 2 * phase)
+    mottle = 0.06 * math.sin(a * 23 + t * 41 + phase) * math.sin(a * 11 - t * 29)
+    s = max(0.0, min(1.0, (line + 0.08 - t + mottle) / 0.32))
+    share = s * s * (3 - 2 * s)
+    wear = math.sin(a * 7 + t * 23 + phase) * math.sin(a * 3 - t * 17)
+    if t < 0.3 and wear > 0.8:
+        share *= 0.6
+    return share
+
+
+def paint_kettle(look, face):
+    """The kettle, as stacked rings lit from the left, its front lug, and its mouth (paint_copper at its lip).
+    Returns the layer and the bail's two ends, back then front, in tiles."""
+    layer = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(layer)
+    phase = 1.3 + face
+    steps = int(KETTLE_H * 2.5)
+    for i in range(steps + 1):
+        t = i / steps
+        cx, cy = pzart.project(0, 0, KETTLE_BOTTOM + KETTLE_H * t)
+        rx, ry = ellipse_r(kettle_radius(t))
+        draw.ellipse(box(cx, cy, rx, ry), fill=shade(KETTLE_SOOT, 0.7))
+        for k in range(64):
+            a = math.pi * k / 63
+            lit = 0.55 + 0.8 * max(0.0, math.cos(a - 2.3)) ** 2
+            sooted = soot_share(t, a, phase)
+            colour = tuple(int(c0 * (1 - sooted) + c1 * sooted)
+                           for c0, c1 in zip(shade(KETTLE, lit)[:3], shade(KETTLE_SOOT, 0.6 + 0.5 * lit)[:3]))
+            draw.ellipse(box(cx + rx * math.cos(a), cy + ry * math.sin(a), 1.3, 0.8), fill=colour + (255,))
+    # Lugs a little under the lip, where the bail is riveted on: one towards the door, one at the back, unseen.
+    ax, ay = handle_axis(face)
+    lip_r = kettle_radius(1.0)
+    ends = [(sign * ax * (lip_r + 0.012), sign * ay * (lip_r + 0.012)) for sign in (-1, 1)]
+    x, y = pzart.project(ax * (lip_r + 0.005), ay * (lip_r + 0.005), KETTLE_TOP - 4)
+    draw.rectangle(box(x, y, 1.0, 1.8), fill=shade(IRON, 0.9))
+    with shape({"TOP": KETTLE_TOP - CAP, "CU_R": lip_r * 0.97, "BED": shade(KETTLE, 0.55)[:3], "LIP": 0}):
+        paint_copper(layer, look, random.Random(80 + face))
+    return layer, ends
+
+
+def post_points(face):
+    ax, ay = bar_axis(face)
+    h = H - POST_IN
+    return [(-ax * h, -ay * h), (ax * h, ay * h)]
+
+
+def paint_post(draw, x, y, light):
+    """An iron bar from the stone's top up to the gallows bar: lit on its left, set in mortar, an eye at the top."""
+    bx, by = pzart.project(x, y, TOP + CAP)
+    _, ty = pzart.project(x, y, BAR_Z + 2)
+    draw.ellipse(box(bx, by + 0.3, 2.2, 1.1), fill=shade(MORTAR, 0.7))
+    draw.rectangle([(bx - 1.1) * SS, ty * SS, (bx + 1.1) * SS, by * SS], fill=shade(IRON, 0.75 * light))
+    draw.rectangle([(bx - 1.1) * SS, ty * SS, (bx - 0.2) * SS, by * SS], fill=shade(IRON, 1.35 * light))
+    draw.ellipse(box(bx, ty, 1.8, 1.8), outline=shade(IRON, 1.2 * light), width=int(0.8 * SS))
+
+
+def paint_bar(draw, face):
+    (x0, y0), (x1, y1) = post_points(face)
+    ax, ay = bar_axis(face)
+    over = 0.03
+    p0 = pzart.project(x0 - ax * over, y0 - ay * over, BAR_Z)
+    p1 = pzart.project(x1 + ax * over, y1 + ay * over, BAR_Z)
+    draw.line([(p0[0] * SS, p0[1] * SS), (p1[0] * SS, p1[1] * SS)], fill=shade(IRON, 0.8), width=int(2.0 * SS))
+    draw.line([(p0[0] * SS, (p0[1] - 0.7) * SS), (p1[0] * SS, (p1[1] - 0.7) * SS)], fill=shade(IRON, 1.4),
+              width=int(0.6 * SS))
+
+
+def paint_bail(draw, ends):
+    """The iron bail, a half hoop from the lugs up to the hook, the Large Hook and its short rod to the bar. Below
+    the lip at the back the bail is behind the kettle, so it starts where it clears the lip."""
+    (x0, y0), (x1, y1) = ends
+    apex = KETTLE_TOP + 14
+    points = []
+    for i in range(41):
+        t = i / 40
+        z = KETTLE_TOP - 4 + (apex - KETTLE_TOP + 4) * math.sin(math.pi * t)
+        if t < 0.5 and z < KETTLE_TOP + 0.5:
+            continue
+        px, py = pzart.project(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z)
+        points.append((px * SS, py * SS))
+    draw.line(points, fill=shade(IRON, 0.85), width=int(1.2 * SS), joint="curve")
+    hx, hy = pzart.project(0, 0, apex)
+    bx, by = pzart.project(0, 0, BAR_Z)
+    draw.line([(hx * SS, (hy - 3) * SS), (bx * SS, by * SS)], fill=shade(IRON, 0.9), width=int(1.0 * SS))
+    draw.arc(box(hx, hy - 1.2, 2.0, 2.0), 300, 200, fill=shade(IRON, 1.25), width=int(1.0 * SS))
+
+
+def steam():
+    """Three wisps rising off the kettle, soft."""
+    layer = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, KETTLE_TOP)
     for dx, height, phase in ((-9, 34, 0.0), (1, 44, 1.7), (10, 28, 3.1)):
         for i in range(26):
             t = i / 25
@@ -294,20 +456,18 @@ def steam():
 
 
 def paint_hearth(look, face):
-    rng = random.Random(60 + face)
-    side = FACES[face]
-    light = {"S": 1.0, "E": 0.72}
-    layer = pzart.new_layer(SS)
+    """The body with its hole, the far post, the kettle, then the near post, the bar and the bail in front of it."""
+    light = 1.0 if FACES[face] == "S" else 0.85
+    layer = body(face, True)
+    back, near = post_points(face)
+    paint_post(ImageDraw.Draw(layer), back[0], back[1], light)
+    kettle, ends = paint_kettle(look, face)
+    layer.alpha_composite(kettle)
     draw = ImageDraw.Draw(layer)
-    for name in ("S", "E"):
-        fieldstone(draw, name, random.Random(70 + (name == "E")), light[name])
-    soot(layer, side)
-    draw = ImageDraw.Draw(layer)
-    mouth(draw, side, rng, light[side])
-    render_top(draw)
-    layer = pzart.darken_down(layer, pzart.FOOT[1] - TOP * 0.5, pzart.FOOT[1] + 30, FOOT_SHADE, SS)
-    paint_copper(layer, look, random.Random(80 + face))
-    tile = pzart.hard_edges(pzart.weather(shrink(layer), random.Random(90 + face), WEATHER).convert("RGBA"))
+    paint_post(draw, near[0], near[1], light)
+    paint_bar(draw, face)
+    paint_bail(draw, ends)
+    tile = pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
     if look == "Hot":
         tile.alpha_composite(shrink(steam()))
     return tile
@@ -316,42 +476,42 @@ def paint_hearth(look, face):
 # --- The fire's glow ---------------------------------------------------------------------------------------------
 
 def paint_glow(kind, face):
-    """Firelight in the mouth, brightest on the bed of embers and fading up into the arch, a warm halo on the stone
-    round it and a little light spilt on the floor in front. Banked: a few embers glowing through the ash, no more."""
-    side = FACES[face]
-    rng = random.Random(100 + face + (10 if kind == "Banked" else 0))
+    """The Hearth's overlay, which the game draws over the whole object, so the kettle's outline is cut out of it:
+    the door's vents (the Firebox's glow, with no leak: the hole is the flue), firelight on the stone round the hole,
+    flames curling up round the kettle's belly and a warm rim along its bottom edge. Banked: a dull red rim, a faint
+    glow, no flame."""
     lit = kind == "Lit"
-    layer = pzart.new_layer(SS)
-    inner = pzart.new_layer(SS)
-    draw = ImageDraw.Draw(inner)
-    draw.polygon(arch_points(side, MOUTH_W - 0.01), fill=(255, 120, 30, 255) if lit else (120, 30, 10, 255))
-    for _ in range(40 if lit else 14):
-        x, y = face_px(side, H + rng.uniform(-MOUTH_W * 0.9, MOUTH_W * 0.9), MOUTH_SILL + rng.uniform(0, 3.5 if lit else 1.8))
-        colours = [(255, 214, 90, 255), (255, 170, 50, 255), (200, 60, 20, 255)] if lit else [(230, 90, 30, 255), (160, 40, 15, 255)]
-        draw.ellipse([x - 0.75 * SS, y - 0.5 * SS, x + 0.75 * SS, y + 0.5 * SS], fill=rng.choice(colours))
-    top = face_px(side, H, MOUTH_SPRING + MOUTH_W * FACE_LEN * ARCH_RISE)[1]
-    bottom = face_px(side, H, MOUTH_SILL)[1]
-    fade = Image.new("L", inner.size, 0)
-    fade_draw = ImageDraw.Draw(fade)
-    for i in range(32):
-        t = i / 31
-        y = top + (bottom - top) * t
-        reach = 60 + 195 * t ** 0.8 if lit else 255 * t ** 2.5
-        fade_draw.rectangle([0, y, inner.width, y + (bottom - top) / 31 + 1], fill=int(reach))
-    fade_draw.rectangle([0, bottom, inner.width, inner.height], fill=255)
-    inner.putalpha(ImageChops.multiply(inner.getchannel("A"), fade))
+    glow = paint_firebox_glow("LitFlue" if lit else "BankedFlue", face)
+    kettle, _ = paint_kettle("Empty", face)
+    mask = kettle.getchannel("A")
+    fire = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(fire)
+    cx, cy = pzart.project(0, 0, TOP + CAP)
+    krx, kry = ellipse_r(kettle_radius(0.12))
+    draw.ellipse(box(cx, cy, krx + 4, kry + 3), fill=FIRE_GLOW + (70 if lit else 30,))
     if lit:
-        spill = pzart.new_layer(SS)
-        sx, sy = face_px(side, H, 0)
-        ImageDraw.Draw(spill).ellipse(box(sx / SS + (-8 if side == "S" else 8), sy / SS + 6, 16, 7), fill=(255, 150, 60, 70))
-        layer.alpha_composite(spill.filter(ImageFilter.GaussianBlur(4 * SS)))
-    halo = pzart.new_layer(SS)
-    hx, hy = face_px(side, H, (MOUTH_SILL + MOUTH_SPRING) / 2)
-    ImageDraw.Draw(halo).ellipse(box(hx / SS, hy / SS, 13 if lit else 8, 11 if lit else 5),
-                                 fill=(255, 130, 50, 60 if lit else 30))
-    layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(3 * SS)))
-    layer.alpha_composite(inner)
-    return shrink(layer)
+        rng = random.Random(300 + face)
+        brx, _ = ellipse_r(KETTLE_R)
+        for side in (-1, 1):
+            for k in range(4):
+                x0 = cx + side * brx * rng.uniform(0.82, 1.0)
+                y0 = cy + rng.uniform(-1.5, 1.5)
+                height = rng.uniform(9, 16)
+                for i in range(18):
+                    t = i / 17
+                    x = x0 + side * (1.5 + 3.0 * t) * t + math.sin(t * 6 + k) * 0.7
+                    draw.ellipse(box(x, y0 - height * t, 2.2 * (1 - t) + 0.5, 1.5),
+                                 fill=(255, 190 - int(90 * t), 70, int(245 * (1 - t) ** 0.8)))
+    fire = fire.filter(ImageFilter.GaussianBlur(0.9 * SS))
+    fire.putalpha(ImageChops.multiply(fire.getchannel("A"), ImageChops.invert(mask)))
+    # The rim: the kettle's own pixels with no kettle a few px under them, its bottom edge.
+    rim = ImageChops.subtract(mask, ImageChops.offset(mask, 0, -(3 if lit else 2) * SS))
+    rim = ImageChops.multiply(rim.filter(ImageFilter.GaussianBlur(0.8 * SS)), mask)
+    edge = Image.new("RGBA", fire.size, FIRE_GLOW + (0,) if lit else (170, 50, 20, 0))
+    edge.putalpha(rim.point(lambda v: int(v * (0.8 if lit else 0.3))))
+    fire.alpha_composite(edge)
+    glow.alpha_composite(shrink(fire))
+    return glow
 
 
 # --- The Firebox -------------------------------------------------------------------------------------------------
@@ -481,67 +641,53 @@ def flue(layer, face, look, rng):
 
 
 def paint_firebox(look, face):
-    with shape(FIREBOX_SHAPE):
-        rng = random.Random(160 + face)
-        side = FACES[face]
-        light = {"S": 1.0, "E": 0.72}
-        layer = pzart.new_layer(SS)
-        draw = ImageDraw.Draw(layer)
-        for name in ("S", "E"):
-            fieldstone(draw, name, random.Random(170 + (name == "E")), light[name])
-        soot(layer, side)
-        draw = ImageDraw.Draw(layer)
-        mouth(draw, side, rng, light[side])
-        door(draw, side, random.Random(175 + face), light[side])
-        render_top(draw)
-        layer = pzart.darken_down(layer, pzart.FOOT[1] - TOP * 0.5, pzart.FOOT[1] + 30, FOOT_SHADE, SS)
-        flue(layer, face, look, random.Random(180 + face))
-        kind, _, side = look.partition("_")
-        if kind == "Stones":
-            ground = pzart.new_layer(SS)
-            trench(ground, face, side, random.Random(185 + face))
-            dx, dy = FLUE_SIDES[FACES[face]][side]
-            if dx + dy > 0:
-                layer.alpha_composite(ground)      # in front of the stone
-            else:
-                ground.alpha_composite(layer)      # behind it
-                layer = ground
-        return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
+    layer = body(face, False)
+    flue(layer, face, look, random.Random(180 + face))
+    kind, _, side = look.partition("_")
+    if kind == "Stones":
+        ground = pzart.new_layer(SS)
+        trench(ground, face, side, random.Random(185 + face))
+        dx, dy = FLUE_SIDES[FACES[face]][side]
+        if dx + dy > 0:
+            layer.alpha_composite(ground)      # in front of the stone
+        else:
+            ground.alpha_composite(layer)      # behind it
+            layer = ground
+    return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
 
 
 def paint_firebox_glow(kind, face):
     """Firelight through the door's vents, a little round its edges and spilt under it; banked, the vents a dull red.
     With no flue joined, smoke leaks from round the door and climbs the stone."""
-    with shape(FIREBOX_SHAPE):
-        side = FACES[face]
-        lit = kind.startswith("Lit")
-        layer = pzart.new_layer(SS)
-        if not kind.endswith("Flue"):
-            smoke = pzart.new_layer(SS)
-            draw = ImageDraw.Draw(smoke)
-            rng = random.Random(200 + face + (10 if lit else 0))
-            for k in range(3):
-                u0, phase = H + (k - 1) * 0.07, rng.uniform(0, 3)
-                for i in range(22):
-                    t = i / 21
-                    x, y = face_px(side, u0 + 0.03 * math.sin(phase + t * 4), MOUTH_SPRING + 4 + (TOP + 34) * t)
-                    r = (1.6 + 4 * t) * SS
-                    draw.ellipse([x - r, y - r * 0.8, x + r, y + r * 0.8],
-                                 fill=SMOKE + (int((150 if lit else 100) * (1 - t) ** 1.1),))
-            layer.alpha_composite(smoke.filter(ImageFilter.GaussianBlur(1.6 * SS)))
-        halo = pzart.new_layer(SS)
-        hx, hy = face_px(side, H, (MOUTH_SILL + MOUTH_SPRING) / 2)
-        ImageDraw.Draw(halo).ellipse(box(hx / SS, hy / SS, 9 if lit else 6, 7 if lit else 4),
-                                     fill=(255, 130, 50, 40 if lit else 18))
-        layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(3 * SS)))
-        draw = ImageDraw.Draw(layer)
-        if lit:
-            face_quad(draw, side, H - MOUTH_W + 0.02, H + MOUTH_W - 0.02, MOUTH_SILL - 0.2, MOUTH_SILL + 0.5, (255, 150, 50, 200))
-        for u, z, rx, ry in door_vents(side):
-            x, y = face_px(side, u, z)
-            draw.ellipse([x - rx * SS, y - ry * SS, x + rx * SS, y + ry * SS],
-                         fill=(255, 190, 70, 255) if lit else (170, 50, 18, 255))
-        return shrink(layer)
+    side = FACES[face]
+    lit = kind.startswith("Lit")
+    layer = pzart.new_layer(SS)
+    if not kind.endswith("Flue"):
+        smoke = pzart.new_layer(SS)
+        draw = ImageDraw.Draw(smoke)
+        rng = random.Random(200 + face + (10 if lit else 0))
+        for k in range(3):
+            u0, phase = H + (k - 1) * 0.07, rng.uniform(0, 3)
+            for i in range(22):
+                t = i / 21
+                x, y = face_px(side, u0 + 0.03 * math.sin(phase + t * 4), MOUTH_SPRING + 4 + (TOP + 34) * t)
+                r = (1.6 + 4 * t) * SS
+                draw.ellipse([x - r, y - r * 0.8, x + r, y + r * 0.8],
+                             fill=SMOKE + (int((150 if lit else 100) * (1 - t) ** 1.1),))
+        layer.alpha_composite(smoke.filter(ImageFilter.GaussianBlur(1.6 * SS)))
+    halo = pzart.new_layer(SS)
+    hx, hy = face_px(side, H, (MOUTH_SILL + MOUTH_SPRING) / 2)
+    ImageDraw.Draw(halo).ellipse(box(hx / SS, hy / SS, 9 if lit else 6, 7 if lit else 4),
+                                 fill=(255, 130, 50, 40 if lit else 18))
+    layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(3 * SS)))
+    draw = ImageDraw.Draw(layer)
+    if lit:
+        face_quad(draw, side, H - MOUTH_W + 0.02, H + MOUTH_W - 0.02, MOUTH_SILL - 0.2, MOUTH_SILL + 0.5, (255, 150, 50, 200))
+    for u, z, rx, ry in door_vents(side):
+        x, y = face_px(side, u, z)
+        draw.ellipse([x - rx * SS, y - ry * SS, x + rx * SS, y + ry * SS],
+                     fill=(255, 190, 70, 255) if lit else (170, 50, 18, 255))
+    return shrink(layer)
 
 
 # --- Menu icons --------------------------------------------------------------------------------------------------
@@ -557,53 +703,43 @@ def icon_box(cx, cy, rx, ry):
 
 
 def copper_icon(full):
-    """The copper seen from the side, for the Hearth's menus: a hammered bowl with a riveted seam, a rolled lip
-    catching the light from the left and a touch of verdigris; full, a skin of milk inside. Drawn at ICON_SS times
-    the size, shrunk, then given a dark one-pixel outline so it reads on the menu's dark strip."""
+    """The Hearth's kettle from the side, for its menus: the Alpine belly sooted black below and blending into bright
+    copper at the shoulder, a rolled lip catching the light from the left and the iron bail over it; full, a skin of
+    milk in its mouth. Drawn at ICON_SS times the size, shrunk, then given a dark one-pixel outline so it reads on
+    the menu's dark strip."""
     n, s = MENU_ICON * ICON_SS, ICON_SS
     icon = Image.new("RGBA", (n, n), (0, 0, 0, 0))
     draw = ImageDraw.Draw(icon)
-    cx, rx, top, ry, depth = n / 2, 14.2 * s, 11 * s, 4.2 * s, 15 * s
-    for x in range(int(cx - rx), int(cx + rx) + 1):
-        u = (x - cx) / rx
-        if abs(u) > 1:
-            continue
-        across = math.sqrt(1 - u * u)
-        light = 0.55 + 0.75 * max(0.0, math.cos((u + 0.45) * 1.6)) ** 1.5
-        draw.line([(x, top + ry * across - 2), (x, top + depth * across ** 0.8 + ry * 0.6 * across)],
-                  fill=shade(ICON_METAL, light))
-    rng = random.Random(3)
-    for _ in range(26):
-        u, v = rng.uniform(-0.85, 0.85), rng.uniform(0.25, 0.85)
-        x, y = cx + u * rx, top + ry + v * depth * math.sqrt(1 - u * u) * 0.8
-        draw.ellipse(icon_box(x, y, 1.2 * s, 0.7 * s), fill=shade(ICON_METAL, rng.uniform(0.85, 1.25)))
-    for i in range(7):
-        u = -0.8 + i * 0.27
-        x, y = cx + u * rx, top + ry * 0.4 + depth * 0.42 * math.sqrt(1 - u * u)
-        draw.ellipse(icon_box(x, y, 0.9 * s, 0.8 * s), fill=shade(ICON_METAL, 0.5))
-        draw.ellipse(icon_box(x - 0.2 * s, y - 0.25 * s, 0.4 * s, 0.35 * s), fill=shade(METAL_LIT, 1.3))
-    for _ in range(6):
-        u = rng.uniform(-0.9, 0.9)
-        x, y = cx + u * rx, top + ry * math.sqrt(1 - u * u) + rng.uniform(0.8, 2.0) * s
-        draw.ellipse(icon_box(x, y, 0.9 * s, 0.45 * s), fill=VERDIGRIS + (150,))
-    draw.ellipse(icon_box(cx, top, rx, ry), fill=shade(ICON_METAL, 0.35))
-    draw.ellipse(icon_box(cx, top + 0.2 * s, rx - 1.6 * s, ry - 0.8 * s), fill=shade(ICON_METAL, 0.55))
-    if full:
-        draw.ellipse(icon_box(cx, top + 0.45 * s, rx - 2.4 * s, ry - 1.35 * s), fill=MILK + (255,))
-    else:
-        draw.ellipse(icon_box(cx - s, top + 0.7 * s, rx - 4 * s, ry - 1.5 * s), fill=shade(ICON_METAL, 0.3))
+    cx, bottom, height, widest = n / 2, 30 * s, 19 * s, 14.5 * s
+    top = bottom - height
+    for row in range(int(height) + 1):
+        t = row / height
+        half = widest * kettle_radius(t) / KETTLE_R
+        y = bottom - row
+        for x in range(int(cx - half), int(cx + half) + 1):
+            u = (x - cx) / half
+            light = 0.55 + 0.8 * max(0.0, math.cos((u + 0.45) * 1.6)) ** 1.5
+            sooted = soot_share(t, math.pi / 2 - u, 1.3)
+            colour = tuple(int(c0 * (1 - sooted) + c1 * sooted)
+                           for c0, c1 in zip(shade(ICON_METAL, light)[:3], shade(KETTLE_SOOT, 0.6 + 0.5 * light)[:3]))
+            draw.point((x, y), fill=colour + (255,))
+    lip_half, ry = widest * PROFILE[-1][1], 3.2 * s
+    draw.ellipse(icon_box(cx, top, lip_half, ry), fill=shade(ICON_METAL, 0.35))
+    draw.ellipse(icon_box(cx, top + 0.2 * s, lip_half - 1.4 * s, ry - 0.8 * s),
+                 fill=MILK + (255,) if full else shade(ICON_METAL, 0.3))
     for i in range(160):
         a = 2 * math.pi * i / 160
         light = 0.7 + 0.8 * max(0.0, math.cos(a - 2.4)) ** 2
-        draw.ellipse(icon_box(cx + (rx - 0.6 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.3 * s, 0.9 * s),
+        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.2 * s, 0.8 * s),
                      fill=shade(ICON_METAL, light))
     for i in range(30):
         a = 2.3 + 0.9 * i / 29
-        draw.ellipse(icon_box(cx + (rx - 0.6 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s,
-                         0.7 * s, 0.35 * s), fill=SPECULAR + (255,))
-    shine = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-    ImageDraw.Draw(shine).ellipse([cx - rx * 0.62, top + ry + s, cx - rx * 0.38, top + ry + 9 * s], fill=SPECULAR + (110,))
-    icon.alpha_composite(shine.filter(ImageFilter.GaussianBlur(1.5 * s)))
+        draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s,
+                              0.7 * s, 0.35 * s), fill=SPECULAR + (255,))
+    bail = [(cx + lip_half * math.cos(math.pi * i / 40), top - 1 * s - 9 * s * math.sin(math.pi * i / 40)) for i in range(41)]
+    draw.line(bail, fill=shade(IRON, 1.3), width=int(1.3 * s), joint="curve")
+    for side in (-1, 1):
+        draw.rectangle(icon_box(cx + side * lip_half, top + 0.5 * s, 0.9 * s, 1.6 * s), fill=shade(IRON, 1.1))
     return outlined(icon.resize((MENU_ICON, MENU_ICON), Image.LANCZOS))
 
 

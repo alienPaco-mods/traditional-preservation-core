@@ -26,8 +26,10 @@ end
 
 -- What building each of the core's stations takes.
 local KITS = {
-    hearth = { about = "a mason's trowel, 12 clay bricks, 4 clay and a copper sheet, to build a Hearth (Masonry 2)",
-        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 12, ["Base.Clay"] = 4, ["Base.CopperSheet"] = 1 },
+    hearth = { about = "a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook, "
+        .. "to build a Hearth (Masonry 2)",
+        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2, ["Base.CopperSheet"] = 2,
+        ["Base.IronBar"] = 3, ["Base.LargeHook"] = 1 },
     firebox = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)",
         ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2 },
 }

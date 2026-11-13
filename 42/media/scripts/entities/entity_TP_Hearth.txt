@@ -2,8 +2,9 @@ module TraditionalPreservationCore
 {
     entity TP_Hearth
     {
-        /* A low stone oven with a copper set into its top. OnCreate swaps the built tile for a vanilla fireplace
-           (fuel, lighting, the firebox to cook in); the copper's fluid lives in the fireplace's modData. */
+        /* A copper kettle hung from an iron gallows over a low stone firebox. OnCreate swaps the built tile for a
+           vanilla fireplace (fuel, lighting, the firebox to cook in); the copper's fluid lives in the fireplace's
+           modData. */
         component UiConfig
         {
             xuiSkin = default,
@@ -30,7 +31,8 @@ module TraditionalPreservationCore
                 }
             }
         }
-        /* Fired bricks laid in clay, and a copper sheet beaten into the vessel. Masonry: it is laid brick. */
+        /* Fired bricks laid in clay, two copper sheets beaten into the kettle, bar stock for the gallows' posts and bar
+           (set in the mortar: no welding) and a Large Hook. Masonry: it is laid brick. */
         component CraftRecipe
         {
             timedAction = Make_With_Brick_Low,
@@ -42,9 +44,11 @@ module TraditionalPreservationCore
             inputs
             {
                 item 1 tags[base:masonstrowel] mode:keep flags[Prop1;MayDegradeLight],
-                item 12 [Base.ClayBrick],
-                item 4 [Base.Clay] flags[DontRecordInput],
-                item 1 [Base.CopperSheet],
+                item 8 [Base.ClayBrick],
+                item 2 [Base.Clay] flags[DontRecordInput],
+                item 2 [Base.CopperSheet],
+                item 3 [Base.IronBar;Base.MetalBar;Base.MetalPipe;Base.SteelBar],
+                item 1 [Base.LargeHook],
             }
         }
     }

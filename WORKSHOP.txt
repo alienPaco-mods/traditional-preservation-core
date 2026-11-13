@@ -6,7 +6,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 
 [h2]What it adds[/h2]
 [list]
-[*][b]The Hearth[/b]: a stone fireplace with a 60 L copper set in its top, for heating any fluid
+[*][b]The Hearth[/b]: a 60 L copper kettle hung from an iron gallows over a low stone firebox, for heating any fluid
 [*][b]The Firebox[/b]: a low stone firebox with an iron door, for heat and cooking
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Eight kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, in a shed, by a fire and by banked embers
@@ -14,7 +14,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [/list]
 
 [h2]The Hearth[/h2]
-Build menu, Masonry. Masonry 2: 12 Clay Bricks, 4 Clay, 1 Copper Sheet and a mason's trowel (kept).
+Build menu, Masonry. Masonry 2: 8 Clay Bricks, 2 Clay, 2 Copper Sheets, 3 Iron Bars (or Metal Bars, Metal Pipes, Steel Bars), 1 Large Hook and a mason's trowel (kept).
 
 It is a working fireplace: add fuel and light it as you would any other, cook in its firebox, warm the room. Its right-click menu also has:
 [list]

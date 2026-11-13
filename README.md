@@ -12,9 +12,9 @@ Copy this folder's `42/` to `~/Zomboid/mods/TraditionalPreservationCore/42` (`tp
 
 ## The Hearth
 
-A waist-high block of fieldstone with an arched fire mouth and a copper pan set in its top. It is a vanilla fireplace (the built tile is swapped for an `IsoFireplace`), so vanilla gives it Add Fuel, lighting, burn time, room heat and a firebox that cooks. The copper is the mod's.
+A copper kettle hung from an iron gallows (two posts and a bar) on a Large Hook, nearly on a small round hole in the top of a knee-high fieldstone firebox with an iron door: an Alpine cheese copper. It holds 60 L, though it is drawn roomier. It is a vanilla fireplace (the built tile is swapped for an `IsoFireplace`), so vanilla gives it Add Fuel, lighting, burn time, room heat and a firebox that cooks. The copper is the mod's.
 
-**Build** (Build menu, Masonry; Masonry 2; 10 Masonry XP): 12 Clay Bricks, 4 Clay, 1 Copper Sheet and a mason's trowel (kept). Two facings.
+**Build** (Build menu, Masonry; Masonry 2; 10 Masonry XP): 8 Clay Bricks, 2 Clay, 2 Copper Sheets, 3 Iron Bars (or Metal Bars, Metal Pipes, Steel Bars), 1 Large Hook and a mason's trowel (kept). Two facings. The posts are set in the mortar, so no welding.
 
 **Right-click it.** Vanilla's Hearth submenu gains:
 
@@ -52,7 +52,7 @@ A waist-high block of fieldstone with an arched fire mouth and a copper pan set 
 | 20 L | about 2.25 hours |
 | 60 L (full) | about 3.2 hours |
 
-The copper shows empty, full or steaming in the Hearth's sprite. The fire mouth glows while the fire burns and shows dull embers when it is banked.
+The copper shows empty, full or steaming in the Hearth's sprite. While the fire burns, the door's vents and the hole glow and flames curl up round the kettle; banked, they show dull embers.
 
 Fluid filled from the copper leaves at the copper's heat. Vanilla cools a carried container to room heat within seconds, unless a mod keeps its own record (Dairy's milk does).
 
@@ -82,7 +82,7 @@ A Hearth can't be picked up while its fire burns or its copper holds anything; t
 
 ## The Firebox
 
-The Hearth's fire without the copper: the same fieldstone and lime top, knee high, with an iron door on its arched mouth. Its fire shows through the door's vents. It is a vanilla fireplace as the Hearth is, so it lights, burns, cooks in its firebox and warms stations within 2 tiles ("by a fire") the same way.
+The Hearth without its kettle and gallows: the same knee-high fieldstone, lime top and iron door on its arched mouth, with no hole in its top. Its fire shows through the door's vents. It is a vanilla fireplace as the Hearth is, so it lights, burns, cooks in its firebox and warms stations within 2 tiles ("by a fire") the same way.
 
 **Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 8 Clay Bricks, 2 Clay and a mason's trowel (kept). Two facings.
 

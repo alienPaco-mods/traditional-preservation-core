@@ -1,4 +1,4 @@
--- Traditional Preservation core: the Hearth, a low stone oven with a copper set in its top, shared by every TP mod.
+-- Traditional Preservation core: the Hearth, a copper kettle hung over a low stone firebox, shared by every TP mod.
 -- The built tile is swapped for a vanilla fireplace, as the Barrel Oven's is (BuildRecipeCode.barrelOven.OnCreate),
 -- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The copper holds one fluid at
 -- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C (water boils, and boils clean) while the fire burns and cools to the room when it is out. Its state is a plain

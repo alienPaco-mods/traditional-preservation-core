@@ -7,7 +7,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 12 clay bricks, 4 clay and a copper sheet) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature, a fire's under an open roof and in the open too. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.setWeather(c, season, ground)` | Pretends the weather for a test that wants a cold month or a warm day: the day's temperature `c` (the engine's own override, the one the debug menu's Climate debugger sets), the season's mean (`c` if left out) and the ground's (left alone if left out). The mods read it at their next ten-minute reading, so run the clock; `TPC.weather()` shows it then. The season drifts towards the day again as it would. `TPC.setWeather()` ends it. Not kept through a load. |
@@ -24,4 +24,4 @@ These console commands load only when the game runs in **debug mode** (launch op
 
 **Typical check of the Firebox:** `TPC.kit("firebox")`, build one, `TPC.fuel()`, light it: the glow shows through the door's vents and smoke leaks round the door. `TPC.flue("Pipe", "Left")` shows a joined flue and the smoke stops.
 
-**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the mouth shows dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
+**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents and the hole show dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.

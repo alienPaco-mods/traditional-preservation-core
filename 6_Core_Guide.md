@@ -38,7 +38,7 @@ On its own it adds only those two, and changes no vanilla recipe, item or loot.
 
 | Step | You need | You get |
 |---|---|---|
-| Build a **Hearth** (Build menu, Masonry) | 12 Clay Bricks, 4 Clay, 1 Copper Sheet, a mason's trowel (kept). Masonry 2 | A fireplace with a 60 L copper. 10 Masonry XP |
+| Build a **Hearth** (Build menu, Masonry) | 8 Clay Bricks, 2 Clay, 2 Copper Sheets, 3 Iron Bars (or Metal Bars, Metal Pipes, Steel Bars), 1 Large Hook, a mason's trowel (kept). Masonry 2 | A fireplace with a 60 L copper. 10 Masonry XP |
 | **Add Fuel** and **Light** it | Firewood and a lighter, as any fireplace | Fire, room heat, a firebox that cooks |
 | **Pour into the Copper** | Any one fluid, up to 60 L | The copper heating towards 95 C |
 | Wait | About 1.5 hours for 10 L | The copper **steaming** at 85 C |
@@ -49,7 +49,9 @@ On its own it adds only those two, and changes no vanilla recipe, item or loot.
 
 ## 3. The Hearth
 
-A waist-high block of split fieldstone with a lime-rendered top, an arched fire mouth on the side it faces, and a hammered copper pan set in it. It has two facings.
+A copper kettle, black with soot below its shoulder, hanging by its bail from a Large Hook on an iron gallows: two posts set in the stone and a bar across. Under it, nearly touching, a knee-high firebox of split fieldstone with a lime-rendered top, closed but for a small round hole in its centre, and an iron door on the side it faces. It has two facings.
+
+> *Margin note:* this is the cheese copper of the Alpine huts and Balkan dairies, where a kettle of 100 L and more swung on a crane over an open fire. The Hearth's holds 60 L, roomy for its milk.
 
 To the game it is a fireplace, so everything a fireplace does, it does: add fuel, light it, put it out, cook in its firebox, warm the room. The copper is the new part.
 
@@ -119,7 +121,7 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 
 ## 5. Banking the Fire
 
-**Bank the Fire** rakes a lit fire down under its own ash. The flames go out and the mouth shows dull embers.
+**Bank the Fire** rakes a lit fire down under its own ash. The flames go out and the door's vents and the hole show dull embers.
 
 | | Lit | Banked |
 |---|---|---|
@@ -141,11 +143,11 @@ The embers keep burning while you're away, at their third. **Put out Fire** work
 
 ## 6. The Firebox
 
-The Hearth without its copper: the same fieldstone and lime top, built knee high, with an **iron door** over the fire mouth. You see the fire only through the door's vents, three draught holes low down and two slits under the arch.
+The Hearth without its kettle and gallows: the same knee-high fieldstone, lime top and **iron door** over the fire mouth, with no hole in its top. You see the fire only through the door's vents, three draught holes low down and two slits under the arch.
 
 | | Hearth | Firebox |
 |---|---|---|
-| Build (Masonry 2, trowel kept) | 12 Clay Bricks, 4 Clay, 1 Copper Sheet | **8 Clay Bricks, 2 Clay** |
+| Build (Masonry 2, trowel kept) | 8 Clay Bricks, 2 Clay, 2 Copper Sheets, 3 Iron Bars, 1 Large Hook | **8 Clay Bricks, 2 Clay** |
 | Masonry XP | 10 | 8 |
 | Copper | 60 L | none |
 | Firebox cooks like an oven | yes | yes |
@@ -253,8 +255,8 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 | | |
 |---|---|
-| Bricks and clay | 12 Clay Bricks, 4 Clay |
-| Metal | 1 Copper Sheet |
+| Bricks and clay | 8 Clay Bricks, 2 Clay |
+| Metal | 2 Copper Sheets (the kettle), 3 Iron Bars, Metal Bars, Metal Pipes or Steel Bars (the gallows), 1 Large Hook |
 | Skill | Masonry 2 |
 | Holds | 60 L |
 | Wood for a full copper | about 2¾ hours of fire to the steam, 3¼ to boil water clean |
@@ -313,7 +315,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 12 clay bricks, 4 clay and a copper sheet) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.setWeather(c, season, ground)` | Pretends the weather for a test that wants a cold month or a warm day: the day's temperature `c` (the engine's own override, the one the debug menu's Climate debugger sets), the season's mean (`c` if left out) and the ground's (left alone if left out). The mods read it at their next ten-minute reading, so run the clock; `TPC.weather()` shows it then. The season drifts towards the day again as it would. `TPC.setWeather()` ends it. Not kept through a load. |
@@ -330,7 +332,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 **Typical check of the Firebox:** `TPC.kit("firebox")`, build one, `TPC.fuel()`, light it: the glow shows through the door's vents and smoke leaks round the door. `TPC.flue("Pipe", "Left")` shows a joined flue and the smoke stops.
 
-**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the mouth shows dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
+**Typical check of banking:** with the fire lit and `TPC.copper(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents and the hole show dull embers; Hearth Info reads Banked, the fuel time triples, and the copper settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
 
 ---
 

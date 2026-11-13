@@ -1,10 +1,10 @@
 {
-  "TP_Hearth": "Hearth",
-  "TraditionalPreservationCore.TP_Hearth": "Hearth",
-  "TPHearth": "Hearth",
-  "TP_Firebox": "Firebox",
-  "TraditionalPreservationCore.TP_Firebox": "Firebox",
-  "TPFirebox": "Firebox",
+  "TP_Hearth": "Stone Hearth (Copper)",
+  "TraditionalPreservationCore.TP_Hearth": "Stone Hearth (Copper)",
+  "TPHearth": "Stone Hearth (Copper)",
+  "TP_Firebox": "Stone Hearth",
+  "TraditionalPreservationCore.TP_Firebox": "Stone Hearth",
+  "TPFirebox": "Stone Hearth",
   "Smokehouse_Chamber": "Smokehouse",
   "TraditionalPreservationCore.Smokehouse_Chamber": "Smokehouse",
   "Smokehouse": "Smokehouse"

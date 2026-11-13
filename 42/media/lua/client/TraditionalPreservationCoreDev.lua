@@ -14,13 +14,13 @@ function TPC.help()
     say("TPC.here()           which place you're standing in, and its temperature")
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
-    say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default), \"firebox\" (Masonry 2), \"smokehouse\" (Woodwork 3) or \"flue\" (both flue kits and their tools). TPC.kit(\"?\") lists them")
+    say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default, the Stone Hearth (Copper)), \"firebox\" (the Stone Hearth, Masonry 2), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot(minutes)     bring its copper to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
-    say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
+    say("TPC.firebox()        the nearest Stone Hearth with nothing fitted within 2 tiles: fire, fuel, flue, hole look and the squares on its flue's sides")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Fireboxes beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
@@ -29,11 +29,13 @@ end
 -- What building each of the core's stations takes.
 local KITS = {
     hearth = { about = "a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook, "
-        .. "to build a Hearth (Masonry 2)",
+        .. "to build a Stone Hearth (Copper) (Masonry 2)",
         ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2, ["Base.CopperSheet"] = 2,
         ["Base.IronBar"] = 3, ["Base.LargeHook"] = 1 },
-    firebox = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)",
+    firebox = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Stone Hearth (Masonry 2)",
         ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2 },
+    hole = { about = "a Pot of Stew (stove food), an uncooked pie (oven food) and an empty Cooking Pot to fill with water",
+        ["Base.PotOfStew"] = 1, ["Base.PieWholeRaw"] = 1, ["Base.Pot"] = 1 },
     smokehouse = { about = "a hammer, 14 planks and 20 nails, to build a Smokehouse (Woodwork 3)",
         ["Base.Hammer"] = 1, ["Base.Plank"] = 14, ["Base.Nails"] = 20 },
     flue = { about = "both flue kits (2 Clay Pipe Segments, 3 Flat Stones, 3 Clay), a Mason's Trowel and a Shovel",
@@ -217,9 +219,11 @@ function TPC.firebox()
         local square = Hearth.flueSquare(firebox, side)
         table.insert(sides, string.format("%s %s", side, square and (square:getX() .. "," .. square:getY()) or "-"))
     end
-    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, flue %s %s; sides: %s", firebox:getX(), firebox:getY(),
+    local container = firebox:getContainer()
+    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, flue %s %s, hole %s; sides: %s", firebox:getX(), firebox:getY(),
         firebox:getZ(), Hearth.isBanked(firebox) and "banked" or firebox:isLit() and "lit" or "out", firebox:getFuelAmount(),
-        firebox:getSprite():getName(), tostring(state.flue), tostring(state.flueSide), table.concat(sides, ", ")))
+        firebox:getSprite():getName(), tostring(state.flue), tostring(state.flueSide),
+        Hearth.holeLook(container and container:getItems()), table.concat(sides, ", ")))
 end
 
 function TPC.flue(kind, side)

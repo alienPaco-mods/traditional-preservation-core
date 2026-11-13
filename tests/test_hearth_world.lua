@@ -129,24 +129,44 @@ cell.squares["5,6,0"] = nil
 for _ = 1, 200 do H.fire("OnTick") end
 check("its area unloaded, the embers' heat and light are taken away", count(cell.heat) == 0 and count(cell.lights) == 0)
 
--- The Firebox: the same fire, no copper; its tile follows its flue.
+-- The Stone Hearth with nothing fitted (the Firebox): the same fire, no copper; its tile follows its flue and hole.
 cell.squares["5,6,0"] = square
 local boxData = {}
-local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Hearth.fireboxSprite(nil, nil, 0)) }, { __index = fire })
+local boxItems = {}
+local boxContainer = setmetatable({ getItems = function() return H.list(boxItems) end }, { __index = container })
+local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Hearth.fireboxSprite(nil, nil, nil, 0)) }, { __index = fire })
 function box:getModData() return boxData end
+function box:getContainer() return boxContainer end
+local function food(fullType)
+    return { getFullType = function() return fullType end, getFluidContainer = function() return nil end }
+end
 World.track(box)
 World.update(box, 110)
-check("a lit Firebox is tracked, capped, with smoke round its door", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, 0) and boxData[Hearth.KEY].copper == nil)
+check("a lit Firebox is tracked, open, its smoke out of the hole", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Open", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Open", 0) and boxData[Hearth.KEY].copper == nil
+    and Hearth.isFirebox(box) and not Hearth.isHearth(box))
+boxItems[1] = food("Base.PieWholeRaw")
+World.update(box, 110)
+check("oven food in it: the lid, the smoke round the door", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Lid", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Lid", 0))
+boxItems[2] = food("Base.PotOfStew")
+World.update(box, 110)
+check("a stew too: the pot", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Pot", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Pot", 0))
 World.setFire(box, "bank", 110)
 check("it banks as the Hearth does", not box:isLit() and Hearth.isBanked(box) and count(cell.heat) >= 1
-    and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, 0))
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, "Pot", 0))
+boxItems[2] = nil
 Hearth.setFlue(boxData[Hearth.KEY], "Pipe", "Back")
 World.update(box, 111)
-check("its flue joined, its tile shows the pipe and the smoke goes up it", box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, true, "Pipe", 0))
+check("its flue joined, its tile shows the pipe and the lid, and the smoke goes up it",
+    box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, "Pipe", "Lid", 0))
+boxItems[1] = nil
+World.update(box, 111)
+check("joined and empty, the lid stays on", box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0))
 check("and it never grows a copper", boxData[Hearth.KEY].copper == nil and boxData[Hearth.KEY].ml == nil
-    and Hearth.attachmentOf(box) == nil and Hearth.canRemove(box) == false)
+    and boxData[Hearth.KEY].attached == nil and Hearth.attachmentOf(box) == nil and Hearth.canRemove(box) == false)
 World.setFire(box, "stoke", 111)
 
 -- The copper, fitted through the attachment registry
@@ -156,6 +176,8 @@ World.setFire(fire, "stoke", 120)
 local spec, copper = Hearth.attachmentOf(fire)
 check("a Hearth's attachment is the copper, its state under its id", spec == Hearth.attachment(Hearth.COPPER)
     and copper == modData[Hearth.KEY].copper and spec.heats ~= nil and spec.onFire ~= nil)
+check("known by its copper tile, it is noted as fitted", modData[Hearth.KEY].attached == Hearth.COPPER and Hearth.isHearth(fire)
+    and not Hearth.isFirebox(fire))
 check("the fire's own state stays outside the copper's", modData[Hearth.KEY].fireUntil ~= nil and copper.ml == nil)
 Hearth.pourInto(copper, "Water", 10000, 20, 120)
 H.setHours(120.5)

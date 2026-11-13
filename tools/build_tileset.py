@@ -36,7 +36,7 @@ from pzart import tint as shade  # noqa: E402
 MOD = "TraditionalPreservationCore"
 NAME = "traditionalpreservationcore"
 TILESET = NAME + "_01"
-COLUMNS, ROWS = 8, 8
+COLUMNS, ROWS = 8, 16
 PAGE_SIZE = 1024
 SS = 4  # supersampling
 
@@ -46,20 +46,27 @@ HEARTH_LOOKS = {"Empty": 0, "Full": 2, "Hot": 4}
 HEARTH = HEARTH_LOOKS["Empty"]
 # The fire mouth's glow, an overlay: lit, and banked (embers under ash, almost no light).
 GLOWS = {"Lit": 6, "Banked": 8}
-# The Firebox: the Hearth's stone, lower, with no copper and an iron door on its mouth. Its flue leaves its top:
-# capped (nothing joined to it), a clay pipe from its top, or a trench in the ground roofed with flat stones from its
-# foot, to the building on one side, never the door's (a mod
-# joins it, as Fuel Barrel picks the barrel's sprite by the generator's). Sides by facing, as world steps (+x east,
-# +y south), the same table as Hearth.FLUE_SIDES in Lua.
+# The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no copper and an
+# iron door on its mouth, and a stone-lined hole in its top (HOLE_D): a cooking source. What shows in the hole is a look
+# (Hearth.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
+# food only, or joined to a flue with nothing for the pot). Joined, its flue leaves for the building on one side,
+# never the door's: a clay pipe out of the stone's side low down, climbing past the top into the wall, or a trench
+# in the ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
+# generator's). Sides by facing, as world steps (+x east, +y south), the same table as Hearth.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
               "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
-FIREBOX_LOOKS = {"Capped": 10}
-for _kind in ("Pipe", "Stones"):
-    for _side in ("Back", "Left", "Right"):
-        FIREBOX_LOOKS[f"{_kind}_{_side}"] = 10 + 2 * len(FIREBOX_LOOKS)
-FIREBOX = FIREBOX_LOOKS["Capped"]
-# Its glow shows through the door's vents; capped, the smoke leaks round the door.
-FIREBOX_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30}
+# Tile numbers: the first seven looks take the Firebox's old 10-23, the rest run on after the Smokehouse's.
+FIREBOX_SLOTS = list(range(10, 24, 2)) + list(range(54, 128, 2))
+FIREBOX_LOOKS = {}
+for _look in ["Open", "Lid", "Pot"] + [f"{kind}_{side}_{hole}" for hole in ("Lid", "Pot") for kind in ("Pipe", "Stones")
+                                       for side in ("Back", "Left", "Right")]:
+    FIREBOX_LOOKS[_look] = FIREBOX_SLOTS[len(FIREBOX_LOOKS)]
+FIREBOX = FIREBOX_LOOKS["Open"]
+# Its glow shows through the door's vents. Under the lid with no flue the smoke leaks round the door (Lit, Banked);
+# joined, it goes up the flue (Flue); open, the fire shows in the hole and the smoke climbs out of it (Open); with the
+# pot in, the smoke curls up round the pot (Pot).
+FIREBOX_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30,
+                 "LitOpen": 46, "BankedOpen": 48, "LitPot": 50, "BankedPot": 52}
 
 # Colours.
 STONE = (158, 132, 104)
@@ -129,7 +136,7 @@ for look, base in FIREBOX_LOOKS.items():
         TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
                                             ("CustomName", "Firebox"), ("Facing", facing),
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
-                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Capped"))
+                                            ("container", "woodstove"), ("solidtrans", "")] + group(look, "Open"))
 
 IRON = (58, 54, 52)
 CLAY_PIPE = (172, 96, 64)
@@ -137,8 +144,12 @@ DAUB = (150, 124, 98)
 SMOKE = (150, 146, 140)
 FIRE_GLOW = (255, 150, 60)
 FLUE_R = 4.5                   # the flue's half width, px
-FLUE_RISE = 16                 # how far it climbs from the top to the wall, px
-FLUE_ELBOW = 9                 # of which straight up out of the top, before it turns towards the wall
+FLUE_RISE = 24                 # where the pipe enters the wall, px over the top
+PIPE_EXIT = 14                 # px up the stone where the pipe leaves its side
+PIPE_OUT = 0.43                # how far out from the middle it runs before climbing, in tiles
+HOLE_D = 0.09                  # the Stone Hearth's hole, in tiles (the user's pick "D", 2026-11-13)
+POT = (62, 62, 64)             # vanilla's forged pot: dark, mottled cast iron
+LID = (64, 64, 66)
 
 # The Smokehouse chamber (moved from Fish & Meat, 2026-11-13; drawn as it was there): a plank shed two tiles long,
 # the back half then the front half with the door, each face (chamber_index). Smokehouse.lua reads the numbers from
@@ -622,77 +633,155 @@ def trench(layer, face, side, rng):
         a = b
 
 
-def flue(layer, face, look, rng):
-    """The flue out of the top. Capped, a flat stone over the hole at the back; a clay pipe with collars climbing to
-    the wall on its side, bedded in clay where it leaves the top. A trench (Stones) leaves from the foot instead, so
-    the top is bare."""
+def back_pipe(face, side):
+    """The clay pipe out of the stone's side (Back, Left or Right): bedded in clay where it leaves the stone low down, a
+    short run out, an elbow, up past the top and into the wall at CHAMBER_FLUE_Z, two collars on the way. Returns the
+    layer and whether it is in front of the stone (towards the viewer)."""
+    layer = pzart.new_layer(SS)
     draw = ImageDraw.Draw(layer)
-    a0, z0 = H - 0.12, TOP + CAP
-    kind, _, side = look.partition("_")
-    if kind == "Stones":
-        return
-    dx, dy = FLUE_SIDES[FACES[face]][side or "Back"]
-
-    def out_px(along, z):
-        return tile_px(dx * along, dy * along, z)
-
-    if kind == "Capped":
-        x, y = out_px(a0, z0)
-        draw.ellipse([x - 5.5 * SS, y - 2.4 * SS, x + 5.5 * SS, y + 2.2 * SS], fill=shade(DARK, 1))
-        draw.polygon([(x - 6 * SS, y - 0.4 * SS), (x - 2 * SS, y - 3.2 * SS), (x + 5 * SS, y - 2.6 * SS),
-                      (x + 6.5 * SS, y + 0.2 * SS), (x + 2 * SS, y + 2.4 * SS), (x - 4 * SS, y + 1.8 * SS)],
-                     fill=shade(STONE, 1.05))
-        draw.polygon([(x - 4 * SS, y - 0.6 * SS), (x - 1 * SS, y - 2.4 * SS), (x + 4 * SS, y - 1.8 * SS),
-                      (x + 2 * SS, y + 0.6 * SS)], fill=shade(STONE, 1.2))
-        return
-    a1, z1 = 0.5, z0 + FLUE_RISE
-    steps = 56
-    # Straight up out of the top for the first part of the steps, then across to the wall: it reads on every side.
-    up = 0.3
-
-    def along(t):
-        if t < up:
-            return a0, z0 + 2 + (FLUE_ELBOW - 2) * t / up
-        u = (t - up) / (1 - up)
-        return a0 + (a1 - a0) * u, z0 + FLUE_ELBOW + (z1 - z0 - FLUE_ELBOW) * u
-
-    x, y = out_px(a0, z0)
-    draw.ellipse([x - (FLUE_R + 3) * SS, y - 3 * SS, x + (FLUE_R + 3) * SS, y + 2.5 * SS], fill=shade(DAUB, 0.9))
-    tones = [rng.uniform(0.82, 1.1) for _ in range(5)]
+    dx, dy = FLUE_SIDES[FACES[face]][side]
+    path = [(H, PIPE_EXIT), (PIPE_OUT, PIPE_EXIT), (PIPE_OUT, CHAMBER_FLUE_Z - 2), (0.5, CHAMBER_FLUE_Z)]
+    points = []
+    for (a0, z0), (a1, z1) in zip(path, path[1:]):
+        n = max(4, int(abs(a1 - a0) * 120 + abs(z1 - z0)))
+        points += [(a0 + (a1 - a0) * k / n, z0 + (z1 - z0) * k / n) for k in range(n)]
+    points.append(path[-1])
+    total = len(points)
     # Far end first: towards the viewer (south or east) the wall end is the near one.
-    order = range(steps + 1) if dx + dy > 0 else range(steps, -1, -1)
+    order = range(total) if dx + dy > 0 else range(total - 1, -1, -1)
     for i in order:
-        t = i / steps
-        x, y = out_px(*along(t))
-        r = FLUE_R if kind == "Pipe" else FLUE_R + 1.5
-        if kind == "Pipe":
-            collar = any(abs(t - c) < 0.025 for c in (0.42, 0.8))
-            r = r + (0.8 if collar else 0)
-            tone = 0.62 if collar else 0.78
-            draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, tone))
-            draw.ellipse([x - (r - 1.6) * SS, y - (r - 0.6) * 0.85 * SS, x + (r - 2.6) * SS, y + (r - 2.4) * 0.85 * SS],
-                         fill=shade(CLAY_PIPE, tone + 0.38))
-        else:
-            tone = tones[min(int(t * 5), 4)]
-            joint = any(abs(t - c) < 0.03 for c in (0.2, 0.4, 0.6, 0.8))
-            colour = MORTAR if joint else STONE
-            draw.rectangle([x - r * SS, y - r * SS, x + r * SS, y + r * SS], fill=shade(colour, 0.7 * tone))
-            draw.rectangle([x - r * SS, y - r * SS, x + r * SS, y - (r - 2.2) * SS], fill=shade(colour, 1.12 * tone))
-            draw.rectangle([x - r * SS, y - (r - 2.2) * SS, x - (r - 2.4) * SS, y + r * SS], fill=shade(colour, 0.95 * tone))
-    if kind == "Pipe":
-        x, y = out_px(a0, z0 + 2)
-        draw.ellipse([x - (FLUE_R + 2) * SS, y - 1.5 * SS, x + (FLUE_R + 2) * SS, y + 2.5 * SS], fill=shade(DAUB, 1.0))
+        a, z = points[i]
+        x, y = tile_px(dx * a, dy * a, z)
+        t = i / total
+        collar = any(abs(t - c) < 0.02 for c in (0.3, 0.75))
+        r = FLUE_R + (0.8 if collar else 0)
+        tone = 0.62 if collar else 0.78
+        draw.ellipse([x - r * SS, y - r * 0.85 * SS, x + r * SS, y + r * 0.85 * SS], fill=shade(CLAY_PIPE, tone))
+        draw.ellipse([x - (r - 1.6) * SS, y - (r - 0.6) * 0.85 * SS, x + (r - 2.6) * SS, y + (r - 2.4) * 0.85 * SS],
+                     fill=shade(CLAY_PIPE, tone + 0.38))
+    x, y = tile_px(dx * H, dy * H, PIPE_EXIT)
+    draw.ellipse([x - (FLUE_R + 2.5) * SS, y - (FLUE_R + 2) * SS, x + (FLUE_R + 2.5) * SS, y + (FLUE_R + 2) * SS],
+                 fill=shade(DAUB, 0.95))
+    return layer, dx + dy > 0
+
+
+HOLE_Z = TOP + CAP
+
+
+def lining(layer, rng):
+    """The hole: a ring of rough stones set in the render, sooted towards the inside, dark below."""
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, HOLE_Z)
+    rx, ry = ellipse_r(HOLE_D)
+    draw.ellipse(box(cx, cy + 0.5, rx + 4.2, ry + 2.6), fill=shade(MORTAR, 0.7))
+    stones = 11
+    for i in range(stones):
+        a = 2 * math.pi * (i + rng.uniform(-0.15, 0.15)) / stones
+        lit = 0.85 + 0.35 * max(0.0, math.cos(a - 2.3))
+        x, y = cx + (rx + 2.0) * math.cos(a), cy + (ry + 1.2) * math.sin(a)
+        colour = tuple(int(c * w) for c, w in zip(STONE, rng.choice([(1, 1, 1), (1.06, 1, 0.9), (0.94, 0.96, 1)])))
+        w, h = rng.uniform(2.4, 3.2), rng.uniform(1.3, 1.8)
+        draw.ellipse(box(x, y + 0.5, w, h), fill=shade(colour, lit * 0.7))
+        draw.ellipse(box(x, y, w, h * 0.85), fill=shade(colour, lit))
+        draw.ellipse(box(x - 0.6, y - 0.4, w * 0.5, h * 0.4), fill=shade(colour, lit * 1.15))
+    sootring = pzart.new_layer(SS)
+    ImageDraw.Draw(sootring).ellipse(box(cx, cy, rx + 1.6, ry + 1.0), fill=(20, 14, 10, 150))
+    layer.alpha_composite(sootring.filter(ImageFilter.GaussianBlur(1.2 * SS)))
+    draw = ImageDraw.Draw(layer)
+    draw.ellipse(box(cx, cy, rx, ry), fill=DARK + (255,))
+    # The far wall of the hole, a little lit stone showing inside.
+    draw.chord(box(cx, cy + 0.6, rx - 0.3, ry - 0.2), 190, 350, fill=shade(ARCH, 0.45))
+    draw.ellipse(box(cx, cy + 1.0, rx - 0.6, ry - 0.8), fill=DARK + (255,))
+
+
+def lid(layer, rng):
+    """A sooted steel lid resting on the lining, just wider than the hole, with a flat bar handle."""
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, HOLE_Z + 1.0)
+    rx, ry = ellipse_r(HOLE_D)
+    draw.ellipse(box(cx, cy + 0.8, rx + 1.4, ry + 1.0), fill=shade(DARK, 1))
+    draw.ellipse(box(cx, cy, rx + 1.4, ry + 1.0), fill=shade(LID, 0.85))
+    draw.ellipse(box(cx + 0.4, cy + 0.3, rx + 0.4, ry + 0.4), fill=shade(LID, 0.62))
+    for _ in range(14):
+        a, k = rng.uniform(0, 2 * math.pi), rng.uniform(0, 0.85)
+        draw.ellipse(box(cx + rx * k * math.cos(a), cy + ry * k * math.sin(a), 1.4, 0.8), fill=(26, 22, 20, 140))
+    draw.arc(box(cx, cy, rx + 1.4, ry + 1.0), 170, 260, fill=shade(LID, 1.4), width=SS)
+    draw.rectangle(box(cx, cy - 1.2, 2.6, 0.6), fill=shade(LID, 0.4))
+    draw.rectangle(box(cx, cy - 1.6, 2.6, 0.3), fill=shade(LID, 1.3))
+
+
+# The forged pot's profile above the stone, bottom to rim: (height share, radius share). Vanilla's: a round belly
+# sunk in the hole, drawn in a little to a plain rolled rim.
+POT_PROFILE = [(0.0, 0.9), (0.25, 1.0), (0.55, 0.98), (0.82, 0.9), (0.92, 0.88), (1.0, 0.92)]
+POT_H = 10                     # px from the stone to its rim
+
+
+def pot_radius(t):
+    for (t0, r0), (t1, r1) in zip(POT_PROFILE, POT_PROFILE[1:]):
+        if t <= t1:
+            return r0 + (r1 - r0) * (t - t0) / (t1 - t0)
+    return POT_PROFILE[-1][1]
+
+
+def pot(layer):
+    """Vanilla's forged pot set in the hole, its lower belly down in it: dark mottled iron lit from the left, a rolled
+    rim, a ring handle on each side, a stew showing; sooted low."""
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, HOLE_Z)
+    rx0, ry0 = ellipse_r(HOLE_D + 0.03)
+    rng = random.Random(330)
+    for i in range(POT_H * 4 + 1):
+        z = i / 4
+        t = z / POT_H
+        k = pot_radius(t)
+        rx, ry = rx0 * k, ry0 * k
+        tone = 0.45 + 0.55 * min(1.0, t * 1.6)        # soot from the fire low down
+        draw.ellipse(box(cx, cy - z, rx, ry), fill=shade(POT, tone * 0.85))
+        draw.ellipse(box(cx - rx * 0.45, cy - z + ry * 0.35, rx * 0.35, ry * 0.5), fill=shade(POT, tone * 1.25))
+        draw.ellipse(box(cx + rx * 0.6, cy - z + ry * 0.4, rx * 0.25, ry * 0.45), fill=shade(POT, tone * 0.7))
+    for _ in range(26):
+        t = rng.uniform(0.15, 0.85)
+        a = rng.uniform(0.15, math.pi - 0.15)
+        k = pot_radius(t)
+        x, y = cx + rx0 * k * math.cos(a), cy - t * POT_H + ry0 * k * math.sin(a)
+        draw.ellipse(box(x, y, 0.6, 0.5), fill=shade(POT, rng.uniform(0.6, 1.35)))
+    top, k = cy - POT_H, POT_PROFILE[-1][1]
+    rx, ry = rx0 * k, ry0 * k
+    draw.ellipse(box(cx, top, rx, ry), fill=shade(POT, 1.35))
+    draw.arc(box(cx, top, rx, ry), 150, 250, fill=shade(POT, 1.8), width=SS)
+    draw.ellipse(box(cx, top + 0.3, rx - 0.9, ry - 0.6), fill=shade(POT, 0.4))
+    draw.ellipse(box(cx, top + 1.0, rx - 1.3, ry - 1.0), fill=shade((150, 92, 52), 0.95))
+    # Ring handles, hung from lugs just under the rim, on the left and right of the screen.
+    for side in (-1, 1):
+        x = cx + side * (rx0 * pot_radius(0.75) + 0.4)
+        y = top + 2.4
+        draw.ellipse(box(x, y - 0.6, 0.9, 0.8), fill=shade(POT, 0.6))
+        draw.ellipse(box(x + side * 1.4, y + 1.4, 1.5, 1.9), outline=shade(POT, 0.75 if side < 0 else 0.5), width=SS)
 
 
 def paint_firebox(look, face):
+    """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot), and the flue joined to
+    one side: the trench on the ground, or the pipe out of the side, behind or in front of the stone."""
+    parts = look.split("_")
+    hole = parts[-1]
+    kind, side = (parts[0], parts[1]) if len(parts) == 3 else (None, None)
     layer = body(face, False)
-    flue(layer, face, look, random.Random(180 + face))
-    kind, _, side = look.partition("_")
-    if kind == "Stones":
-        ground = pzart.new_layer(SS)
-        trench(ground, face, side, random.Random(185 + face))
+    top = pzart.new_layer(SS)
+    lining(top, random.Random(300 + face))
+    if hole == "Pot":
+        pot(top)
+    elif hole == "Lid":
+        lid(top, random.Random(310 + face))
+    layer.alpha_composite(top)
+    if kind:
         dx, dy = FLUE_SIDES[FACES[face]][side]
-        if dx + dy > 0:
+        if kind == "Stones":
+            ground = pzart.new_layer(SS)
+            trench(ground, face, side, random.Random(185 + face))
+            front = dx + dy > 0
+        else:
+            ground, front = back_pipe(face, side)
+        if front:
             layer.alpha_composite(ground)      # in front of the stone
         else:
             ground.alpha_composite(layer)      # behind it
@@ -700,13 +789,54 @@ def paint_firebox(look, face):
     return pzart.hard_edges(pzart.weather(shrink(layer), random.Random(190 + face), WEATHER).convert("RGBA"))
 
 
+def hole_smoke(lit, potted):
+    """With no flue the smoke climbs out of the hole, or round the pot's rim with one set in it."""
+    layer = pzart.new_layer(SS)
+    draw = ImageDraw.Draw(layer)
+    cx, cy = pzart.project(0, 0, HOLE_Z + (POT_H - 1 if potted else 0))
+    cx, cy = cx * SS, cy * SS
+    rng = random.Random(400 + lit)
+    for k in range(3):
+        phase = rng.uniform(0, 3)
+        x0 = cx + (k - 1) * ellipse_r(HOLE_D)[0] * SS * (0.9 if potted else 0.4)
+        for i in range(22):
+            t = i / 21
+            r = (1.5 + 4.5 * t) * SS
+            x, y = x0 + 3 * SS * math.sin(phase + t * 4), cy - 40 * SS * t
+            draw.ellipse([x - r, y - r * 0.8, x + r, y + r * 0.8],
+                         fill=SMOKE + (int((120 if lit else 70) * (1 - t) ** 1.1),))
+    return layer.filter(ImageFilter.GaussianBlur(1.6 * SS))
+
+
+def hole_glow(lit):
+    """The fire seen down the open hole: lit, a bright core and a halo on the stones; banked, a dull red."""
+    layer = pzart.new_layer(SS)
+    cx, cy = pzart.project(0, 0, HOLE_Z)
+    rx, ry = ellipse_r(HOLE_D)
+    halo = pzart.new_layer(SS)
+    ImageDraw.Draw(halo).ellipse(box(cx, cy, rx + 6, ry + 4), fill=(255, 130, 50, 70 if lit else 25))
+    layer.alpha_composite(halo.filter(ImageFilter.GaussianBlur(2.5 * SS)))
+    draw = ImageDraw.Draw(layer)
+    if lit:
+        draw.ellipse(box(cx, cy + 0.8, rx - 1.0, ry - 1.0), fill=(255, 150, 50, 230))
+        draw.ellipse(box(cx, cy + 1.2, rx * 0.55, ry * 0.5), fill=(255, 220, 120, 255))
+    else:
+        draw.ellipse(box(cx, cy + 1.0, rx - 1.6, ry - 1.4), fill=(170, 50, 18, 220))
+    return layer
+
+
 def paint_firebox_glow(kind, face):
     """Firelight through the door's vents, a little round its edges and spilt under it; banked, the vents a dull red.
-    With no flue joined, smoke leaks from round the door and climbs the stone."""
+    Under the lid with no flue joined (Lit, Banked), smoke leaks from round the door and climbs the stone; open, the
+    fire shows down the hole and the smoke climbs out of it; with the pot in, it curls up round the pot."""
     side = FACES[face]
     lit = kind.startswith("Lit")
     layer = pzart.new_layer(SS)
-    if not kind.endswith("Flue"):
+    if kind.endswith("Open"):
+        layer.alpha_composite(hole_glow(lit))
+    if kind.endswith("Open") or kind.endswith("Pot"):
+        layer.alpha_composite(hole_smoke(lit, kind.endswith("Pot")))
+    elif not kind.endswith("Flue"):
         smoke = pzart.new_layer(SS)
         draw = ImageDraw.Draw(smoke)
         rng = random.Random(200 + face + (10 if lit else 0))
@@ -1108,7 +1238,8 @@ def contact_sheet(tiles, path):
     cells = [(index + face, None) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
     cells += [(HEARTH + face, GLOWS[kind] + face) for kind in GLOWS for face in range(len(FACES))]
     cells += [(index + face, None) for index in FIREBOX_LOOKS.values() for face in range(len(FACES))]
-    cells += [(FIREBOX_LOOKS["Pipe_Back" if kind.endswith("Flue") else "Capped"] + face, FIREBOX_GLOWS[kind] + face)
+    glow_looks = {"": "Lid", "Flue": "Pipe_Back_Lid", "Open": "Open", "Pot": "Pot"}
+    cells += [(FIREBOX_LOOKS[glow_looks[kind.replace("Lit", "").replace("Banked", "")]] + face, FIREBOX_GLOWS[kind] + face)
               for kind in FIREBOX_GLOWS for face in range(len(FACES))]
     sheet = Image.new("RGBA", (TILE_W * len(cells), TILE_H), (96, 110, 88, 255))
     for x, (index, glow) in enumerate(cells):

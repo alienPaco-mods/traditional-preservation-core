@@ -1,7 +1,7 @@
 {
-  "Stone_Hearth": "Hearth",
-  "Hearth": "Hearth",
-  "Stone_Firebox": "Firebox",
-  "Firebox": "Firebox",
+  "Stone_Hearth": "Stone Hearth (Copper)",
+  "Hearth": "Stone Hearth (Copper)",
+  "Stone_Firebox": "Stone Hearth",
+  "Firebox": "Stone Hearth",
   "Smokehouse_Chamber": "Smokehouse"
 }

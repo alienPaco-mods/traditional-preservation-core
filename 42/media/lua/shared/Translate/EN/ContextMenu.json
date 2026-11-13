@@ -1,5 +1,5 @@
 {
-  "ContextMenu_TraditionalPreservationCore_HearthInfo": "Hearth Info",
+  "ContextMenu_TraditionalPreservationCore_HearthInfo": "Stone Hearth Info",
   "ContextMenu_TraditionalPreservationCore_PourIntoCopper": "Pour into the Copper",
   "ContextMenu_TraditionalPreservationCore_FillFromCopper": "Fill from the Copper",
   "ContextMenu_TraditionalPreservationCore_EmptyCopper": "Empty the Copper",
@@ -7,11 +7,11 @@
   "ContextMenu_TraditionalPreservationCore_Holds": "%1 (holds %2 L)",
   "ContextMenu_TraditionalPreservationCore_BankFire": "Bank the Fire",
   "ContextMenu_TraditionalPreservationCore_StokeFire": "Stoke the Fire",
-  "ContextMenu_TraditionalPreservationCore_FireboxInfo": "Firebox Info",
+  "ContextMenu_TraditionalPreservationCore_FireboxInfo": "Stone Hearth Info",
   "ContextMenu_TraditionalPreservationCore_Season": "Season",
   "ContextMenu_TraditionalPreservationCore_SeasonWith": "%1 (%2)",
-  "ContextMenu_TraditionalPreservationCore_ConnectFirebox": "Connect the Firebox",
+  "ContextMenu_TraditionalPreservationCore_ConnectFirebox": "Connect the Stone Hearth",
   "ContextMenu_TraditionalPreservationCore_ConnectPipe": "With a Clay Pipe",
   "ContextMenu_TraditionalPreservationCore_ConnectStones": "With a Stone Trench",
-  "ContextMenu_TraditionalPreservationCore_DisconnectFirebox": "Disconnect the Firebox"
+  "ContextMenu_TraditionalPreservationCore_DisconnectFirebox": "Disconnect the Stone Hearth"
 }

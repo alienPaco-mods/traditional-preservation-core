@@ -99,10 +99,12 @@ Hearth.attach({ id = Hearth.COPPER, onFire = function(copper, fire) simmer(fire,
 
 -- Brings what is fitted up to now (Hearth.attach's heats), keeps a banked fire's fuel and cooking slow, its embers'
 -- heat and light, notes how long the fire will burn on and adds to its record (Hearth.logFire), and shows the
--- attachment's look (a Firebox: its flue) and the fire mouth's glow, lit or banked. Returns the fire's state.
+-- attachment's look (a Firebox: its flue and what is in the hole) and the fire mouth's glow, lit or banked. Returns the fire's state.
 function World.update(fire, now)
     local state = Hearth.stateOf(fire:getModData())
     local spec, part = Hearth.attachmentOf(fire)
+    -- Known by its tile only (put down after a pick-up): noted, so the hole's tiles never take its place.
+    if spec then state.attached = spec.id end
     local before = spec and spec.look and spec.look(part, fire)
     if spec and spec.heats then
         spec.heats(part, fire, now, state, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
@@ -138,7 +140,7 @@ local tracker = Station.tracker({
         simmer(fire, false)
         cookSeen[fire] = nil
     end,
-    -- A hearth just built or put down shows its copper (a Firebox its flue) at once.
+    -- A hearth just built or put down shows its copper (a Firebox its flue and hole) at once.
     scan = true,
 })
 

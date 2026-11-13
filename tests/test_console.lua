@@ -30,6 +30,9 @@ check("kit(\"smokehouse\") gives what a Smokehouse is built from", #player.given
 before = #player.given
 run("kit", "flue")
 check("kit(\"flue\") gives both flue kits and their tools", #player.given == before + 10)
+before = #player.given
+run("kit", "hole")
+check("kit(\"hole\") gives a stove food, an oven food and a pot", #player.given == before + 3)
 check("smokehouse says so when none is near", run("smokehouse"):find("No Smokehouse", 1, true) ~= nil)
 local multiplier = 1
 getGameTime = function()

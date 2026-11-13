@@ -235,20 +235,45 @@ check("the fire mouth glows while lit, dimly when banked, not at all when out",
     and Hearth.glowSprite(true, true, 0) == "traditionalpreservationcore_01_8"
     and Hearth.glowSprite(false, true, 0) == nil and Hearth.face(Hearth.glowSprite(true, false, 0)) == nil)
 
--- The Firebox
-local fireboxTile = Hearth.fireboxSprite(nil, nil, 1)
-check("every firebox tile is known with its facing, apart from the Hearth's", #Hearth.FIREBOX_SPRITES == 14
-    and Hearth.fireboxFace(fireboxTile) == 1 and Hearth.face(fireboxTile) == nil
-    and Hearth.fireboxFace(Hearth.sprite("Empty", 0)) == nil and #Hearth.FIRE_SPRITES == 20)
-check("a firebox's tile by flue and side, capped for none or one it doesn't know",
-    Hearth.fireboxSprite("Pipe", "Left", 0) == "traditionalpreservationcore_01_14"
-    and Hearth.fireboxSprite("Stones", "Right", 1) == "traditionalpreservationcore_01_23"
-    and Hearth.fireboxSprite("Pipe", nil, 0) == "traditionalpreservationcore_01_10"
-    and Hearth.fireboxSprite("Clay", "Back", 0) == "traditionalpreservationcore_01_10")
-check("its glow: smoke round the door while capped, none once joined, nothing while out",
-    Hearth.fireboxGlow(true, false, nil, 0) == "traditionalpreservationcore_01_24"
-    and Hearth.fireboxGlow(true, true, "Pipe", 1) == "traditionalpreservationcore_01_31"
-    and Hearth.fireboxGlow(false, false, nil, 0) == nil)
+-- The Stone Hearth with nothing fitted (the Firebox)
+local fireboxTile = Hearth.fireboxSprite(nil, nil, nil, 1)
+check("every Stone Hearth tile is known with its facing, apart from the copper's", #Hearth.FIREBOX_SPRITES == 30
+    and Hearth.fireboxFace(fireboxTile) == 1 and Hearth.face(fireboxTile) == nil and Hearth.fireFace(fireboxTile) == 1
+    and Hearth.fireboxFace(Hearth.sprite("Empty", 0)) == nil and Hearth.fireFace(Hearth.sprite("Hot", 1)) == 1
+    and #Hearth.FIRE_SPRITES == 36)
+check("its tile by flue, side and hole; open when nothing is joined or in it",
+    fireboxTile == "traditionalpreservationcore_01_11"
+    and Hearth.fireboxSprite(nil, nil, "Pot", 0) == "traditionalpreservationcore_01_14"
+    and Hearth.fireboxSprite("Pipe", "Left", "Lid", 0) == "traditionalpreservationcore_01_18"
+    and Hearth.fireboxSprite("Stones", "Right", "Pot", 1) == "traditionalpreservationcore_01_69"
+    and Hearth.fireboxSprite("Pipe", nil, "Lid", 0) == "traditionalpreservationcore_01_12"
+    and Hearth.fireboxSprite("Clay", "Back", "Lid", 0) == "traditionalpreservationcore_01_10")
+check("joined, the hole is never open: the lid goes on",
+    Hearth.fireboxSprite("Pipe", "Back", "Open", 0) == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0)
+    and Hearth.fireboxSprite("Pipe", "Back", nil, 1) == "traditionalpreservationcore_01_17")
+check("its glow: smoke round the door under the lid, out of the hole when open, round the pot, none once joined, nothing while out",
+    Hearth.fireboxGlow(true, false, nil, "Lid", 0) == "traditionalpreservationcore_01_24"
+    and Hearth.fireboxGlow(true, false, nil, "Open", 1) == "traditionalpreservationcore_01_47"
+    and Hearth.fireboxGlow(true, true, nil, "Pot", 0) == "traditionalpreservationcore_01_52"
+    and Hearth.fireboxGlow(true, true, "Pipe", "Pot", 1) == "traditionalpreservationcore_01_31"
+    and Hearth.fireboxGlow(false, false, nil, "Open", 0) == nil)
+
+-- Stove or oven, and what shows in the hole
+local function food(fullType, fluid)
+    return { getFullType = function() return fullType end,
+        getFluidContainer = function() return fluid and { isEmpty = function() return fluid == 0 end } or nil end }
+end
+check("vanilla's stews, soups, stir-fries and omelettes are stove food; anything else is oven food",
+    Hearth.cookedOn(food("Base.PotOfStew")) == Hearth.STOVE and Hearth.cookedOn(food("Base.EggOmelette")) == Hearth.STOVE
+    and Hearth.cookedOn(food("Base.PanFriedVegetablesForged")) == Hearth.STOVE
+    and Hearth.cookedOn(food("Base.PieWholeRaw")) == Hearth.OVEN)
+Hearth.cooksOn(Hearth.STOVE, "Test.PotOfThing")
+check("a mod names its own stove food", Hearth.cookedOn(food("Test.PotOfThing")) == Hearth.STOVE)
+check("empty, the hole is open", Hearth.holeLook(H.list({})) == Hearth.OPEN and Hearth.holeLook(nil) == Hearth.OPEN)
+check("oven food only: the lid", Hearth.holeLook(H.list({ food("Base.PieWholeRaw"), food("Base.Bread") })) == Hearth.LID)
+check("an empty pot is oven gear too", Hearth.holeLook(H.list({ food("Base.Pot", 0) })) == Hearth.LID)
+check("any stove food or fluid wins: the pot", Hearth.holeLook(H.list({ food("Base.PieWholeRaw"), food("Base.PotOfSoup") })) == Hearth.POT
+    and Hearth.holeLook(H.list({ food("Base.Bread"), food("Base.Pot", 2) })) == Hearth.POT)
 local flue = {}
 Hearth.setFlue(flue, "Stones", "Back")
 check("a flue joined to a side", flue.flue == "Stones" and flue.flueSide == "Back")

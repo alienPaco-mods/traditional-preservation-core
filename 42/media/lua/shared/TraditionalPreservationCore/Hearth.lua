@@ -1,4 +1,5 @@
--- Traditional Preservation core: the Hearth, a copper kettle hung over a low stone firebox, shared by every TP mod.
+-- Traditional Preservation core: the Stone Hearth, a low stone firebox with a lined hole in its top, shared by every TP
+-- mod; with the copper fitted (Stone Hearth (Copper), "the Hearth" in the code) a copper kettle hangs over the hole.
 -- The built tile is swapped for a vanilla fireplace, as the Barrel Oven's is (BuildRecipeCode.barrelOven.OnCreate),
 -- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The copper holds one fluid at
 -- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C (water boils, and boils clean) while the fire burns and cools to the room when it is out. Its state is a plain
@@ -12,7 +13,7 @@
 --
 -- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the copper is the first, written in
 -- Copper.lua, CopperUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
--- One at a time; its state is kept under its id in the fire's state.
+-- One at a time: the fire's state names it (attached), and its own state is kept under its id there.
 --
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
 -- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
@@ -20,10 +21,12 @@
 -- the mod counts its fuel from the clock (Hearth.reckonFuel) and sets vanilla's to the count, gives it its own small
 -- heat and faint light, and keeps the firebox hot (HearthWorld). Hearth.isBurning is a fire lit or banked.
 --
--- The Firebox is the Hearth's fire without the copper: a low stone box with an iron door, for heat and cooking, banked
--- and stoked the same way. Its state is the same table (no ml). Its flue leaves its top, capped until a mod joins it
--- to something on its back or either flank, never the door's side (Hearth.setFlue; Fish & Meat's Smokehouse): its tile
--- is picked by facing, flue and side, as Fuel Barrel picks its barrel's by the generator's. Hearth.isFire is either.
+-- A Stone Hearth with nothing fitted is "the Firebox" in the code (Hearth.isFirebox): a cooking source through the
+-- hole, banked and stoked the same way. Its state is the same table (no attachment). What shows in the hole is its
+-- look (Hearth.holeLook): open, a forged pot when a stove food or a fluid is inside (Hearth.cooksOn), a lid when only
+-- oven food is. Its flue is joined by a mod to something on its back or either flank, never the door's side
+-- (Hearth.setFlue; the Smokehouse): its tile is picked by facing, flue, side and hole, as Fuel Barrel picks its
+-- barrel's by the generator's. Hearth.isFire is any Stone Hearth, fitted or not.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -32,7 +35,8 @@ local Doors = require "TraditionalPreservationCore/Doors"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: fireUntil; banked, fuel, fuelAt, fuelSet; a Firebox's flue and flueSide; the fire's record (Hearth.logFire):
+-- Inside: fireUntil; banked, fuel, fuelAt, fuelSet; a Firebox's flue and flueSide; attached (the id of what is fitted);
+-- the fire's record (Hearth.logFire):
 -- fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session, sessionBase, stokedLast; and each attachment's
 -- state under its id: the copper's (COPPER) ml, fluid, parts, tempC, last, boiled, hot, held, offAt, with fireUntil and
 -- banked copied from the fire as it heats.
@@ -196,6 +200,8 @@ end
 --                                         Fit / Remove, to come)
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
 --   look(part, fire)                      the look its tile shows (Hearth.LOOKS)
+--   sprite(look, face), glow(burning, banked, face)   its tile and glow overlay by look and facing (the copper's
+--                                         Hearth.sprite and Hearth.glowSprite if left out)
 --   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
 --   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
 --   status(part)                          client: the menu's first row, text and icon
@@ -559,9 +565,9 @@ Hearth.SPRITES = Tiles.HEARTHS or {}
 Hearth.FACE_COUNT = Tiles.FACE_COUNT or 2
 
 -- The hearth's own sprite is swapped among its looks, so each look is a "kind" of tile here.
-local lookOf, HEARTH_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.LOOKS)
+local _, HEARTH_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.LOOKS)
 
--- The facing (0 S, 1 E) of a hearth tile, whatever its copper shows; nil for any other tile.
+-- The facing (0 S, 1 E) of a copper tile, whatever the copper shows; nil for any other tile.
 function Hearth.face(spriteName)
     return spriteName and HEARTH_TILES.face[spriteName]
 end
@@ -578,15 +584,12 @@ function Hearth.glowSprite(lit, banked, face)
     return base and Tiles.PREFIX .. (base + face) or nil
 end
 
-function Hearth.isHearth(object)
-    return lookOf(object) ~= nil and instanceof(object, "IsoFireplace")
-end
-
--- The Firebox: one tile per flue and facing, its glow by fire and flue (capped, smoke leaks round the door).
+-- The Stone Hearth with nothing fitted: one tile per flue, side, hole look and facing (FIREBOX_LOOKS: Open, Lid, Pot,
+-- or Flue_Side_Lid / Flue_Side_Pot), its glow by fire, flue and hole.
 Hearth.FIREBOX_LOOKS = Tiles.FIREBOX_LOOKS or {}
 Hearth.FIREBOX_SPRITES = Tiles.FIREBOXES or {}
 Hearth.FIREBOX_GLOWS = Tiles.FIREBOX_GLOWS or {}
-Hearth.CAPPED = "Capped"
+Hearth.OPEN, Hearth.LID, Hearth.POT = "Open", "Lid", "Pot"
 Hearth.FLUES = { Pipe = true, Stones = true }
 -- The sides a flue may go to, by facing (0 S, 1 E), as world steps (+x east, +y south): the same table as FLUE_SIDES
 -- in tools/build_tileset.py. The door's side is never one.
@@ -595,36 +598,69 @@ Hearth.FLUE_SIDES = {
     [1] = { Back = { -1, 0 }, Left = { 0, -1 }, Right = { 0, 1 } },
 }
 
-local fireboxLookOf, FIREBOX_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.FIREBOX_LOOKS)
+local _, FIREBOX_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.FIREBOX_LOOKS)
 
 function Hearth.fireboxFace(spriteName)
     return spriteName and FIREBOX_TILES.face[spriteName]
 end
 
-function Hearth.fireboxSprite(flue, side, face)
-    local look = flue and side and flue .. "_" .. side or Hearth.CAPPED
-    return Tiles.PREFIX .. ((Hearth.FIREBOX_LOOKS[look] or Hearth.FIREBOX_LOOKS[Hearth.CAPPED]) + face)
+-- The facing of any Stone Hearth tile, fitted or not.
+function Hearth.fireFace(spriteName)
+    return Hearth.fireboxFace(spriteName) or Hearth.face(spriteName)
 end
 
-function Hearth.fireboxGlow(lit, banked, flue, face)
+-- Joined to a flue the hole is never open: the smoke must go up the flue.
+function Hearth.fireboxSprite(flue, side, hole, face)
+    local look = hole or Hearth.OPEN
+    if flue and side then look = flue .. "_" .. side .. "_" .. (look == Hearth.OPEN and Hearth.LID or look) end
+    return Tiles.PREFIX .. ((Hearth.FIREBOX_LOOKS[look] or Hearth.FIREBOX_LOOKS[Hearth.OPEN]) + face)
+end
+
+function Hearth.fireboxGlow(lit, banked, flue, hole, face)
     if not lit then return nil end
-    local base = Hearth.FIREBOX_GLOWS[(banked and "Banked" or "Lit") .. (flue and "Flue" or "")]
+    local kind = flue and "Flue" or (hole == Hearth.OPEN or hole == Hearth.POT) and hole or ""
+    local base = Hearth.FIREBOX_GLOWS[(banked and "Banked" or "Lit") .. kind]
     return base and Tiles.PREFIX .. (base + face) or nil
 end
 
-function Hearth.isFirebox(object)
-    return fireboxLookOf(object) ~= nil and instanceof(object, "IsoFireplace")
+-- Every Stone Hearth tile, fitted or not.
+Hearth.FIRE_SPRITES = {}
+local FIRE_TILES = {}
+for _, list in ipairs({ Hearth.SPRITES, Hearth.FIREBOX_SPRITES }) do
+    for _, name in ipairs(list) do
+        table.insert(Hearth.FIRE_SPRITES, name)
+        FIRE_TILES[name] = true
+    end
 end
 
--- A Hearth or a Firebox: a fire this mod banks, stokes and counts the fuel of.
+-- Any Stone Hearth: a fire this mod banks, stokes and counts the fuel of.
 function Hearth.isFire(object)
-    return Hearth.isHearth(object) or Hearth.isFirebox(object)
+    local sprite = object and object:getSprite()
+    return sprite ~= nil and FIRE_TILES[sprite:getName()] == true and instanceof(object, "IsoFireplace")
 end
 
--- What is fitted on a fire: its spec and state, or nil. Until the Stone Hearth a Hearth's tile is the fire with
--- the copper fitted.
+-- The id of what is fitted on a fire, or nil. A copper tile with nothing noted (a Hearth picked up and put down: its
+-- modData doesn't go with it) is the copper fitted.
+function Hearth.attachedTo(fire)
+    local state = fire:getModData()[Hearth.KEY]
+    local id = state and state.attached
+    if id then return id end
+    if Hearth.face(fire:getSprite():getName()) then return Hearth.COPPER end
+end
+
+-- A Stone Hearth with the copper fitted ("the Hearth").
+function Hearth.isHearth(object)
+    return Hearth.isFire(object) and Hearth.attachedTo(object) == Hearth.COPPER
+end
+
+-- A Stone Hearth with nothing fitted ("the Firebox").
+function Hearth.isFirebox(object)
+    return Hearth.isFire(object) and Hearth.attachedTo(object) == nil
+end
+
+-- What is fitted on a fire: its spec and state, or nil.
 function Hearth.attachmentOf(fire)
-    local id = Hearth.isHearth(fire) and Hearth.COPPER or nil
+    local id = Hearth.isFire(fire) and Hearth.attachedTo(fire)
     local spec = id and ATTACHMENTS[id]
     if not spec then return nil end
     return spec, Hearth.partState(fire:getModData(), id)
@@ -639,18 +675,44 @@ function Hearth.canRemove(fire)
     return spec.canRemove(part, fire)
 end
 
--- Every Hearth and Firebox tile.
-Hearth.FIRE_SPRITES = {}
-for _, list in ipairs({ Hearth.SPRITES, Hearth.FIREBOX_SPRITES }) do
-    for _, name in ipairs(list) do table.insert(Hearth.FIRE_SPRITES, name) end
-end
-
 -- The Hearth's open mouth and the Firebox's door need their front tile free (Doors), every look of each.
 local FACE_NAMES = { [0] = "S", [1] = "E" }
 local doorFacings = {}
-for _, name in ipairs(Hearth.SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.face(name)] end
-for _, name in ipairs(Hearth.FIREBOX_SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.fireboxFace(name)] end
+for _, name in ipairs(Hearth.FIRE_SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.fireFace(name)] end
 Doors.register(doorFacings)
+
+-- Stove or oven: where a food is cooked, which picks what shows in the hole. A stove food (a pot on the hob: stews,
+-- soups) or a fluid sets the forged pot in it; anything else is oven food (clay pots, roasting pans), under the lid.
+-- Every food is oven food unless a mod says otherwise: Hearth.cooksOn("stove", "Base.PotOfStew", ...).
+Hearth.STOVE, Hearth.OVEN = "stove", "oven"
+local COOKS_ON = {}
+
+function Hearth.cooksOn(where, ...)
+    for _, fullType in ipairs({ ... }) do COOKS_ON[fullType] = where end
+end
+
+function Hearth.cookedOn(item)
+    return COOKS_ON[item:getFullType()] or Hearth.OVEN
+end
+
+-- Vanilla's stews, soups, stir-fries and omelettes go on the hob.
+Hearth.cooksOn(Hearth.STOVE, "Base.PotOfStew", "Base.PotForgedStew", "Base.BucketOfStew", "Base.PotOfSoup",
+    "Base.PotOfSoupRecipe", "Base.PotForgedSoupRecipe", "Base.BucketOfSoup", "Base.PanFriedVegetables",
+    "Base.PanFriedVegetables2", "Base.PanFriedVegetablesForged", "Base.GriddlePanFriedVegetables", "Base.OmeletteRecipe",
+    "Base.OmeletteRecipeForged", "Base.EggOmelette")
+
+-- What shows in the hole, by what is in the fire's container (a Java list of items): the pot for any stove food or
+-- container with fluid in it, the lid for anything else, open when it is empty.
+function Hearth.holeLook(items)
+    local look = Hearth.OPEN
+    for i = 0, items and items:size() - 1 or -1 do
+        local item = items:get(i)
+        local fluid = item:getFluidContainer()
+        if (fluid and not fluid:isEmpty()) or Hearth.cookedOn(item) == Hearth.STOVE then return Hearth.POT end
+        look = Hearth.LID
+    end
+    return look
+end
 
 -- Joins a Firebox's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
 function Hearth.setFlue(state, flue, side)
@@ -664,7 +726,7 @@ end
 -- The side of a Firebox that square is on (Back, Left or Right): nil for its door's side, a square not beside it,
 -- or anything but a Firebox.
 function Hearth.flueSideTo(firebox, square)
-    local face = Hearth.fireboxFace(firebox:getSprite():getName())
+    local face = Hearth.fireFace(firebox:getSprite():getName())
     local here = firebox:getSquare()
     if not face or not here or not square or square:getZ() ~= here:getZ() then return nil end
     local dx, dy = square:getX() - here:getX(), square:getY() - here:getY()
@@ -675,27 +737,27 @@ end
 
 -- The square on that side of a Firebox, or nil.
 function Hearth.flueSquare(firebox, side)
-    local face = Hearth.fireboxFace(firebox:getSprite():getName())
+    local face = Hearth.fireFace(firebox:getSprite():getName())
     local step = face and Hearth.FLUE_SIDES[face][side]
     local here = firebox:getSquare()
     if not step or not here then return nil end
     return getCell():getGridSquare(here:getX() + step[1], here:getY() + step[2], here:getZ())
 end
 
--- The sprite and glow a Hearth or Firebox shows now: its attachment's look or its flue, and its fire. nil for
--- anything else.
+-- The sprite and glow a Stone Hearth shows now: its attachment's look, or its flue and hole (Hearth.holeLook), and
+-- its fire. nil for anything else.
 function Hearth.showing(fire, state, burning, banked)
-    local name = fire:getSprite():getName()
-    local face = Hearth.face(name)
-    if face then
-        local spec, part = Hearth.attachmentOf(fire)
-        local look = spec and spec.look and spec.look(part, fire) or "Empty"
-        return Hearth.sprite(look, face), Hearth.glowSprite(burning, banked, face)
+    local face = Hearth.fireFace(fire:getSprite():getName())
+    if not face then return nil end
+    local spec, part = Hearth.attachmentOf(fire)
+    if spec then
+        local look = spec.look and spec.look(part, fire) or "Empty"
+        return (spec.sprite or Hearth.sprite)(look, face), (spec.glow or Hearth.glowSprite)(burning, banked, face)
     end
-    face = Hearth.fireboxFace(name)
-    if face then
-        return Hearth.fireboxSprite(state.flue, state.flueSide, face), Hearth.fireboxGlow(burning, banked, state.flue, face)
-    end
+    local container = fire:getContainer()
+    local hole = Hearth.holeLook(container and container:getItems())
+    return Hearth.fireboxSprite(state.flue, state.flueSide, hole, face),
+        Hearth.fireboxGlow(burning, banked, state.flue, state.flue and Hearth.LID or hole, face)
 end
 
 -- The fire's state, brought up to now where the World runs (a server or single player).
@@ -855,8 +917,11 @@ local function toFireplace(params, faceOf)
     return { replaceObject = true, object = fire }
 end
 
+-- Built with the copper already on (until Fit Copper comes).
 function TraditionalPreservationCore.OnCreateHearth(params)
-    return toFireplace(params, Hearth.face)
+    local made = toFireplace(params, Hearth.face)
+    if made then Hearth.stateOf(made.object:getModData()).attached = Hearth.COPPER end
+    return made
 end
 
 function TraditionalPreservationCore.OnCreateFirebox(params)

@@ -1,7 +1,7 @@
 -- Traditional Preservation core: food eaten from a vessel a portion at a time (Dairy's Jar of Yogurt, Fish & Meat's
 -- Crock of Potted Meat). The item's food values are its portions, so vanilla's Eat, Eat Half and Eat Quarter work on
--- it; what a mod adds is the name with the portions left, the vessel's weight under them and the empty vessel back
--- with the last bite. A mod keeps its own modData keys and one portion's food; this holds what the two share, and
+-- it; what a mod adds is the name with the portions left (or a plain name: Portions.weigh), the vessel's weight under
+-- them and the empty vessel back with the last bite. A mod keeps its own modData keys and one portion's food; this holds what the two share, and
 -- the one wrap of vanilla's eat action (Portions.onEat), so a mod adds a handler instead of wrapping it again.
 local Portions = {}
 
@@ -38,14 +38,19 @@ function Portions.name(baseName, left)
     return getText(KEY .. (text == "1" and "OnePortion" or "Portions"), baseName, text)
 end
 
--- Names the item by its portions and weighs it: the empty vessel (a full type) plus what is left in it. The engine
--- saves only a custom weight; without one a reloaded item weighs a full one again.
-function Portions.label(item, baseName, left, vesselType, portionWeight)
-    item:setName(Portions.name(baseName, left))
-    item:setCustomName(true)
+-- Weighs the item: the empty vessel (a full type) plus what is left in it. The engine saves only a custom weight;
+-- without one a reloaded item weighs a full one again.
+function Portions.weigh(item, left, vesselType, portionWeight)
     local empty = ScriptManager.instance:getItem(vesselType)
     item:setActualWeight((empty and empty:getActualWeight() or 0) + left * portionWeight)
     item:setCustomWeight(true)
+end
+
+-- Names the item by its portions and weighs it (Portions.weigh).
+function Portions.label(item, baseName, left, vesselType, portionWeight)
+    item:setName(Portions.name(baseName, left))
+    item:setCustomName(true)
+    Portions.weigh(item, left, vesselType, portionWeight)
 end
 
 -- After any eat or spoonful: one with enough left (stillHolds(item), asked only while it is still in the container

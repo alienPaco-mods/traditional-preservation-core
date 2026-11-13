@@ -246,6 +246,8 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 - **Some can be cured.** A mod may let you stir something in to keep a fluid longer. Right-click the container: its own submenu (*Bucket*, beside the game's options) has the cure, one line for each thing you can use, saying how much of it you have; its note says what it takes, and a greyed line says why not. Cured fluid poured into cured stays cured; fresh poured in makes the lot fresh again.
 - Dairy uses this for milk, and Fish & Meat for blood (cured with salt or vinegar). Without them, nothing ages. Their guides have the times.
 
+**Seasoning afterwards.** A mod may let you season a food after it is made, as you would a stew (Fish & Meat's sausage links). Right-click it: its own submenu has **Season**, one line for each seasoning you have within reach that isn't in it yet, with the uses you have. Each goes in once, as many as you like, takes what a stew would take (a use; half an onion), and makes the food a little nicer to eat, as a spice does a stew: -2 unhappiness and -2 boredom. The seasonings show as small icons on its tooltip, and stay with it through what the mod does to it next. With several selected, each one that lacks it gets it.
+
 **Within reach.** Whenever one of the series' recipes or menus counts salt, vinegar or a filler past what the recipe's own line takes (packing a big fish in salt, curing a bucket of blood, the oats in a black pudding), it counts what a craft can reach: your inventory and bags, and the containers and floor around you.
 
 ---

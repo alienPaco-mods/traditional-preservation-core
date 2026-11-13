@@ -11,6 +11,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Eight kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, in a shed, by a fire and by banked embers
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
+[*]A [b]Season[/b] menu for foods the other mods let you season afterwards, as a stew (Fish & Meat's sausages): garlic, onion, pepper or herbs, each a little nicer to eat
 [/list]
 
 [h2]The Hearth[/h2]

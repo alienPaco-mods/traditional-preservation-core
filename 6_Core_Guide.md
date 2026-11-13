@@ -129,7 +129,7 @@ What you fill from the copper leaves at the copper's heat. An ordinary container
 | The firebox cooks | at full speed | a third as fast |
 | Warms the room | 8 tiles round | only the **2 tiles** round it |
 | Light | the whole room | a faint glow |
-| Stations within 2 tiles (chapter 7) | 28 C | 24 C |
+| Stations within 2 tiles (chapter 7) | 28 C indoors | 24 C indoors |
 
 **Stoke the Fire** rakes the embers back up into a full fire.
 
@@ -168,8 +168,20 @@ A fire warms what stands beside it. Yeast's shelf, Vinegar's floor, vessel and c
 
 | Place | What makes it | Temperature |
 |---|---|---|
-| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Hearth, a Firebox, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** |
-| **By banked embers** | A banked Hearth or Firebox within 2 tiles, with no full fire in reach | **24 C** |
+| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Hearth, a Firebox, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** indoors |
+| **By banked embers** | A banked Hearth or Firebox within 2 tiles, with no full fire in reach | **24 C** indoors |
+
+**Indoors** (a room, a loft, a basement) the walls keep the fire's heat in, whatever the weather. **Outside** the air carries it off, so a fire there only warms the air it stands in, never past the indoor heat:
+
+| Where the fire stands | Lit | Banked |
+|---|---|---|
+| Indoors | 28 C | 24 C |
+| Under an open roof | the 10-day average **+15 C**, up to 28 | the 10-day average **+10 C**, up to 24 |
+| In the open | the day's weather **+10 C**, up to 28 | the day's weather **+5 C**, up to 24 |
+
+So a campfire in a January field (−4 C) holds a station at about 6 C, a porch fire about 11 C: a culture by either still works, only slower. In summer every fire reaches its full heat. The station's window says which: *By a fire*, *By a fire, under a roof*, *By a fire, in the open*.
+
+> *Margin note:* a fire heats by radiation, and only on the side that faces it. Indoors the walls and the air between them warm up and stay warm; out of doors the wind takes the warm air as fast as the fire makes it. A shepherd by his fire on a winter night is warm in front and frosted at the back.
 
 While you're away, the fire counts only for as long as its fuel would have lasted. After that, the station is back in whatever place it stands in without the fire.
 
@@ -185,27 +197,27 @@ Every station in the series works by the temperature of **where it stands**. The
 |---|---|---|
 | **Open air** | Nothing overhead | The day's weather, hour by hour |
 | **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The average outdoor temperature of the last 10 days |
-| **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days; **22 C while the power grid is on** |
+| **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days, **2 C warmer in the cold months** (in full when that average is 10 C or below, less as it nears 18 C, none above); **22 C while the power grid is on** |
 | **Loft** | The top storey: a room upstairs with no room over it | As indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 | **In a shed** | Inside the Smokehouse: a closed plank shed standing out of doors | The day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it |
 
 > *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it. *In a shed* is the Smokehouse's own: a box of thin planks has no walls' worth of warmth to hold, so a frost at night reaches it by morning.
 
-> *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is as cold as the season: in Kentucky's January that is below freezing. Vanilla agrees: with the grid off, its rooms start from the outdoor temperature.
+> *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is nearly as cold as the season: in Kentucky's January that is still below freezing. It keeps a couple of degrees over the air in winter (its mass, the people in it, the sun through the glass), but no more: a house with no fire freezes the water in its pipes. Vanilla's rooms start from the outdoor temperature with the grid off.
 
 > *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
 
-| Month | Open air and indoors (the 10-day average) | Loft | Basement |
-|---|---|---|---|
-| January | −4 C | −4 C | 5 C |
-| March | 1 C | 1 C | 5 C |
-| April | 6 C | 6 C | 7 C |
-| May | 13 C | 14 C | 9 C |
-| July | 21 C | 24 C | 13 C |
-| September | 15 C | 16 C | 13 C |
-| October | 9 C | 9 C | 12 C |
-| November | 3 C | 3 C | 9 C |
+| Month | Under an open roof (the 10-day average) | Indoors | Loft | Basement |
+|---|---|---|---|---|
+| January | −4 C | −2 C | −2 C | 5 C |
+| March | 1 C | 3 C | 3 C | 5 C |
+| April | 6 C | 8 C | 8 C | 7 C |
+| May | 13 C | 14 C | 15 C | 9 C |
+| July | 21 C | 21 C | 24 C | 13 C |
+| September | 15 C | 16 C | 17 C | 13 C |
+| October | 9 C | 11 C | 11 C | 12 C |
+| November | 3 C | 5 C | 5 C | 9 C |
 
 *(The game's own sampled year, which runs colder than real Kentucky.)*
 

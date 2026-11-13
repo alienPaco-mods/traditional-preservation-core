@@ -39,12 +39,12 @@ The tile in front of the Hearth's mouth and the Firebox's door must stay clear: 
 [h2]Places[/h2]
 [list]
 [*][b]Open air[/b]: the day's weather.
-[*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors. A room is 22 C while the power grid is on.
+[*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors, a room 2 C warmer in the cold months. A room is 22 C while the power grid is on.
 [*][b]In a loft[/b] (the top storey: a room upstairs with no room over it): as indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on.
 [*][b]In a basement[/b]: follows the ground, a month behind the season and two fifths as far: about 5 C from January to March, 13 C from July to September.
 [*][b]In a shed[/b] (inside Fish & Meat's Smokehouse, a closed plank shed out of doors): the day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it.
 [/list]
-Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C, and banked embers (a Hearth's or a Firebox's) 24 C.
+Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C indoors, and banked embers (a Hearth's or a Firebox's) 24 C. Outside, the air carries the heat off: under an open roof a fire adds 15 C to the 10-day average (embers 10), in the open 10 C to the day's weather (embers 5), never past 28 and 24.
 
 [h2]Good to know[/h2]
 [list]

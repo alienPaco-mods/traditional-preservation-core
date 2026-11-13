@@ -67,6 +67,13 @@ Two places beyond the six of `Weather.PLACES`, which a mod must ask for (`Hearth
 - **By a fire, 28 C:** any lit fire within 2 tiles on the same floor. A Hearth, a fireplace, an antique stove, a brazier or a campfire counts; an electric or gas stove never does.
 - **By banked embers, 24 C:** a banked Hearth or Firebox within 2 tiles, when no full fire is in reach.
 
+Those are a fire indoors (a room, a loft, a basement). Outside the air carries the heat off, so a fire warms the place it stands in by a lift, never past its indoor heat (`Hearth.FIRE_LIFT`, `Hearth.EMBERS_LIFT`; places `HearthCovered`, `HearthOpen`, `EmbersCovered`, `EmbersOpen`, `Hearth.firePlace`):
+
+| Fire | Indoors | Under an open roof | In the open |
+|---|---|---|---|
+| Lit | 28 C | 10-day average + 15, up to 28 | the day's + 10, up to 28 |
+| Banked | 24 C | 10-day average + 10, up to 24 | the day's + 5, up to 24 |
+
 A station seen by a fire notes how long the fuel will last. While its area is unloaded the fire counts until then, and after that the place under it does.
 
 ### Picking it up
@@ -97,15 +104,15 @@ Every TP station works by the temperature of the place it stands in, from one we
 |---|---|---|
 | **Open air** | Nothing overhead | The day's weather |
 | **Under an open roof** (Covered) | A roof or floor overhead, not a room: a porch, an open shed | The average outdoor temperature of the last 10 days |
-| **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same; **22 C while the power grid is on**, as vanilla's rooms are |
-| **Loft** | The top storey: a room at floor 1 or higher whose square above is in no room (`square:getSquareAbove()`) | `season + 0.3 x max(season - 10, 0)` (`Weather.loftTemperature`, `LOFT_ANCHOR`, `LOFT_LIFT`); 22 C while the grid is on |
+| **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same, **2 C warmer in the cold months**: in full at a season of 10 C or below, none from 18 C (`Weather.roomTemperature`, `ROOM_LIFT`); **22 C while the power grid is on**, as vanilla's rooms are |
+| **Loft** | The top storey: a room at floor 1 or higher whose square above is in no room (`square:getSquareAbove()`) | A room's, `+ 0.3 x max(season - 10, 0)` (`Weather.loftTemperature`, `LOFT_ANCHOR`, `LOFT_LIFT`); 22 C while the grid is on |
 | **Basement** | Any level below ground | `10 + 0.4 x (ground - 10)`, the ground being the 10-day average's own 30-day mean (`Weather.GROUND_HOURS`, a month behind): about 5 C January to March, 9 in May, 13 July to September, 9 in November |
 | **In a shed** (Enclosed) | Never from a square: a station claims it in its World entry (Fish & Meat's Smokehouse chamber, the only one). A closed shed in the outside air: out of the rain and wind, no thermal mass | The day's, as Open; not warmed by the grid |
-| **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Hearth) | 28 C / 24 C, for as long as the fuel lasts |
+| **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Hearth) | 28 C / 24 C indoors, for as long as the fuel lasts; outside the air's plus a lift |
 
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Hearth.placeOf`); Fish & Meat dries by its own rates.
 
-Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again.
+Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again. `Weather.frozen(celsius, sensitivity, freezeC)` says whether work has stopped for the frost (at or below its freezing point, 0 C unless given): a stop outside the scaling and under any floor, the same on every setting but Off.
 
 ## Fluids that go off
 

@@ -5,7 +5,9 @@
 -- table in the fireplace's modData under KEY; every rule here works on it without the engine.
 --
 -- "By a fire" is a place of its own (PLACE, at FIRE_C): any lit fire within FIRE_RADIUS tiles on the same floor,
--- the Hearth or not. It is opt-in: Weather.placeOf never returns it, Hearth.placeOf does, so only a mod that asks
+-- the Hearth or not. Indoors it holds FIRE_C whatever the weather; under an open roof or in the open the air takes
+-- the heat away, so there it is that place's air plus FIRE_LIFT, never past FIRE_C (places PLACE .. "Covered", ..
+-- "Open"; a campfire in a January field is cold at the back). It is opt-in: Weather.placeOf never returns it, Hearth.placeOf does, so only a mod that asks
 -- for it gets it. Mods hook into the copper with Hearth.hook (see HOOKS below).
 --
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
@@ -47,8 +49,18 @@ Hearth.BANKED_LIGHT_RADIUS = 1
 Hearth.BANKED_LIGHT = { 0.6, 0.25, 0.1 }
 Hearth.BANKED_FIREBOX = 1.8        -- the firebox's heat (vanilla's container temperature): it cooks, a third as fast
 
-local FIRE_C = { [Hearth.PLACE] = Hearth.FIRE_C, [Hearth.EMBERS] = Hearth.EMBERS_C }
-Weather.FIXED_C[Hearth.PLACE], Weather.FIXED_C[Hearth.EMBERS] = Hearth.FIRE_C, Hearth.EMBERS_C
+-- What a fire adds to the air under an open roof (the season's) and in the open (the day's), lit and banked.
+Hearth.FIRE_LIFT = { Covered = 15, Open = 10 }
+Hearth.EMBERS_LIFT = { Covered = 10, Open = 5 }
+
+-- Save values: a station's noted place. Never rename them.
+for _, fire in ipairs({ { Hearth.PLACE, Hearth.FIRE_C, Hearth.FIRE_LIFT }, { Hearth.EMBERS, Hearth.EMBERS_C, Hearth.EMBERS_LIFT } }) do
+    local place, celsius, lifts = fire[1], fire[2], fire[3]
+    Weather.FIRE_PLACES[place] = { celsius = celsius }
+    for under, lift in pairs(lifts) do
+        Weather.FIRE_PLACES[place .. under] = { celsius = celsius, under = under, lift = lift }
+    end
+end
 
 -- The fire's record, for whatever hangs over it (Fish & Meat's Smokehouse). Hours of stoked (lit) and banked fire,
 -- and the stoked session now running: unbroken stoking, a gap of up to SESSION_GRACE hours (more wood, a dip) kept.
@@ -89,13 +101,22 @@ function Hearth.sessionHours(state)
     return (state.stokedHours or 0) - (state.sessionBase or 0)
 end
 
--- The heat of a place by a fire, lit or banked; nil for any other place.
-function Hearth.fireC(place)
-    return FIRE_C[place]
+-- The heat of a place by a fire, lit or banked, by the ledger's weather; nil for any other place, and for a fire
+-- under a roof or in the open without a ledger.
+function Hearth.fireC(place, ledger)
+    local fire = Weather.FIRE_PLACES[place]
+    if not fire or (fire.under and not ledger) then return nil end
+    return Weather.placeTemperature(ledger or {}, place)
 end
 
 function Hearth.isFirePlace(place)
-    return FIRE_C[place] ~= nil
+    return Weather.FIRE_PLACES[place] ~= nil
+end
+
+-- A fire's place (PLACE or EMBERS) where it warms under (Weather.placeOf): its own outside, plain indoors.
+function Hearth.firePlace(place, under)
+    if Hearth.FIRE_LIFT[under] then return place .. under end
+    return place
 end
 
 -- The copper
@@ -672,11 +693,11 @@ function Hearth.placeOf(object)
     local square = object and object:getSquare()
     local fire, place
     if square then fire, place = warmestFire(square) end
-    if fire then return place, fire end
+    if fire then return Hearth.firePlace(place, Weather.placeOf(object)), fire end
     return Weather.placeOf(object)
 end
 
--- Weather.placeTemperature knows the fire's places too (Weather.FIXED_C); kept for the mods that call it here.
+-- Weather.placeTemperature knows the fire's places too (Weather.FIRE_PLACES); kept for the mods that call it here.
 Hearth.placeTemperature = Weather.placeTemperature
 
 -- Marks for Hearth.catchUp: Weather's, which keep the hour they were taken.
@@ -692,7 +713,7 @@ function Hearth.catchUp(state, marks, ledger, kind, place, rateAt)
     if Hearth.isFirePlace(place) then
         local from, to = marks.hour or ledger.lastHour, ledger.lastHour
         local byFire = math.max(math.min(state.fireUntil or to, to) - from, 0)
-        work = byFire * rateAt(Hearth.fireC(place))
+        work = byFire * rateAt(Hearth.fireC(place, ledger))
         if to - from > byFire then
             work = work + Weather.catchUp(marks, ledger, kind, state.under or "Sheltered") * (to - from - byFire) / (to - from)
         end

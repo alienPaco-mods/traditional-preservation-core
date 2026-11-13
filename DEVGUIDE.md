@@ -362,10 +362,13 @@ Smokehouse's day's temperature was one until it became the Enclosed place, step 
   protects the flesh), which keeps open-air stockfish possible from November to February while it reads the day's
   temperature as the open air must.
 More places (north wall, near the stove) would ask the player to learn rules the game can't show them. Covered
-and Sheltered read the same temperature off the grid (a room is 22 C on it; a generator does not count, as in
+and Sheltered read the same temperature but for a room's winter lift (`Weather.roomTemperature`: +2 C at a season of
+10 C or below, none from 18; realism pass 1b) off the grid (a room is 22 C on it; a generator does not count, as in
 vanilla); Fish & Meat tells them apart for its drying rates (moving air and shade).
-By a fire and by banked embers are `Weather.FIXED_C` places that Hearth registers: the ledger keeps no totals for
-them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hearth.noteFire` runs out, then gives the
+By a fire and by banked embers are `Weather.FIRE_PLACES` that Hearth registers, indoors at a fixed 28 / 24 C, and
+under an open roof or in the open (`HearthCovered`, `HearthOpen`, `EmbersCovered`, `EmbersOpen`) at that place's air
+plus `Hearth.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat (realism pass L1, user 2026-11-13). The ledger keeps
+no totals for them, so `Hearth.catchUp` counts them by the clock until the fuel noted by `Hearth.noteFire` runs out, then gives the
 place under the fire its share of the gap by time. A station's World calls `Hearth.notePlace`, which catches a run up
 at its old place before writing the new one.
 

@@ -269,6 +269,19 @@ check("a fire keeps its warmth whatever the weather", Hearth.placeTemperature(le
     and Hearth.placeTemperature(ledger, "Open") == -10)
 check("banked embers are a cooler place by a fire", Hearth.placeTemperature(ledger, Hearth.EMBERS) == Hearth.EMBERS_C
     and Hearth.EMBERS_C < Hearth.FIRE_C and Hearth.isFirePlace(Hearth.EMBERS) and not Hearth.isFirePlace("Open"))
+check("a fire in a January field warms the day's air by 10, under an open roof the season's by 15",
+    Hearth.placeTemperature(ledger, "HearthOpen") == 0 and Hearth.placeTemperature(ledger, "HearthCovered") == 10
+    and Hearth.isFirePlace("HearthOpen") and Hearth.isFirePlace("EmbersCovered"))
+check("banked embers outside add 5 in the open, 10 under a roof", Hearth.placeTemperature(ledger, "EmbersOpen") == -5
+    and Hearth.placeTemperature(ledger, "EmbersCovered") == 5)
+local summer = { temperature = 25, seasonTemperature = 22 }
+check("never warmer than by a fire indoors", Hearth.placeTemperature(summer, "HearthOpen") == Hearth.FIRE_C
+    and Hearth.placeTemperature(summer, "EmbersCovered") == Hearth.EMBERS_C)
+check("fireC: indoors needs no ledger, outside does", Hearth.fireC(Hearth.PLACE) == Hearth.FIRE_C
+    and Hearth.fireC("HearthOpen") == nil and Hearth.fireC("HearthOpen", ledger) == 0 and Hearth.fireC("Open", ledger) == nil)
+check("firePlace: the fire's own place outside, plain indoors", Hearth.firePlace(Hearth.PLACE, "Open") == "HearthOpen"
+    and Hearth.firePlace(Hearth.EMBERS, "Covered") == "EmbersCovered" and Hearth.firePlace(Hearth.PLACE, "Basement") == Hearth.PLACE
+    and Hearth.firePlace(Hearth.PLACE, "Loft") == Hearth.PLACE)
 local state = {}
 Hearth.noteFire(state, nil, nil, 5)
 check("no fire, no notes", state.fireUntil == nil and state.under == nil)
@@ -288,6 +301,10 @@ check("a fire still burning counts all of it", near(Hearth.catchUp({ fireUntil =
 local away = Hearth.mark({}, book, "work")
 for hour = 11, 20 do Weather.advance(book, hour, 0, kinds) end
 check("away from a fire it is Weather's catch-up", near(Hearth.catchUp({}, away, book, "work", "Open", half), 5))
+local field = Hearth.mark({}, book, "work")
+for hour = 21, 30 do Weather.advance(book, hour, 0, kinds) end
+check("by a fire in the open it counts at the air's heat plus the lift", near(Hearth.catchUp({ fireUntil = 99 }, field, book, "work",
+    "HearthOpen", half), 5))
 local seen = { place = Hearth.PLACE, fireUntil = 22 }
 local caught
 Hearth.placeOf = function() return "Sheltered" end

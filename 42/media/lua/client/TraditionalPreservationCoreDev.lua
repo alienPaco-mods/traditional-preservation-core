@@ -56,8 +56,12 @@ function TPC.weather()
     for _, place in ipairs(Weather.PLACES) do
         say(string.format("%-9s %.1f C", place, Weather.placeTemperature(state, place)))
     end
-    say(string.format("By a fire %d C, by banked embers %d C (within %d tiles; the mods that ask for it).", Hearth.FIRE_C,
-        Hearth.EMBERS_C, Hearth.FIRE_RADIUS))
+    say(string.format("By a fire indoors %d C, by banked embers %d C (within %d tiles; the mods that ask for it).",
+        Hearth.FIRE_C, Hearth.EMBERS_C, Hearth.FIRE_RADIUS))
+    for _, under in ipairs({ "Covered", "Open" }) do
+        say(string.format("By a fire, %s: %.1f C, by banked embers %.1f C.", under,
+            Weather.placeTemperature(state, Hearth.PLACE .. under), Weather.placeTemperature(state, Hearth.EMBERS .. under)))
+    end
 end
 
 -- Where the player stands, as a station there would read it.

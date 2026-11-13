@@ -12,9 +12,14 @@ check("curve: flat past the last point", Weather.curve(points, 30) == 1)
 check("curve: straight between points", near(Weather.curve(points, 5), 0.3) and near(Weather.curve(points, 15), 0.75))
 check("scaled: off runs at full speed", Weather.scaled(0.2, 0, 0.02) == 1)
 check("scaled: harsh slows more, down to the floor", near(Weather.scaled(0.8, 1.5, 0.02), 0.7) and Weather.scaled(0, 1.5, 0.02) == 0.02)
+check("frozen: at or below the freezing point on any sensitivity but Off", Weather.frozen(0, 1) and Weather.frozen(-5, 0.5)
+    and Weather.frozen(-3, 1.5, -3) and not Weather.frozen(-2, 1, -3) and not Weather.frozen(0.5, 1) and not Weather.frozen(-20, 0))
 local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
-check("place: a room by the season, nothing added", Weather.placeTemperature(ledger, "Sheltered") == 12)
+check("place: a room by the season, a little warmer in a cool one", near(Weather.placeTemperature(ledger, "Sheltered"), 13.5))
+check("room: 2 C warmer from a 10 C season down, nothing from 18 C up", Weather.roomTemperature(-5) == -3
+    and Weather.roomTemperature(10) == 12 and near(Weather.roomTemperature(14), 15) and Weather.roomTemperature(18) == 18
+    and Weather.roomTemperature(25) == 25)
 check("place: an open roof by the season too", Weather.placeTemperature(ledger, "Covered") == 12)
 check("place: a basement with no ground mean yet swings two fifths as far as the season", near(Weather.placeTemperature(ledger, "Basement"), 10.8))
 check("place: a basement goes by the ground once there is one", near(Weather.placeTemperature({ temperature = 30, seasonTemperature = 12,
@@ -44,8 +49,8 @@ check("placeOf: the top storey is a loft, under a roof's square or under nothing
 check("placeOf: a storey with a room over it is a room", Weather.placeOf(storey(1, true)) == "Sheltered")
 check("placeOf: the ground floor is a room, whatever is over it", Weather.placeOf(storey(0, false)) == "Sheltered"
     and Weather.placeOf(storey(0, true)) == "Sheltered")
-check("a loft is a room's temperature in the cold months", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4 }, "Loft") == 4
-    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 10 }, "Loft") == 10)
+check("a loft is a room's temperature in the cold months", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4 }, "Loft") == 6
+    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 10 }, "Loft") == 12)
 check("and warmer under the roof in summer", math.abs(Weather.placeTemperature({ temperature = 25, seasonTemperature = 20 }, "Loft") - 23) < 1e-9)
 check("a shed in the open air (Enclosed) goes by the day, grid or not",
     Weather.placeTemperature({ temperature = 2, seasonTemperature = 8, gridOn = true }, "Enclosed") == 2)
@@ -115,7 +120,7 @@ getClimateManager = function()
 end
 local seeded = Weather.getLedger("Seeded", newLedger)
 check("getLedger: a new ledger starts on the weather there is", Weather.placeTemperature(seeded, "Open") == 12
-    and Weather.placeTemperature(seeded, "Sheltered") == 12)
+    and Weather.placeTemperature(seeded, "Covered") == 12)
 
 -- One weather for the series: every mod's ledger copies its season means at each record.
 H.installEvents()

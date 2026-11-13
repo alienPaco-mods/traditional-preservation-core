@@ -9,7 +9,7 @@
 local Weather = {}
 
 -- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
--- the mean of the last ten days or so, as an unheated house or shed would. A basement follows the ground: the
+-- the mean of the last ten days or so, as an unheated house or shed would; a room a little warmer in winter (ROOM_LIFT). A basement follows the ground: the
 -- season's mean over a further GROUND_HOURS (a month behind, so a cellar is coldest in March and warmest in August),
 -- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
 -- in winter (about 5 C to 13). A loft (a room above the ground floor with no room over it: the top storey, under the roof) is the basement's mirror: a room in the cold
@@ -27,9 +27,16 @@ Weather.LOFT_LIFT = 0.3
 -- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room and a
 -- loft do here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
 Weather.GRID_ROOM_C = 22
--- Places at a temperature of their own, whatever the weather: Hearth adds by a fire and by banked embers. The
--- ledger keeps no totals for them; work there counts by the clock (Hearth.catchUp).
-Weather.FIXED_C = {}
+-- An unheated room is a little warmer than the season's air in the cold months: the house's own mass, the people in
+-- it, the sun through its windows. ROOM_LIFT in full at a season of ROOM_LIFT_FULL or below, none from
+-- ROOM_LIFT_NONE (a room in summer is the season's). A room (Sheltered) and a loft; never while the grid is on.
+Weather.ROOM_LIFT = 2
+Weather.ROOM_LIFT_FULL = 10
+Weather.ROOM_LIFT_NONE = 18
+-- Places by a fire, which the ledger keeps no totals for: work there counts by the clock (Hearth.catchUp). Hearth
+-- adds them: place -> { celsius, under, lift }. A fire indoors (no under) holds celsius whatever the weather; one
+-- under an open roof or in the open warms that place's air by lift, never past celsius.
+Weather.FIRE_PLACES = {}
 
 local SECONDS_PER_HOUR = 3600
 
@@ -62,6 +69,13 @@ function Weather.scaled(rate, sensitivity, minRate)
     return math.max(1 - (1 - rate) * sensitivity, minRate)
 end
 
+-- At or below its freezing point (default 0 C) a culture, a ferment or a cure stops: its water is ice. Paused, not
+-- killed: it goes on once thawed. A stop outside the scaling, the same on Forgiving, Normal and Harsh, and under any
+-- minRate (a floor holds above freezing only); Off alone ignores it, as Off means temperature never matters.
+function Weather.frozen(celsius, sensitivity, freezeC)
+    return sensitivity > 0 and celsius <= (freezeC or 0)
+end
+
 -- Below ground is a basement, in a room sheltered, under a roof that isn't a room covered (a porch, an open shed),
 -- anything else open. Asks the square, not the object: a player's isOutside() only means "not in a room", while
 -- the square's exterior flag also clears under a floor with no walls round it, as a station's isOutside() and the
@@ -85,21 +99,33 @@ function Weather.basementTemperature(groundTemperature)
     return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (groundTemperature - Weather.BASEMENT_ANCHOR)
 end
 
+-- An unheated room by the season's mean, with its winter lift (ROOM_LIFT).
+function Weather.roomTemperature(seasonTemperature)
+    local share = Weather.curve({ { Weather.ROOM_LIFT_FULL, 1 }, { Weather.ROOM_LIFT_NONE, 0 } }, seasonTemperature)
+    return seasonTemperature + Weather.ROOM_LIFT * share
+end
+
 -- A loft by the season's mean: a room's, plus LOFT_LIFT of what the season is above LOFT_ANCHOR.
 function Weather.loftTemperature(seasonTemperature)
-    return seasonTemperature + Weather.LOFT_LIFT * math.max(seasonTemperature - Weather.LOFT_ANCHOR, 0)
+    return Weather.roomTemperature(seasonTemperature)
+        + Weather.LOFT_LIFT * math.max(seasonTemperature - Weather.LOFT_ANCHOR, 0)
 end
 
 -- The temperature a place has now, from the ledger's last reading.
 function Weather.placeTemperature(ledger, place)
-    if Weather.FIXED_C[place] then return Weather.FIXED_C[place] end
+    local fire = Weather.FIRE_PLACES[place]
+    if fire then
+        if not fire.under then return fire.celsius end
+        return math.min(Weather.placeTemperature(ledger, fire.under) + fire.lift, fire.celsius)
+    end
     local temperature = ledger.temperature or 0
     local season = ledger.seasonTemperature or temperature
     -- A ledger from before the ground's mean (or a test's) goes by the season.
     if place == "Basement" then return Weather.basementTemperature(ledger.groundTemperature or season) end
     if (place == "Sheltered" or place == "Loft") and ledger.gridOn then return Weather.GRID_ROOM_C end
     if place == "Loft" then return Weather.loftTemperature(season) end
-    if place == "Sheltered" or place == "Covered" then return season end
+    if place == "Sheltered" then return Weather.roomTemperature(season) end
+    if place == "Covered" then return season end
     -- The open air and a shed in it (Enclosed) by the day's.
     return temperature
 end
@@ -282,12 +308,12 @@ end
 
 -- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the work
 -- done. Weather is only recorded every ten minutes, so the bar carries on at the last rate between
--- records. That part is only shown, and the next record replaces it. rateAt gives the rate at a fixed place
--- (Weather.FIXED_C), which the ledger keeps none for.
+-- records. That part is only shown, and the next record replaces it. rateAt gives the rate by a fire
+-- (Weather.FIRE_PLACES), which the ledger keeps none for.
 function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now, rateAt)
     local modData = craftRecipeData:getModData()
-    local fixed = Weather.FIXED_C[place]
-    local rate = fixed and rateAt and rateAt(fixed) or ledger[kind .. place .. "Rate"] or 0
+    local byFire = Weather.FIRE_PLACES[place] and rateAt
+    local rate = byFire and rateAt(Weather.placeTemperature(ledger, place)) or ledger[kind .. place .. "Rate"] or 0
     local sinceRecord = math.max(now - ledger.lastHour, 0)
     local elapsed = (modData.done + sinceRecord * rate) * speed * SECONDS_PER_HOUR
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))

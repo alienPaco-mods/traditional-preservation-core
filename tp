@@ -309,8 +309,32 @@ def run_golden(mod, update=False):
     return ok
 
 
+def translation_lint(root):
+    """Translation files the game would refuse, as 'path: reason' lines. The game drops the whole file on a key
+    given twice, and a mod's at load stops the mods loading (Fish & Meat 0.4.35, 2026-11-13)."""
+    found = []
+    for path in sorted(root.glob("*/media/lua/shared/Translate/**/*.json")):
+        repeated = []
+
+        def pairs(items):
+            seen = set()
+            for key, _ in items:
+                if key in seen:
+                    repeated.append(key)
+                seen.add(key)
+            return dict(items)
+
+        try:
+            json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=pairs)
+        except ValueError as error:
+            found.append(f"{path.relative_to(root)}: not valid JSON ({error})")
+        for key in repeated:
+            found.append(f"{path.relative_to(root)}: key given twice, the game refuses the file: {key}")
+    return found
+
+
 def lint_failed(root):
-    found = kahlua_lint(root)
+    found = kahlua_lint(root) + translation_lint(root)
     for entry in found:
         print(f"  FAIL {root.name}/{entry}")
     return bool(found)

@@ -19,7 +19,8 @@ Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it
 ## The everyday loop
 
 1. Edit in `~/MODS/<Mod>`.
-2. `tp test <Mod>`: the mod's tests, then its golden checks.
+2. `tp test <Mod>`: the mod's tests, then its golden checks. Before the tests it lints the shipped files: Lua calling
+   what Kahlua lacks, and translation JSON the game would refuse (not valid, or a key given twice).
 3. `tp install <Mod>`: runs the same checks again and copies the mod only if they all pass.
 4. Restart the game (Lua or scripts changed) or reload to the main menu (translations only), then follow the in-game test steps.
 5. Commit in the mod's repo.

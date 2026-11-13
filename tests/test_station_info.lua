@@ -98,6 +98,12 @@ info.bars = {}
 for _ = 1, StationInfo.REFRESH_TICKS do panel:update() end
 check("one that shrank gives the height back", frame.relaid[2] == -28)
 
+-- A long value wraps under its label: at 300 wide the value has 300 - 16 - 110 = 174, 29 letters a line here.
+info.rows[2] = { "T_Wort", "5.0 of 20.0 L, sours in about 2d 18h, if the temperature holds" }
+check("a long row value wraps onto three lines", #panel:rowLines(info.rows[2], 300) == 3
+    and panel:measure(300) == 8 + 12 + 32 + 4 + 30 + 8)
+info.rows[2] = nil
+
 -- The plain station's block (StationInfo.block), keys shown as they are.
 local shown = StationInfo.block({ place = "Basement", temperature = 9.6, rate = 0.3,
     rows = { { "T_Place", "own" } }, batches = { { name = "Malt", progress = 0.5, hoursLeft = 49.2 } }, numbered = true,

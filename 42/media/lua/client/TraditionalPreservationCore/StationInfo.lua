@@ -1,5 +1,5 @@
 -- Traditional Preservation core: a station's own lines inside vanilla's crafting window, under In Progress, Done and
--- Take All: rows of label and value, a bar for each running batch and wrapped notes, kept up to date while the
+-- Take All: rows of label and value (a long value wraps), a bar for each running batch and wrapped notes, kept up to date while the
 -- window is open. A mod adds a provider:
 --     StationInfo.add(function(entity) return { rows = { { labelKey, value } }, bars = { { text, share, value, colour } },
 --         notes = { "..." } } end)
@@ -54,11 +54,17 @@ function Panel:noteLines(width)
     return self.wrapped
 end
 
+-- A row's value lines at this panel width.
+function Panel:rowLines(row, width)
+    return InfoWindow.valueLines(self, row[2], width - StationInfo.PADDING * 2 - StationInfo.LABEL_WIDTH)
+end
+
 -- The block's height at this width; 0 with nothing to show.
 function Panel:measure(width)
     local info = self.info
     if not info then return 0 end
-    local height = StationInfo.PADDING + #info.rows * (lineHeight() + 2) + #info.bars * (lineHeight() + 4)
+    local height = StationInfo.PADDING + #info.bars * (lineHeight() + 4)
+    for _, row in ipairs(info.rows) do height = height + #self:rowLines(row, width) * lineHeight() + 2 end
     local lines = self:noteLines(width - StationInfo.PADDING * 2)
     for index = 1, #info.notes do height = height + 4 + #lines[index] * lineHeight() end
     return height + StationInfo.PADDING
@@ -87,8 +93,11 @@ function Panel:render()
     self:drawRect(padding, 0, self.width - padding * 2, 1, 0.4, 0.5, 0.5, 0.5)
     for _, row in ipairs(info.rows) do
         self:drawText(getText(row[1]), padding, y, 0.7, 0.7, 0.7, 1, UIFont.Small)
-        self:drawText(row[2], padding + labelWidth, y, 1, 1, 1, 1, UIFont.Small)
-        y = y + line + 2
+        for _, text in ipairs(self:rowLines(row, self.width)) do
+            self:drawText(text, padding + labelWidth, y, 1, 1, 1, 1, UIFont.Small)
+            y = y + line
+        end
+        y = y + 2
     end
     local x = padding + labelWidth
     local width = self.width - x - padding

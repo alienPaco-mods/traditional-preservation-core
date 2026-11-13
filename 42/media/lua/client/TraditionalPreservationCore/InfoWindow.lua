@@ -81,6 +81,21 @@ end
 -- For a panel that wraps its own notes (StationInfo).
 InfoWindow.wrapped = wrapped
 
+-- A row's value wrapped to width, at least one line. Kept in owner until the width changes; a value changes as its
+-- time counts down, so the cache starts over once it holds 32 texts.
+function InfoWindow.valueLines(owner, value, width)
+    if owner.valueWidth ~= width or owner.valueCount > 32 then
+        owner.valueWidth, owner.valueCache, owner.valueCount = width, {}, 0
+    end
+    local lines = owner.valueCache[value]
+    if not lines then
+        lines = wrapped(value, width)
+        if #lines == 0 then lines = { value } end
+        owner.valueCache[value], owner.valueCount = lines, owner.valueCount + 1
+    end
+    return lines
+end
+
 -- The y of the first row, under the title bar.
 function InfoWindow:top()
     return self:titleBarHeight() + InfoWindow.PADDING
@@ -89,9 +104,14 @@ end
 -- Draws a label (a translation key) and value line at y and returns the next line's y. bar does the same with a
 -- filled bar, share 0 to 1, colour { r, g, b }.
 function InfoWindow:row(y, label, value)
+    local lineHeight = getTextManager():getFontHeight(UIFont.Small)
+    local x = InfoWindow.PADDING + InfoWindow.LABEL_WIDTH
     self:drawText(getText(label), InfoWindow.PADDING, y, 0.7, 0.7, 0.7, 1, UIFont.Small)
-    self:drawText(value, InfoWindow.PADDING + InfoWindow.LABEL_WIDTH, y, 1, 1, 1, 1, UIFont.Small)
-    return y + getTextManager():getFontHeight(UIFont.Small) + 2
+    for _, line in ipairs(InfoWindow.valueLines(self, value, self.width - x - InfoWindow.PADDING)) do
+        self:drawText(line, x, y, 1, 1, 1, 1, UIFont.Small)
+        y = y + lineHeight
+    end
+    return y + 2
 end
 
 function InfoWindow:bar(y, label, share, colour, value)

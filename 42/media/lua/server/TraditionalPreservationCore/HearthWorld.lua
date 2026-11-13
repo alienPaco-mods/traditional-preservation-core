@@ -87,7 +87,7 @@ function World.update(fire, now)
     local before = Hearth.look(copper)
     if hasCopper then
         Hearth.advance(copper, now, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
-        FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.isHot(copper))
+        FluidAgeing.updateCopper(copper, now, Weather.placeOf(fire), Hearth.heldHours(copper))
     end
     local fuel = Hearth.reckonFuel(copper, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end

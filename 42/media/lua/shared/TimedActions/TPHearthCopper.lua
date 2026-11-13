@@ -76,18 +76,16 @@ function TPHearthCopper:complete()
     elseif canFillFrom(container, copper) then
         local hadMl = mlIn(container)
         local hadC = hadMl > 0 and Hearth.heatOf(self.item, now, self.character) or 0
-        local hot = Hearth.isHot(copper)
-        local age = FluidAgeing.copperRecord(copper, now, Weather.placeOf(self.hearth))
+        local hot, held = Hearth.isHot(copper), Hearth.heldHours(copper)
+        local age = FluidAgeing.copperRecord(copper, now, Weather.placeOf(self.hearth), held)
         if age then FluidAgeing.look(self.item, now) end
         local ml, fluid, tempC, parts = Hearth.take(copper, roomIn(container))
         if ml > 0 then
             for name, part in pairs(parts) do container:addFluid(name, part / 1000) end
-            Hearth.filledFrom(self.item, { ml = ml, fluid = fluid, parts = parts, tempC = tempC, hot = hot, hadMl = hadMl,
+            Hearth.filledFrom(self.item, { ml = ml, fluid = fluid, parts = parts, tempC = tempC, hot = hot, held = held, hadMl = hadMl,
                 hadC = hadC, now = now, character = self.character })
-            if age then
-                FluidAgeing.receive(self.item:getModData(), age, hadMl > 0, FluidAgeing.placeOfItem(self.item))
-                if hot then FluidAgeing.markScalded(self.item, now) end
-            end
+            -- The copper's record says whether it has been held long enough to count as scalded.
+            if age then FluidAgeing.receive(self.item:getModData(), age, hadMl > 0, FluidAgeing.placeOfItem(self.item)) end
         end
         if (copper.ml or 0) <= 0 then copper[FluidAgeing.KEY] = nil end
     end

@@ -293,6 +293,7 @@ function Hearth.pourInto(copper, fluid, ml, fluidC, now)
     copper.tempC = had > 0 and (copper.tempC * had + fluidC * taken) / (had + taken) or fluidC
     copper.boiled = nil
     copper.hot = nil
+    copper.held = nil
     Hearth.addParts(copper, fluid, taken)
     copper.ml = had + taken
     copper.last = copper.last or now
@@ -307,7 +308,7 @@ function Hearth.take(copper, maxMl)
     local fluid, tempC, parts = copper.fluid, copper.tempC, Hearth.partsOf(copper, ml)
     copper.ml = copper.ml - ml
     if copper.ml <= 0 then
-        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "offAt" }) do copper[key] = nil end
+        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "held", "offAt" }) do copper[key] = nil end
     end
     return ml, fluid, tempC, parts
 end
@@ -333,6 +334,12 @@ local function keepHot(copper, target, hours, tau)
     end
 end
 
+-- Counts the hours at HOT_C or more of whatever the copper holds, in all since it was last poured into
+-- (Hearth.heldHours): a mod can ask for a hold at the heat, as Dairy's scald does.
+local function countHeld(copper, target, hours, tau)
+    copper.held = (copper.held or 0) + hoursHot(copper.tempC, target, hours, tau)
+end
+
 -- A fluid past its offAt becomes what it goes off to (Hearth.goesOff).
 local function goOff(copper, now)
     if not copper.offAt or copper.offAt > now then return end
@@ -345,6 +352,7 @@ end
 local function heat(copper, hours)
     local target, tau = Hearth.fireTarget(copper), Hearth.copperTau(copper.ml, not copper.banked)
     keepHot(copper, target, hours, tau)
+    countHeld(copper, target, hours, tau)
     if target <= Hearth.BOIL_C then
         copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
         return
@@ -376,6 +384,7 @@ function Hearth.advance(copper, now, roomC)
     if now > t then
         local tau = Hearth.copperTau(copper.ml, false)
         keepHot(copper, roomC, now - t, tau)
+        countHeld(copper, roomC, now - t, tau)
         copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, tau)
         copper.boiled = nil
     end
@@ -391,6 +400,11 @@ end
 
 function Hearth.isHot(copper)
     return (copper.ml or 0) > 0 and (copper.tempC or 0) >= Hearth.HOT_C
+end
+
+-- Hours what the copper holds has spent at HOT_C or more, in all, since it was last poured into.
+function Hearth.heldHours(copper)
+    return (copper.ml or 0) > 0 and copper.held or 0
 end
 
 -- Hours until the copper is hot if the fire burns on; 0 if it is already, nil if it is empty or banked.

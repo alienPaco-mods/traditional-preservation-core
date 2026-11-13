@@ -206,60 +206,98 @@ spec.scaldHeat = nil
 -- Milk left in the copper turns there too
 local cold = { ml = 4000, fluid = "CowMilk", parts = { CowMilk = 3000, SheepMilk = 1000 } }
 FluidAgeing.receive(cold, { kind = "milk", age = 30, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
-FluidAgeing.updateCopper(cold, 0, "Sheltered", false)
+FluidAgeing.updateCopper(cold, 0, "Sheltered", 0)
 check("fresh milk in a cold copper stays milk", cold.fluid == "CowMilk" and cold.parts.SheepMilk == 1000)
 pass("Sheltered", 6)
-FluidAgeing.updateCopper(cold, 0, "Sheltered", false)
+FluidAgeing.updateCopper(cold, 0, "Sheltered", 0)
 check("turned in the copper, its milks are renamed to their twins", cold.fluid == "SourCowMilk"
     and cold.parts.SourSheepMilk == 1000 and cold.parts.CowMilk == nil)
 pass("Sheltered", 36)
-FluidAgeing.updateCopper(cold, 0, "Sheltered", false)
+FluidAgeing.updateCopper(cold, 0, "Sheltered", 0)
 check("spoiled in the copper, each milk is its own rotten one", cold.fluid == "RottenCowMilk"
     and cold.parts.RottenSheepMilk == 1000 and cold.parts.SourCowMilk == nil)
 local plainCopper = { ml = 1000, fluid = "CowMilk" }
 FluidAgeing.receive(plainCopper, { kind = "milk", age = 40, marks = {} }, false, "Sheltered")
-FluidAgeing.updateCopper(plainCopper, 0, "Sheltered", false)
+FluidAgeing.updateCopper(plainCopper, 0, "Sheltered", 0)
 check("one milk alone is renamed too", plainCopper.fluid == "SourCowMilk")
 local hotCopper = { ml = 1000, fluid = "CowMilk" }
 FluidAgeing.receive(hotCopper, { kind = "milk", age = 30, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
-FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", true)
+FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", 1)
 pass("Sheltered", 10)
-FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", false)
+FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", 0)
 check("milk scalded in the copper doesn't sour there, and is scalded", hotCopper.tpFluidAge.scalded
     and hotCopper.fluid == "ScaldedCowMilk")
 check("raw milk poured onto old scalded milk sours it all", (function()
     FluidAgeing.receive(hotCopper, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
     hotCopper.parts = { ScaldedCowMilk = 1000, CowMilk = 500 }
-    FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", false)
+    FluidAgeing.updateCopper(hotCopper, 0, "Sheltered", 0)
     return hotCopper.fluid == "SourCowMilk" and hotCopper.parts == nil
 end)())
 local youngCopper = { ml = 1500, fluid = "ScaldedCowMilk", parts = { ScaldedCowMilk = 1000, CowMilk = 500 } }
 FluidAgeing.receive(youngCopper, { kind = "milk", age = 2, scalded = true, marks = {} }, false, "Sheltered")
 FluidAgeing.receive(youngCopper, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
-FluidAgeing.updateCopper(youngCopper, 0, "Sheltered", false)
+FluidAgeing.updateCopper(youngCopper, 0, "Sheltered", 0)
 check("raw milk poured onto it makes it all plain again", youngCopper.fluid == "CowMilk" and youngCopper.parts == nil
     and not youngCopper.tpFluidAge.scalded)
 local blendCopper = { ml = 2000, fluid = "CowMilk", parts = { CowMilk = 1500, SheepMilk = 500 } }
 FluidAgeing.receive(blendCopper, { kind = "milk", age = 0, marks = {} }, false, "Sheltered")
-FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", true)
+FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", 1)
 check("a steaming blend scalds each milk", blendCopper.fluid == "ScaldedCowMilk" and blendCopper.parts.ScaldedSheepMilk == 500)
 pass("Sheltered", 80)
-FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", false)
+FluidAgeing.updateCopper(blendCopper, 0, "Sheltered", 0)
 check("and scalded milk spoils to its own milk's rotten one", blendCopper.fluid == "RottenCowMilk"
     and blendCopper.parts.RottenSheepMilk == 500)
 local cooled = { ml = 1000, fluid = "ScaldedCowMilk" }
 FluidAgeing.receive(cooled, { kind = "milk", age = 2, scalded = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
-FluidAgeing.updateCopper(cooled, 0, "Sheltered", false)
+FluidAgeing.updateCopper(cooled, 0, "Sheltered", 0)
 check("cooled, scalded milk stays scalded", cooled.fluid == "ScaldedCowMilk")
 local debugCopper = { ml = 5000, fluid = "CowMilk" }
-FluidAgeing.updateCopper(debugCopper, 0, "Sheltered", true)
+FluidAgeing.updateCopper(debugCopper, 0, "Sheltered", 1)
 check("milk in a copper with no record starts one, and scalds", debugCopper.tpFluidAge and debugCopper.tpFluidAge.age == 0
     and debugCopper.fluid == "ScaldedCowMilk")
 local waterCopper = { ml = 5000, fluid = "Water" }
-check("water in the copper gets no record", FluidAgeing.updateCopper(waterCopper, 0, "Sheltered", true) == nil
+check("water in the copper gets no record", FluidAgeing.updateCopper(waterCopper, 0, "Sheltered", 1) == nil
     and waterCopper.tpFluidAge == nil)
 local drained = { ml = 0, tpFluidAge = { kind = "milk", age = 5 } }
-FluidAgeing.updateCopper(drained, 0, "Sheltered", false)
+FluidAgeing.updateCopper(drained, 0, "Sheltered", 0)
 check("an emptied copper forgets the age", drained.tpFluidAge == nil)
+
+-- A hold at the heat (scaldHold): Dairy's 20 minutes at 85 C
+spec.scaldHold = 1 / 3
+local heldCopper = { ml = 1000, fluid = "CowMilk" }
+FluidAgeing.updateCopper(heldCopper, 0, "Sheltered", 0.2)
+check("steaming 12 minutes is not yet scalded", not heldCopper.tpFluidAge.scalded and heldCopper.fluid == "CowMilk")
+FluidAgeing.updateCopper(heldCopper, 0, "Sheltered", 1 / 3)
+check("20 minutes at the steam scalds it", heldCopper.tpFluidAge.scalded and heldCopper.fluid == "ScaldedCowMilk")
+check("a copy taken before the hold is not scalded", not FluidAgeing.copperRecord({ ml = 500, fluid = "CowMilk" }, 0, "Sheltered", 0.1).scalded)
+spec.scaldHeat = 1.5
+local pot = item({ CowMilk = 2 })
+pot.heat = 1.6
+function pot:getItemHeat() return self.heat end
+FluidAgeing.look(pot, 10, "Sheltered")
+check("a pot first seen on the heat starts its hold, not scalded", not pot.md.tpFluidAge.scalded and pot.fc.fluids.CowMilk == 2
+    and FluidAgeing.heldHours(pot) > 0)
+FluidAgeing.look(pot, 10.2, "Sheltered")
+check("12 minutes on, still not", not pot.md.tpFluidAge.scalded and math.abs(FluidAgeing.heldHours(pot) - 0.2) < 1e-4)
+pot.heat = 1.2
+FluidAgeing.look(pot, 10.5, "Sheltered")
+check("off the heat, the hold stops counting", math.abs(FluidAgeing.heldHours(pot) - 0.2) < 1e-4)
+pot.heat = 1.6
+FluidAgeing.look(pot, 11, "Sheltered")
+FluidAgeing.look(pot, 11.14, "Sheltered")
+check("back on, the hours add up, and at 20 minutes in all it scalds", pot.md.tpFluidAge.scalded and pot.fc.fluids.ScaldedCowMilk == 2)
+local topped = item({ CowMilk = 1 })
+topped.md.tpHeldHot = { hours = 0.3 }
+FluidAgeing.receive(topped:getModData(), { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
+check("raw milk poured in starts the hold over", topped.md.tpHeldHot == nil)
+on = false
+local offPot = item({ CowMilk = 1 })
+offPot.heat = 1.6
+function offPot:getItemHeat() return self.heat end
+FluidAgeing.look(offPot, 20, "Sheltered")
+FluidAgeing.look(offPot, 20.5, "Sheltered")
+check("with ageing off the hold still counts (no record)", offPot.md.tpFluidAge == nil and math.abs(FluidAgeing.heldHours(offPot) - 0.5) < 1e-4)
+on = true
+spec.scaldHeat, spec.scaldHold = nil, nil
 
 H.done()

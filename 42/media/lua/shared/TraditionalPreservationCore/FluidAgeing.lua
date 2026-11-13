@@ -10,7 +10,10 @@
 -- would sour it, so it stays fresh until spoilHours and then spoils. A kind may name a scalded twin for each fresh fluid
 -- (Cow's Milk (Scalded)): while a fresh record is scalded its fresh fluids go by that name, and by the plain one again once
 -- raw is mixed in. A kind may also name a scalding heat (scaldHeat, vanilla item heat): fluid seen in an item that hot,
--- on a stove or a fire, is scalded from then on, as vanilla's boiling makes tainted water clean.
+-- on a stove or a fire, is scalded from then on, as vanilla's boiling makes tainted water clean. With a hold
+-- (scaldHold, hours) it scalds only once it has been that hot for so long in all: an item counts its hours under
+-- HELD_KEY, a copper by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep
+-- their own scalded flag.
 --
 -- Pouring: the older age wins, and a raw share makes the whole lot raw again. An empty container takes the source's
 -- record, so pouring never makes milk young. Sealed items (store milk) keep their own fluid without a record; poured
@@ -25,9 +28,11 @@ FluidAgeing.KEY = "tpFluidAge"
 FluidAgeing.FRIDGE = "Fridge"
 FluidAgeing.FREEZER = "Freezer"
 FluidAgeing.FRIDGE_C = 4
+-- An item's hours at its kind's scalding heat: { hours, at }, at the hour it was last seen hot (nil once seen cooler).
+FluidAgeing.HELD_KEY = "tpHeldHot"
 
 -- spec = { kind, rate(celsius), turnHours, spoilHours, fresh = { name = twin }, spoiled = { fresh name = spoiled },
---          scalded = { fresh name = scalded }, scaldHeat (both optional), sealed = { fullType = true }, getLedger(), enabled(), speed() }. enabled and speed are asked each time, so
+--          scalded = { fresh name = scalded }, scaldHeat, scaldHold (hours; all three optional), sealed = { fullType = true }, getLedger(), enabled(), speed() }. enabled and speed are asked each time, so
 --          the sandbox can change them.
 local specs = {}
 local byFluid = {}
@@ -212,6 +217,33 @@ local function scalding(owner, spec)
     return spec.scaldHeat ~= nil and instanceof(owner, "InventoryItem") and owner:getItemHeat() >= spec.scaldHeat
 end
 
+-- True if hours at the scalding heat meet the kind's hold.
+function FluidAgeing.heldLongEnough(spec, hours)
+    return (hours or 0) > 0 and hours >= (spec.scaldHold or 0)
+end
+
+-- Counts an owner's hours at the scalding heat: from one look to the next while it stays that hot. Returns them.
+local function noteHeat(owner, spec, now)
+    local modData = owner:getModData()
+    local held = modData[FluidAgeing.HELD_KEY]
+    if not scalding(owner, spec) then
+        if held then held.at = nil end
+        return held and held.hours or 0
+    end
+    held = held or { hours = 0 }
+    if held.at then held.hours = held.hours + math.max(now - held.at, 0) end
+    -- A first look on the heat counts as a moment: the hold starts here.
+    held.hours, held.at = math.max(held.hours, 1e-6), now
+    modData[FluidAgeing.HELD_KEY] = held
+    return held.hours
+end
+
+-- An item's hours at its kind's scalding heat, in all, as last counted (0 when never).
+function FluidAgeing.heldHours(owner)
+    local held = owner and owner:getModData()[FluidAgeing.HELD_KEY]
+    return held and held.hours or 0
+end
+
 local function isSealed(owner, spec)
     return spec.sealed and instanceof(owner, "InventoryItem") and spec.sealed[owner:getFullType()] or false
 end
@@ -223,6 +255,8 @@ function FluidAgeing.look(owner, now, place)
     local container = owner and owner:getFluidContainer()
     local modData = owner and owner:getModData()
     local spec = FluidAgeing.specIn(container)
+    if not spec and modData then modData[FluidAgeing.HELD_KEY] = nil end
+    local scalds = spec and FluidAgeing.heldLongEnough(spec, noteHeat(owner, spec, now))
     if not spec or not isOn(spec) then
         if modData and modData[FluidAgeing.KEY] and not spec then modData[FluidAgeing.KEY] = nil end
         return nil
@@ -232,14 +266,14 @@ function FluidAgeing.look(owner, now, place)
     local ledger = spec.getLedger()
     if not record or record.kind ~= spec.kind then
         if isSealed(owner, spec) then return nil end
-        local scalded = allScalded(spec, (FluidAgeing.amounts(container, spec))) or scalding(owner, spec)
+        local scalded = allScalded(spec, (FluidAgeing.amounts(container, spec))) or scalds
         record = FluidAgeing.newRecord(spec, ledger, now, place, scalded or nil)
         modData[FluidAgeing.KEY] = record
         if scalded then FluidAgeing.apply(container, record, spec) end
         return record, spec
     end
     FluidAgeing.advance(record, spec, ledger, now, place)
-    if scalding(owner, spec) and FluidAgeing.stage(record, spec) == "Fresh" then record.scalded = true end
+    if scalds and FluidAgeing.stage(record, spec) == "Fresh" then record.scalded = true end
     FluidAgeing.apply(container, record, spec)
     return record, spec
 end
@@ -257,6 +291,8 @@ end
 -- holder (a modData table, or a copper's state) gets fluid of age record: it takes the record if it held none of
 -- the kind (hadSome false), else the older age.
 function FluidAgeing.receive(holder, record, hadSome, place)
+    -- Raw fluid coming in starts the hold at the heat over.
+    if not record.scalded then holder[FluidAgeing.HELD_KEY] = nil end
     local into = hadSome and holder[FluidAgeing.KEY]
     if into and into.kind == record.kind then
         FluidAgeing.merge(into, record)
@@ -269,10 +305,11 @@ end
 
 -- Brings what a copper's state ({ ml, fluid, parts }, Hearth's) holds up to now at the Hearth's place and renames
 -- its fluids for their stage, as a container's are swapped, so turned milk in the copper is no longer milk to
--- anything that reads it. Milk in a steaming copper (hot) is scalded from then on, and renamed so; raw milk
+-- anything that reads it. Milk that has steamed in the copper for the kind's hold (heldHours, Hearth.heldHours) is
+-- scalded from then on, and renamed so; raw milk
 -- poured onto it makes it plain again. An empty copper forgets; one holding a kind's fluid with no record (filled before
 -- the kind aged, or by a debug command) starts one.
-function FluidAgeing.updateCopper(copper, now, place, hot)
+function FluidAgeing.updateCopper(copper, now, place, heldHours)
     local record = copper[FluidAgeing.KEY]
     if (copper.ml or 0) <= 0 then
         copper[FluidAgeing.KEY] = nil
@@ -289,7 +326,7 @@ function FluidAgeing.updateCopper(copper, now, place, hot)
     if not spec or not isOn(spec) then return nil end
     FluidAgeing.advance(record, spec, spec.getLedger(), now, place)
     local stage = FluidAgeing.stage(record, spec)
-    if hot and stage == "Fresh" then record.scalded = true end
+    if FluidAgeing.heldLongEnough(spec, heldHours) and stage == "Fresh" then record.scalded = true end
     if copper.parts then
         local parts, count, most, changed = {}, 0, nil, false
         for name, part in pairs(copper.parts) do
@@ -310,9 +347,9 @@ function FluidAgeing.updateCopper(copper, now, place, hot)
     return record, spec
 end
 
--- A copy of the age of what a copper's state holds, brought up to now, or nil.
-function FluidAgeing.copperRecord(copper, now, place)
-    local record = FluidAgeing.updateCopper(copper, now, place)
+-- A copy of the age of what a copper's state holds, brought up to now (heldHours as for updateCopper), or nil.
+function FluidAgeing.copperRecord(copper, now, place, heldHours)
+    local record = FluidAgeing.updateCopper(copper, now, place, heldHours)
     return record and FluidAgeing.copy(record) or nil
 end
 
@@ -329,6 +366,7 @@ function FluidAgeing.clearIfEmpty(owner)
     local modData = owner and owner:getModData()
     if modData and modData[FluidAgeing.KEY] and not FluidAgeing.specIn(owner:getFluidContainer()) then
         modData[FluidAgeing.KEY] = nil
+        modData[FluidAgeing.HELD_KEY] = nil
     end
 end
 

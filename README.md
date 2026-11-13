@@ -109,7 +109,7 @@ Each mod keeps its own rate curve, and its sandbox option **Temperature sensitiv
 
 ## Fluids that go off
 
-Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Hearth's copper ages there and is scalded while the copper steams. With no such mod on, nothing ages.
+Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Hearth's copper ages there and is scalded once the copper has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `Hearth.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
 
 ## What it changes in vanilla
 

@@ -14,7 +14,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.hearth()` | The nearest Hearth within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the copper's litres, fluid and heat, when it will steam, and until when the fire burns. |
 | `TPC.copper(litres, c, fluid)` | Empties its copper and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.copper()` is 10 L of CowMilk at 20 C; the copper holds 60. |
 | `TPC.fuel(minutes)` | Sets the fuel of the nearest Hearth or Firebox (600, ten hours, if left out); banked, what the embers have left. Vanilla's menu still lights it. |
-| `TPC.hot()` | Brings its copper to the steam (90 C) now. |
+| `TPC.hot(minutes)` | Brings its copper to the steam (90 C) now, counted as having steamed that long (an hour if left out, past Dairy's 20-minute scald). `TPC.hot(0)` lets you watch a hold count up. |
 | `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Hearth and on your square, your core heat, the firebox's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
 | `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
 | `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |

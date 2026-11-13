@@ -17,7 +17,7 @@ function TPC.help()
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
-    say("TPC.hot()            bring its copper to the steam (90 C) now")
+    say("TPC.hot(minutes)     bring its copper to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
     say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
@@ -141,12 +141,15 @@ function TPC.fuel(minutes)
     if Hearth.isFirebox(fire) then TPC.firebox() else TPC.hearth() end
 end
 
-function TPC.hot()
+-- minutes: how long it counts as having steamed already (an hour if left out; 0 to watch a hold such as Dairy's
+-- 20-minute scald count up).
+function TPC.hot(minutes)
     local hearth = nearestHearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
     if (copper.ml or 0) <= 0 then return say("The copper is empty: TPC.copper() first.") end
     copper.tempC = 90
+    copper.held = (minutes or 60) / 60
     Hearth.World.refresh(hearth)
     TPC.hearth()
 end

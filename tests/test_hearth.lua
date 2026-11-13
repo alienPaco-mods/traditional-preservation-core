@@ -51,6 +51,10 @@ for minute = 6, 240, 6 do
     if not hot and Hearth.isHot(copper) then hot = minute / 60 end
 end
 check("10 L over the fire is hot in about an hour and a half", hot and hot > 1.3 and hot < 1.7)
+check("milk counts its hours at the steam, as any fluid does", near(Hearth.heldHours(copper), 4 - hot, 0.15))
+Hearth.pourInto(copper, "CowMilk", 1000, 20, 4)
+check("pouring more in starts the count over", Hearth.heldHours(copper) == 0)
+check("an empty copper has held nothing", Hearth.heldHours({ held = 2 }) == 0)
 check("20 L takes about two hours", Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 1.8
     and Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.1)
 check("a full 60 L copper under three hours", Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 2.6

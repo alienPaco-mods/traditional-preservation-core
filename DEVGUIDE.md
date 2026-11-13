@@ -210,6 +210,17 @@ local Weather = require "TraditionalPreservationCore/Weather"
      action, for a mod that gives something back for what a craft used up.
    - `Pour.before(name, fn)` / `Pour.after(name, fn)` (name is `start`, `stop` or `complete`) and `Pour.owner`:
      handlers on the one wrap of the fluid transfer, for what rides along with a fluid.
+   - `Uses.count(character, tag)` / `Uses.take(character, tag, owed)`: salt, vinegar or any tagged food or drainable
+     by the use from what a character carries, part-used first; emptied salt goes back to the Salt mod. Charge
+     what a recipe line can't (Fish & Meat's salt by weight, a cure by the litre) here, not in a copy.
+   - `FluidAgeing` treatments: a kind registered with `treatments`, `litresPerUse` and `treatMenu` gets a submenu on
+     its containers (Fish & Meat's *Cure Blood > -n Salt / -n Vinegar*), greyed with the reason; the timed action is
+     `TPFluidTreat`. `FluidAgeing.treatRefusal` / `treatBy` / `litresIn` / `treatUses` for a mod's own code.
+   - `TraditionalPreservationCore.OnCreateCooked` (`Recipes.cookOutputs`): a recipe's cookable food comes out cooked.
+   - `Charge.line(amounts)`: one recipe line that takes a different amount of each item (uses or a count); the
+     craft window shows it (`ChargeUI`). `OnHeat.watch(fullType, minutes, fn)`: food kept at frying heat after it
+     was made (vanilla's OnCooked fires once).
+   - Sounds: `TPBoiling` for anything of ours that boils (`CookingSound = TPBoiling`), `TPSimmering` (the Hearth).
    - `Container.ml(container)` and `Container.isEmptyVessel(item)`; `Recipes.created(craftRecipeData, wanted)` and
      `Recipes.consumed(...)`: an OnCreate's own items as a Lua list, by full type or a set of them.
    - `Log`: `log("TPV", "format", ...)` prints only in debug mode. Lines the test steps read go through it; a
@@ -271,6 +282,8 @@ of all:
 | `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
+| `ISWidgetInput.updateValues` | core `ChargeUI` (Fish & Meat's filler) | A charged line (`Charge`) shows its real amount (*n/12 Uses*, *n/12*) with the consumed icon; other lines pass straight through |
+| `ISGatherBloodFromAnimal.updateBucket` | core `FluidAgeingWorld` (for Fish & Meat's blood) | A container with no blood starts a new record; fresh blood gathered onto treated blood makes it untreated |
 | `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Clay Jar or Clay Pot back; a crock's first portion opens it |
 | `ISCampingMenu.doLightFireOption` | core `HearthUI` | A banked Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `HearthLootControls` | The same in the loot window's buttons |

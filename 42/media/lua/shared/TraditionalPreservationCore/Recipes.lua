@@ -93,4 +93,18 @@ function Recipes.addFluids(fullName, extra, tag)
     return changed
 end
 
+-- OnCreate for a recipe whose food comes out cooked (Fish & Meat's black pudding turned out of its pan): each
+-- cookable food it made is set cooked, so it reads Cooked and can be warmed again. Scripts name it
+-- TraditionalPreservationCore.OnCreateCooked.
+function Recipes.cookOutputs(craftRecipeData)
+    local created = craftRecipeData:getAllCreatedItems()
+    for i = 0, created:size() - 1 do
+        local item = created:get(i)
+        if instanceof(item, "Food") and item:isCookable() then item:setCooked(true) end
+    end
+end
+
+TraditionalPreservationCore = TraditionalPreservationCore or {}
+TraditionalPreservationCore.OnCreateCooked = Recipes.cookOutputs
+
 return Recipes

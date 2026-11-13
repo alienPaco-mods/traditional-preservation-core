@@ -16,6 +16,36 @@ UI.WARNING_COLOUR = { 1, 0.35, 0.3 }
 -- The game's translator reads a finished line again as a format pattern, so a percentage followed by a
 -- word ("40% soured") makes it throw, and so does a line with %1 given no values. So it is given plain
 -- tokens, and the values go in here.
+local OPTION_FIELDS = { "target", "onSelect", "param1", "param2", "param3", "param4", "param5", "param6", "param7",
+    "param8", "param9", "param10", "iconTexture", "color", "toolTip", "notAvailable" }
+
+-- The submenu named after an item that holds its recipes (Gut Fish, Pack Fish in Salt; a bucket's Cure Blood), so a
+-- mod's options sit with vanilla's. Vanilla makes one only for two recipes or more; a lone recipe option is turned
+-- into it where it stands, and with no recipe it is added. (Was Fish & Meat's fishSubMenu.)
+function UI.itemSubMenu(context, item)
+    local name = item:getDisplayName()
+    local lone
+    for _, option in ipairs(context.options) do
+        if option.name == name and option.subOption then return context:getSubMenu(option.subOption) end
+        if not lone and option.onSelect and option.onSelect == ISInventoryPaneContextMenu.OnNewCraft then lone = option end
+    end
+    local subMenu = context:getNew(context)
+    local parent = lone
+    if lone then
+        local recipe = subMenu:addOption(lone.name)
+        for _, field in ipairs(OPTION_FIELDS) do
+            recipe[field] = lone[field]
+            lone[field] = nil
+        end
+        lone.name = name
+    else
+        parent = context:addOption(name)
+    end
+    parent.iconTexture = item:getTexture()
+    context:addSubMenu(parent, subMenu)
+    return subMenu
+end
+
 function UI.say(key, ...)
     local values = { ... }
     local tokens = {}

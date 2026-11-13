@@ -300,4 +300,87 @@ check("with ageing off the hold still counts (no record)", offPot.md.tpFluidAge 
 on = true
 spec.scaldHeat, spec.scaldHold = nil, nil
 
+-- Treatments (Fish & Meat's blood): states with their own names and spoiling.
+local bloodLedger = { bloodOpen = 0, bloodSheltered = 0 }
+local blood = FluidAgeing.register({
+    kind = "blood",
+    rate = function() return 1 end,
+    turnHours = math.huge,
+    spoilHours = 24,
+    fresh = { AnimalBlood = "AnimalBlood" },
+    spoiled = { AnimalBlood = "SpoiledBlood" },
+    states = {
+        Salted = { fluids = { AnimalBlood = "SaltedBlood" }, spoilHours = 72 },
+        Vinegared = { fluids = { AnimalBlood = "VinegaredBlood" }, spoilHours = 72 },
+        Cured = { fluids = { AnimalBlood = "CuredBlood" }, spoilHours = 96, of = { "Salted", "Vinegared" } },
+    },
+    getLedger = function() return bloodLedger end,
+})
+check("fresh blood spoils at 24", FluidAgeing.stage({ age = 24 }, blood) == "Spoiled"
+    and FluidAgeing.hoursLeft({ age = 20 }, blood) == 4)
+check("salted blood keeps to 72", FluidAgeing.stage({ age = 50, treated = { Salted = true } }, blood) == "Fresh"
+    and FluidAgeing.hoursLeft({ age = 50, treated = { Salted = true } }, blood) == 22)
+check("both treatments are Cured", FluidAgeing.state({ treated = { Vinegared = true, Salted = true } }, blood).name == "Cured"
+    and FluidAgeing.spoilHours({ treated = { Vinegared = true, Salted = true } }, blood) == 96)
+local pail = item({ AnimalBlood = 2 })
+FluidAgeing.look(pail, 0, "Sheltered")
+check("salting renames the blood", FluidAgeing.treat(pail, 0, "Salted") and pail.fc.fluids.SaltedBlood == 2
+    and pail.fc.fluids.AnimalBlood == nil)
+FluidAgeing.treat(pail, 0, "Vinegared")
+check("vinegar on salted blood cures it", pail.fc.fluids.CuredBlood == 2 and pail.fc.fluids.SaltedBlood == nil)
+local cup = item({})
+FluidAgeing.pour(pail, cup, 0)
+cup.fc.fluids.CuredBlood = 1
+FluidAgeing.look(cup, 0, "Sheltered")
+check("poured, the blood stays cured", cup.md.tpFluidAge.treated.Salted and cup.md.tpFluidAge.treated.Vinegared
+    and cup.fc.fluids.CuredBlood == 1)
+local salted = item({ SaltedBlood = 1 })
+check("salted blood seen for the first time is salted", FluidAgeing.look(salted, 0, "Sheltered").treated.Salted
+    and not salted.md.tpFluidAge.scalded and salted.fc.fluids.SaltedBlood == 1)
+local vinegared = item({ VinegaredBlood = 1 })
+FluidAgeing.look(vinegared, 0, "Sheltered")
+FluidAgeing.pour(vinegared, salted, 0)
+salted.fc.fluids.VinegaredBlood = 1
+FluidAgeing.look(salted, 0, "Sheltered")
+check("salted and vinegared mixed keep neither", salted.md.tpFluidAge.treated == nil and salted.fc.fluids.AnimalBlood == 2)
+local mixed = item({ AnimalBlood = 1, SaltedBlood = 1 })
+check("a fresh share makes a new record untreated", FluidAgeing.look(mixed, 0, "Sheltered").treated == nil
+    and mixed.fc.fluids.AnimalBlood == 2)
+local gathered = item({ SaltedBlood = 1 })
+FluidAgeing.look(gathered, 0, "Sheltered")
+gathered.fc.fluids.AnimalBlood = 1
+FluidAgeing.untreat(gathered, 0)
+check("untreat: blood gathered in makes it all fresh", gathered.fc.fluids.AnimalBlood == 2 and gathered.md.tpFluidAge.treated == nil)
+local old = item({ SaltedBlood = 1 })
+FluidAgeing.look(old, 0, "Sheltered")
+bloodLedger.bloodSheltered = 80
+FluidAgeing.look(old, 80, "Sheltered")
+check("salted blood spoils at 72", old.fc.fluids.SpoiledBlood == 1 and not FluidAgeing.treat(old, 80, "Vinegared"))
+-- A state with its own cold curve ages on its own ledger kind.
+local cold = FluidAgeing.register({
+    kind = "cold", rate = function(c) return c >= 20 and 1 or 0.25 end, turnHours = math.huge, spoilHours = 24,
+    fresh = { Gore = "Gore" }, spoiled = { Gore = "RottenGore" },
+    states = { Kept = { fluids = { Gore = "KeptGore" }, spoilHours = 72, kind = "coldKept",
+        rate = function(c) return c >= 20 and 1 or 0.5 end } },
+    getLedger = function() return bloodLedger end,
+})
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 0, 0
+local jar = item({ Gore = 1 })
+FluidAgeing.look(jar, 0, "Sheltered")
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 10, 4
+FluidAgeing.look(jar, 0, "Sheltered")
+check("untreated ages on the kind's totals", jar.md.tpFluidAge.age == 10)
+FluidAgeing.treat(jar, 0, "Kept")
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 30, 9
+FluidAgeing.look(jar, 0, "Sheltered")
+check("the change of state loses one stretch, then marks the state's kind", jar.md.tpFluidAge.age == 10
+    and jar.md.tpFluidAge.markKind == "coldKept")
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 50, 15
+FluidAgeing.look(jar, 0, "Sheltered")
+check("treated, it ages on the state's totals", jar.md.tpFluidAge.age == 16)
+jar.md.tpFluidAge.place, jar.md.tpFluidAge.hour = FluidAgeing.FRIDGE, 0
+FluidAgeing.look(jar, 10, "Sheltered")
+check("in a fridge, by the state's curve", jar.md.tpFluidAge.age == 16 + 10 * 0.5)
+check("nameAt with no state is unchanged for milk", FluidAgeing.nameAt(spec, "Fresh", "CowMilk", true) == "ScaldedCowMilk")
+
 H.done()

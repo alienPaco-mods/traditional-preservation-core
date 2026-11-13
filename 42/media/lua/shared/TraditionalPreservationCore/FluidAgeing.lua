@@ -15,15 +15,22 @@
 -- HELD_KEY, a copper by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep
 -- their own scalded flag.
 --
--- Pouring: the older age wins, and a raw share makes the whole lot raw again. An empty container takes the source's
+-- Treatments (states, optional): a kind may also name what can be done to its fresh fluid to keep it longer, each with
+-- its own twin and spoilHours (Fish & Meat's blood: Salted, Vinegared, and Cured for both). A record keeps the
+-- treatments done (treated = { Salted = true }); the state is the one whose treatments match exactly. A treated
+-- record never turns either. Fluid seen for the first time under a state's name takes that state.
+--
+-- Pouring: the older age wins, and a raw share makes the whole lot raw again (and an untreated share untreated: a
+-- mix keeps only the treatments both sides had). An empty container takes the source's
 -- record, so pouring never makes milk young. Sealed items (store milk) keep their own fluid without a record; poured
 -- out, it counts as scalded. Every rule here works on plain tables; the engine parts are at the end.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
+local Uses = require "TraditionalPreservationCore/Uses"
 
 local FluidAgeing = {}
 
--- Save key: never rename it once the mod is out. Inside: kind, age, scalded, place, marks, hour.
+-- Save key: never rename it once the mod is out. Inside: kind, age, scalded, treated, place, marks, hour.
 FluidAgeing.KEY = "tpFluidAge"
 FluidAgeing.FRIDGE = "Fridge"
 FluidAgeing.FREEZER = "Freezer"
@@ -32,7 +39,13 @@ FluidAgeing.FRIDGE_C = 4
 FluidAgeing.HELD_KEY = "tpHeldHot"
 
 -- spec = { kind, rate(celsius), turnHours, spoilHours, fresh = { name = twin }, spoiled = { fresh name = spoiled },
---          scalded = { fresh name = scalded }, scaldHeat, scaldHold (hours; all three optional), sealed = { fullType = true }, getLedger(), enabled(), speed() }. enabled and speed are asked each time, so
+--          scalded = { fresh name = scalded }, scaldHeat, scaldHold (hours; all three optional), sealed = { fullType = true }, getLedger(), enabled(), speed(),
+--          states = { name = { fluids = { fresh name = its name in this state }, spoilHours, of = { treatment names }
+--          (optional: { name } when left out), kind and rate (optional: the state's own ledger kind and rate curve,
+--          when it slows in the cold unlike the plain fluid; the mod's ledger must count that kind) } } (optional),
+--          treatments = { { name (a state's treatment), tag = function() return ItemTag end, icon (texture),
+--          label (ContextMenu key, %1 the uses) } }, litresPerUse, treatMenu (ContextMenu key), treatTooltip
+--          (Tooltip key) (all optional: a kind with treatments gets the treat menu on its containers, FluidAgeingUI) }. enabled and speed are asked each time, so
 --          the sandbox can change them.
 local specs = {}
 local byFluid = {}
@@ -51,7 +64,47 @@ function FluidAgeing.register(spec)
             byFluid[scalded], spec.spoiledOf[scalded], spec.plainOf[scalded] = spec, spoiled, fresh
         end
     end
+    -- Each state's key is its treatments in order, joined: "Salted", "Salted+Vinegared".
+    spec.stateOfKey, spec.stateOfFluid = {}, {}
+    for name, state in pairs(spec.states or {}) do
+        local of = {}
+        for _, treatment in ipairs(state.of or { name }) do table.insert(of, treatment) end
+        table.sort(of)
+        state.name, state.treatments = name, of
+        spec.stateOfKey[table.concat(of, "+")] = state
+        for fresh, named in pairs(state.fluids) do
+            byFluid[named], spec.spoiledOf[named], spec.plainOf[named] = spec, spec.spoiled[fresh], fresh
+            spec.stateOfFluid[named] = state
+        end
+    end
     return spec
+end
+
+-- The state a record is in (a spec.states entry), or nil when untreated or no state has its treatments.
+function FluidAgeing.state(record, spec)
+    if not record.treated or not spec.stateOfKey then return nil end
+    local done = {}
+    for treatment in pairs(record.treated) do table.insert(done, treatment) end
+    table.sort(done)
+    return spec.stateOfKey[table.concat(done, "+")]
+end
+
+-- Hours at the reference until the record spoils: its state's, else the kind's.
+function FluidAgeing.spoilHours(record, spec)
+    local state = FluidAgeing.state(record, spec)
+    return state and state.spoilHours or spec.spoilHours
+end
+
+-- The ledger kind and rate curve a record ages by: its state's own, else the kind's.
+local function agingOf(record, spec)
+    local state = FluidAgeing.state(record, spec)
+    if state and state.kind then return state.kind, state.rate end
+    return spec.kind, spec.rate
+end
+
+-- True if nothing will turn the record before it spoils: scalded or treated.
+local function neverTurns(record)
+    return record.scalded or record.treated ~= nil
 end
 
 function FluidAgeing.spec(kind)
@@ -69,8 +122,8 @@ end
 
 -- Fresh, Turned or Spoiled.
 function FluidAgeing.stage(record, spec)
-    if record.age >= spec.spoilHours then return "Spoiled" end
-    if not record.scalded and record.age >= spec.turnHours then return "Turned" end
+    if record.age >= FluidAgeing.spoilHours(record, spec) then return "Spoiled" end
+    if not neverTurns(record) and record.age >= spec.turnHours then return "Turned" end
     return "Fresh"
 end
 
@@ -78,7 +131,8 @@ end
 function FluidAgeing.hoursLeft(record, spec)
     local stage = FluidAgeing.stage(record, spec)
     if stage == "Spoiled" then return nil end
-    local next = stage == "Fresh" and not record.scalded and spec.turnHours or spec.spoilHours
+    local spoil = FluidAgeing.spoilHours(record, spec)
+    local next = stage == "Fresh" and not neverTurns(record) and math.min(spec.turnHours, spoil) or spoil
     return next - record.age
 end
 
@@ -88,11 +142,18 @@ function FluidAgeing.newRecord(spec, ledger, now, place, scalded)
         marks = Weather.mark({}, ledger, spec.kind) }
 end
 
+local function copyTreated(treated)
+    if not treated then return nil end
+    local copy = {}
+    for k, v in pairs(treated) do copy[k] = v end
+    return copy
+end
+
 function FluidAgeing.copy(record)
     local marks = {}
     for k, v in pairs(record.marks or {}) do marks[k] = v end
-    return { kind = record.kind, age = record.age, scalded = record.scalded, place = record.place, hour = record.hour,
-        marks = marks }
+    return { kind = record.kind, age = record.age, scalded = record.scalded, treated = copyTreated(record.treated),
+        markKind = record.markKind, place = record.place, hour = record.hour, marks = marks }
 end
 
 -- Brings the record up to now: the time since it was last seen counts at the place it was seen in then. place is
@@ -100,23 +161,35 @@ end
 function FluidAgeing.advance(record, spec, ledger, now, place)
     -- Records from test builds before the rename say steamed.
     if record.steamed ~= nil then record.scalded, record.steamed = record.scalded or record.steamed, nil end
+    -- A state with its own curve counts on its own ledger kind. The marks are of the kind they were taken on
+    -- (markKind, nil for the spec's own): when the state has changed since, the stretch is lost (one look's worth).
+    local kind, rate = agingOf(record, spec)
     local was, work = record.place, 0
     if was == FluidAgeing.FRIDGE then
-        work = math.max(now - (record.hour or now), 0) * spec.rate(FluidAgeing.FRIDGE_C)
-    elseif was ~= FluidAgeing.FREEZER and was then
-        local total = ledger[spec.kind .. was] or 0
+        work = math.max(now - (record.hour or now), 0) * rate(FluidAgeing.FRIDGE_C)
+    elseif was ~= FluidAgeing.FREEZER and was and (record.markKind or spec.kind) == kind then
+        local total = ledger[kind .. was] or 0
         work = total - ((record.marks or {})[was] or total)
     end
-    record.marks = Weather.mark(record.marks or {}, ledger, spec.kind)
+    record.marks = Weather.mark(record.marks or {}, ledger, kind)
+    record.markKind = kind ~= spec.kind and kind or nil
     record.age = record.age + math.max(work, 0) * (spec.speed and spec.speed() or 1)
     record.hour, record.place = now, place
     return record
 end
 
--- into takes from: the older age, and scalded only while both were.
+-- into takes from: the older age, scalded only while both were, and the treatments both had.
 function FluidAgeing.merge(into, from)
     into.age = math.max(into.age, from.age)
     into.scalded = (into.scalded and from.scalded) or nil
+    local shared
+    for treatment in pairs(into.treated or {}) do
+        if from.treated and from.treated[treatment] then
+            shared = shared or {}
+            shared[treatment] = true
+        end
+    end
+    into.treated = shared
     return into
 end
 
@@ -153,11 +226,13 @@ local function swap(container, from, to, amount)
 end
 
 -- The name a fluid goes by at a stage: a fresh fluid's twin once turned, its spoiled fluid once spoiled; while fresh,
--- its scalded twin when the record is scalded and its plain one when not.
-local function nameAt(spec, stage, name, scalded)
+-- its state's name when treated (state, a spec.states entry), its scalded twin when the record is scalded and its
+-- plain one when neither.
+local function nameAt(spec, stage, name, scalded, state)
     if stage == "Spoiled" then return spec.spoiledOf[name] or name end
     local plain = spec.plainOf[name] or name
     if stage == "Turned" then return spec.fresh[plain] or name end
+    if state then return state.fluids[plain] or name end
     if scalded and spec.scalded then return spec.scalded[plain] or name end
     return plain
 end
@@ -169,17 +244,33 @@ local function allScalded(spec, found)
     local any = false
     for name in pairs(found) do
         if spec.fresh[name] then return false end
-        if spec.plainOf[name] then any = true end
+        if spec.plainOf[name] and not spec.stateOfFluid[name] then any = true end
     end
     return any
+end
+
+-- The treatments of the fluid in found ({ name = litres }) if every fresh share of it goes by one state's name: a
+-- container seen for the first time with salted blood is salted. Nil otherwise.
+local function treatedIn(spec, found)
+    local state
+    for name in pairs(found) do
+        local named = spec.stateOfFluid and spec.stateOfFluid[name]
+        if spec.fresh[name] or (state and named ~= state) then return nil end
+        state = named or state
+    end
+    if not state then return nil end
+    local treated = {}
+    for _, treatment in ipairs(state.treatments) do treated[treatment] = true end
+    return treated
 end
 
 -- Swaps the fluids for the record's stage. Returns true if anything changed.
 function FluidAgeing.apply(container, record, spec)
     local stage = FluidAgeing.stage(record, spec)
+    local state = FluidAgeing.state(record, spec)
     local changed = false
     for name, amount in pairs(FluidAgeing.amounts(container, spec)) do
-        local target = nameAt(spec, stage, name, record.scalded)
+        local target = nameAt(spec, stage, name, record.scalded, state)
         if target ~= name then
             swap(container, name, target, amount)
             changed = true
@@ -266,10 +357,12 @@ function FluidAgeing.look(owner, now, place)
     local ledger = spec.getLedger()
     if not record or record.kind ~= spec.kind then
         if isSealed(owner, spec) then return nil end
-        local scalded = allScalded(spec, (FluidAgeing.amounts(container, spec))) or scalds
+        local found = (FluidAgeing.amounts(container, spec))
+        local scalded = allScalded(spec, found) or scalds
         record = FluidAgeing.newRecord(spec, ledger, now, place, scalded or nil)
+        record.treated = treatedIn(spec, found)
         modData[FluidAgeing.KEY] = record
-        if scalded then FluidAgeing.apply(container, record, spec) end
+        FluidAgeing.apply(container, record, spec)
         return record, spec
     end
     FluidAgeing.advance(record, spec, ledger, now, place)
@@ -320,6 +413,7 @@ function FluidAgeing.updateCopper(copper, now, place, heldHours)
         local spec = copper.fluid and byFluid[copper.fluid]
         if not spec or not isOn(spec) then return nil end
         record = FluidAgeing.newRecord(spec, spec.getLedger(), now, place, allScalded(spec, found) or nil)
+        record.treated = treatedIn(spec, found)
         copper[FluidAgeing.KEY] = record
     end
     local spec = specs[record.kind]
@@ -327,10 +421,11 @@ function FluidAgeing.updateCopper(copper, now, place, heldHours)
     FluidAgeing.advance(record, spec, spec.getLedger(), now, place)
     local stage = FluidAgeing.stage(record, spec)
     if FluidAgeing.heldLongEnough(spec, heldHours) and stage == "Fresh" then record.scalded = true end
+    local state = FluidAgeing.state(record, spec)
     if copper.parts then
         local parts, count, most, changed = {}, 0, nil, false
         for name, part in pairs(copper.parts) do
-            local renamed = nameAt(spec, stage, name, record.scalded)
+            local renamed = nameAt(spec, stage, name, record.scalded, state)
             if not parts[renamed] then count = count + 1 end
             parts[renamed] = (parts[renamed] or 0) + part
             changed = changed or renamed ~= name
@@ -342,7 +437,7 @@ function FluidAgeing.updateCopper(copper, now, place, heldHours)
         copper.parts = count > 1 and parts or nil
         copper.fluid = most
     elseif copper.fluid then
-        copper.fluid = nameAt(spec, stage, copper.fluid, record.scalded)
+        copper.fluid = nameAt(spec, stage, copper.fluid, record.scalded, state)
     end
     return record, spec
 end
@@ -378,6 +473,75 @@ function FluidAgeing.markScalded(owner, now)
         record.scalded = true
         FluidAgeing.apply(owner:getFluidContainer(), record, spec)
     end
+end
+
+-- Adds a treatment to the fluid an owner holds (Add Salt to Blood), while it is fresh, and renames it for its new
+-- state. Returns true if it took.
+function FluidAgeing.treat(owner, now, treatment)
+    local record, spec = FluidAgeing.look(owner, now)
+    if not record or FluidAgeing.stage(record, spec) ~= "Fresh" then return false end
+    record.treated = record.treated or {}
+    record.treated[treatment] = true
+    FluidAgeing.apply(owner:getFluidContainer(), record, spec)
+    return true
+end
+
+-- Forgets the treatments of the fluid an owner holds (fresh fluid gathered into it, as vanilla adds blood): a raw
+-- share makes the whole lot untreated, as pouring does.
+function FluidAgeing.untreat(owner, now)
+    local record, spec = FluidAgeing.look(owner, now)
+    if not record or not record.treated then return end
+    record.treated = nil
+    FluidAgeing.apply(owner:getFluidContainer(), record, spec)
+end
+
+-- Treating by hand (a kind's treatments): one use of the treatment's tag for each litresPerUse litres of the kind's
+-- fluid that isn't spoiled, taken from what the character carries (Uses).
+function FluidAgeing.litresIn(container, spec)
+    local usable, spoiled = 0, 0
+    local spoiledNames = {}
+    for _, name in pairs(spec.spoiled) do spoiledNames[name] = true end
+    for name, amount in pairs((FluidAgeing.amounts(container, spec))) do
+        if spoiledNames[name] then spoiled = spoiled + amount else usable = usable + amount end
+    end
+    return usable, spoiled
+end
+
+function FluidAgeing.treatUses(spec, litres)
+    return math.max(1, math.ceil(litres / (spec.litresPerUse or 1) - 1e-6))
+end
+
+-- The kind with treatments whose fluid an owner holds (spoiled or not), or nil.
+function FluidAgeing.treatableSpec(owner)
+    local spec = FluidAgeing.specIn(owner and owner:getFluidContainer())
+    return spec and spec.treatments and spec or nil
+end
+
+-- Why an owner's fluid can't take a treatment now (an IGUI key, its text taking the litres and the uses), or nil
+-- when it can: none of the kind's fluid, spoiled, done already, or not enough carried (character optional).
+function FluidAgeing.treatRefusal(owner, spec, treatment, character, now)
+    local usable, spoiled = FluidAgeing.litresIn(owner:getFluidContainer(), spec)
+    if usable <= 0 then
+        return spoiled > 0 and "IGUI_TraditionalPreservationCore_TreatSpoiled" or "IGUI_TraditionalPreservationCore_TreatNoFluid"
+    end
+    local record = FluidAgeing.look(owner, now or getGameTime():getWorldAgeHours())
+    if record and FluidAgeing.stage(record, spec) ~= "Fresh" then return "IGUI_TraditionalPreservationCore_TreatSpoiled" end
+    if record and record.treated and record.treated[treatment.name] then return "IGUI_TraditionalPreservationCore_TreatDone" end
+    if character and Uses.count(character, treatment.tag()) < FluidAgeing.treatUses(spec, usable) then
+        return "IGUI_TraditionalPreservationCore_TreatShort"
+    end
+    return nil
+end
+
+-- Treats an owner's fluid and takes the uses from the character. Returns true if it took.
+function FluidAgeing.treatBy(owner, spec, treatment, character, now)
+    now = now or getGameTime():getWorldAgeHours()
+    if FluidAgeing.treatRefusal(owner, spec, treatment, character, now) then return false end
+    local uses = FluidAgeing.treatUses(spec, (FluidAgeing.litresIn(owner:getFluidContainer(), spec)))
+    if not FluidAgeing.treat(owner, now, treatment.name) then return false end
+    Uses.take(character, treatment.tag(), uses)
+    if owner.sendSyncEntity then owner:sendSyncEntity(nil) end
+    return true
 end
 
 local function hasFluid(item)

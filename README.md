@@ -126,7 +126,7 @@ Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functi
 
 The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt` and `entity_TP_Firebox.txt`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_uses.lua` (Uses, Charge, OnHeat, the cooked OnCreate), `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 
@@ -140,3 +140,7 @@ In debug mode, `TPC.help()` in the Lua console lists the Hearth's and the Firebo
 - Vanilla's fuel info window (from the fuel line in the fireplace menu) says Unlit for a banked Hearth; the menu line and Hearth Info say Banked.
 - The tiledef number 5173 must be unique among your active mods.
 - Multiplayer is not supported. This mod is singleplayer only for now.
+
+## Credits
+
+Cooking sounds (`TPBoiling`, `TPSimmering`): "boiling water loops" by TinyWorlds, OpenGameArt.org, CC0.

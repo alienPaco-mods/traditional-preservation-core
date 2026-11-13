@@ -92,7 +92,7 @@ The window updates while it's open, and closes when you walk more than 6 squares
 - **Heat mixes by volume.** Cold poured onto hot cools the lot.
 - **Lit:** it heats towards 95 C. Milk and the rest are kept off the boil.
 - **Water boils.** Water on its own comes to a rolling boil at 100 C. Tainted water held there for **10 minutes** comes out clean: a whole copper of rain-barrel water made safe at once. If the fire goes out or you pour more in, the 10 minutes start over.
-- **At 85 C it steams.** You see it in the copper, and in Hearth Info.
+- **At 85 C it steams.** You see it in the copper, and in Hearth Info, and you hear it: a gentle simmer at the Hearth for as long as it stays that hot.
 - **Fire out:** it cools towards the temperature of the place the Hearth stands in. Slowly: the stone holds its heat.
 - **More takes longer**, both ways.
 
@@ -243,7 +243,10 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 - **It ages by its place**, like a station: open air, under an open roof, indoors, in a loft or in a basement. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
 - **Pouring never makes it young.** Mix two lots and the older age wins.
 - **In the copper it ages too**, and a copper that has steamed for the mod's hold (Dairy: 20 minutes) scalds it.
-- Today only Dairy uses this, for milk. Without Dairy, nothing ages. Its guide has the times.
+- **Some can be cured.** A mod may let you stir something in to keep a fluid longer. Right-click the container: its own submenu (*Bucket*, beside the game's options) has the cure, one line for each thing you can use, saying how much of it you have; its note says what it takes, and a greyed line says why not. Cured fluid poured into cured stays cured; fresh poured in makes the lot fresh again.
+- Dairy uses this for milk, and Fish & Meat for blood (cured with salt or vinegar). Without them, nothing ages. Their guides have the times.
+
+**Within reach.** Whenever one of the series' recipes or menus counts salt, vinegar or a filler past what the recipe's own line takes (packing a big fish in salt, curing a bucket of blood, the oats in a black pudding), it counts what a craft can reach: your inventory and bags, and the containers and floor around you.
 
 ---
 
@@ -339,6 +342,8 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 ## Credits
 
 **Design and code:** alienPaco
+
+**Sounds:** the boil and the simmer are "boiling water loops" by TinyWorlds (OpenGameArt.org, CC0).
 
 **Made for:** Project Zomboid, Build 42. Singleplayer.
 

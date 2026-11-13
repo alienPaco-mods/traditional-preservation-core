@@ -78,6 +78,23 @@ local function showEmbers(fire, banked)
     end
 end
 
+-- The copper's simmer: a looping TPSimmering on the Hearth's square while what it holds is at HOT_C or more, one per
+-- Hearth. A free world emitter (the world ticks it); stopped when the copper cools, empties, or the Hearth unloads.
+World.SIMMER_SOUND = "TPSimmering"
+local simmers = {}
+
+local function simmer(fire, on)
+    local playing = simmers[fire]
+    if playing and (not on or not playing.emitter:isPlaying(playing.id)) then
+        playing.emitter:stopSound(playing.id)
+        simmers[fire], playing = nil, nil
+    end
+    if not on or playing or isServer() then return end
+    local square = fire:getSquare()
+    local emitter = square and getWorld():getFreeEmitter(square:getX() + 0.5, square:getY() + 0.5, square:getZ())
+    if emitter then simmers[fire] = { emitter = emitter, id = emitter:playSoundLooped(World.SIMMER_SOUND) } end
+end
+
 -- Brings the copper up to now, keeps a banked fire's fuel and cooking slow, its embers' heat and light, notes how long the fire will burn on
 -- and adds to its record (Hearth.logFire),
 -- and shows the copper empty, full or steaming (a Firebox: its flue), and the fire mouth's glow, lit or banked.
@@ -102,6 +119,7 @@ function World.update(fire, now)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
     local shown = fire:getOverlaySprite()
     if (shown and shown:getName()) ~= glow then fire:setOverlaySprite(glow) end
+    simmer(fire, hasCopper and Hearth.isHot(copper))
     if hasCopper and look ~= before then
         log("TP", "hearth copper %s -> %s: %.1f L %s at %.1f C", before, look, (copper.ml or 0) / 1000,
             tostring(copper.fluid), copper.tempC or 0)
@@ -119,6 +137,7 @@ local tracker = Station.tracker({
     refresh = refresh,
     dropped = function(fire, entry)
         removeEmbers(entry)
+        simmer(fire, false)
         cookSeen[fire] = nil
     end,
     -- A hearth just built or put down shows its copper (a Firebox its flue) at once.

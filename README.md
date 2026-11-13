@@ -118,6 +118,10 @@ Each mod keeps its own rate curve, and its sandbox option **Temperature sensitiv
 
 Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Hearth's copper ages there and is scalded once the copper has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `Hearth.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
 
+## Seasoning afterwards
+
+A mod can register a food that is seasoned after it is made, as a stew is (`Season.register`; Fish & Meat's sausage links). Right-click it, **Season**: each kind of seasoning it takes that you have in reach and that isn't in it yet, with the uses you have. Each kind goes in once, as many kinds as you like, takes what a stew would (a use, half an onion), and makes the food a little nicer to eat. Select several and each one that lacks it gets it. The seasoning stays with the food through what the mod does to it next.
+
 ## What it changes in vanilla
 
 Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update.

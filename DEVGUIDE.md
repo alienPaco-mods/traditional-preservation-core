@@ -220,6 +220,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Charge.line(amounts)`: one recipe line that takes a different amount of each item (uses or a count); the
      craft window shows it (`ChargeUI`). `OnHeat.watch(fullType, minutes, fn)`: food kept at frying heat after it
      was made (vanilla's OnCooked fires once).
+   - `Season.register(fullTypes, { kinds = { { name, types, uses }, ... }, unhappy })`: a food seasoned afterwards,
+     as a stew is (Fish & Meat's sausage links). A **Season** submenu on it (`SeasonUI`, timed action `TPSeason`)
+     offers each kind in reach not yet in it; a kind goes in once, no cap, taking `uses` (default 1, what vanilla
+     takes for a stew), each `unhappy` (and `boredom`) nicer. Never hand `Food.setSpices` the food's own list: it clears it first. What went in is the food's own spice list; `Season.carry(from, to,
+     share)` hands it on (smoked, sliced), `Season.record` / `Season.apply` keep it through a pot.
    - Sounds: `TPBoiling` for anything of ours that boils (`CookingSound = TPBoiling`), `TPSimmering` (the Hearth).
    - `Container.ml(container)` and `Container.isEmptyVessel(item)`; `Recipes.created(craftRecipeData, wanted)` and
      `Recipes.consumed(...)`: an OnCreate's own items as a Lua list, by full type or a set of them.

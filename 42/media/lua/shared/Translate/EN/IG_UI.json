@@ -67,5 +67,8 @@
   "IGUI_TraditionalPreservationCore_TreatSpoiled": "It has spoiled: nothing saves it now.",
   "IGUI_TraditionalPreservationCore_TreatDone": "Already done to this.",
   "IGUI_TraditionalPreservationCore_TreatShort": "Not enough carried: %1 L takes %2 uses, you have %3.",
-  "IGUI_TraditionalPreservationCore_TreatTakes": "%1 L takes %2 of your %3 uses."
+  "IGUI_TraditionalPreservationCore_TreatTakes": "%1 L takes %2 of your %3 uses.",
+  "IGUI_TraditionalPreservationCore_SeasonNot": "This doesn't season that",
+  "IGUI_TraditionalPreservationCore_SeasonAlready": "Already in it",
+  "IGUI_TraditionalPreservationCore_SeasonNone": "None in reach"
 }

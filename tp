@@ -236,7 +236,8 @@ def cmd_status(_args):
 
 
 # Lua the game's Kahlua lacks though luajit has it, so tests can't catch it: (pattern, what to use instead).
-KAHLUA_MISSING = [(re.compile(r"(?<![\w.:])next\s*\("), "next() is nil in game: use a pairs loop")]
+KAHLUA_MISSING = [(re.compile(r"(?<![\w.:])next\s*\("), "next() is nil in game: use a pairs loop"),
+                  (re.compile(r"(?<![\w.:])goto\s+\w+|::\w+::"), "Kahlua is Lua 5.1, no goto or labels: use if/else")]
 
 
 def kahlua_lint(root):

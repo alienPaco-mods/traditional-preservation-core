@@ -158,7 +158,18 @@ The Hearth without its kettle and gallows: the same knee-high fieldstone, lime t
 
 **The door.** As with the Hearth, the tile in front of the Firebox's door must stay free, and a picked-up Firebox turns as you put it down. It can't be picked up while it burns, or while its flue is joined to a building.
 
-**The flue.** On its own the flue is capped with a flat stone, and while it burns the smoke leaks out round the door. A mod can lead it into a building on the Firebox's back or either flank (never the door's side): the Smokehouse of *Traditional Preservation (Fish & Meat)* does, with a **clay pipe** from the top or a **trench** in the ground roofed with flat stones from its foot. The Firebox then shows that flue, and the smoke goes where it should.
+**The flue.** On its own the flue is capped with a flat stone, and while it burns the smoke leaks out round the door. It can be led into a **Smokehouse** on the Firebox's back or either flank (never the door's side), with a **clay pipe** from the top or a **trench** in the ground roofed with flat stones from its foot. The Firebox then shows that flue, and the smoke goes where it should.
+
+**The Smokehouse.** A plank shed two tiles long under one roof slope, its door on the high end (Build menu, Furniture: Woodwork 3, 14 planks, 20 nails, a hammer kept). It stands in the open or under an open roof, never in a room, and the tile in front of its door stays clear. Inside it is always *In a shed* (chapter 8). It holds 6 stacks of whatever the TP mods smoke: today the fish, meat and sausage of *Traditional Preservation (Fish & Meat)*, whose guide tells what each does in the smoke.
+
+| To join a Firebox | Takes | Tool, kept |
+|---|---|---|
+| **With a Clay Pipe** | 2 Clay Pipe Segments, 1 Clay | Mason's Trowel |
+| **With a Stone Trench** (a longer, cooler run for the smoke) | 3 Flat Stones, 2 Clay | Shovel or Spade |
+
+Right-click the Firebox or the shed: **Connect the Firebox**, about half a minute, a little Masonry XP. Not at the shed's door end, not with the Firebox's own door towards it, and not while the fire burns; one Firebox a shed. **Disconnect the Firebox** gives the pipe segments or stones back; the clay is lost. Neither can be picked up while they are joined. Joined, the pipe or trench shows where it enters the shed's wall, and a ham hangs by the door while finished stacks wait inside.
+
+> *Margin note:* the Smokehouse used to belong to *Fish & Meat*. It moved here so cheese, and anything else a later mod smokes, can hang in the same shed over the same fire.
 
 > *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
 
@@ -320,7 +331,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both; `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3) or `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel). `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.setWeather(c, season, ground)` | Pretends the weather for a test that wants a cold month or a warm day: the day's temperature `c` (the engine's own override, the one the debug menu's Climate debugger sets), the season's mean (`c` if left out) and the ground's (left alone if left out). The mods read it at their next ten-minute reading, so run the clock; `TPC.weather()` shows it then. The season drifts towards the day again as it would. `TPC.setWeather()` ends it. Not kept through a load. |
@@ -331,6 +342,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.hot(minutes)` | Brings its copper to the steam (90 C) now, counted as having steamed that long (an hour if left out, past Dairy's 20-minute scald). `TPC.hot(0)` lets you watch a hold count up. |
 | `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Hearth's, Firebox's or Smokehouse's door opens onto it. |
+| `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Firebox beside it with its flue and why it can't join (or `may join`, `joined here`). |
 | `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.

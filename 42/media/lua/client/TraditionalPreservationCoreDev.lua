@@ -4,6 +4,7 @@ if not isDebugEnabled() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local Weather = require "TraditionalPreservationCore/Weather"
+local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 TPC = {}
 
 local function say(text) print("[TPC] " .. text) end
@@ -13,7 +14,7 @@ function TPC.help()
     say("TPC.here()           which place you're standing in, and its temperature")
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
-    say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default) or \"firebox\" (Masonry 2). TPC.kit(\"?\") lists them")
+    say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default), \"firebox\" (Masonry 2), \"smokehouse\" (Woodwork 3) or \"flue\" (both flue kits and their tools). TPC.kit(\"?\") lists them")
     say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
     say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
@@ -21,6 +22,7 @@ function TPC.help()
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
     say("TPC.firebox()        the nearest Firebox within 2 tiles: fire, fuel, flue and the squares on its flue's sides")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
+    say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Fireboxes beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
 
@@ -32,6 +34,10 @@ local KITS = {
         ["Base.IronBar"] = 3, ["Base.LargeHook"] = 1 },
     firebox = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Firebox (Masonry 2)",
         ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2 },
+    smokehouse = { about = "a hammer, 14 planks and 20 nails, to build a Smokehouse (Woodwork 3)",
+        ["Base.Hammer"] = 1, ["Base.Plank"] = 14, ["Base.Nails"] = 20 },
+    flue = { about = "both flue kits (2 Clay Pipe Segments, 3 Flat Stones, 3 Clay), a Mason's Trowel and a Shovel",
+        ["Base.ClayPipeSegment"] = 2, ["Base.FlatStone"] = 3, ["Base.Clay"] = 3, ["Base.MasonsTrowel"] = 1, ["Base.Shovel"] = 1 },
 }
 
 function TPC.kit(kind)
@@ -235,6 +241,33 @@ function TPC.doors()
     end
     local door = Doors.doorOnto(square)
     say(door and ("a door opens onto this tile: " .. door) or "no registered door opens onto this tile")
+end
+
+local PARTS = { [0] = "back", [1] = "door" }
+
+function TPC.smokehouse()
+    local player, seen = getPlayer(), 0
+    local cell, x, y, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), player:getZ()
+    for dx = -3, 3 do
+        for dy = -3, 3 do
+            local tile, face, part = Smokehouse.chamberOn(cell:getGridSquare(x + dx, y + dy, z))
+            if tile then
+                seen = seen + 1
+                local lines = {}
+                for _, found in ipairs(Smokehouse.fireboxesBy(tile)) do
+                    if found.tile == tile then
+                        local flue, side = Smokehouse.flueOf(found.firebox)
+                        table.insert(lines, string.format("Firebox at %d,%d: flue %s %s, %s", found.firebox:getX(), found.firebox:getY(),
+                            tostring(flue), tostring(side), Smokehouse.joinedChamber(found.firebox) == tile and "joined here"
+                            or (Smokehouse.connectRefusalFor(found) or "may join")))
+                    end
+                end
+                say(string.format("%d,%d facing %s, %s tile, entry art %s; %s", tile:getX(), tile:getY(), face == 0 and "S" or "E",
+                    PARTS[part], tostring(Smokehouse.chamberEntry(tile)), #lines > 0 and table.concat(lines, "; ") or "no Firebox beside it"))
+            end
+        end
+    end
+    if seen == 0 then say("No Smokehouse within 3 tiles on this floor.") end
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

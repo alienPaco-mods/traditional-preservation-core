@@ -7,7 +7,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both. `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes to build: `"hearth"` (the default: a mason's trowel, 8 clay bricks, 2 clay, 2 copper sheets, 3 iron bars and a large hook) or `"firebox"` (a trowel, 8 clay bricks and 2 clay); Masonry 2 for both; `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3) or `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel). `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature, a fire's under an open roof and in the open too. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.setWeather(c, season, ground)` | Pretends the weather for a test that wants a cold month or a warm day: the day's temperature `c` (the engine's own override, the one the debug menu's Climate debugger sets), the season's mean (`c` if left out) and the ground's (left alone if left out). The mods read it at their next ten-minute reading, so run the clock; `TPC.weather()` shows it then. The season drifts towards the day again as it would. `TPC.setWeather()` ends it. Not kept through a load. |
@@ -19,6 +19,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.firebox()` | The nearest Firebox within 2 tiles: position, fire, fuel in minutes, sprite, its flue and side, and the square on each of its flue's sides. |
 | `TPC.flue(kind, side)` | Shows its flue for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. The Smokehouse joins it for real. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (its front tile free, or what blocks it: a wall edge or a sprite with `BlocksPlacement`, `solid` or `solidtrans`), and whether a registered door (Hearth, Firebox, Smokehouse) opens onto it. For a station the build ghost refuses beside another. |
+| `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Firebox beside it with its flue and why it can't join (or `may join`, `joined here`). |
 
 **Typical check of the copper:** `TPC.kit()`, build a Hearth, `TPC.copper(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 

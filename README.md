@@ -2,7 +2,7 @@
 
 **Status: experimental, not released.** Back up your save before enabling.
 
-TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, and the series' shared stations, the **Hearth** and the **Firebox**. On its own it adds only those two.
+TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, and the series' shared stations, the **Hearth**, the **Firebox** and the **Smokehouse**. On its own it adds only those three.
 
 This file describes the mod as a player meets it. How to work on the code, the tests and the `tp` tool: `DEVGUIDE.md`.
 
@@ -88,11 +88,21 @@ The Hearth without its kettle and gallows: the same knee-high fieldstone, lime t
 
 **Right-click it.** Vanilla's Firebox submenu gains **Firebox Info** (fire and fuel, with a note) and **Bank the Fire** / **Stoke the Fire**, which work exactly as on the Hearth (the loot-window button too). Clicking it opens Firebox Info. It can't be picked up while its fire burns, or while its flue is joined to a building.
 
-**Its flue** leaves its top and is capped on its own: smoke leaks round the door while it burns. Another mod can join it to a building beside it, on its back or either flank, never the door's side: Traditional Preservation (Fish & Meat)'s Smokehouse does, with a clay pipe out of the top or a trench roofed with flat stones from its foot. The Firebox's tile then shows that flue on that side, and the smoke goes up it instead of round the door.
+**Its flue** leaves its top and is capped on its own: smoke leaks round the door while it burns. It can be joined to a Smokehouse beside it (below), on its back or either flank, never the door's side, with a clay pipe out of the top or a trench roofed with flat stones from its foot. The Firebox's tile then shows that flue on that side, and the smoke goes up it instead of round the door.
+
+## The Smokehouse
+
+Moved here from Traditional Preservation (Fish & Meat) on 2026-11-13, so every TP mod can smoke in it (Dairy's smoked cheese next). A plank shed two tiles long under one roof slope, the door on the high end; inside it is always **In a shed** (Enclosed): the day's temperature, out of rain and wind. It shows nothing hanging; a joined flue shows where it enters on the long side in view, and a ham hangs by the door while finished stacks wait inside.
+
+**Build** (Build menu, Furniture; Woodwork 3; 15 Woodwork XP): 14 Planks, 20 Nails and a hammer (kept). Open air or under an open roof, never in a room; the tile in front of its door stays clear. 6 stacks.
+
+**Connect the Firebox** (the Firebox's menu or the shed's right-click): a **clay pipe** (2 Clay Pipe Segments + 1 Clay, Mason's Trowel kept) or a **stone trench** (3 Flat Stones + 2 Clay, a shovel or spade kept); about half an hour, a little Masonry XP. Not at the door end, not with the Firebox's own door towards the shed, not while it burns; one Firebox a shed, one shed a Firebox. **Disconnect** gives the pipe or stones back; the clay is lost. Neither picks up while joined. Firebox Info says where its flue goes, and each mod adds what its smoke does.
+
+**For a mod** (`shared/TraditionalPreservationCore/Smokehouse.lua`): its recipes carry the tag `Smokehouse` (`Smokehouse.RECIPES`). A stack's OnStart calls `Smokehouse.startCounters(modData, owner, hotNeed)` (owner: the mod's id); the mod's World tracks the chamber's tiles (`Tiles.CHAMBERS`, `Smokehouse.isChamber`, `Smokehouse.slotTile`) and steps **only its own stacks** (`Smokehouse.owns`), each with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`: `hot` is the stoked session now running, `cold` banked hours and broken sessions' hours (by `coolShare`, the share of cool hours since the last look; a stack with `noHot` takes stoked hours as smoke at once); it returns the stoked and banked hours since the last look for the mod's own use, nil when the stack starts counting from this fire. `Smokehouse.hotDone(modData)` says when the cook is done. Its `UI.slotRules` gives `owns(entity, item)` so that in the shared shed it judges only its own items. Other stacks count against the shed's 6. The chamber's World (`server/.../SmokehouseWorld.lua`) draws the look and sets the tag; the menu is `client/.../SmokehouseUI.lua`, the action `TPFlue`. `TPC.kit("smokehouse")`, `TPC.kit("flue")` and `TPC.smokehouse()` in the console.
 
 ## Doors keep their front free
 
-`Doors` (shared) keeps a list of tiles with a door or fire mouth and the way each opens (`Doors.register`): the Hearth's mouth and the Firebox's door, every look, and mods add theirs (Fish & Meat's Smokehouse). None is built or put down with something in front of its door: an object that blocks placing (`BlocksPlacement`, `solid`, `solidtrans`) or a wall on that edge. And nothing checked stands on a tile in front of one's door. The build menu asks `TraditionalPreservationCore.doorFits` (the entities' `OnIsValid`); putting a moveable down asks `UI.keepDoorsFree(sprites)`, where a mod adds its door-less stations (Fish's beams). Vanilla furniture isn't checked. `TPC.doors()` says what is in the way.
+`Doors` (shared) keeps a list of tiles with a door or fire mouth and the way each opens (`Doors.register`): the Hearth's mouth, the Firebox's door and the Smokehouse's, every look, and mods add theirs. None is built or put down with something in front of its door: an object that blocks placing (`BlocksPlacement`, `solid`, `solidtrans`) or a wall on that edge. And nothing checked stands on a tile in front of one's door. The build menu asks `TraditionalPreservationCore.doorFits` (the entities' `OnIsValid`); putting a moveable down asks `UI.keepDoorsFree(sprites)`, where a mod adds its door-less stations (Fish's beams). Vanilla furniture isn't checked. `TPC.doors()` says what is in the way.
 
 A picked-up Hearth or Firebox turns between its two facings as it is put down. The engine links a moveable's facings by `GroupName` + `CustomName` only for a small group, so only the plain look (empty copper, capped flue: the ones that can be picked up) carries `GroupName = Stone`.
 
@@ -107,7 +117,7 @@ Every TP station works by the temperature of the place it stands in, from one we
 | **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same, **2 C warmer in the cold months**: in full at a season of 10 C or below, none from 18 C (`Weather.roomTemperature`, `ROOM_LIFT`); **22 C while the power grid is on**, as vanilla's rooms are |
 | **Loft** | The top storey: a room at floor 1 or higher whose square above is in no room (`square:getSquareAbove()`) | A room's, `+ 0.3 x max(season - 10, 0)` (`Weather.loftTemperature`, `LOFT_ANCHOR`, `LOFT_LIFT`); 22 C while the grid is on |
 | **Basement** | Any level below ground | `10 + 0.4 x (ground - 10)`, the ground being the 10-day average's own 30-day mean (`Weather.GROUND_HOURS`, a month behind): about 5 C January to March, 9 in May, 13 July to September, 9 in November |
-| **In a shed** (Enclosed) | Never from a square: a station claims it in its World entry (Fish & Meat's Smokehouse chamber, the only one). A closed shed in the outside air: out of the rain and wind, no thermal mass | The day's, as Open; not warmed by the grid |
+| **In a shed** (Enclosed) | Never from a square: a station claims it in its World entry (the Smokehouse chamber, the only one). A closed shed in the outside air: out of the rain and wind, no thermal mass | The day's, as Open; not warmed by the grid |
 | **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Hearth) | 28 C / 24 C indoors, for as long as the fuel lasts; outside the air's plus a lift |
 
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Hearth.placeOf`); Fish & Meat dries by its own rates.
@@ -128,9 +138,9 @@ Nothing on its own beyond adding the Hearth. It wraps several vanilla Lua functi
 
 ## Tuning
 
-The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt` and `entity_TP_Firebox.txt`.
+The copper's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/Hearth.lua`. The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Hearth.txt`, `entity_TP_Firebox.txt` and `entity_Smokehouse_Chamber.txt`; the Smokehouse's flue kits and times at the top of `Smokehouse.lua`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_uses.lua` (Uses, Charge, OnHeat, the cooked OnCreate), `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Hearth, its copper looks, the glow and the menu icons, the Firebox with its flues (capped, pipe and trench to each side) and its vent glows, the Smokehouse chamber with its flue entries and the ham (tiles 32-45, drawn as Fish & Meat drew them), and writes the generated `Tiles.lua`. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_uses.lua` (Uses, Charge, OnHeat, the cooked OnCreate), `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_smokehouse.lua` and `test_smokehouse_world.lua`, `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 

@@ -1,6 +1,6 @@
 [h1]Traditional Preservation (Core)[/h1]
 
-The shared mod of the Traditional Preservation series. Every Traditional Preservation mod (Salt, Fish, Yeast, Vinegar, Dairy) requires it. It holds what they share, and two stations of its own: the Hearth and the Firebox.
+The shared mod of the Traditional Preservation series. Every Traditional Preservation mod (Salt, Fish, Yeast, Vinegar, Dairy) requires it. It holds what they share, and three stations of its own: the Hearth, the Firebox and the Smokehouse.
 
 [b]Build 42 only (42.22 or newer). This is an early release, so back up your save before enabling it. Singleplayer only: multiplayer is not supported.[/b]
 
@@ -8,6 +8,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [list]
 [*][b]The Hearth[/b]: a 60 L copper kettle hung from an iron gallows over a low stone firebox, for heating any fluid
 [*][b]The Firebox[/b]: a low stone firebox with an iron door, for heat and cooking
+[*][b]The Smokehouse[/b]: a plank shed two tiles long, joined to a Firebox by a clay pipe or a stone trench, where the TP mods smoke their food
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Eight kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, in a shed, by a fire and by banked embers
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
@@ -33,7 +34,11 @@ A Hearth can't be picked up while its fire burns or its copper holds anything.
 [h2]The Firebox[/h2]
 Build menu, Masonry. Masonry 2: 8 Clay Bricks, 2 Clay and a mason's trowel (kept).
 
-The Hearth's fire without the copper: knee high, with an iron door whose vents show the fire. It lights, cooks and warms like the Hearth, and banks and stokes the same way ([b]Firebox Info[/b] shows the fire and fuel). Its flue is capped on its own, so smoke leaks round the door; Traditional Preservation (Fish & Meat)'s Smokehouse leads it into its smoking shed. It can't be picked up while it burns or while its flue is joined.
+The Hearth's fire without the copper: knee high, with an iron door whose vents show the fire. It lights, cooks and warms like the Hearth, and banks and stokes the same way ([b]Firebox Info[/b] shows the fire and fuel). Its flue is capped on its own, so smoke leaks round the door; joined to a Smokehouse, the smoke goes into the shed. It can't be picked up while it burns or while its flue is joined.
+
+[h2]The Smokehouse[/h2]
+
+A plank shed two tiles long under one roof slope, its door on the high end (Woodwork 3: 14 planks, 20 nails, hammer kept). Open air or under an open roof, never in a room; 6 stacks. Right-click it or a Firebox beside it to [b]Connect the Firebox[/b] with a clay pipe (2 Clay Pipe Segments, 1 Clay, a Mason's Trowel kept) or a stone trench (3 Flat Stones, 2 Clay, a shovel kept). What hangs inside and what the smoke does to it is each mod's: Fish & Meat smokes fish, meat and sausage there.
 
 The tile in front of the Hearth's mouth and the Firebox's door must stay clear: neither builds or goes down with something in front of it. Picked up, both turn to either facing as you put them down.
 
@@ -43,13 +48,13 @@ The tile in front of the Hearth's mouth and the Firebox's door must stay clear: 
 [*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors, a room 2 C warmer in the cold months. A room is 22 C while the power grid is on.
 [*][b]In a loft[/b] (the top storey: a room upstairs with no room over it): as indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on.
 [*][b]In a basement[/b]: follows the ground, a month behind the season and two fifths as far: about 5 C from January to March, 13 C from July to September.
-[*][b]In a shed[/b] (inside Fish & Meat's Smokehouse, a closed plank shed out of doors): the day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it.
+[*][b]In a shed[/b] (inside the Smokehouse, a closed plank shed out of doors): the day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it.
 [/list]
 Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Hearth within 2 tiles holds 28 C indoors, and banked embers (a Hearth's or a Firebox's) 24 C. Outside, the air carries the heat off: under an open roof a fire adds 15 C to the 10-day average (embers 10), in the open 10 C to the day's weather (embers 5), never past 28 and 24.
 
 [h2]Good to know[/h2]
 [list]
-[*]On its own the mod only adds the Hearth and the Firebox. It changes no vanilla recipe, item or loot table.
+[*]On its own the mod only adds the Hearth, the Firebox and the Smokehouse. It changes no vanilla recipe, item or loot table.
 [*]The tiledef number 5173 must be unique among your active mods.
 [/list]
 

@@ -1,0 +1,12 @@
+module Base
+{
+    xuiSkin default
+    {
+        entity ES_SmokehouseChamber
+        {
+            LuaWindowClass = ISEntityWindow,
+            DisplayName = Smokehouse,
+            Icon = Item_SmokehouseChamber,
+        }
+    }
+}

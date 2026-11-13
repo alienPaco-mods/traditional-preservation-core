@@ -4,5 +4,8 @@
   "TPHearth": "Hearth",
   "TP_Firebox": "Firebox",
   "TraditionalPreservationCore.TP_Firebox": "Firebox",
-  "TPFirebox": "Firebox"
+  "TPFirebox": "Firebox",
+  "Smokehouse_Chamber": "Smokehouse",
+  "TraditionalPreservationCore.Smokehouse_Chamber": "Smokehouse",
+  "Smokehouse": "Smokehouse"
 }

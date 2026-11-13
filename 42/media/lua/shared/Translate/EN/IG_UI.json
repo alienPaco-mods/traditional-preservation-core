@@ -70,5 +70,22 @@
   "IGUI_TraditionalPreservationCore_TreatTakes": "%1 L takes %2 of your %3 uses.",
   "IGUI_TraditionalPreservationCore_SeasonNot": "This doesn't season that",
   "IGUI_TraditionalPreservationCore_SeasonAlready": "Already in it",
-  "IGUI_TraditionalPreservationCore_SeasonNone": "None in reach"
+  "IGUI_TraditionalPreservationCore_SeasonNone": "None in reach",
+  "IGUI_TraditionalPreservationCore_FlueFireboxJoined": "This Firebox is already joined to something: disconnect it first",
+  "IGUI_TraditionalPreservationCore_FlueChamberJoined": "This Smokehouse already has a Firebox joined to it",
+  "IGUI_TraditionalPreservationCore_FlueDoorEnd": "The Firebox can't stand at the Smokehouse's door end: put it by a long side or the back",
+  "IGUI_TraditionalPreservationCore_FlueFireboxDoor": "The Firebox's door faces the Smokehouse: its flue leaves from the back or a flank",
+  "IGUI_TraditionalPreservationCore_FlueBurning": "Let the fire go out first",
+  "IGUI_TraditionalPreservationCore_FlueNeeds": "Needs: %1",
+  "IGUI_TraditionalPreservationCore_FlueTool": "Tool kept: %1",
+  "IGUI_TraditionalPreservationCore_FlueMissing": "Missing: %1",
+  "IGUI_TraditionalPreservationCore_ToolTrowel": "a Mason's Trowel",
+  "IGUI_TraditionalPreservationCore_ToolShovel": "a Shovel or Spade",
+  "IGUI_TraditionalPreservationCore_FluePipeHelp": "A clay pipe from the Firebox's top into the Smokehouse wall, bedded in clay.",
+  "IGUI_TraditionalPreservationCore_FlueStonesHelp": "A trench from the Firebox's foot to the Smokehouse, roofed with flat stones on clay: a longer, cooler run for the smoke.",
+  "IGUI_TraditionalPreservationCore_DisconnectHelp": "Takes up the flue: %1 back, the clay is lost. Tool kept: %2",
+  "IGUI_TraditionalPreservationCore_FlueJoined": "Flue: joined to the Smokehouse (%1)",
+  "IGUI_TraditionalPreservationCore_FluePipe": "clay pipe",
+  "IGUI_TraditionalPreservationCore_FlueStones": "stone trench",
+  "IGUI_CraftingWindow_Smokehouse": "Smokehouse"
 }

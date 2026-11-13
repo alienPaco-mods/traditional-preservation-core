@@ -270,6 +270,9 @@ end
 --                                without one). The slot's border goes red and a
 --                                drop says why, as for refusal; and since the recipe can change after loading,
 --                                Craft also refuses to start while any stored input fails it.
+--   owns(entity, item)           optional, for a station several mods use (TP Core's Smokehouse): true for the
+--                                items this mod judges there; any other item passes on to the next mod's rules and
+--                                vanilla, and an add with one in it is left to them whole
 -- Wraps ISCraftLogicPanel.ItemSlotAddItems (its add loop is copied here), ISItemSlot.defaultVerifyItem,
 -- ISItemSlot.onMouseUp and, with recipeRefusal, ISWidgetCraftLogicControl.startCraft: compare them with vanilla
 -- after a game update. Each mod's call wraps the last, so other entities pass through every mod to vanilla.
@@ -284,8 +287,15 @@ function UI.slotRules(rules)
     local vanillaVerifyItem = ISItemSlot.defaultVerifyItem
     local vanillaMouseUp = ISItemSlot.onMouseUp
 
+    -- A station several mods use (the Smokehouse): rules.owns(entity, item) says which items are this mod's to
+    -- judge; any other passes on to the next mod's rules and vanilla.
+    local function mine(entity, item)
+        return not rules.owns or rules.owns(entity, item)
+    end
+
     -- The station's own rules, then the selected recipe's.
     local function refusal(slot, item, queued)
+        if not mine(slot.entity, item) then return nil end
         local reason = rules.refusal(slot, item, queued)
         if reason or not rules.recipeRefusal or not slot.recipe then return reason end
         return rules.recipeRefusal(slot, item)
@@ -305,6 +315,11 @@ function UI.slotRules(rules)
 
     function ISCraftLogicPanel.ItemSlotAddItems(player, entity, itemSlot, itemList, component)
         local ours, extra = station(entity)
+        if ours then
+            for _, item in ipairs(itemList) do
+                if not mine(entity, item) then ours = nil end
+            end
+        end
         if not ours then return vanillaAddItems(player, entity, itemSlot, itemList, component) end
         if rules.added then rules.added(entity) end
 
@@ -383,7 +398,7 @@ function UI.slotRules(rules)
                 slot.resource = inputs:get(i)
                 local stored = slot.resource:getStoredItems()
                 for j = 0, stored:size() - 1 do
-                    local reason = rules.recipeRefusal(slot, stored:get(j))
+                    local reason = mine(self.entity, stored:get(j)) and rules.recipeRefusal(slot, stored:get(j))
                     if reason then
                         HaloTextHelper.addBadText(self.player, getText(reason))
                         return

@@ -137,12 +137,13 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper),
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth and its copper), `.../Smokehouse.lua` (the
+Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
-`HearthUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
-see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
+`HearthUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
 require=\TraditionalPreservationCore
@@ -163,7 +164,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 4. **Modules only the required mod has:** `Hearth` (the Hearth and its copper, save key `tpHearth`, the opt-in "by
    a fire" place, hooks), its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
-   mods can't both ship. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
+   mods can't both ship; the Smokehouse's three files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
    makes a click on the station open it.
@@ -198,6 +199,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
+   - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
+     `Smokehouse.startCounters(modData, owner, hotNeed)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
+     the stacks it owns (`Smokehouse.owns`) with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`.
+     Its `UI.slotRules` passes `owns(entity, item)`, so in the shared shed it judges only its own items. Core's README
+     ("The Smokehouse") has the details; Fish & Meat is the worked example.
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
    - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,
@@ -271,7 +277,7 @@ of all:
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
 | `ISWidgetCraftLogicControl.startCraft` | core `UI.slotRules` with `recipeRefusal` (Fish & Meat) | Craft refuses stored inputs the selected recipe can't take |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox; Fish's beams and Smokehouse) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
+| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox, Smokehouse; Fish's beams) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |

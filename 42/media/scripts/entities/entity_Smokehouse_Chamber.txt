@@ -1,0 +1,70 @@
+module TraditionalPreservationCore
+{
+    entity Smokehouse_Chamber
+    {
+        component UiConfig
+        {
+            xuiSkin = default,
+            entityStyle = ES_SmokehouseChamber,
+            uiEnabled = true,
+        }
+        component Resources
+        {
+            group craft_inputs
+            {
+                Item@Input@25,
+            }
+            group craft_outputs
+            {
+                Item@Output@200@StackAny,
+            }
+        }
+        /* A closed shed of planks, moved from Fish & Meat to TP Core 2026-11-13 so every mod can smoke in it: each
+           mod's recipes carry the Smokehouse tag, and each steps its own stacks (Smokehouse.lua). It is always
+           Enclosed (the outside air, out of rain and wind). Two tiles, the slots on the engine's master tile. */
+        component DryingCraftLogic
+        {
+            Recipes = Smokehouse,
+            StartMode = Manual,
+            inputGroup = craft_inputs,
+            outputGroup = craft_outputs,
+            actionAnim = Untie_High,
+        }
+        component SpriteConfig
+        {
+            isThumpable = false,
+            OnIsValid = TraditionalPreservationCore.notInRoom,
+            face S
+            {
+                layer
+                {
+                    row = traditionalpreservationcore_01_32,
+                    row = traditionalpreservationcore_01_33,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = traditionalpreservationcore_01_34 traditionalpreservationcore_01_35,
+                }
+            }
+        }
+        component CraftRecipe
+        {
+            timedAction = BuildWoodenStructureMedium,
+            time = 400,
+            SkillRequired = Woodwork:3,
+            xpAward = Woodwork:15,
+            category = Furniture,
+            Tags = Carpentry;Furniture,
+            Tooltip = Tooltip_craft_smokehouseChamberDesc,
+            inputs
+            {
+                item 1 tags[base:hammer] mode:keep flags[Prop1;MayDegradeVeryLight],
+                item 14 [Base.Plank],
+                item 20 [Base.Nails],
+            }
+        }
+    }
+}

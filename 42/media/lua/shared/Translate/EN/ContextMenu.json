@@ -9,5 +9,9 @@
   "ContextMenu_TraditionalPreservationCore_StokeFire": "Stoke the Fire",
   "ContextMenu_TraditionalPreservationCore_FireboxInfo": "Firebox Info",
   "ContextMenu_TraditionalPreservationCore_Season": "Season",
-  "ContextMenu_TraditionalPreservationCore_SeasonWith": "%1 (%2)"
+  "ContextMenu_TraditionalPreservationCore_SeasonWith": "%1 (%2)",
+  "ContextMenu_TraditionalPreservationCore_ConnectFirebox": "Connect the Firebox",
+  "ContextMenu_TraditionalPreservationCore_ConnectPipe": "With a Clay Pipe",
+  "ContextMenu_TraditionalPreservationCore_ConnectStones": "With a Stone Trench",
+  "ContextMenu_TraditionalPreservationCore_DisconnectFirebox": "Disconnect the Firebox"
 }

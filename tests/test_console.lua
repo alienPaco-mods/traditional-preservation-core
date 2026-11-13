@@ -24,6 +24,13 @@ run("kit", "firebox")
 check("kit(\"firebox\") gives what a Firebox is built from", #player.given == before + 11)
 check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"firebox\")", 1, true) ~= nil
     and #player.given == before + 11)
+before = #player.given
+run("kit", "smokehouse")
+check("kit(\"smokehouse\") gives what a Smokehouse is built from", #player.given == before + 35)
+before = #player.given
+run("kit", "flue")
+check("kit(\"flue\") gives both flue kits and their tools", #player.given == before + 10)
+check("smokehouse says so when none is near", run("smokehouse"):find("No Smokehouse", 1, true) ~= nil)
 local multiplier = 1
 getGameTime = function()
     return { setMultiplier = function(_, x) multiplier = x end, getTrueMultiplier = function() return multiplier end }

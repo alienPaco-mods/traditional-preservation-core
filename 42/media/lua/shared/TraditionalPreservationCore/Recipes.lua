@@ -107,4 +107,44 @@ end
 TraditionalPreservationCore = TraditionalPreservationCore or {}
 TraditionalPreservationCore.OnCreateCooked = Recipes.cookOutputs
 
+-- Magazines and research
+
+-- A magazine's recipes as a list of names, with name added if it isn't there: the entries DoParam's
+-- LearnedRecipes takes (it replaces the list). nil when nothing needs adding.
+function Recipes.withLearned(names, name)
+    for _, have in ipairs(names) do
+        if have == name then return nil end
+    end
+    local all = {}
+    for _, have in ipairs(names) do table.insert(all, have) end
+    table.insert(all, name)
+    return all
+end
+
+-- Teaches recipeName (a craft recipe's full name) from a vanilla magazine too (magazineType, "Base.SmithingMag2").
+-- The magazine's script item holds the list and every copy reads it, so magazines already in the world teach it too
+-- (ENGINE_NOTES). Known by the recipe's own name, as the character's known list is checked.
+function Recipes.teach(magazineType, recipeName, tag)
+    local magazine = ScriptManager.instance:getItem(magazineType)
+    local recipe = ScriptManager.instance:getCraftRecipe(recipeName)
+    if not magazine or not recipe then
+        print("[" .. tag .. "] Could not find " .. (magazine and recipeName or magazineType))
+        return false
+    end
+    local learned, names = magazine:getLearnedRecipes(), {}
+    for i = 0, learned and learned:size() - 1 or -1 do table.insert(names, learned:get(i)) end
+    local all = Recipes.withLearned(names, recipe:getName())
+    if all then
+        magazine:DoParam("LearnedRecipes = " .. table.concat(all, ";"))
+        log(tag, "%s teaches %s", magazineType, recipe:getName())
+    end
+    return true
+end
+
+-- Lets an item be researched for recipeName (Research Recipes on its menu), as ResearchableRecipes in its script.
+function Recipes.researchable(itemType, recipeName)
+    local item = ScriptManager.instance:getItem(itemType)
+    if item then item:DoParam("ResearchableRecipes = " .. recipeName) end
+end
+
 return Recipes

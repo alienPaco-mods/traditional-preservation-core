@@ -76,4 +76,10 @@ check("lines too", #lines == 4 and lines[1] == bowl and lines[2] == inputs[2] an
 check("a second world changes nothing", Recipes.addFluids("Base.MakeCakeBatter", SOUR, "T") == 0 and #loaded == 1)
 check("a missing recipe is skipped", Recipes.addFluids("Base.Nothing", SOUR, "T") == 0)
 
+-- Magazines
+local listed = Recipes.withLearned({ "base:kitchentools", "Forge_Cooking_Pot" }, "TraditionalPreservationCore.Forge_TPCauldron")
+check("a magazine's list keeps what it had and gains the recipe", listed and #listed == 3 and listed[1] == "base:kitchentools"
+    and listed[3] == "TraditionalPreservationCore.Forge_TPCauldron")
+check("and is left alone when it has it already", Recipes.withLearned(listed, "TraditionalPreservationCore.Forge_TPCauldron") == nil)
+
 H.done()

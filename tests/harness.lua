@@ -228,6 +228,8 @@ function H.vessel(name, fluid, litres, capacity, more)
         getTex = function() return name .. ".png" end,
         isFavorite = function() return false end,
         getFullType = function() return "Base." .. name:gsub("%W", "") end,
+        hasTag = function() return false end,
+        isBroken = function() return false end,
     }
     local modData = {}
     item.getModData = function() return modData end
@@ -246,6 +248,8 @@ function H.installMenus()
     ISBaseTimedAction, ISCollapsableWindow = H.class("ISBaseTimedAction"), H.class("ISCollapsableWindow")
     function instanceof(object, name) return type(object) == "table" and object.class == name end
     function getTexture(name) return name end
+    function getItemNameFromFullType(fullType) return fullType:match("[^.]+$") end
+    ItemTag = ItemTag or { PLIERS = "base:pliers" }
     function getSpecificPlayer() return "player" end
     Fluid = { Get = function() return nil end }
     ISWorldObjectContextMenu = {

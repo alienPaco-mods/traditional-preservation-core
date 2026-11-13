@@ -15,6 +15,11 @@ require = function(name)
 end
 
 local ui = H.installMenus()
+-- A plain item in reach: its full type and tags.
+local function thing(fullType, tags)
+    return { getFullType = function() return fullType end, isFavorite = function() return false end, getFluidContainer = function() end,
+        isBroken = function() return false end, hasTag = function(_, tag) return tags ~= nil and tags[tag] == true end }
+end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
 require "TraditionalPreservationCore/HearthUI"
@@ -23,8 +28,13 @@ local onFillMenu = H.handlers.OnFillWorldObjectContextMenu[1]
 
 local menu = H.menu
 
-local function named(aMenu, key)
-    return aMenu:getOptionFromName(getText(key))
+local function named(aMenu, key, ...)
+    return aMenu:getOptionFromName(getText(key, ...))
+end
+
+-- Fit Cauldron, Remove Cauldron.
+local function cauldron(aMenu, key)
+    return named(aMenu, key, getText("IGUI_TraditionalPreservationCore_InfoCopper"))
 end
 
 local function hearth(copper, lit)
@@ -50,6 +60,7 @@ local function open(aHearth, context)
     context = context or menu()
     onFillMenu(0, context, { fireplace, aHearth }, false)
     local option = context:getOptionFromName("Stone Oven") or named(context, "IGUI_CraftingWindow_TPHearth")
+        or named(context, "IGUI_CraftingWindow_TPFirebox")
     return option and option.subOption, context
 end
 
@@ -191,8 +202,8 @@ pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper")
 local entries = pour.subOption.options
 check("pouring lists every container with fluid in it, favourites and empties left out", #entries == 3
     and entries[1].args[2] == milk and entries[2].args[2] == water and entries[3].args[2] == mixture)
-check("the copper's lines show the copper, full when it holds something", sub.options[1].iconTexture == "media/textures/Item_TPCopperFull.png"
-    and pour.iconTexture == "media/textures/Item_TPCopper.png")
+check("the copper's lines show the cauldron, full when it holds something", sub.options[1].iconTexture == "media/textures/Item_TPCauldronFull.png"
+    and pour.iconTexture == "media/textures/Item_TPCauldron.png")
 check("each container shows as the inventory draws it, its fluid's colour and all", entries[2].itemForTexture == water
     and entries[2].iconTexture == nil)
 check("each with its litres", entries[2].name:find("Bucket of Water", 1, true) ~= nil and entries[2].name:find("8.0", 1, true) ~= nil)
@@ -220,7 +231,7 @@ check("a full copper takes no more", pour.isDisabled == true and pour.subOption 
 sub = open(holdsWater)
 local fill = named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCopper")
 entries = fill.subOption.options
-check("Fill from shows the copper full", fill.iconTexture == "media/textures/Item_TPCopperFull.png" and entries[2].itemForTexture == empty)
+check("Fill from shows the cauldron full", fill.iconTexture == "media/textures/Item_TPCauldronFull.png" and entries[2].itemForTexture == empty)
 check("filling lists empty containers and those of the copper's fluid with room", #entries == 2
     and entries[1].args[2] == water and entries[2].args[2] == empty)
 entries[2].onSelect(character, unpack(entries[2].args))
@@ -264,20 +275,103 @@ local left = rotten:getModData()[Hearth.KEY]
 check("done, the copper is empty and its age forgotten", left.ml == nil and left.fluid == nil and left.tpFluidAge == nil
     and not emptying:isValid())
 
+-- A Stone Hearth with nothing fitted: the copper tile, attached noted false.
+local function bare(lit)
+    local fire = hearth(nil, lit)
+    fire:getModData()[Hearth.KEY] = { attached = false }
+    return fire
+end
+
+-- Fit Cauldron
+ui.carried = {}
+sub = open(bare())
+local fit = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit")
+check("a bare Stone Hearth offers Fit Cauldron, greyed with what is missing", fit ~= nil and fit.isDisabled == true
+    and fit.toolTip.description:find("ForgedCauldron", 1, true) ~= nil and fit.toolTip.description:find("Pliers", 1, true) ~= nil)
+check("and no Remove, no pouring", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove") == nil
+    and named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper") == nil)
+local kit = { thing("TraditionalPreservationCore.ForgedCauldron"), thing("Base.MetalPipe"), thing("Base.MetalPipe"),
+    thing("Base.HeavyChain"), thing("Base.LargeHook"), thing("Base.Pliers", { ["base:pliers"] = true }) }
+ui.carried = kit
+local spare = bare()
+sub = open(spare)
+fit = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit")
+check("with the kit in reach it can be chosen", fit.isDisabled ~= true and fit.toolTip.description:find("Missing", 1, true) == nil)
+fit.onSelect(character, unpack(fit.args))
+local fitting = ui.queued[#ui.queued]
+check("choosing it brings the kit to hand and queues the fit", fitting.Type == "TPHearthFit" and fitting.fitting == true
+    and fitting.fire == spare and fitting.spec.id == Hearth.COPPER and #ui.moved >= #kit)
+sub = open(bare(true))
+check("not while the fire burns", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit").isDisabled == true)
+
+-- The fit itself: the kit goes in, the cauldron is on; Remove gives it all back.
+local pack, given, xp = {}, {}, 0
+for _, item in ipairs(kit) do table.insert(pack, item) end
+ArrayList = { new = function() return nil end }
+Perks = { Blacksmith = "Blacksmith" }
+local smith = {
+    isTimedActionInstant = function() return false end,
+    getXp = function() return { AddXP = function(_, _, amount) xp = xp + amount end } end,
+    getInventory = function() return {
+        containsTagRecurse = function(_, tag) return tag == "base:pliers" end,
+        getSomeType = function(_, fullType, count)
+            local found = {}
+            for _, item in ipairs(pack) do
+                if item:getFullType() == fullType and #found < count then table.insert(found, item) end
+            end
+            return H.list(found)
+        end,
+        Remove = function(_, item)
+            for i, have in ipairs(pack) do if have == item then table.remove(pack, i) return end end
+        end,
+        AddItem = function(_, fullType) table.insert(given, fullType) end,
+    } end,
+}
+local onto = bare()
+local action = TPHearthFit:new(smith, onto, Hearth.COPPER)
+check("Fit takes an hour's work and is valid with the kit", action.maxTime == 600 and action:isValid())
+action:complete()
+check("done, the kit is used, only the pliers are left, the cauldron is on and empty", #pack == 1
+    and Hearth.attachedTo(onto) == Hearth.COPPER and next(Hearth.copperState(onto:getModData())) == nil and xp == 5)
+check("a second fit is refused", not TPHearthFit:new(smith, onto, Hearth.COPPER):isValid())
+local off = TPHearthFit:new(smith, onto)
+check("Remove is shorter, and valid while the cauldron is empty", off.maxTime == 300 and off:isValid())
+Hearth.copperState(onto:getModData()).ml = 1000
+check("not while it holds anything", not off:isValid())
+Hearth.copperState(onto:getModData()).ml = nil
+off:complete()
+table.sort(given)
+check("done, every part is back and nothing is fitted", table.concat(given, " ") == "Base.HeavyChain Base.LargeHook Base.MetalPipe "
+    .. "Base.MetalPipe TraditionalPreservationCore.ForgedCauldron" and Hearth.attachedTo(onto) == nil
+    and onto:getModData()[Hearth.KEY].copper == nil)
+
+-- Remove Cauldron
+sub = open(hearth())
+local remove = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove")
+check("a fitted Hearth offers Remove Cauldron, saying what comes back", remove ~= nil and remove.isDisabled ~= true
+    and remove.toolTip.description:find("HeavyChain", 1, true) ~= nil and cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit") == nil)
+sub = open(holdsWater)
+check("greyed while the cauldron holds anything", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
+sub = open(hearth({}, true))
+check("and while the fire burns", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
+remove = cauldron(open(hearth()), "ContextMenu_TraditionalPreservationCore_Remove")
+remove.onSelect(character, unpack(remove.args))
+check("choosing it queues the removal", ui.queued[#ui.queued].Type == "TPHearthFit" and ui.queued[#ui.queued].fitting == false)
+
 -- Picking a Hearth up
 local props = {}
-check("a cold, empty Hearth can be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth()) == true)
-check("not while it burns", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth({}, true)) == false)
-check("nor while the copper holds anything", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, holdsWater) == false)
+check("a cold, bare Stone Hearth can be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare()) == true)
+check("not while it burns", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare(true)) == false)
+check("nor with the cauldron fitted, even empty", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth()) == false)
 ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, holdsWater, character, "pickup")
 check("and the pick-up cursor says why", InfoPanelFlags.hasItems == true and not InfoPanelFlags.tooHot)
 InfoPanelFlags.tooHot = nil
 ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, hearth({}, true), character, "pickup")
 check("a burning one is too hot, not full", InfoPanelFlags.tooHot == true and InfoPanelFlags.hasItems == false)
-ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, hearth(), character, "pickup")
+ISMoveableSpriteProps.getInfoPanelFlagsPerTile(props, nil, bare(), character, "pickup")
 check("but not for one that can go", InfoPanelFlags.hasItems == false)
 ui.vanillaPickUp = false
-check("vanilla's own refusal still stands", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, hearth()) == false)
+check("vanilla's own refusal still stands", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare()) == false)
 
 check("no text would make the game's formatter warn" .. (H.textWarnings[1] and " (" .. table.concat(H.textWarnings, "; ") .. ")" or ""),
     #H.textWarnings == 0)

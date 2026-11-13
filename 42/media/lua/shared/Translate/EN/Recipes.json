@@ -1,11 +1,10 @@
 {
-  "TP_Hearth": "Stone Hearth (Copper)",
-  "TraditionalPreservationCore.TP_Hearth": "Stone Hearth (Copper)",
-  "TPHearth": "Stone Hearth (Copper)",
   "TP_Firebox": "Stone Hearth",
   "TraditionalPreservationCore.TP_Firebox": "Stone Hearth",
   "TPFirebox": "Stone Hearth",
   "Smokehouse_Chamber": "Smokehouse",
   "TraditionalPreservationCore.Smokehouse_Chamber": "Smokehouse",
-  "Smokehouse": "Smokehouse"
+  "Smokehouse": "Smokehouse",
+  "Forge_TPCauldron": "Forge Cauldron",
+  "TraditionalPreservationCore.Forge_TPCauldron": "Forge Cauldron"
 }

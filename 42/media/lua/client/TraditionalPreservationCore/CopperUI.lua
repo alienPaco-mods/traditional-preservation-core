@@ -9,8 +9,8 @@ local HearthUI = require "TraditionalPreservationCore/HearthUI"
 require "TraditionalPreservationCore/Copper"
 
 local say = UI.say
-local COPPER_ICON = "media/textures/Item_TPCopper.png"
-local COPPER_FULL_ICON = "media/textures/Item_TPCopperFull.png"
+local COPPER_ICON = "media/textures/Item_TPCauldron.png"
+local COPPER_FULL_ICON = "media/textures/Item_TPCauldronFull.png"
 local COPPER_COLOUR = { 0.72, 0.45, 0.3 }
 
 local litresText, degrees, fluidName, hoursText = UI.litres, UI.degrees, UI.fluidName, UI.hoursText

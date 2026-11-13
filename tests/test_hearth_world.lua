@@ -191,4 +191,24 @@ check("out, a copper holding fluid may not come off", Hearth.canRemove(fire) == 
 Hearth.take(copper)
 check("out and empty, it may", Hearth.canRemove(fire) == true)
 
+-- Two slots: the Cauldron and the Smokehouse's flue go together; Remove leaves the bare Stone Hearth.
+local cauldron = Hearth.attachment(Hearth.COPPER)
+check("fitted, a second fit is refused", Hearth.fitRefusal(fire, cauldron) == "Fitted")
+Hearth.setFlue(modData[Hearth.KEY], "Pipe", "Back")
+check("a fitted Hearth's flue can be joined, the cauldron kept", modData[Hearth.KEY].flue == "Pipe" and Hearth.isHearth(fire))
+check("Remove gives the whole kit back", #Hearth.fitBack(cauldron) == 4)
+check("taken off, the copper's state goes and nothing is fitted", Hearth.unfit(fire) == Hearth.COPPER
+    and modData[Hearth.KEY].copper == nil and modData[Hearth.KEY].attached == false and Hearth.attachmentOf(fire) == nil)
+World.update(fire, 121)
+check("its copper tile turns to the bare Stone Hearth's, the flue still joined", Hearth.isFirebox(fire)
+    and fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0) and modData[Hearth.KEY].flue == "Pipe")
+check("the joined flue never blocks the fit", Hearth.fitRefusal(fire, cauldron) == nil)
+fire.lit = true
+check("but a burning fire does", Hearth.fitRefusal(fire, cauldron) == "Burning")
+fire.lit = false
+Hearth.fit(fire, Hearth.COPPER)
+World.update(fire, 121)
+check("fitted again, the copper's tile, its state empty", Hearth.isHearth(fire) and Hearth.face(fire.sprite:getName()) == 0
+    and next(modData[Hearth.KEY].copper) == nil)
+
 H.done()

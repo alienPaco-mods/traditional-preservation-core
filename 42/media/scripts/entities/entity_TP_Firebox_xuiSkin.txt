@@ -2,12 +2,6 @@ module Base
 {
     xuiSkin default
     {
-        entity ES_TPHearth
-        {
-            LuaWindowClass = ISEntityWindow,
-            DisplayName = TPHearth,
-            Icon = Item_TPHearth,
-        }
         entity ES_TPFirebox
         {
             LuaWindowClass = ISEntityWindow,

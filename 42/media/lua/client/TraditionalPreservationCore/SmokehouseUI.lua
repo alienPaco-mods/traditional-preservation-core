@@ -129,11 +129,11 @@ Events.OnFillWorldObjectContextMenu.Add(onFillChamberMenu)
 -- Neither the Firebox nor the shed picks up while the flue joins them.
 UI.keepInPlace(function(object)
     if Smokehouse.isChamber(object) then return Smokehouse.joinedFirebox(object) ~= nil end
-    return Hearth.isFirebox(object) and Smokehouse.flueOf(object) ~= nil
+    return Hearth.isFire(object) and Smokehouse.flueOf(object) ~= nil
 end)
 
 HearthUI.addFireboxNotes(function(info, notes)
-    local flue = info.copper and info.copper.flue
+    local flue = info.state and info.state.flue
     if not flue then return end
     table.insert(notes, UI.say("IGUI_TraditionalPreservationCore_FlueJoined", getText(KIND_NAMES[flue])))
 end)

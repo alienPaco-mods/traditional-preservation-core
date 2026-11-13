@@ -16,9 +16,15 @@ local TPC, run = H.checkConsole("42/media/lua/client/TraditionalPreservationCore
 run("kit")
 local counts = {}
 for _, fullType in ipairs(player.given) do counts[fullType] = (counts[fullType] or 0) + 1 end
-check("kit gives what a Hearth is built from", counts["Base.MasonsTrowel_Wood"] == 1 and counts["Base.ClayBrick"] == 8
-    and counts["Base.Clay"] == 2 and counts["Base.CopperSheet"] == 2 and counts["Base.IronBar"] == 3
-    and counts["Base.LargeHook"] == 1)
+check("kit gives a Stone Hearth and Fit Cauldron's kit", counts["Base.MasonsTrowel_Wood"] == 1 and counts["Base.ClayBrick"] == 8
+    and counts["Base.Clay"] == 2 and counts["TraditionalPreservationCore.ForgedCauldron"] == 1 and counts["Base.MetalPipe"] == 2
+    and counts["Base.HeavyChain"] == 1 and counts["Base.LargeHook"] == 1 and counts["Base.Pliers"] == 1)
+local given = #player.given
+run("kit", "cauldron")
+check("kit(\"cauldron\") gives Fit Cauldron's kit", #player.given == given + 6)
+given = #player.given
+run("kit", "forge")
+check("kit(\"forge\") gives the forging and the magazine", #player.given == given + 10)
 local before = #player.given
 run("kit", "firebox")
 check("kit(\"firebox\") gives what a Firebox is built from", #player.given == before + 11)

@@ -2,11 +2,13 @@
 -- the fire; ours, inside vanilla's Hearth submenu, banks a lit fire or stokes it up again and has what is fitted
 -- add its own rows (Hearth.attach's status and menu: the copper's are CopperUI's). Hearth Info, also on the menu,
 -- shows the fire, its fuel and the attachment's rows and notes. A Hearth can't be picked up while it burns or while
--- its attachment can't come off (Hearth.canRemove). Clicking a Hearth opens Hearth Info too. Mods add their own rows
+-- something is fitted. Clicking a Hearth opens Hearth Info too. Mods add their own rows
 -- to the copper's menu with HearthUI.addMenu and notes to Hearth Info with HearthUI.addNotes.
--- A Firebox has the same menu without the copper: Firebox Info and Bank / Stoke, plus a mod's rows
--- (HearthUI.addFireboxMenu, Fish & Meat's flue) and notes (HearthUI.addFireboxNotes).
+-- A Firebox has the same menu without the copper: Firebox Info and Bank / Stoke, and Fit for each attachment that has
+-- a fit (Fit Cauldron); a fitted Hearth has Remove. The fire's own rows (HearthUI.addFireboxMenu: the Smokehouse's
+-- Connect / Disconnect, its connected slot) and notes (HearthUI.addFireboxNotes) show on both, fitted or not.
 require "TimedActions/TPHearthFire"
+require "TimedActions/TPHearthFit"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 require "TraditionalPreservationCore/Copper"
@@ -23,6 +25,8 @@ local FUEL_SCALE_MIN = 12 * 60 -- a full Fuel bar: 12 hours of burning
 local FUEL_COLOUR = { 0.75, 0.42, 0.18 }
 
 local tooltipFor = UI.tooltip
+local FIT_ICON = "media/textures/Item_TPCauldron.png"
+local TOOL_NAMES = { PLIERS = "IGUI_TraditionalPreservationCore_ToolPliers" }
 
 -- Menu
 
@@ -89,6 +93,72 @@ end
 
 local HearthWindow -- below
 
+-- Fit and Remove
+
+local function itemList(items)
+    local names = {}
+    for _, need in ipairs(items) do table.insert(names, need[2] .. " " .. getItemNameFromFullType(need[1])) end
+    return table.concat(names, ", ")
+end
+
+local function fitTool(playerObj, spec)
+    local tag = ItemTag[spec.fit.tool]
+    return UI.findItems(playerObj, function(item) return item:hasTag(tag) and not item:isBroken() end)[1]
+end
+
+local function toolName(spec)
+    return getText(TOOL_NAMES[spec.fit.tool] or spec.fit.tool)
+end
+
+local function onFit(playerObj, fire, spec, fitting)
+    if fitting then
+        for _, need in ipairs(spec.fit.items) do
+            local items = UI.findItems(playerObj, function(item) return item:getFullType() == need[1] end)
+            for i = 1, need[2] do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, items[i]) end
+        end
+    end
+    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, fitTool(playerObj, spec))
+    if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
+    ISTimedActionQueue.add(TPHearthFit:new(playerObj, fire, fitting and spec.id or nil))
+end
+
+-- Fit <attachment>: its items and tool, what is missing, or why not now.
+local function addFitOption(menu, playerObj, fire, spec)
+    local option = menu:addOption(UI.say("ContextMenu_TraditionalPreservationCore_Fit", getText(spec.name)), playerObj, onFit, fire, spec, true)
+    option.iconTexture = getTexture(spec.fitIcon or FIT_ICON)
+    local lines = {}
+    if spec.fitHelp then table.insert(lines, getText(spec.fitHelp)) end
+    table.insert(lines, UI.say("IGUI_TraditionalPreservationCore_FlueNeeds", itemList(spec.fit.items)))
+    table.insert(lines, UI.say("IGUI_TraditionalPreservationCore_FlueTool", toolName(spec)))
+    local missing = {}
+    for _, need in ipairs(spec.fit.items) do
+        local short = need[2] - #UI.findItems(playerObj, function(item) return item:getFullType() == need[1] end)
+        if short > 0 then table.insert(missing, { need[1], short }) end
+    end
+    local short = itemList(missing)
+    if not fitTool(playerObj, spec) then short = short ~= "" and (short .. ", " .. toolName(spec)) or toolName(spec) end
+    if short ~= "" then table.insert(lines, UI.say("IGUI_TraditionalPreservationCore_FlueMissing", short)) end
+    if Hearth.isBurning(fire) then table.insert(lines, getText("IGUI_TraditionalPreservationCore_FlueBurning")) end
+    if short ~= "" or Hearth.fitRefusal(fire, spec) then return UI.disable(option, table.concat(lines, " <LINE> ")) end
+    tooltipFor(option, table.concat(lines, " <LINE> "))
+end
+
+-- Remove <attachment>: what comes back, or why not now (burning, or it holds something).
+local function addRemoveOption(menu, playerObj, fire, spec)
+    local option = menu:addOption(UI.say("ContextMenu_TraditionalPreservationCore_Remove", getText(spec.name)), playerObj, onFit, fire, spec, false)
+    option.iconTexture = getTexture(spec.fitIcon or FIT_ICON)
+    local help = UI.say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Hearth.fitBack(spec)), toolName(spec))
+    local ok, why = Hearth.canRemove(fire)
+    if not ok then
+        local reason = why == "Burning" and "IGUI_TraditionalPreservationCore_FlueBurning" or "IGUI_TraditionalPreservationCore_RemoveFull"
+        return UI.disable(option, help .. " <LINE> " .. getText(reason))
+    end
+    if not fitTool(playerObj, spec) then
+        return UI.disable(option, help .. " <LINE> " .. UI.say("IGUI_TraditionalPreservationCore_FlueMissing", toolName(spec)))
+    end
+    tooltipFor(option, help)
+end
+
 local MENUS = {}
 
 -- fn(menu, playerObj, hearth, copper) adds a mod's own rows to the Hearth's menu, after Pour into Copper.
@@ -101,9 +171,21 @@ function HearthUI.modRows(menu, playerObj, hearth, copper)
     for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, copper) end
 end
 
+local FIREBOX_MENUS = {}
+
+-- fn(menu, playerObj, fire, state) adds rows for the fire itself, fitted or not (a connection's: the Smokehouse's
+-- flue), last in its menu. state is the fire's.
+function HearthUI.addFireboxMenu(fn)
+    table.insert(FIREBOX_MENUS, fn)
+end
+
+local function addFireRows(menu, playerObj, fire, state)
+    for _, fn in ipairs(FIREBOX_MENUS) do fn(menu, playerObj, fire, state) end
+end
+
 -- A Hearth: what is fitted says what it holds first, then Hearth Info, Bank / Stoke and the attachment's own rows.
 local function addHearthMenu(context, playerObj, hearth)
-    Hearth.fireStateOf(hearth)
+    local state = Hearth.fireStateOf(hearth)
     local spec, part = Hearth.attachmentOf(hearth)
     local menu = hearthSubMenu(context, hearth)
     fixFuelLine(menu, hearth)
@@ -118,13 +200,8 @@ local function addHearthMenu(context, playerObj, hearth)
     info.iconTexture = getTexture(HEARTH_ICON)
     addFireOption(menu, playerObj, hearth)
     if spec and spec.menu then spec.menu(menu, playerObj, hearth, part) end
-end
-
-local FIREBOX_MENUS = {}
-
--- fn(menu, playerObj, firebox, state) adds a mod's own rows to the Firebox's menu, after Bank / Stoke.
-function HearthUI.addFireboxMenu(fn)
-    table.insert(FIREBOX_MENUS, fn)
+    if spec and spec.fit then addRemoveOption(menu, playerObj, hearth, spec) end
+    addFireRows(menu, playerObj, hearth, state)
 end
 
 local function addFireboxMenu(context, playerObj, firebox)
@@ -134,7 +211,10 @@ local function addFireboxMenu(context, playerObj, firebox)
     local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_FireboxInfo"), playerObj, HearthWindow.open, firebox)
     info.iconTexture = getTexture(FIREBOX_ICON)
     addFireOption(menu, playerObj, firebox)
-    for _, fn in ipairs(FIREBOX_MENUS) do fn(menu, playerObj, firebox, state) end
+    for _, spec in ipairs(Hearth.attachments()) do
+        if spec.fit and spec.name then addFitOption(menu, playerObj, firebox, spec) end
+    end
+    addFireRows(menu, playerObj, firebox, state)
 end
 
 local function onFillContextMenu(playerNum, context, worldobjects, test)
@@ -154,13 +234,13 @@ Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
 UI.keepDoorsFree()
 
--- Picking a Hearth or Firebox up while the fire burns (lit or banked), or while what is fitted can't come off (the
--- copper holding anything), would lose them. The cursor says Too hot for the fire, Has items for the rest.
+-- Picking a Stone Hearth up while the fire burns (lit or banked) would lose it, and with something fitted the
+-- attachment comes off first (Remove): the stone alone is carried. The cursor says Too hot for the fire, Has items
+-- for the rest.
 UI.keepInPlace(function(object)
     if not Hearth.isFire(object) then return nil end
-    local ok, why = Hearth.canRemove(object)
-    if ok then return nil end
-    return why == "Burning" and "tooHot" or true
+    if Hearth.isBurning(object) then return "tooHot" end
+    return Hearth.attachedTo(object) ~= nil or nil
 end)
 
 -- Hearth Info: the fire, its fuel and the attachment's rows and notes.
@@ -173,7 +253,9 @@ function HearthUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
 
--- The same for Firebox Info: info = { copper (its state: flue, flueSide), lit, banked, fuelMin, burnHours, firebox }.
+-- Notes on the fire itself, fitted or not (a connection's: the Smokehouse's flue), last in its Info. info = { state
+-- (the fire's: flue, flueSide), copper (the attachment's state, or the fire's when nothing is fitted), lit, banked,
+-- fuelMin, burnHours, firebox }.
 function HearthUI.addFireboxNotes(fn)
     table.insert(FIREBOX_NOTES, fn)
 end
@@ -224,6 +306,7 @@ function HearthWindow:render()
     if spec and spec.rows then y = spec.rows(self, y, info) end
     if spec and spec.notes then spec.notes(info, notes) end
     for _, fn in ipairs(NOTES) do fn(info, notes) end
+    for _, fn in ipairs(FIREBOX_NOTES) do fn(info, notes) end
     self:drawNotes(y, notes)
 end
 

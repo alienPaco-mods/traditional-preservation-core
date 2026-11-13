@@ -140,7 +140,7 @@ local function fireboxOn(square)
     local objects = square:getObjects()
     for i = 0, objects:size() - 1 do
         local object = objects:get(i)
-        if Hearth.isFirebox(object) then return object end
+        if Hearth.isFire(object) then return object end
     end
 end
 

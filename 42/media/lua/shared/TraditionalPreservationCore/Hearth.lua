@@ -13,7 +13,10 @@
 --
 -- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the copper is the first, written in
 -- Copper.lua, CopperUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
--- One at a time: the fire's state names it (attached), and its own state is kept under its id there.
+-- Two slots (user, 2026-11-13): one attachment fitted on the fire (the Cauldron, later Salt's pan) and one connection
+-- built onto it (the Smokehouse's flue), each free of the other. The fire's state names the attachment (attached:
+-- false once one has come off), and the attachment's own state is kept under its id there. Fit and Remove are
+-- Core's (Hearth.canFit, Hearth.fit, Hearth.unfit; TPHearthFit), by the attachment's fit.
 --
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
 -- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
@@ -24,8 +27,8 @@
 -- A Stone Hearth with nothing fitted is "the Firebox" in the code (Hearth.isFirebox): a cooking source through the
 -- hole, banked and stoked the same way. Its state is the same table (no attachment). What shows in the hole is its
 -- look (Hearth.holeLook): open, a forged pot when a stove food or a fluid is inside (Hearth.cooksOn), a lid when only
--- oven food is. Its flue is joined by a mod to something on its back or either flank, never the door's side
--- (Hearth.setFlue; the Smokehouse): its tile is picked by facing, flue, side and hole, as Fuel Barrel picks its
+-- oven food is. Any Stone Hearth, fitted or not, may have its flue joined to something on its back or either flank,
+-- never the door's side (Hearth.setFlue; the Smokehouse): its tile is picked by facing, flue, side and hole, as Fuel Barrel picks its
 -- barrel's by the generator's. Hearth.isFire is any Stone Hearth, fitted or not.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
@@ -196,8 +199,10 @@ end
 -- fields given to one already registered, so its rules can be given in shared Lua and its menu in client Lua. Each
 -- function gets the attachment's own state (part) and the fireplace; fireState is the fire's.
 --   name                                  its text key
---   fit                                   what fitting takes: { items, tools, skill, ticks, kept, lost } (the hub's
---                                         Fit / Remove, to come)
+--   fit                                   what Fit takes: { items = { {full type, count} }, tool (an ItemTag's
+--                                         name, kept), ticks, removeTicks, xp = { perk, amount }, lost = { full type
+--                                         = true } }; Remove gives the items back, all but lost ones
+--   fitHelp, fitIcon                      client: Fit's tooltip line (a text key) and Fit / Remove's icon path
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
 --   look(part, fire)                      the look its tile shows (Hearth.LOOKS)
 --   sprite(look, face), glow(burning, banked, face)   its tile and glow overlay by look and facing (the copper's
@@ -208,9 +213,10 @@ end
 --   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
 --   rows(window, y, info) -> y            client: its rows in the Info window; info.copper is the part
 --   notes(info, notes)                    client: its Info notes, before HearthUI.addNotes'
-local ATTACHMENTS = {}
+local ATTACHMENTS, ORDER = {}, {}
 
 function Hearth.attach(spec)
+    if not ATTACHMENTS[spec.id] then table.insert(ORDER, spec.id) end
     local known = ATTACHMENTS[spec.id] or {}
     for key, value in pairs(spec) do known[key] = value end
     ATTACHMENTS[spec.id] = known
@@ -219,6 +225,13 @@ end
 
 function Hearth.attachment(id)
     return ATTACHMENTS[id]
+end
+
+-- Every attachment, in the order registered.
+function Hearth.attachments()
+    local list = {}
+    for _, id in ipairs(ORDER) do table.insert(list, ATTACHMENTS[id]) end
+    return list
 end
 
 -- Copper rules
@@ -640,11 +653,11 @@ function Hearth.isFire(object)
 end
 
 -- The id of what is fitted on a fire, or nil. A copper tile with nothing noted (a Hearth picked up and put down: its
--- modData doesn't go with it) is the copper fitted.
+-- modData doesn't go with it) is the copper fitted; attached false is nothing, whatever the tile shows until redrawn.
 function Hearth.attachedTo(fire)
     local state = fire:getModData()[Hearth.KEY]
     local id = state and state.attached
-    if id then return id end
+    if id ~= nil then return id or nil end
     if Hearth.face(fire:getSprite():getName()) then return Hearth.COPPER end
 end
 
@@ -673,6 +686,40 @@ function Hearth.canRemove(fire)
     local spec, part = Hearth.attachmentOf(fire)
     if not (spec and spec.canRemove) then return true end
     return spec.canRemove(part, fire)
+end
+
+-- Why spec can't be fitted on this fire now, as a reason (Burning, Fitted, NoFit), or nil. A connection never blocks
+-- the attachment slot (the Cauldron fits on a Hearth joined to the Smokehouse).
+function Hearth.fitRefusal(fire, spec)
+    if not (spec and spec.fit) then return "NoFit" end
+    if Hearth.attachedTo(fire) then return "Fitted" end
+    if Hearth.isBurning(fire) then return "Burning" end
+    return nil
+end
+
+-- Fits the attachment id on a fire: its state starts empty.
+function Hearth.fit(fire, id)
+    local state = Hearth.stateOf(fire:getModData())
+    state[id] = {}
+    state.attached = id
+end
+
+-- Takes what is fitted off a fire, its state with it. Returns its id.
+function Hearth.unfit(fire)
+    local id = Hearth.attachedTo(fire)
+    local state = Hearth.stateOf(fire:getModData())
+    if id then state[id] = nil end
+    state.attached = false
+    return id
+end
+
+-- What Remove gives back of an attachment's fit: { {full type, count} }, lost items left out.
+function Hearth.fitBack(spec)
+    local back, lost = {}, spec.fit.lost or {}
+    for _, need in ipairs(spec.fit.items) do
+        if not lost[need[1]] then table.insert(back, need) end
+    end
+    return back
 end
 
 -- The Hearth's open mouth and the Firebox's door need their front tile free (Doors), every look of each.
@@ -714,7 +761,7 @@ function Hearth.holeLook(items)
     return look
 end
 
--- Joins a Firebox's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
+-- Joins a Stone Hearth's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
 function Hearth.setFlue(state, flue, side)
     if Hearth.FLUES[flue] and Hearth.FLUE_SIDES[0][side] then
         state.flue, state.flueSide = flue, side
@@ -915,13 +962,6 @@ local function toFireplace(params, faceOf)
         thumpable:setSquare(nil)
     end
     return { replaceObject = true, object = fire }
-end
-
--- Built with the copper already on (until Fit Copper comes).
-function TraditionalPreservationCore.OnCreateHearth(params)
-    local made = toFireplace(params, Hearth.face)
-    if made then Hearth.stateOf(made.object:getModData()).attached = Hearth.COPPER end
-    return made
 end
 
 function TraditionalPreservationCore.OnCreateFirebox(params)

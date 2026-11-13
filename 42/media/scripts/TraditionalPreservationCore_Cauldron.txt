@@ -1,0 +1,45 @@
+module TraditionalPreservationCore
+{
+    /* A 60 L cauldron of forged sheet iron, its bail of wire, greased and blacked against rust. Not a fluid
+       container in the hand: Fit Cauldron hangs it over a Stone Hearth's hole (Hearth.attach's fit), where its
+       fluid lives in the fireplace's modData. Learned as the forged pot is (SmithingMag2, TraditionalPreservationCore
+       adds it at load), or researched from the cauldron itself. */
+    item ForgedCauldron
+    {
+        DisplayCategory = Cooking,
+        ItemType = base:normal,
+        Weight = 4.0,
+        Icon = TPCauldron,
+        MetalValue = 80.0,
+        Tags = base:hasmetal,
+        Tooltip = Tooltip_TraditionalPreservationCore_ForgedCauldron,
+    }
+
+    /* Vanilla's Forge_Cooking_Pot scaled up: two full sheets for the two small, three charcoal for two, a longer
+       job at one skill level more. */
+    craftRecipe Forge_TPCauldron
+    {
+        time = 400,
+        SkillRequired = Blacksmith:4,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:35,
+        AutoLearnAll = Blacksmith:5;Cooking:2,
+        Tags = Forge,
+        category = Cookware,
+        Tooltip = Tooltip_craft_TPCauldronDesc,
+        inputs
+        {
+            item 3 tags[base:charcoal],
+            item 2 [Base.SheetMetal],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:metalworkingpliers;base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:metalworkingchisel] mode:keep flags[MayDegradeLight],
+            item 1 [Base.Wire],
+        }
+        outputs
+        {
+            item 1 TraditionalPreservationCore.ForgedCauldron,
+        }
+    }
+}

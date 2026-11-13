@@ -81,8 +81,8 @@ function firebox:getModData() return self.modData end
 function firebox:getSquare() return self.square end
 function firebox:getX() return 11 end
 function firebox:getY() return 10 end
-local isFirebox, flueSquare = Hearth.isFirebox, Hearth.flueSquare
-Hearth.isFirebox = function(object) return object == firebox end
+local isFire, flueSquare = Hearth.isFire, Hearth.flueSquare
+Hearth.isFire = function(object) return object == firebox end
 Hearth.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
 Hearth.setFlue(Hearth.stateOf(firebox.modData), "Pipe", "Left")
 World.refresh(back)
@@ -91,6 +91,6 @@ check("the shed knows its fire", Smokehouse.joinedFirebox(door) == firebox and S
 local redraws = back.clears
 World.refresh(back)
 check("and doesn't redraw while nothing changes", back.clears == redraws)
-Hearth.isFirebox, Hearth.flueSquare = isFirebox, flueSquare
+Hearth.isFire, Hearth.flueSquare = isFire, flueSquare
 
 H.done()

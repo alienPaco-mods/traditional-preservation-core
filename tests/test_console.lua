@@ -68,8 +68,8 @@ check("and takes a season and a ground of their own", override.value == 12 and s
 run("setWeather")
 check("setWeather() ends the override and leaves the means to drift", override.on == false and state.seasonTemperature == 6)
 
-for _, command in ipairs({ "hearth", "copper", "fuel", "hot" }) do
-    check(command .. " says so when no Hearth is near", run(command):find("No Hearth", 1, true) ~= nil)
+for _, command in ipairs({ "hearth", "cauldron", "fuel", "hot" }) do
+    check(command .. " says so when no Stone Hearth is near", run(command):find("No Stone Hearth", 1, true) ~= nil)
 end
 
 H.done()

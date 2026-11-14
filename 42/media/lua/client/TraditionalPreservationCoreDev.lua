@@ -1,5 +1,5 @@
 -- Traditional Preservation (Core): commands for the debug Lua console, loaded only in debug mode. They work on the
--- core's shared stations (the Hearth), whichever TP mods are on. Type TPC.help() in the console for the list.
+-- core's shared stations (the Stone Hearth, the Smokehouse), whichever TP mods are on. Type TPC.help() in the console for the list.
 if not isDebugEnabled() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
@@ -16,15 +16,15 @@ function TPC.help()
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default: the Stone Hearth and Fit Cauldron's kit), \"firebox\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
-    say("TPC.hearth()         the nearest Hearth within 2 tiles: fire (lit, banked or out), fuel, copper, when it steams")
-    say("TPC.copper(l, c, f)  fill its copper: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
-    say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
-    say("TPC.hot(minutes)     bring its copper to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
-    say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
+    say("TPC.hearth()         the nearest Stone Hearth with the Cauldron within 2 tiles: fire (lit, banked or out), fuel, the cauldron, when it steams")
+    say("TPC.cauldron(l, c, f) fill its cauldron: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
+    say("TPC.fuel(minutes)    set the nearest Stone Hearth's fuel, fitted or not (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
+    say("TPC.hot(minutes)     bring its cauldron to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
+    say("TPC.warmth()         air C and light 1-6 tiles east of the Stone Hearth (Cauldron) and on your square, firebox heat, each food's cooking")
     say("TPC.firebox()        the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks")
     say("TPC.fit()            fit the Cauldron on the nearest Stone Hearth now, no items (TPC.fit(false) takes off what is fitted, nothing back)")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
-    say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Fireboxes beside it and why each can't join")
+    say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Stone Hearths beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
 
@@ -117,11 +117,11 @@ function TPC.speed(x)
     say(string.format("Game speed x%g.", time:getTrueMultiplier()))
 end
 
--- Hearth
+-- The Stone Hearth with the Cauldron fitted
 
 local function nearestHearth()
     local hearth = Hearth.hearthsNear(getPlayer():getSquare())[1]
-    if not hearth then say("No Hearth within 2 tiles.") end
+    if not hearth then say("No Stone Hearth with the Cauldron within 2 tiles.") end
     if hearth and Hearth.World then Hearth.World.track(hearth) end
     return hearth
 end
@@ -132,7 +132,7 @@ function TPC.hearth()
     local copper = Hearth.copperOf(hearth)
     local state = Hearth.stateOf(hearth:getModData())
     local hotIn = Hearth.hoursToHot(copper)
-    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; copper %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
+    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; cauldron %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         hearth:getX(), hearth:getY(), hearth:getZ(),
         Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", state.fuel or 0)
             or hearth:isLit() and "lit" or "out", hearth:getFuelAmount(),
@@ -141,7 +141,7 @@ function TPC.hearth()
         (copper.boiled or 0) * 60))
 end
 
-function TPC.copper(litres, celsius, fluid)
+function TPC.cauldron(litres, celsius, fluid)
     local hearth = nearestHearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
@@ -152,10 +152,10 @@ function TPC.copper(litres, celsius, fluid)
     TPC.hearth()
 end
 
--- The nearest Hearth or Firebox: TPC.fuel works on either.
+-- The nearest Stone Hearth: TPC.fuel works fitted or not.
 function TPC.fuel(minutes)
     local fire = Hearth.near(getPlayer():getSquare(), Hearth.isFire)[1]
-    if not fire then return say("No Hearth or Firebox within 2 tiles.") end
+    if not fire then return say("No Stone Hearth within 2 tiles.") end
     if Hearth.World then Hearth.World.track(fire) end
     minutes = minutes or 600
     fire:setFuelAmount(minutes)
@@ -170,7 +170,7 @@ function TPC.hot(minutes)
     local hearth = nearestHearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
-    if (copper.ml or 0) <= 0 then return say("The copper is empty: TPC.copper() first.") end
+    if (copper.ml or 0) <= 0 then return say("The cauldron is empty: TPC.cauldron() first.") end
     copper.tempC = 90
     copper.held = (minutes or 60) / 60
     Hearth.World.refresh(hearth)
@@ -183,7 +183,7 @@ local function squareLine(label, square, playerNum)
         getClimateManager():getAirTemperatureForSquare(square), square:getLightLevel(playerNum)))
 end
 
--- What a lit or banked Hearth warms and lights round it, and how its firebox cooks.
+-- What a lit or banked Stone Hearth (Cauldron) warms and lights round it, and how its firebox cooks.
 function TPC.warmth()
     local hearth = nearestHearth()
     if not hearth then return end
@@ -236,7 +236,7 @@ function TPC.firebox()
         Hearth.holeLook(container and container:getItems()), table.concat(sides, ", ")))
 end
 
--- Fits the Cauldron (the copper) on the nearest Stone Hearth at once, or with false takes off what is fitted.
+-- Fits the Cauldron on the nearest Stone Hearth at once, or with false takes off what is fitted.
 function TPC.fit(on)
     local fire = nearestFirebox()
     if not fire then return end
@@ -282,13 +282,13 @@ function TPC.smokehouse()
                 for _, found in ipairs(Smokehouse.fireboxesBy(tile)) do
                     if found.tile == tile then
                         local flue, side = Smokehouse.flueOf(found.firebox)
-                        table.insert(lines, string.format("Firebox at %d,%d: flue %s %s, %s", found.firebox:getX(), found.firebox:getY(),
+                        table.insert(lines, string.format("Stone Hearth at %d,%d: flue %s %s, %s", found.firebox:getX(), found.firebox:getY(),
                             tostring(flue), tostring(side), Smokehouse.joinedChamber(found.firebox) == tile and "joined here"
                             or (Smokehouse.connectRefusalFor(found) or "may join")))
                     end
                 end
                 say(string.format("%d,%d facing %s, %s tile, entry art %s; %s", tile:getX(), tile:getY(), face == 0 and "S" or "E",
-                    PARTS[part], tostring(Smokehouse.chamberEntry(tile)), #lines > 0 and table.concat(lines, "; ") or "no Firebox beside it"))
+                    PARTS[part], tostring(Smokehouse.chamberEntry(tile)), #lines > 0 and table.concat(lines, "; ") or "no Stone Hearth beside it"))
             end
         end
     end

@@ -137,7 +137,7 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Hearth, its attachments and the copper's fluid rules), `.../Copper.lua` (the copper as the first attachment), `.../Smokehouse.lua` (the
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Copper.lua` (the Forged Cauldron as the first attachment; in the code it is still `copper`: its id `Hearth.COPPER`, its save key, `Copper.lua`, `CopperUI.lua`, `TPHearthCopper`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
@@ -161,7 +161,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    a mod whose mod.info requires TP Core. FuelBarrel isn't TP and doesn't require it (its tests and builder only
    borrow the core's harness and `pzart`). A test with its own `require` stub (e.g. `name:find("^TraditionalPreservation<Mod>/")`)
    must also let `^TraditionalPreservationCore/` through, or use `H.useModPaths()`.
-4. **Modules only the required mod has:** `Hearth` (the Hearth and its copper, save key `tpHearth`, the opt-in "by
+4. **Modules only the required mod has:** `Hearth` (the Stone Hearth and its cauldron, save key `tpHearth`, the opt-in "by
    a fire" place, hooks) and `Copper`, its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI`, `CopperUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's three files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
@@ -183,20 +183,20 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
-   - `Hearth.blend("A", "B")`: fluids that may share the copper. `Hearth.partsIn(fluidContainer)` is then what a
+   - `Hearth.blend("A", "B")`: fluids that may share the cauldron. `Hearth.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.
    - `Hearth.turnsHot(from, to, hours)`, `Hearth.goesOff(from, to)` + `Hearth.offBy(copper, hour)` and
-     `Hearth.staysIn(name)`: a fluid the copper changes when kept steaming, one that goes off at an hour, and one
+     `Hearth.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `HearthUI.addMenu(fn)` and `HearthUI.addNotes(fn)`
-     put a mod's rows on the Hearth's menu and its lines in Hearth Info.
+     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info.
    - **Attachments** (`Hearth.attach{ id, name, fit, canRemove, look, heats, onFire, status, menu, rows, notes }`, the
-     Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the copper (`Copper.lua`, `CopperUI.lua`,
+     Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Copper.lua`, `CopperUI.lua`,
      its simmer in `HearthWorld`) is the first, written against the registry alone. Calling `attach` again with the
      same id adds fields, so rules go in shared Lua and the menu in client Lua. Its state is its own table under its
      id in `tpHearth` (`Hearth.partState(modData, id)`; the copper's is `Hearth.copperState(modData)`, and
      `Hearth.copperOf(fire)` brings it up to now). `Hearth.attachmentOf(fire)` gives the spec and state;
-     `Hearth.canRemove(fire)` refuses while the fire burns, then asks the attachment (the copper: only empty).
+     `Hearth.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
      `Hearth.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
      `Hearth.lua` above `Hearth.attach`. Fit / Remove are Core's (`TPHearthFit`, by the attachment's `fit`).
    - **Connections** (`Hearth.connect{ id, kinds, kits, blocks, finds, joined, refusal, onChange, connectText,
@@ -214,13 +214,13 @@ local Weather = require "TraditionalPreservationCore/Weather"
      object (the Smokehouse's entry overlay draws the whole flue, `Smokehouse.entrySprite`; `onChange` redraws it),
      never on the stone, which has no flue tiles. `smoke = true` (the Smokehouse's) says it takes the fire's smoke: the
      bare Stone Hearth's hole is lidded and its glow goes up the flue.
-   - The Firebox (`Hearth.isFirebox`; `Hearth.isFire` is a Hearth or a Firebox): the Hearth's fire with no copper, in
-     the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
+   - The bare Stone Hearth (`Hearth.isFirebox`, "the Firebox" in the code; `Hearth.isHearth` is one with the cauldron
+     fitted, `Hearth.isFire` either): the same fire with nothing fitted, in the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
      door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES`
-     matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the Hearth.
+     matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the fitted one; their rows show on a fitted Stone Hearth too.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
-     it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.
+     it, swaps the fluid when it turns and spoils, and hands the age on through pours and the cauldron.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
    - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
      `Smokehouse.startCounters(modData, owner, hotNeed)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
@@ -254,7 +254,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      offers each kind in reach not yet in it; a kind goes in once, no cap, taking `uses` (default 1, what vanilla
      takes for a stew), each `unhappy` (and `boredom`) nicer. Never hand `Food.setSpices` the food's own list: it clears it first. What went in is the food's own spice list; `Season.carry(from, to,
      share)` hands it on (smoked, sliced), `Season.record` / `Season.apply` keep it through a pot.
-   - Sounds: `TPBoiling` for anything of ours that boils (`CookingSound = TPBoiling`), `TPSimmering` (the Hearth).
+   - Sounds: `TPBoiling` for anything of ours that boils (`CookingSound = TPBoiling`), `TPSimmering` (the cauldron, at 85 C or more).
    - `Container.ml(container)` and `Container.isEmptyVessel(item)`; `Recipes.created(craftRecipeData, wanted)` and
      `Recipes.consumed(...)`: an OnCreate's own items as a Lua list, by full type or a set of them.
    - `Log`: `log("TPV", "format", ...)` prints only in debug mode. Lines the test steps read go through it; a
@@ -300,7 +300,7 @@ of all:
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
 | `ISWidgetCraftLogicControl.startCraft` | core `UI.slotRules` with `recipeRefusal` (Fish & Meat) | Craft refuses stored inputs the selected recipe can't take |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Hearth, Firebox, Smokehouse; Fish's beams) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
+| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Stone Hearth, Smokehouse; Fish's beams) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |
@@ -308,8 +308,8 @@ of all:
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
 | `ISWidgetCraftLogicControl.startCraft` | Vinegar `...UI` | Says why the vessel can't start, and stops a second run |
-| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (Vinegar, the Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit, banked or holds fluid, and the cursor says why |
-| `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Hearth) | Clicking a cask, a Hearth, an incubator or a crock opens its info window |
+| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (Vinegar, the Stone Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit, banked or holds fluid, and the cursor says why |
+| `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
@@ -428,7 +428,7 @@ Three kinds, by what the station holds:
   set from Lua (`OnStart` / `OnUpdate`, below). It is read by **an info block in the crafting window**
   (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a hover popup on each running batch.
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
-  timed actions** (the Orleans Cask, the Hearth and Firebox, Dairy's Incubator and Crock). The engine can't be
+  timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
   trusted with fluid amounts in a station (ENGINE_NOTES "Fluids"), a cask is one pool with no batch, and the
   incubator's milk cools from what it was. It is read by **an Info window on click** (`InfoWindow.clickOpens`) and
   its right-click line.
@@ -466,11 +466,12 @@ Fish & Meat's tub uses it: Corn Salted Meat refuses a Leg of Pork.
 **Why is the core one required mod instead of a copy in each mod?**
 It began as a copy in each mod, so a player could subscribe to one with no dependency (PZ loads only one file per Lua
 path, so each copy lived under its mod's own path). That changed on 2026-11-10: the series now shares *stations*,
-not only code (the Hearth, a fire with a copper, is wanted by Dairy and later by cheese and others), and a station
+not only code (the Stone Hearth with its cauldron is wanted by Dairy and later by cheese and others), and a station
 needs one tileset, one save key and one set of timed actions. Two mods can't both ship it. One required mod also
 means one copy of each fix, and one place for multiplayer's network code later. Its modules still return a local
-table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateHearth`
-(the entity script), the `TPHearthCopper` and `TPHearthFire` timed actions, and `TPC`, the debug console. FuelBarrel is not a TP mod and does not require it.
+table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateFirebox`
+(the entity script) and `OnCreateCooked`, the timed actions (`TPHearthCopper`, `TPHearthFire`, `TPHearthFit`,
+`TPHearthConnect`, `TPFluidTreat`, `TPSeason`), and `TPC`, the debug console. FuelBarrel is not a TP mod and does not require it.
 
 **Why the extra check that a station is loaded?**
 An unloaded object keeps its square and its index until its chunk has been saved and reused, so `getSquare()` and

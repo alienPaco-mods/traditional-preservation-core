@@ -130,7 +130,7 @@ TILE_PROPS = {}
 def group(look, plain):
     """The engine links the facings of tiles sharing a GroupName and CustomName, and that link lets a moved hearth
     rotate, but only with one tile a facing: a group of more is left unlinked (IsoWorld.LoadTileDefinitions). So only
-    the plain look (the one that can be picked up: copper empty, flue capped) carries the GroupName."""
+    the plain look (the one that can be picked up: the open hole, nothing fitted or joined) carries the GroupName."""
     return [("GroupName", "Stone")] if look == plain else []
 
 

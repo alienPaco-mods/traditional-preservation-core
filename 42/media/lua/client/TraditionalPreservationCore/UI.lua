@@ -16,6 +16,32 @@ UI.LABEL_COLOUR = { 1, 1, 0.8 }
 local OPTION_FIELDS = { "target", "onSelect", "param1", "param2", "param3", "param4", "param5", "param6", "param7",
     "param8", "param9", "param10", "iconTexture", "color", "toolTip", "notAvailable" }
 
+-- An inventory context menu's selected items (OnFillInventoryObjectContextMenu's items: an item, or a collapsed stack
+-- whose items list its first item twice), each once, that pass wanted (all with no wanted).
+function UI.selectedItems(items, wanted)
+    local found = {}
+    local function consider(item)
+        if not wanted or wanted(item) then table.insert(found, item) end
+    end
+    for _, entry in ipairs(items) do
+        if instanceof(entry, "InventoryItem") then
+            consider(entry)
+        else
+            for i = 2, #entry.items do consider(entry.items[i]) end
+        end
+    end
+    return found
+end
+
+-- The first selected entry's item that passes wanted, a stack by its first item, and what wanted gave for it.
+function UI.firstSelected(items, wanted)
+    for _, entry in ipairs(items) do
+        local item = instanceof(entry, "InventoryItem") and entry or (entry.items and entry.items[1])
+        local result = item and wanted(item)
+        if result then return item, result end
+    end
+end
+
 -- The submenu named after an item that holds its recipes (Gut Fish, Pack Fish in Salt; a bucket's Cure Blood), so a
 -- mod's options sit with vanilla's. Vanilla makes one only for two recipes or more; a lone recipe option is turned
 -- into it where it stands, and with no recipe it is added. (Was Fish & Meat's fishSubMenu.)

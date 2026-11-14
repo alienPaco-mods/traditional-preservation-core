@@ -3,6 +3,7 @@
 -- OnHeat.watch(fullType, minutes, fn): every minute, items of that type at HEAT_C or hotter in a hot container near
 -- a player count the minutes they stay so, and once they reach minutes fn(item) runs, once for that item (Fish &
 -- Meat: Blood Sausage (Boiled) fried becomes Blood Sausage (Boiled, Fried)). Counted under KEY in the item's modData.
+-- The look is Station's minute look at the heat near players (Station.onHeatNear, Station.HEAT_NEAR).
 local Station = require "TraditionalPreservationCore/Station"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 
@@ -11,11 +12,12 @@ local OnHeat = {}
 -- Save key: never rename it once the mod is out. Inside: minutes, at (the hour last seen hot), done.
 OnHeat.KEY = "tpOnHeat"
 OnHeat.HEAT_C = 100
-OnHeat.RADIUS = 8
 OnHeat.MAX_GAP_MINUTES = 2
+-- HEAT_C as vanilla's item heat, worked out once (it is also the container heat looked for).
+OnHeat.HEAT = Hearth.itemHeat(OnHeat.HEAT_C)
 
 local watched = {}
-local started = false
+local looking = false
 
 -- One look at an item: counts the time since it was last seen hot, and calls fn once it has been hot long enough.
 -- hot says whether it is hot now. Returns true once fn has run.
@@ -41,35 +43,26 @@ function OnHeat.note(item, watch, now, hot)
     return false
 end
 
-local function itemHot(item)
-    return item:getItemHeat() >= Hearth.itemHeat(OnHeat.HEAT_C)
-end
-
-local function lookNear(square, now)
-    Station.hotContainers(square, OnHeat.RADIUS, Hearth.itemHeat(OnHeat.HEAT_C), function(container)
-        for fullType, watch in pairs(watched) do
-            local items = container:getAllTypeRecurse(fullType)
-            for i = 0, items:size() - 1 do
-                local item = items:get(i)
-                OnHeat.note(item, watch, now, itemHot(item))
-            end
+local function lookIn(container, now)
+    for fullType, watch in pairs(watched) do
+        local items = container:getAllTypeRecurse(fullType)
+        for i = 0, items:size() - 1 do
+            local item = items:get(i)
+            OnHeat.note(item, watch, now, item:getItemHeat() >= OnHeat.HEAT)
         end
-    end)
+    end
 end
 
-local function start()
-    -- Outside the game (tests) there may be no clock to hang it on.
-    if started or not Events or (isClient and isClient()) then return end
-    started = true
-    Events.EveryOneMinute.Add(function()
-        local now, list = getGameTime():getWorldAgeHours(), Station.players()
-        for i = 0, list:size() - 1 do lookNear(list:get(i):getSquare(), now) end
-    end)
-end
-
+-- fullType: the food watched; minutes: how long it must stay hot; fn(item): what then happens to it. Watching a type
+-- again replaces it (a Lua reload runs the mod's file again).
 function OnHeat.watch(fullType, minutes, fn)
+    assert(type(fullType) == "string", "OnHeat.watch: fullType must be a full type")
+    assert(type(minutes) == "number" and minutes > 0, "OnHeat.watch: " .. fullType .. " needs minutes")
+    assert(type(fn) == "function", "OnHeat.watch: " .. fullType .. " needs fn")
     watched[fullType] = { minutes = minutes, fn = fn }
-    start()
+    if looking then return end
+    looking = true
+    Station.onHeatNear(OnHeat.HEAT, lookIn)
 end
 
 return OnHeat

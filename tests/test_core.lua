@@ -255,6 +255,19 @@ check("say: values go in after the translator", UI.say("T_Soured", UI.percent(0.
 check("say: a text with no values", UI.say("T_None") == "plain")
 check("timeText: rounds up to the hour", UI.timeText(25.2, "T_Time") == "1 d 2 h")
 check("timeText: whole days", UI.timeText(48, "T_Time") == "2 d 0 h")
+-- Selected items: a collapsed stack lists its first item twice.
+local selInstanceof = instanceof
+instanceof = function(object, class) return class == "InventoryItem" and object.item == true end
+local loose, a1, a2, b1 = { item = true, n = 1 }, { item = true, n = 2 }, { item = true, n = 3 }, { item = true, n = 4 }
+local picked = { loose, { items = { a1, a1, a2 } }, { items = { b1, b1 } } }
+local all = UI.selectedItems(picked)
+check("selectedItems: each once", #all == 4 and all[1] == loose and all[2] == a1 and all[3] == a2 and all[4] == b1)
+local odd = UI.selectedItems(picked, function(item) return item.n % 2 == 0 end)
+check("selectedItems: only those wanted", #odd == 2 and odd[1] == a1 and odd[2] == b1)
+local first, why = UI.firstSelected(picked, function(item) return item.n > 1 and "yes" end)
+check("firstSelected: a stack by its first item, with what wanted gave", first == a1 and why == "yes")
+check("firstSelected: none", UI.firstSelected(picked, function() return nil end) == nil)
+instanceof = selInstanceof
 -- Tainted water: "Water", plus vanilla's "(Tainted)" only when the sandbox's tainted water text is on.
 H.texts.Fluid_Tainted = "(Tainted)"
 local savedFluid, taintedText = Fluid, true

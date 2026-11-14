@@ -26,7 +26,6 @@
 -- milk) keep their own fluid without a record; poured out, it is in the heat state. Every rule here works on plain tables; the engine parts are at the end. Treating by hand
 -- (the treat menu, the uses it takes) is FluidTreat's; its functions are reached here too.
 local Weather = require "TraditionalPreservationCore/Weather"
-local Station = require "TraditionalPreservationCore/Station"
 
 local FluidAgeing = {}
 
@@ -608,16 +607,6 @@ end
 function FluidAgeing.lookIn(container, now)
     local items = container and container:getAllEvalRecurse(hasFluid)
     for i = 0, items and items:size() - 1 or -1 do FluidAgeing.look(items:get(i), now) end
-end
-
-FluidAgeing.HEAT_RADIUS = 8
-
--- Looks at the fluid items in every hot container (a lit stove, fireplace, barbecue or campfire) within HEAT_RADIUS of
--- a square on its level, so milk left on the heat scalds with nobody looking at it.
-function FluidAgeing.lookOnHeat(square, now)
-    local heat = FluidAgeing.lowestScaldHeat()
-    if not heat then return end
-    Station.hotContainers(square, FluidAgeing.HEAT_RADIUS, heat, function(container) FluidAgeing.lookIn(container, now) end)
 end
 
 return FluidAgeing

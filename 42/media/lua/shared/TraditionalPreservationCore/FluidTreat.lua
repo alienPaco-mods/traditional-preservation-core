@@ -1,6 +1,6 @@
 -- Traditional Preservation core: treating a kind's fluid by hand (FluidAgeing's treatments: Fish & Meat's Cure
 -- Blood). One use of the treatment's tag for each litresPerUse litres of the kind's fluid that isn't spoiled, taken
--- from what the character carries (Uses). The treat menu is FluidAgeingUI's, the action TPFluidTreat.
+-- from what the character carries (Uses). The treat menu is FluidTreatUI's, the action TPFluidTreat.
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 local Uses = require "TraditionalPreservationCore/Uses"
 

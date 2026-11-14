@@ -10,14 +10,40 @@ local Uses = require "TraditionalPreservationCore/Uses"
 
 local Season = {}
 
+-- Save keys: never rename them once the mod is out. The whole item's unhappy bonus, and its boredom bonus.
 Season.KEY = "tpSeasoning"
+Season.BOREDOM_KEY = "tpSeasoningBoredom"
 Season.USES = 1
 
--- fullType -> spec { kinds = { { name = key, types = { fullType, ... }, uses = n (optional) }, ... }, unhappy = number,
--- boredom = number (optional) }
+-- fullType -> spec
 local specs = {}
 
+-- Seasoning for the foods in fullTypes. spec:
+--   kinds    { { name = key, types = { fullType, ... }, uses = n (optional) }, ... }: an item type in one kind only
+--   unhappy  what each kind adds to the whole item's unhappiness; boredom (optional) the same for boredom
+-- Adds spec.kindByType (a seasoning's full type -> its kind). Registering a food again replaces its spec.
 function Season.register(fullTypes, spec)
+    assert(type(fullTypes) == "table" and #fullTypes > 0, "Season.register: fullTypes must be a list of full types")
+    local what = "Season.register " .. tostring(fullTypes[1])
+    assert(type(spec) == "table" and type(spec.kinds) == "table" and #spec.kinds > 0, what .. ": spec needs kinds")
+    assert(type(spec.unhappy) == "number", what .. ": spec needs unhappy")
+    assert(spec.boredom == nil or type(spec.boredom) == "number", what .. ": boredom must be a number")
+    if not spec.kindByType then
+        local kindByType = {}
+        for _, kind in ipairs(spec.kinds) do
+            assert(type(kind.name) == "string", what .. ": a kind needs a name")
+            assert(type(kind.types) == "table" and #kind.types > 0, what .. ": kind " .. kind.name .. " needs types")
+            assert(kind.uses == nil or (type(kind.uses) == "number" and kind.uses > 0),
+                what .. ": kind " .. kind.name .. "'s uses must be above 0")
+            for _, fullType in ipairs(kind.types) do
+                if kindByType[fullType] then
+                    error(what .. ": " .. fullType .. " is in kinds " .. kindByType[fullType].name .. " and " .. kind.name)
+                end
+                kindByType[fullType] = kind
+            end
+        end
+        spec.kindByType = kindByType
+    end
     for _, fullType in ipairs(fullTypes) do specs[fullType] = spec end
 end
 
@@ -27,12 +53,7 @@ end
 
 -- The kind (its entry in spec.kinds) a seasoning item's full type belongs to, or nil.
 function Season.kindOf(spec, fullType)
-    for _, kind in ipairs(spec.kinds) do
-        for _, kindType in ipairs(kind.types) do
-            if kindType == fullType then return kind end
-        end
-    end
-    return nil
+    return spec.kindByType[fullType]
 end
 
 -- The uses one seasoning of a kind takes.
@@ -65,15 +86,26 @@ function Season.bonus(item)
 end
 
 function Season.boredom(item)
-    return item:getModData()[Season.KEY .. "Boredom"]
+    return item:getModData()[Season.BOREDOM_KEY]
 end
 
--- A new list of the full types in a Java list (or none). Food.setSpices clears the food's own list before copying
--- the one it is given, so it must never be given that same list back.
+-- A food's spice list (a Java list, or none) as a Lua list, and back.
+local function luaList(list)
+    local found = {}
+    for i = 0, (list and list:size() or 0) - 1 do table.insert(found, list:get(i)) end
+    return found
+end
+
+local function javaList(fullTypes)
+    local list = ArrayList.new()
+    for _, fullType in ipairs(fullTypes) do list:add(fullType) end
+    return list
+end
+
+-- A new Java list of the same full types. Food.setSpices clears the food's own list before copying the one it is
+-- given, so it must never be given that same list back.
 local function copyOf(list)
-    local copy = ArrayList.new()
-    for i = 0, (list and list:size() or 0) - 1 do copy:add(list:get(i)) end
-    return copy
+    return javaList(luaList(list))
 end
 
 local function setBonus(item, bonus, boredom, spices, share)
@@ -82,7 +114,7 @@ local function setBonus(item, bonus, boredom, spices, share)
     item:getModData()[Season.KEY] = bonus
     item:setUnhappyChange(bonus * share)
     if boredom and boredom ~= 0 then
-        item:getModData()[Season.KEY .. "Boredom"] = boredom
+        item:getModData()[Season.BOREDOM_KEY] = boredom
         item:setBoredomChange(boredom * share)
     end
     if spices and spices:size() > 0 then item:setSpices(copyOf(spices)) end
@@ -150,16 +182,12 @@ end
 function Season.record(item)
     local bonus = Season.bonus(item)
     if not bonus then return nil end
-    local record, spices = { bonus = bonus, boredom = Season.boredom(item), spices = {} }, item:getSpices()
-    for i = 0, (spices and spices:size() or 0) - 1 do table.insert(record.spices, spices:get(i)) end
-    return record
+    return { bonus = bonus, boredom = Season.boredom(item), spices = luaList(item:getSpices()) }
 end
 
 function Season.apply(item, record)
     if not record then return end
-    local spices = ArrayList.new()
-    for _, fullType in ipairs(record.spices or {}) do spices:add(fullType) end
-    setBonus(item, record.bonus, record.boredom, spices)
+    setBonus(item, record.bonus, record.boredom, javaList(record.spices or {}))
 end
 
 return Season

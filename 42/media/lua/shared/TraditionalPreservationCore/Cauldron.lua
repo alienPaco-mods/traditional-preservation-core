@@ -38,7 +38,7 @@ local Cauldron = Hearth.attach({
 
 Events.OnInitGlobalModData.Add(function()
     Recipes.teach("Base.SmithingMag2", Hearth.CAULDRON_RECIPE, "TP")
-    Recipes.researchable(Hearth.CAULDRON_ITEM, Hearth.CAULDRON_RECIPE)
+    Recipes.researchable(Hearth.CAULDRON_ITEM, Hearth.CAULDRON_RECIPE, "TP")
 end)
 
 return Cauldron

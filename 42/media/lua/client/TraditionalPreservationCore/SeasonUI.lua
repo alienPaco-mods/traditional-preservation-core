@@ -4,20 +4,12 @@
 local Season = require "TraditionalPreservationCore/Season"
 local UI = require "TraditionalPreservationCore/UI"
 
--- The selected items of the first seasonable type. A collapsed stack lists its first item twice.
+-- The selected items of the first seasonable type.
 local function selected(items)
-    local found, fullType = {}, nil
-    local function consider(item)
-        if not Season.specFor(item) then return end
-        fullType = fullType or item:getFullType()
+    local seasonable, found = UI.selectedItems(items, Season.specFor), {}
+    local fullType = seasonable[1] and seasonable[1]:getFullType()
+    for _, item in ipairs(seasonable) do
         if item:getFullType() == fullType then table.insert(found, item) end
-    end
-    for _, entry in ipairs(items) do
-        if instanceof(entry, "InventoryItem") then
-            consider(entry)
-        else
-            for i = 2, #entry.items do consider(entry.items[i]) end
-        end
     end
     return found
 end
@@ -38,7 +30,7 @@ local function kindNames(spec)
     return table.concat(names, ", ")
 end
 
-function Season.fillMenu(playerNum, context, items)
+local function fillMenu(playerNum, context, items)
     local foods = selected(items)
     if #foods == 0 then return end
     local playerObj, first = getSpecificPlayer(playerNum), foods[1]
@@ -66,4 +58,4 @@ function Season.fillMenu(playerNum, context, items)
     end
 end
 
-Events.OnFillInventoryObjectContextMenu.Add(Season.fillMenu)
+Events.OnFillInventoryObjectContextMenu.Add(fillMenu)

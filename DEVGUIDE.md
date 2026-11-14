@@ -136,14 +136,16 @@ every mod's translation files for a literal `%`.
 `~/MODS/TraditionalPreservationCore` is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
-that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../HearthConnect.lua` (connections), `.../HearthPlace.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
+that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
+line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
+hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../HearthConnect.lua` (connections), `.../HearthPlace.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
-`HearthUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+`HearthUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
+`SeasonUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
@@ -238,6 +240,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `heat = true`, made by `scaldHeat` and `scaldHold`). One state at a time: heat leaves a fluid in a state as it
      is, a treatment by hand replaces the heat state. `FluidAgeing.inState(record, name)` asks.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
+     `Recipes.teach(magazineType, recipeName, tag)` and `Recipes.researchable(itemType, recipeName, tag)`: a mod's
+     recipe from a vanilla magazine and by research; each says *Could not find* in the console when a name is wrong.
    - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
      `Smokehouse.startCounters(modData, owner, hotNeed)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
      the stacks it owns (`Smokehouse.owns`) with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`.
@@ -245,7 +249,13 @@ local Weather = require "TraditionalPreservationCore/Weather"
      ("The Smokehouse") has the details; Fish & Meat is the worked example.
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
-     `Station.squareAt(square, dx, dy)`: the square beside one, on its level.
+     `Station.squareAt(square, dx, dy)`: the square beside one, on its level. `Station.eachPlayer(fn)`: every player
+     here. `Station.onHeatNear(heat, fn)`: `fn(container, now)` each game minute for every container at `heat` or
+     hotter within `Station.HEAT_NEAR` (8) of a player, one look shared by every caller (`heat` a number, or a
+     function giving one or nil). FluidAgeing's scalding and OnHeat use it; never add a second minute look.
+   - `UI.selectedItems(items, wanted)` and `UI.firstSelected(items, wanted)`: an inventory context menu's selected
+     items, each once (a collapsed stack lists its first item twice), or the first wanted one, a stack by its first
+     item.
    - `Action`: a timed action's time (`duration`, `pourDuration`) and a kit's parts: `hasTool(character, tag)`,
      `kitItems(character, needs)` (the items, all from the main inventory, or nil), `takeItems`, `giveItems(character,
      needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them. `Hearth.redraw(fire)`
@@ -271,7 +281,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Charge.line(amounts)`: one recipe line that takes a different amount of each item (uses or a count); the
      craft window shows it (`ChargeUI`). `OnHeat.watch(fullType, minutes, fn)`: food kept at frying heat after it
      was made (vanilla's OnCooked fires once).
-   - `Season.register(fullTypes, { kinds = { { name, types, uses }, ... }, unhappy })`: a food seasoned afterwards,
+   - `Season.register(fullTypes, { kinds = { { name, types, uses }, ... }, unhappy, boredom })` (checked: a seasoning
+     item in one kind only; adds `spec.kindByType`): a food seasoned afterwards,
      as a stew is (Fish & Meat's sausage links). A **Season** submenu on it (`SeasonUI`, timed action `TPSeason`)
      offers each kind in reach not yet in it; a kind goes in once, no cap, taking `uses` (default 1, what vanilla
      takes for a stew), each `unhappy` (and `boredom`) nicer. Never hand `Food.setSpices` the food's own list: it clears it first. What went in is the food's own spice list; `Season.carry(from, to,

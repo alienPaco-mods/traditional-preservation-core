@@ -69,6 +69,12 @@ function Station.players()
     return list
 end
 
+-- Calls fn(player) for every player here (Station.players).
+function Station.eachPlayer(fn)
+    local list = Station.players()
+    for i = 0, list:size() - 1 do fn(list:get(i)) end
+end
+
 -- Every object within radius tiles of the square at x, y on level z that passes test, nearest first; of two as near,
 -- the one the scan meets first (west to east, then north to south, then by its place on the square).
 function Station.nearAt(x, y, z, radius, test)
@@ -101,6 +107,54 @@ function Station.hotContainers(square, radius, heat, fn)
             if container:getTemperature() >= heat then fn(container, object) end
         end
     end)
+end
+
+-- Things kept on the heat near a player (FluidAgeing's scalding, OnHeat's frying): one look a game minute over the
+-- squares within HEAT_NEAR of each player, shared by everyone who asks, each told only of containers at its own
+-- heat or hotter. Not on a client: the server (or a single player game) keeps the items.
+Station.HEAT_NEAR = 8
+
+local hotWatchers = {}
+local hotStarted = false
+
+-- The watchers with a heat now, and the lowest of those heats (nil when none has one).
+local function readyWatchers()
+    local ready, lowest = {}, nil
+    for _, watcher in ipairs(hotWatchers) do
+        local heat = watcher.heat
+        if type(heat) == "function" then heat = heat() end
+        if heat then
+            table.insert(ready, { heat = heat, fn = watcher.fn })
+            lowest = math.min(lowest or heat, heat)
+        end
+    end
+    return ready, lowest
+end
+
+local function lookAtHeat()
+    local ready, lowest = readyWatchers()
+    if not lowest then return end
+    local now = getGameTime():getWorldAgeHours()
+    Station.eachPlayer(function(player)
+        Station.hotContainers(player:getSquare(), Station.HEAT_NEAR, lowest, function(container)
+            local temperature = container:getTemperature()
+            for _, watcher in ipairs(ready) do
+                if temperature >= watcher.heat then watcher.fn(container, now) end
+            end
+        end)
+    end)
+end
+
+-- Calls fn(container, now) every game minute for each container at heat or hotter near a player. heat is a vanilla
+-- container temperature, or a function giving one (nil: nothing to look for this minute).
+function Station.onHeatNear(heat, fn)
+    assert(type(heat) == "number" or type(heat) == "function", "Station.onHeatNear: heat must be a number or a function")
+    assert(type(fn) == "function", "Station.onHeatNear: fn must be a function")
+    table.insert(hotWatchers, { heat = heat, fn = fn })
+    -- Outside the game (tests) there may be no clock to hang it on.
+    if hotStarted or not Events or (isClient and isClient()) then return end
+    hotStarted = true
+    Events.EveryOneMinute.Add(lookAtHeat)
 end
 
 -- A station just built or put down isn't known to the map loader. For the trackers that ask (options.scan), the

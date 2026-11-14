@@ -116,4 +116,80 @@ check("take: 12 uses of oats, the part-used bag first", more.removed and oats.us
 check("the line is found by its item list", Charge.forScriptLine("item 1 [Base.BarleySeed;Base.OatsRaw] mode:keep") == filler
     and filler.need("Base.OatsRaw") == 12 and Charge.forScriptLine("item 1 [Base.OatsRaw] mode:keep") == nil)
 
+-- Station.onHeatNear: one look a minute near each player, each watcher told of the containers at its heat or hotter.
+local Station = require "TraditionalPreservationCore/Station"
+H.installEvents()
+H.installClock(10)
+isServer = function() return false end
+isClient = function() return false end
+local function hotContainer(temperature, items)
+    return { getTemperature = function() return temperature end,
+        getAllTypeRecurse = function(_, fullType) return H.list(items and items[fullType] or {}) end }
+end
+local hotLink = { md = {} }
+function hotLink:getModData() return self.md end
+function hotLink:getItemHeat() return OnHeat.HEAT end
+local stove = hotContainer(math.max(OnHeat.HEAT, 2), { ["T.Link"] = { hotLink } })
+local warm = hotContainer(1.5)
+local cold = hotContainer(1.0)
+local objects = {}
+for _, container in ipairs({ stove, warm, cold }) do
+    table.insert(objects, { getContainerCount = function() return 1 end, getContainerByIndex = function() return container end })
+end
+local stoveSquare = { getObjects = function() return H.list(objects) end }
+getCell = function()
+    return { getGridSquare = function(_, x, y) return (x == 2 and y == 0) and stoveSquare or nil end }
+end
+local cook = H.player()
+getNumActivePlayers = function() return 1 end
+getSpecificPlayer = function() return cook end
+local everyone = {}
+Station.eachPlayer(function(player) table.insert(everyone, player) end)
+check("eachPlayer: the local players", #everyone == 1 and everyone[1] == cook)
+local seen, scaldHeat = {}, nil
+Station.onHeatNear(1.4, function(container, now) table.insert(seen, { low = container, now = now }) end)
+Station.onHeatNear(function() return scaldHeat end, function(container) table.insert(seen, { high = container }) end)
+check("one minute look, however many watch", #H.handlers.EveryOneMinute == 1)
+H.fire("EveryOneMinute")
+check("a watcher with no heat this minute is skipped; the other sees what is hot enough, with the hour",
+    #seen == 2 and seen[1].low == stove and seen[1].now == 10 and seen[2].low == warm)
+seen, scaldHeat = {}, 1.8
+H.fire("EveryOneMinute")
+local highs = 0
+for _, entry in ipairs(seen) do if entry.high then highs = highs + 1 end end
+check("each watcher by its own heat", #seen == 3 and highs == 1)
+OnHeat.watch("T.Link", 2, function(item) item.fried = true end)
+check("OnHeat looks through the same minute", #H.handlers.EveryOneMinute == 1)
+for minute = 1, 4 do
+    H.setHours(10 + minute / 60)
+    H.fire("EveryOneMinute")
+end
+check("a link kept hot near the player is done", hotLink.fried and hotLink.md.tpOnHeat.done)
+check("watch checks what it is given", not pcall(OnHeat.watch, "T.Other", 0, function() end))
+
+-- Recipes.researchable: says so when the item isn't there.
+local doParams = {}
+ScriptManager = { instance = { getItem = function(_, fullType)
+    if fullType == "T.Pot" then return { DoParam = function(_, line) table.insert(doParams, line) end } end
+end } }
+local printed = {}
+local realPrint = print
+print = function(line) table.insert(printed, line) end
+local found, missing = Recipes.researchable("T.Pot", "T.MakePot", "T"), Recipes.researchable("T.None", "T.MakePot", "T")
+print = realPrint
+check("researchable: a found item takes the recipe", found and doParams[1] == "ResearchableRecipes = T.MakePot")
+check("a missing one is reported", missing == false and printed[1] == "[T] Could not find T.None")
+
+-- Season.register: checks what it is given, and finds a seasoning's kind by one lookup.
+local Season = require "TraditionalPreservationCore/Season"
+local herbs = { name = "herbs", types = { "T.Thyme", "T.Sage" } }
+local spec = { kinds = { herbs, { name = "pepper", types = { "T.Pepper" }, uses = 2 } }, unhappy = -2 }
+Season.register({ "T.Link" }, spec)
+check("Season: a seasoning's kind", Season.kindOf(spec, "T.Sage") == herbs and Season.kindOf(spec, "T.Salt") == nil)
+check("a food registered again keeps working", pcall(Season.register, { "T.Link" }, spec))
+local ok, err = pcall(Season.register, { "T.Other" }, { kinds = { herbs, { name = "more", types = { "T.Sage" } } }, unhappy = -2 })
+check("a seasoning in two kinds is refused, by name", not ok and err:find("T.Sage is in kinds herbs and more", 1, true))
+check("no unhappy, or no kinds: refused", not pcall(Season.register, { "T.Other" }, { kinds = { herbs } })
+    and not pcall(Season.register, { "T.Other" }, { kinds = {}, unhappy = -2 }))
+
 H.done()

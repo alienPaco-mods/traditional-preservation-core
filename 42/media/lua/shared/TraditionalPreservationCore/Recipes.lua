@@ -1,12 +1,15 @@
--- Traditional Preservation core: more fluids for a vanilla craft recipe's fluid line, so baking takes a mod's soured
--- milk where it took milk. A script can't do it: a second `craftRecipe` of the same name loads on top of the first
+-- Traditional Preservation core: craft recipes, in three parts.
+-- Fluid lines: more fluids for a vanilla craft recipe's fluid line, so baking takes a mod's soured milk where it took
+-- milk. A script can't do it: a second `craftRecipe` of the same name loads on top of the first
 -- and its inputs are added, not swapped, and so does `recipe:Load`. So this loads the line's item and fluid again
 -- with the longer list (they go on the end) and puts the new pair where the old one was.
 --
 -- Run it from OnInitWorld: the game builds each fluid line's filter after that (WorldDictionary init) and seals it.
 -- A line that already names every fluid is left alone, so a second world in one session changes nothing.
 --     Recipes.addFluids("Base.MakeCakeBatter", { CowMilk = { "SourCowMilk" } }, "TPD")
--- Also what every OnCreate asks of its recipe data: the items it made and the ones it used up (created, consumed).
+-- OnCreate helpers: what every OnCreate asks of its recipe data, the items it made and the ones it used up (created,
+-- consumed), and OnCreateCooked for a food that comes out cooked.
+-- Magazines and research: teaching a mod's recipe from a vanilla magazine (teach) and by research (researchable).
 local log = require "TraditionalPreservationCore/Log"
 
 local Recipes = {}
@@ -41,7 +44,7 @@ local function listed(items, wanted)
     local found = {}
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        local fullType = item:getFullType()
+        local fullType = wanted and item:getFullType()
         if not wanted or wanted == fullType or (type(wanted) == "table" and wanted[fullType]) then table.insert(found, item) end
     end
     return found
@@ -97,9 +100,7 @@ end
 -- cookable food it made is set cooked, so it reads Cooked and can be warmed again. Scripts name it
 -- TraditionalPreservationCore.OnCreateCooked.
 function Recipes.cookOutputs(craftRecipeData)
-    local created = craftRecipeData:getAllCreatedItems()
-    for i = 0, created:size() - 1 do
-        local item = created:get(i)
+    for _, item in ipairs(listed(craftRecipeData:getAllCreatedItems())) do
         if instanceof(item, "Food") and item:isCookable() then item:setCooked(true) end
     end
 end
@@ -142,9 +143,15 @@ function Recipes.teach(magazineType, recipeName, tag)
 end
 
 -- Lets an item be researched for recipeName (Research Recipes on its menu), as ResearchableRecipes in its script.
-function Recipes.researchable(itemType, recipeName)
+-- Returns false, and says so in the console, when the item isn't found.
+function Recipes.researchable(itemType, recipeName, tag)
     local item = ScriptManager.instance:getItem(itemType)
-    if item then item:DoParam("ResearchableRecipes = " .. recipeName) end
+    if not item then
+        print("[" .. (tag or "TP") .. "] Could not find " .. itemType)
+        return false
+    end
+    item:DoParam("ResearchableRecipes = " .. recipeName)
+    return true
 end
 
 return Recipes

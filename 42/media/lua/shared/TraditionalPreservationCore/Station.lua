@@ -40,6 +40,24 @@ function Station.kinds(prefix, faces, bases)
     return kindOf, tiles
 end
 
+-- The square dx, dy from square on its level, or nil (not loaded).
+function Station.squareAt(square, dx, dy)
+    return getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
+end
+
+-- Calls fn(object, dx, dy) for every object on the squares within radius tiles of x, y on level z: west to east,
+-- then north to south, then by its place on the square.
+local function eachObject(x, y, z, radius, fn)
+    local cell = getCell()
+    for dx = -radius, radius do
+        for dy = -radius, radius do
+            local there = cell:getGridSquare(x + dx, y + dy, z)
+            local objects = there and there:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do fn(objects:get(i), dx, dy) end
+        end
+    end
+end
+
 -- Every player here: all of them on a server, the local ones otherwise. A Java list.
 function Station.players()
     if isServer() then return getOnlinePlayers() end
@@ -54,17 +72,10 @@ end
 -- Every object within radius tiles of the square at x, y on level z that passes test, nearest first; of two as near,
 -- the one the scan meets first (west to east, then north to south, then by its place on the square).
 function Station.nearAt(x, y, z, radius, test)
-    local found, cell = {}, getCell()
-    for dx = -radius, radius do
-        for dy = -radius, radius do
-            local there = cell:getGridSquare(x + dx, y + dy, z)
-            local objects = there and there:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                if test(object) then table.insert(found, { object = object, distance = dx * dx + dy * dy, order = #found }) end
-            end
-        end
-    end
+    local found = {}
+    eachObject(x, y, z, radius, function(object, dx, dy)
+        if test(object) then table.insert(found, { object = object, distance = dx * dx + dy * dy, order = #found }) end
+    end)
     table.sort(found, function(a, b)
         if a.distance ~= b.distance then return a.distance < b.distance end
         return a.order < b.order
@@ -84,20 +95,12 @@ end
 -- cold, a lit stove or fire more) on any object within radius tiles of square on its level.
 function Station.hotContainers(square, radius, heat, fn)
     if not square then return end
-    local cell = getCell()
-    for dx = -radius, radius do
-        for dy = -radius, radius do
-            local there = cell:getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
-            local objects = there and there:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                for c = 0, object:getContainerCount() - 1 do
-                    local container = object:getContainerByIndex(c)
-                    if container:getTemperature() >= heat then fn(container, object) end
-                end
-            end
+    eachObject(square:getX(), square:getY(), square:getZ(), radius, function(object)
+        for c = 0, object:getContainerCount() - 1 do
+            local container = object:getContainerByIndex(c)
+            if container:getTemperature() >= heat then fn(container, object) end
         end
-    end
+    end)
 end
 
 -- A station just built or put down isn't known to the map loader. For the trackers that ask (options.scan), the
@@ -105,18 +108,12 @@ end
 local scanning = {}
 local scanTicks = 0
 
+local function foundByAll(object)
+    for _, tracker in ipairs(scanning) do tracker.found(object) end
+end
+
 local function scanNear(player)
-    local cell, px, py, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), math.floor(player:getZ())
-    for x = px - Station.SCAN_NEAR, px + Station.SCAN_NEAR do
-        for y = py - Station.SCAN_NEAR, py + Station.SCAN_NEAR do
-            local square = cell:getGridSquare(x, y, z)
-            local objects = square and square:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                for _, tracker in ipairs(scanning) do tracker.found(object) end
-            end
-        end
-    end
+    eachObject(math.floor(player:getX()), math.floor(player:getY()), math.floor(player:getZ()), Station.SCAN_NEAR, foundByAll)
 end
 
 local function onScanTick()
@@ -136,6 +133,8 @@ end
 --   scan     true to find stations built or put down this session as soon as a player is near (see above).
 --            entry must then turn down every object that isn't the mod's, and cheaply (Station.kinds).
 function Station.tracker(options)
+    assert(type(options.sprites) == "table", "Station.tracker: sprites (a list of sprite names) needed")
+    assert(type(options.refresh) == "function", "Station.tracker: refresh (a function) needed")
     local tracker = { tracked = {} }
     local ticks = options.ticks or Station.TICKS_PER_REFRESH
     local ticksSinceRefresh = 0

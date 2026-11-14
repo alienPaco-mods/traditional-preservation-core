@@ -23,6 +23,8 @@ StationInfo.BAR_HEIGHT = 12
 StationInfo.REFRESH_TICKS = 30
 StationInfo.GOOD_COLOUR, StationInfo.SLOW_COLOUR = { 0.35, 0.6, 0.3 }, { 0.75, 0.55, 0.2 }
 
+local LAYOUT = { padding = StationInfo.PADDING, labelWidth = StationInfo.LABEL_WIDTH, barHeight = StationInfo.BAR_HEIGHT }
+
 local KEY = "IGUI_TraditionalPreservationCore_"
 
 local providers = {}
@@ -39,34 +41,17 @@ function Panel:new(widget, provider)
     return o
 end
 
-local function lineHeight()
-    return getTextManager():getFontHeight(UIFont.Small)
-end
-
--- Each note's lines at this width, kept until its text or the width changes (wrapping measures every word).
-function Panel:noteLines(width)
-    if self.noteWidth ~= width then self.noteWidth, self.noteTexts, self.wrapped = width, {}, {} end
-    for index, note in ipairs(self.info.notes) do
-        if self.noteTexts[index] ~= note then
-            self.noteTexts[index], self.wrapped[index] = note, InfoWindow.wrapped(note, width)
-        end
-    end
-    return self.wrapped
-end
-
--- A row's value lines at this panel width.
-function Panel:rowLines(row, width)
-    return InfoWindow.valueLines(self, row[2], width - StationInfo.PADDING * 2 - StationInfo.LABEL_WIDTH)
-end
-
 -- The block's height at this width; 0 with nothing to show.
 function Panel:measure(width)
     local info = self.info
     if not info then return 0 end
-    local height = StationInfo.PADDING + #info.bars * (lineHeight() + 4)
-    for _, row in ipairs(info.rows) do height = height + #self:rowLines(row, width) * lineHeight() + 2 end
-    local lines = self:noteLines(width - StationInfo.PADDING * 2)
-    for index = 1, #info.notes do height = height + 4 + #lines[index] * lineHeight() end
+    local line = InfoWindow.lineHeight()
+    local height = StationInfo.PADDING + #info.bars * (line + InfoWindow.BAR_GAP)
+    for _, row in ipairs(info.rows) do
+        height = height + #InfoWindow.rowLines(self, LAYOUT, row[2], width) * line + InfoWindow.ROW_GAP
+    end
+    local lines = InfoWindow.noteLines(self, LAYOUT, info.notes, width)
+    for index = 1, #info.notes do height = height + InfoWindow.NOTE_GAP + #lines[index] * line end
     return height + StationInfo.PADDING
 end
 
@@ -87,37 +72,12 @@ function Panel:render()
     ISPanel.render(self)
     local info = self.info
     if not info then return end
-    local padding, labelWidth, barHeight = StationInfo.PADDING, StationInfo.LABEL_WIDTH, StationInfo.BAR_HEIGHT
-    local line = lineHeight()
+    local padding = StationInfo.PADDING
     local y = padding
     self:drawRect(padding, 0, self.width - padding * 2, 1, 0.4, 0.5, 0.5, 0.5)
-    for _, row in ipairs(info.rows) do
-        self:drawText(getText(row[1]), padding, y, 0.7, 0.7, 0.7, 1, UIFont.Small)
-        for _, text in ipairs(self:rowLines(row, self.width)) do
-            self:drawText(text, padding + labelWidth, y, 1, 1, 1, 1, UIFont.Small)
-            y = y + line
-        end
-        y = y + 2
-    end
-    local x = padding + labelWidth
-    local width = self.width - x - padding
-    for _, bar in ipairs(info.bars) do
-        local top = y + (line - barHeight) / 2
-        self:drawText(bar.text, padding, y, 0.7, 0.7, 0.7, 1, UIFont.Small)
-        self:drawRect(x, top, width, barHeight, 0.6, 0.1, 0.1, 0.1)
-        self:drawRect(x, top, width * math.max(0, math.min(bar.share, 1)), barHeight, 0.9, bar.colour[1], bar.colour[2], bar.colour[3])
-        self:drawRectBorder(x, top, width, barHeight, 0.8, 0.4, 0.4, 0.4)
-        self:drawTextCentre(bar.value, x + width / 2, y, 1, 1, 1, 1, UIFont.Small)
-        y = y + line + 4
-    end
-    local lines = self:noteLines(self.width - padding * 2)
-    for index = 1, #info.notes do
-        y = y + 4
-        for _, text in ipairs(lines[index]) do
-            self:drawText(text, padding, y, 0.8, 0.8, 0.65, 1, UIFont.Small)
-            y = y + line
-        end
-    end
+    for _, row in ipairs(info.rows) do y = InfoWindow.drawRow(self, LAYOUT, y, getText(row[1]), row[2]) end
+    for _, bar in ipairs(info.bars) do y = InfoWindow.drawBar(self, LAYOUT, y, bar.text, bar.share, bar.colour, bar.value) end
+    InfoWindow.drawNoteLines(self, LAYOUT, y, info.notes)
 end
 
 local hooked = false
@@ -161,6 +121,14 @@ end
 -- The last station asked about and its window logic: one window is open at a time, and the logic is costly to make.
 local cached = { entity = nil, entry = {} }
 
+-- The order of running batches: furthest along first; at the same progress (put in together) by recipe name, then
+-- by item count, so the bars keep their rows whatever order the engine lists them in (rule 9).
+function StationInfo.batchBefore(a, b)
+    if a.progress ~= b.progress then return a.progress > b.progress end
+    if a.name ~= b.name then return a.name < b.name end
+    return a.count > b.count
+end
+
 local function storedItems(resources, group, io)
     local items = {}
     local slots = Station.itemSlots(resources, group, io)
@@ -185,9 +153,11 @@ function StationInfo.contents(entity)
     for craftData, items in pairs(uiLogic:getItemsInProgress()) do
         local count = 0
         for _, amount in pairs(items) do count = count + tonumber(tostring(amount)) end
-        table.insert(batches, { data = craftData, progress = logic:getProgress(craftData), count = count })
+        local recipe = craftData:getRecipe()
+        table.insert(batches, { data = craftData, progress = logic:getProgress(craftData), count = count,
+            name = recipe and recipe:getName() or "" })
     end
-    table.sort(batches, function(a, b) return a.progress > b.progress end)
+    table.sort(batches, StationInfo.batchBefore)
     return { logic = logic, batches = batches,
         waiting = storedItems(resources, logic:getInputsGroupName(), ResourceIO.Input),
         finished = storedItems(resources, logic:getOutputsGroupName(), ResourceIO.Output) }
@@ -210,11 +180,12 @@ function StationInfo.block(options)
     for _, row in ipairs(options.rows or {}) do table.insert(rows, row) end
     local slow = rate and rate < UI.SLOW_RATE
     for index, batch in ipairs(options.batches or {}) do
-        local hours = batch.hoursLeft and math.ceil(batch.hoursLeft)
+        local days, hours
+        if batch.hoursLeft then days, hours = UI.daysHours(batch.hoursLeft) end
         table.insert(bars, {
             text = options.numbered and UI.say(KEY .. "InfoBatch", tostring(index), batch.name) or batch.name,
             share = batch.progress,
-            value = hours and UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), tostring(math.floor(hours / 24)), tostring(hours % 24))
+            value = days and UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), days, hours)
                 or UI.say(KEY .. "InfoPaused", UI.percent(batch.progress)),
             colour = slow and StationInfo.SLOW_COLOUR or StationInfo.GOOD_COLOUR,
         })
@@ -229,6 +200,7 @@ end
 
 -- Adds a provider (see above). The first call installs the wraps.
 function StationInfo.add(provider)
+    assert(type(provider) == "function", "StationInfo.add: a provider (a function) needed")
     hook()
     table.insert(providers, provider)
 end

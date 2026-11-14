@@ -172,7 +172,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a
-   station without one keeps an InfoWindow.
+   station without one keeps an InfoWindow. Both draw with InfoWindow's `drawRow`, `drawBar` and `drawNoteLines`
+   (one look, one set of colours: `InfoWindow.LABEL_COLOUR` and the rest); running batches are listed furthest along
+   first, ties by recipe name then count (`StationInfo.batchBefore`).
 6. **What the core already does, so a mod doesn't write it again:**
    - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `fluidName`, and
      `keepInPlace(test)` for a station that mustn't be picked up while it holds something (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
@@ -243,6 +245,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      ("The Smokehouse") has the details; Fish & Meat is the worked example.
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
+     `Station.squareAt(square, dx, dy)`: the square beside one, on its level.
    - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
      default and old-save migration (Yeast, Vinegar, the template).

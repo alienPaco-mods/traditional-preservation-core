@@ -100,7 +100,8 @@ check("one that shrank gives the height back", frame.relaid[2] == -28)
 
 -- A long value wraps under its label: at 300 wide the value has 300 - 16 - 110 = 174, 29 letters a line here.
 info.rows[2] = { "T_Wort", "5.0 of 20.0 L, sours in about 2d 18h, if the temperature holds" }
-check("a long row value wraps onto three lines", #panel:rowLines(info.rows[2], 300) == 3
+check("a long row value wraps onto three lines", #require("TraditionalPreservationCore/InfoWindow").rowLines(panel, { padding = StationInfo.PADDING, labelWidth = StationInfo.LABEL_WIDTH },
+    info.rows[2][2], 300) == 3
     and panel:measure(300) == 8 + 12 + 32 + 4 + 30 + 8)
 info.rows[2] = nil
 
@@ -118,5 +119,29 @@ check("a frozen batch has no time left: its bar says paused", frozen.bars[1].val
     and frozen.bars[1].colour == StationInfo.SLOW_COLOUR)
 local bare = StationInfo.block({ place = "Open" })
 check("by the clock: one row, and nothing in it", #bare.rows == 1 and #bare.bars == 0 and #bare.notes == 1)
+local UI = require "TraditionalPreservationCore/UI"
+local days, hours = UI.daysHours(30.2)
+check("time left: rounded up, whole days and hours as text (30.2 h is 1 d 7 h)", days == "1" and hours == "7"
+    and select(1, UI.daysHours(24)) == "1" and select(2, UI.daysHours(24)) == "0")
+
+-- Running batches: furthest along first; two at the same progress by recipe name, then count, whatever the order.
+local function order(list)
+    table.sort(list, StationInfo.batchBefore)
+    local names = {}
+    for _, b in ipairs(list) do table.insert(names, b.name .. b.count) end
+    return table.concat(names, " ")
+end
+local a, b, c, d = { progress = 0.5, name = "Malt", count = 2 }, { progress = 0.2, name = "Barm", count = 1 },
+    { progress = 0.5, name = "Barm", count = 3 }, { progress = 0.5, name = "Barm", count = 1 }
+check("ties by name, then by count, in either order", order({ a, b, c, d }) == "Barm3 Barm1 Malt2 Barm1"
+    and order({ d, c, b, a }) == "Barm3 Barm1 Malt2 Barm1")
+
+-- Register checks (rule 6).
+local Station = require "TraditionalPreservationCore/Station"
+local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+check("a tracker needs its sprites and its refresh", not pcall(Station.tracker, {})
+    and not pcall(Station.tracker, { sprites = {} }) and not pcall(Station.tracker, { refresh = function() end }))
+check("a provider and a click's test and open are functions", not pcall(StationInfo.add, {})
+    and not pcall(InfoWindow.clickOpens, nil, function() end))
 
 H.done()

@@ -3,6 +3,8 @@
 -- is built or put down with something in front of its door, nor on a tile in front of another one's door. The build
 -- menu asks TraditionalPreservationCore.doorFits (an entity's OnIsValid); putting a moveable down asks the same
 -- through UI.keepDoorsFree. Vanilla's own furniture isn't checked.
+local Station = require "TraditionalPreservationCore/Station"
+
 local Doors = {}
 
 -- The step to the tile in front, by facing (+x east, +y south), and the wall that would shut that tile off from the
@@ -22,7 +24,7 @@ function Doors.facingOf(spriteName)
 end
 
 local function squareAt(square, step, sign)
-    return getCell():getGridSquare(square:getX() + step[1] * sign, square:getY() + step[2] * sign, square:getZ())
+    return Station.squareAt(square, step[1] * sign, step[2] * sign)
 end
 
 -- What on a square would block a door, or nil: a wall on the edge facing the door ("wall collideN"), or a solid or

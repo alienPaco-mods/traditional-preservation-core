@@ -10,6 +10,8 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 local HearthConnect = require "TraditionalPreservationCore/HearthConnect"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
+local Station = require "TraditionalPreservationCore/Station"
+local squareAt = Station.squareAt
 
 local Smokehouse = {}
 
@@ -132,10 +134,6 @@ function Smokehouse.kitMissing(kind, counts, hasTool)
 end
 
 -- The world
-
-local function squareAt(square, dx, dy)
-    return getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
-end
 
 -- The first object on a square that test(object) answers, with the two values test gave back.
 local function firstOn(square, test)

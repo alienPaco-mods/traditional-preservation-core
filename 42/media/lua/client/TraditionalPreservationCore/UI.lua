@@ -69,11 +69,16 @@ function UI.placeText(place, celsius)
     return UI.say("IGUI_TraditionalPreservationCore_PlaceAt", UI.degrees(celsius), UI.placeName(place))
 end
 
+-- Hours rounded up to the hour, as whole days and the hours left over, both as text: 30.2 -> "1", "7".
+function UI.daysHours(hours)
+    local whole = math.ceil(hours)
+    return string.format("%.0f", math.floor(whole / 24)), string.format("%.0f", whole % 24)
+end
+
 -- Days and hours, rounded up to the hour, through a text with %1 days and %2 hours.
 function UI.timeText(hours, key)
     if not hours then return getText("IGUI_TraditionalPreservationCore_Paused") end
-    local whole = math.ceil(hours)
-    return UI.say(key, string.format("%.0f", math.floor(whole / 24)), string.format("%.0f", whole % 24))
+    return UI.say(key, UI.daysHours(hours))
 end
 
 -- An item's name in a menu: vanilla's, unless a mod has a say (UI.nameHook): Dairy names a wrapped pot "Wrapped

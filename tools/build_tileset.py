@@ -52,7 +52,7 @@ HEARTH_LOOKS = {"Cold": 0, "Steam": 2, "Lit": 4, "LitSteam": 70, "Banked": 72, "
 HEARTH = HEARTH_LOOKS["Cold"]
 FIRE_KINDS = ("Lit", "Banked")
 LIQUID = 6
-# The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no copper and an
+# The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no cauldron and an
 # iron door on its mouth, and a stone-lined hole in its top (HOLE_D): a cooking source. What shows in the hole is a look
 # (Hearth.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
 # food only, or joined to a flue with nothing for the pot). The stone draws no flue: a connection owns its sprites
@@ -78,14 +78,14 @@ STONE = (124, 116, 108)
 MORTAR = (46, 41, 38)          # the joints
 ARCH = (112, 106, 98)
 RENDER = (140, 133, 124)       # the slab on top, as the walls' light stones
-BED = (64, 54, 46)             # the mortar the copper is bedded in
+BED = (64, 54, 46)             # the mortar the cauldron is bedded in
 METAL = (82, 80, 80)           # the Forged Cauldron: iron, greased and blacked, grey where the soot hasn't reached
 METAL_LIT = (110, 108, 108)    # its lit inside
 KETTLE = (96, 94, 94)          # its outside, above the soot
 KETTLE_SOOT = (26, 24, 24)
 HAMMER = (70, 68, 68)          # forging marks inside, faint
 SPECULAR = (170, 170, 176)     # the grease's cool sheen on the rim
-VERDIGRIS = (44, 42, 42)       # flecks of old soot on the rim (the copper's verdigris)
+VERDIGRIS = (44, 42, 42)       # flecks of old soot on the rim
 PIPE = (128, 128, 124)         # vanilla's Metal Pipe: plain grey steel, under the soot
 MILK = (226, 220, 200)
 DARK = (22, 15, 11)
@@ -103,7 +103,7 @@ SLAB = 7                       # the slab's thickness, px: it sits down over the
 MOUTH_W, MOUTH_SILL, MOUTH_SPRING = 0.16, 1.5, 11.5   # half width in tiles; sill and springing height, px
 ARCH_RISE = 0.55               # the arch's height for its width
 FACE_LEN = math.hypot(pzart.DIAMOND_HALF_W, pzart.DIAMOND_HALF_H)   # px along a face per tile
-# The copper's mouth, as paint_copper draws it: the kettle sets these to its lip (shape()).
+# The cauldron's mouth, as paint_mouth draws it: the kettle sets these to its lip (shape()).
 CU_R = 0.27                    # its radius, in tiles
 LIP = 2                        # how far its rolled lip stands above TOP + CAP, px
 
@@ -209,7 +209,7 @@ HAM_BONE = (232, 222, 196)
 
 @contextmanager
 def shape(values):
-    """Draws with other sizes (the kettle's mouth for paint_copper and steam): the drawing reads them as module
+    """Draws with other sizes (the kettle's mouth for paint_mouth and steam): the drawing reads them as module
     globals."""
     saved = {name: globals()[name] for name in values}
     globals().update(values)
@@ -349,11 +349,11 @@ def slab_top(layer):
                       for a in [2 * math.pi * k / 7 for k in range(7)]], fill=shade(RENDER, rng.choice([1.0, 1.07, 0.97])))
 
 
-# --- The copper --------------------------------------------------------------------------------------------------
+# --- The cauldron ------------------------------------------------------------------------------------------------
 
-def paint_copper(layer, look, rng):
-    """The copper's mouth from above (the kettle's, through shape()): a rolled lip that catches the light, tarnished
-    metal with rivets on its seam and a little verdigris, the bowl lit on its far wall, set on a ring of BED. Full, a
+def paint_mouth(layer, look, rng):
+    """The cauldron's mouth from above (the kettle's, through shape()): a rolled lip that catches the light, forged
+    metal with rivets on its seam and flecks of old soot, the bowl lit on its far wall, set on a ring of BED. Full, a
     skin of milk; hot, wrinkles in the skin."""
     draw = ImageDraw.Draw(layer)
     cx, cy = pzart.project(0, 0, TOP + CAP)
@@ -454,7 +454,7 @@ def kettle_radius(t):
 
 def soot_share(t, a, phase):
     """How sooted the kettle is at height t and angle a, 0 to 1: black at the bottom, thinning up the belly into the
-    copper over a wide band with a mottled, uneven edge, as smoke leaves it; a few worn patches low down."""
+    bare iron over a wide band with a mottled, uneven edge, as smoke leaves it; a few worn patches low down."""
     line = 0.76 + 0.05 * math.sin(a * 5 + phase) + 0.03 * math.sin(a * 13 + 2 * phase)
     mottle = 0.06 * math.sin(a * 23 + t * 41 + phase) * math.sin(a * 11 - t * 29)
     s = max(0.0, min(1.0, (line + 0.08 - t + mottle) / 0.32))
@@ -466,7 +466,7 @@ def soot_share(t, a, phase):
 
 
 def paint_kettle(look, face):
-    """The kettle, as stacked rings lit from the left, its front lug, and its mouth (paint_copper at its lip).
+    """The kettle, as stacked rings lit from the left, its front lug, and its mouth (paint_mouth at its lip).
     Returns the layer and the bail's two ends, back then front, in tiles."""
     layer = pzart.new_layer(SS)
     draw = ImageDraw.Draw(layer)
@@ -491,7 +491,7 @@ def paint_kettle(look, face):
     x, y = pzart.project(ax * (lip_r + 0.005), ay * (lip_r + 0.005), KETTLE_TOP - 4)
     draw.rectangle(box(x, y, 1.0, 1.8), fill=shade(IRON, 0.9))
     with shape({"TOP": KETTLE_TOP - CAP, "CU_R": lip_r * 0.97, "BED": shade(KETTLE, 0.55)[:3], "LIP": 0}):
-        paint_copper(layer, look, random.Random(80 + face))
+        paint_mouth(layer, look, random.Random(80 + face))
     return layer, ends
 
 
@@ -887,7 +887,6 @@ def paint_firebox_glow(kind, face):
 
 MENU_ICON = 32
 ICON_SS = 8
-ICON_METAL = (176, 92, 52)     # brighter than the tile's copper: a menu icon is seen small and on its own
 ICON_OUTLINE = (40, 20, 12)
 
 
@@ -895,12 +894,12 @@ def icon_box(cx, cy, rx, ry):
     return [cx - rx, cy - ry, cx + rx, cy + ry]
 
 
-ICON_IRON = (122, 120, 120)    # the cauldron's iron above the soot, lighter than the tile's, as ICON_METAL
+ICON_IRON = (122, 120, 120)    # the cauldron's iron above the soot, lighter than the tile's: an icon is seen small
 ICON_LIQUID = MILK              # a full cauldron's icon: milk, its first use, whatever it holds
 ICON_IRON_OUTLINE = (16, 16, 18)  # near black, as vanilla's forged pot icon
 
 
-def copper_icon(full, metal=ICON_METAL, liquid=MILK, lip=1.0, speck=SPECULAR, scale=1.0, centre=None, rim=1.0,
+def kettle_icon(full, metal=ICON_IRON, liquid=MILK, lip=1.0, speck=SPECULAR, scale=1.0, centre=None, rim=1.0,
                 outline=ICON_OUTLINE):
     """The Hearth's kettle from the side, for its menus: the Alpine belly sooted black below and blending into bright
     metal at the shoulder, a rolled lip (lip times as thick) catching the light from the left and the iron bail over
@@ -910,7 +909,6 @@ def copper_icon(full, metal=ICON_METAL, liquid=MILK, lip=1.0, speck=SPECULAR, sc
     n, s = MENU_ICON * ICON_SS, ICON_SS
     icon = Image.new("RGBA", (n, n), (0, 0, 0, 0))
     draw = ImageDraw.Draw(icon)
-    ICON_METAL = metal
     cx, bottom = (n / 2, 30 * s) if centre is None else (centre[0] * s, centre[1] * s)
     s *= scale
     height, widest = 19 * s, 14.5 * s
@@ -924,17 +922,17 @@ def copper_icon(full, metal=ICON_METAL, liquid=MILK, lip=1.0, speck=SPECULAR, sc
             light = 0.55 + 0.8 * max(0.0, math.cos((u + 0.45) * 1.6)) ** 1.5
             sooted = soot_share(t, math.pi / 2 - u, 1.3)
             colour = tuple(int(c0 * (1 - sooted) + c1 * sooted)
-                           for c0, c1 in zip(shade(ICON_METAL, light)[:3], shade(KETTLE_SOOT, 0.6 + 0.5 * light)[:3]))
+                           for c0, c1 in zip(shade(metal, light)[:3], shade(KETTLE_SOOT, 0.6 + 0.5 * light)[:3]))
             draw.point((x, y), fill=colour + (255,))
     lip_half, ry = widest * PROFILE[-1][1], 3.2 * s
-    draw.ellipse(icon_box(cx, top, lip_half, ry), fill=shade(ICON_METAL, 0.35))
+    draw.ellipse(icon_box(cx, top, lip_half, ry), fill=shade(metal, 0.35))
     draw.ellipse(icon_box(cx, top + 0.2 * s, lip_half - 1.4 * s * lip, ry - 0.8 * s * lip),
-                 fill=liquid + (255,) if full else shade(ICON_METAL, 0.3))
+                 fill=liquid + (255,) if full else shade(metal, 0.3))
     for i in range(160):
         a = 2 * math.pi * i / 160
         light = (0.7 + 0.8 * max(0.0, math.cos(a - 2.4)) ** 2) * rim
         draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a), 1.2 * s * lip,
-                              0.8 * s * lip), fill=shade(ICON_METAL, light))
+                              0.8 * s * lip), fill=shade(metal, light))
     for i in range(30):
         a = 2.3 + 0.9 * i / 29
         draw.ellipse(icon_box(cx + (lip_half - 0.5 * s) * math.cos(a), top + (ry - 0.3 * s) * math.sin(a) - 0.3 * s * lip,
@@ -949,9 +947,9 @@ def copper_icon(full, metal=ICON_METAL, liquid=MILK, lip=1.0, speck=SPECULAR, sc
 
 
 def cauldron_icon(full, **kw):
-    """The Forged Cauldron, as copper_icon draws a kettle: dark forged iron sooted black below, grey above with a cool
+    """The Forged Cauldron, as kettle_icon draws a kettle: dark forged iron sooted black below, grey above with a cool
     sheen, the thick rolled lip of its tiles and model; full, a pale surface."""
-    return copper_icon(full, metal=ICON_IRON, liquid=ICON_LIQUID, lip=1.7, speck=(150, 152, 158), rim=0.78,
+    return kettle_icon(full, metal=ICON_IRON, liquid=ICON_LIQUID, lip=1.7, speck=(150, 152, 158), rim=0.78,
                        outline=ICON_IRON_OUTLINE, **kw)
 
 
@@ -1444,13 +1442,11 @@ def main():
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
     (media / "textures").mkdir(parents=True, exist_ok=True)
     pzart.write_build_icon(tiles[HEARTH], media / "textures" / "Item_TPHearth.png")
-    # Menu icons: the copper empty and full, the Hearth lit and banked.
-    copper_icon(False).save(media / "textures" / "Item_TPCopper.png")
-    copper_icon(True).save(media / "textures" / "Item_TPCopperFull.png")
-    # The Forged Cauldron's: empty and full (the item, the Hearth's status row) and Fit / Remove.
+    # Menu icons: the Forged Cauldron's, empty and full (the item, the Hearth's status row) and Fit / Remove.
     cauldron_icon(False).save(media / "textures" / "Item_TPCauldron.png")
     cauldron_icon(True).save(media / "textures" / "Item_TPCauldronFull.png")
     fit_icon().save(media / "textures" / "Item_TPCauldronFit.png")
+    # The Hearth lit and banked.
     for kind in FIRE_KINDS:
         pzart.write_build_icon(hearth_icon(kind), media / "textures" / f"Item_TPHearth{kind}.png", MENU_ICON)
     pzart.write_build_icon(tiles[FIREBOX], media / "textures" / "Item_TPFirebox.png")
@@ -1459,7 +1455,7 @@ def main():
         icon.alpha_composite(tiles[FIREBOX_GLOWS[kind]])
         pzart.write_build_icon(icon, media / "textures" / f"Item_TPFirebox{kind}.png", MENU_ICON)
     pzart.write_build_icon(chamber_icon(tiles), media / "textures" / "Item_SmokehouseChamber.png")
-    # The mod list shows the copper steaming.
+    # The mod list shows the cauldron steaming.
     pzart.write_mod_icon(tiles[HEARTH_LOOKS["Steam"]], media.parent / "icon.png")
     if len(sys.argv) > 1:
         contact_sheet(tiles, sys.argv[1])

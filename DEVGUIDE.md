@@ -137,12 +137,12 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Copper.lua` (the Forged Cauldron as the first attachment; in the code it is still `copper`: its id `Hearth.COPPER`, its save key, `Copper.lua`, `CopperUI.lua`, `TPHearthCopper`), `.../Smokehouse.lua` (the
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
-`HearthUI.lua`, `CopperUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+`HearthUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
@@ -162,7 +162,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    borrow the core's harness and `pzart`). A test with its own `require` stub (e.g. `name:find("^TraditionalPreservation<Mod>/")`)
    must also let `^TraditionalPreservationCore/` through, or use `H.useModPaths()`.
 4. **Modules only the required mod has:** `Hearth` (the Stone Hearth and its cauldron, save key `tpHearth`, the opt-in "by
-   a fire" place, hooks) and `Copper`, its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI`, `CopperUI` and `InfoWindow` are
+   a fire" place, hooks) and `Cauldron`, its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI`, `CauldronUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's three files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
@@ -186,16 +186,16 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Hearth.blend("A", "B")`: fluids that may share the cauldron. `Hearth.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.
-   - `Hearth.turnsHot(from, to, hours)`, `Hearth.goesOff(from, to)` + `Hearth.offBy(copper, hour)` and
+   - `Hearth.turnsHot(from, to, hours)`, `Hearth.goesOff(from, to)` + `Hearth.offBy(cauldron, hour)` and
      `Hearth.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `HearthUI.addMenu(fn)` and `HearthUI.addNotes(fn)`
      put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info.
    - **Attachments** (`Hearth.attach{ id, name, fit, canRemove, look, heats, onFire, status, menu, rows, notes }`, the
-     Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Copper.lua`, `CopperUI.lua`,
+     Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
      its simmer in `HearthWorld`) is the first, written against the registry alone. Calling `attach` again with the
      same id adds fields, so rules go in shared Lua and the menu in client Lua. Its state is its own table under its
-     id in `tpHearth` (`Hearth.partState(modData, id)`; the copper's is `Hearth.copperState(modData)`, and
-     `Hearth.copperOf(fire)` brings it up to now). `Hearth.attachmentOf(fire)` gives the spec and state;
+     id in `tpHearth` (`Hearth.partState(modData, id)`; the cauldron's is `Hearth.cauldronState(modData)`, and
+     `Hearth.cauldronOf(fire)` brings it up to now). `Hearth.attachmentOf(fire)` gives the spec and state;
      `Hearth.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
      `Hearth.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
      `Hearth.lua` above `Hearth.attach`. Fit / Remove are Core's (`TPHearthFit`, by the attachment's `fit`).
@@ -515,7 +515,7 @@ not only code (the Stone Hearth with its cauldron is wanted by Dairy and later b
 needs one tileset, one save key and one set of timed actions. Two mods can't both ship it. One required mod also
 means one copy of each fix, and one place for multiplayer's network code later. Its modules still return a local
 table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateFirebox`
-(the entity script) and `OnCreateCooked`, the timed actions (`TPHearthCopper`, `TPHearthFire`, `TPHearthFit`,
+(the entity script) and `OnCreateCooked`, the timed actions (`TPHearthCauldron`, `TPHearthFire`, `TPHearthFit`,
 `TPHearthConnect`, `TPFluidTreat`, `TPSeason`), and `TPC`, the debug console. FuelBarrel is not a TP mod and does not require it.
 
 **Why the extra check that a station is loaded?**

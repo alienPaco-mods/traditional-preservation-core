@@ -12,7 +12,7 @@
 -- raw is mixed in. A kind may also name a scalding heat (scaldHeat, vanilla item heat): fluid seen in an item that hot,
 -- on a stove or a fire, is scalded from then on, as vanilla's boiling makes tainted water clean. With a hold
 -- (scaldHold, hours) it scalds only once it has been that hot for so long in all: an item counts its hours under
--- HELD_KEY, a copper by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep
+-- HELD_KEY, a cauldron by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep
 -- their own scalded flag.
 --
 -- Treatments (states, optional): a kind may also name what can be done to its fresh fluid to keep it longer, each with
@@ -306,7 +306,7 @@ local function nameAt(spec, stage, name, scalded, state)
 end
 FluidAgeing.nameAt = nameAt
 
--- True if the fresh fluid in found ({ name = litres }) is all scalded: it came from a copper steaming, so a container
+-- True if the fresh fluid in found ({ name = litres }) is all scalded: it came from a cauldron steaming, so a container
 -- seen for the first time with it is scalded.
 local function allScalded(spec, found)
     local any = false
@@ -468,7 +468,7 @@ function FluidAgeing.sourceRecord(source, now)
         sealed
 end
 
--- holder (a modData table, or a copper's state) gets fluid of age record: it takes the record if it held none of
+-- holder (a modData table, or a cauldron's state) gets fluid of age record: it takes the record if it held none of
 -- the kind (hadSome false), else the older age.
 function FluidAgeing.receive(holder, record, hadSome, place)
     -- Raw fluid coming in starts the hold at the heat over.
@@ -483,24 +483,24 @@ function FluidAgeing.receive(holder, record, hadSome, place)
     end
 end
 
--- Brings what a copper's state ({ ml, fluid, parts }, Hearth's) holds up to now at the Hearth's place and renames
--- its fluids for their stage, as a container's are swapped, so turned milk in the copper is no longer milk to
--- anything that reads it. Milk that has steamed in the copper for the kind's hold (heldHours, Hearth.heldHours) is
+-- Brings what a cauldron's state ({ ml, fluid, parts }, Hearth's) holds up to now at the Hearth's place and renames
+-- its fluids for their stage, as a container's are swapped, so turned milk in the cauldron is no longer milk to
+-- anything that reads it. Milk that has steamed in the cauldron for the kind's hold (heldHours, Hearth.heldHours) is
 -- scalded from then on, and renamed so; raw milk
--- poured onto it makes it plain again. An empty copper forgets; one holding a kind's fluid with no record (filled before
+-- poured onto it makes it plain again. An empty cauldron forgets; one holding a kind's fluid with no record (filled before
 -- the kind aged, or by a debug command) starts one.
-function FluidAgeing.updateCopper(copper, now, place, heldHours)
-    local record = copper[FluidAgeing.KEY]
-    if (copper.ml or 0) <= 0 then
-        copper[FluidAgeing.KEY] = nil
+function FluidAgeing.updateCauldron(cauldron, now, place, heldHours)
+    local record = cauldron[FluidAgeing.KEY]
+    if (cauldron.ml or 0) <= 0 then
+        cauldron[FluidAgeing.KEY] = nil
         return nil
     end
     if not record then
-        local found = copper.parts or { [copper.fluid or ""] = copper.ml }
-        local spec = copper.fluid and byFluid[copper.fluid]
+        local found = cauldron.parts or { [cauldron.fluid or ""] = cauldron.ml }
+        local spec = cauldron.fluid and byFluid[cauldron.fluid]
         if not spec or not isOn(spec) then return nil end
         record = startRecord(spec, found, now, place)
-        copper[FluidAgeing.KEY] = record
+        cauldron[FluidAgeing.KEY] = record
     end
     local spec = specs[record.kind]
     if not spec or not isOn(spec) then return nil end
@@ -508,9 +508,9 @@ function FluidAgeing.updateCopper(copper, now, place, heldHours)
     if FluidAgeing.heldLongEnough(spec, heldHours) then scaldIfFresh(record, spec) end
     local stage = FluidAgeing.stage(record, spec)
     local state = FluidAgeing.state(record, spec)
-    if copper.parts then
+    if cauldron.parts then
         local parts, count, most, changed = {}, 0, nil, false
-        for name, part in pairs(copper.parts) do
+        for name, part in pairs(cauldron.parts) do
             local renamed = nameAt(spec, stage, name, record.scalded, state)
             if not parts[renamed] then count = count + 1 end
             parts[renamed] = (parts[renamed] or 0) + part
@@ -520,17 +520,17 @@ function FluidAgeing.updateCopper(copper, now, place, heldHours)
         for name, part in pairs(parts) do
             if not most or part > parts[most] or (part == parts[most] and name < most) then most = name end
         end
-        copper.parts = count > 1 and parts or nil
-        copper.fluid = most
-    elseif copper.fluid then
-        copper.fluid = nameAt(spec, stage, copper.fluid, record.scalded, state)
+        cauldron.parts = count > 1 and parts or nil
+        cauldron.fluid = most
+    elseif cauldron.fluid then
+        cauldron.fluid = nameAt(spec, stage, cauldron.fluid, record.scalded, state)
     end
     return record, spec
 end
 
--- A copy of the age of what a copper's state holds, brought up to now (heldHours as for updateCopper), or nil.
-function FluidAgeing.copperRecord(copper, now, place, heldHours)
-    local record = FluidAgeing.updateCopper(copper, now, place, heldHours)
+-- A copy of the age of what a cauldron's state holds, brought up to now (heldHours as for updateCauldron), or nil.
+function FluidAgeing.cauldronRecord(cauldron, now, place, heldHours)
+    local record = FluidAgeing.updateCauldron(cauldron, now, place, heldHours)
     return record and FluidAgeing.copy(record) or nil
 end
 
@@ -557,7 +557,7 @@ local function changeRecord(owner, now, change)
     return true
 end
 
--- Marks the fluid an owner holds as scalded (drawn hot from the Hearth's copper): a fresh record, or the one it has.
+-- Marks the fluid an owner holds as scalded (drawn hot from the Hearth's cauldron): a fresh record, or the one it has.
 -- Its fresh fluids are renamed to their scalded twins.
 function FluidAgeing.markScalded(owner, now)
     changeRecord(owner, now, scaldIfFresh)

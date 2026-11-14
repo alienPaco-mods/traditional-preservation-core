@@ -1,10 +1,10 @@
 -- Traditional Preservation core: the Hearth is worked from its right-click menu. Vanilla's own menu lights and feeds
 -- the fire; ours, inside vanilla's Hearth submenu, banks a lit fire or stokes it up again and has what is fitted
--- add its own rows (Hearth.attach's status and menu: the copper's are CopperUI's). Hearth Info, also on the menu,
+-- add its own rows (Hearth.attach's status and menu: the cauldron's are CauldronUI's). Hearth Info, also on the menu,
 -- shows the fire, its fuel and the attachment's rows and notes. A Hearth can't be picked up while it burns or while
 -- something is fitted. Clicking a Hearth opens Hearth Info too. Mods add their own rows
--- to the copper's menu with HearthUI.addMenu and notes to Hearth Info with HearthUI.addNotes.
--- A Firebox has the same menu without the copper: Firebox Info and Bank / Stoke, and Fit for each attachment that has
+-- to the cauldron's menu with HearthUI.addMenu and notes to Hearth Info with HearthUI.addNotes.
+-- A Firebox has the same menu without the cauldron: Firebox Info and Bank / Stoke, and Fit for each attachment that has
 -- a fit (Fit Cauldron); a fitted Hearth has Remove. Both have Connect for each connection with something beside the
 -- fire to join (Hearth.connect: the Smokehouse's flue), or Disconnect for the one joined (HearthUI.addConnect,
 -- HearthUI.addDisconnect: the joined thing's own menu may offer them too). The fire's own rows
@@ -14,7 +14,7 @@ require "TimedActions/TPHearthFit"
 require "TimedActions/TPHearthConnect"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
-require "TraditionalPreservationCore/Copper"
+require "TraditionalPreservationCore/Cauldron"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
 
 local HearthUI = {}
@@ -57,7 +57,7 @@ local function addFireOption(menu, playerObj, hearth)
     tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
--- Vanilla gives every fire its own submenu, named after the tile (ISBBQMenu): the copper's options go in there too,
+-- Vanilla gives every fire its own submenu, named after the tile (ISBBQMenu): the cauldron's options go in there too,
 -- so there is one Hearth menu, not two.
 local function hearthSubMenu(context, hearth)
     local vanilla = context:getOptionFromName(hearth:getTileName())
@@ -254,14 +254,14 @@ end
 
 local MENUS = {}
 
--- fn(menu, playerObj, hearth, copper) adds a mod's own rows to the Hearth's menu, after Pour into Copper.
+-- fn(menu, playerObj, hearth, cauldron) adds a mod's own rows to the Hearth's menu, after Pour into Cauldron.
 function HearthUI.addMenu(fn)
     table.insert(MENUS, fn)
 end
 
--- The rows HearthUI.addMenu gave, for the copper's menu to place.
-function HearthUI.modRows(menu, playerObj, hearth, copper)
-    for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, copper) end
+-- The rows HearthUI.addMenu gave, for the cauldron's menu to place.
+function HearthUI.modRows(menu, playerObj, hearth, cauldron)
+    for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, cauldron) end
 end
 
 local FIREBOX_MENUS = {}
@@ -342,14 +342,14 @@ end)
 
 local NOTES, FIREBOX_NOTES = {}, {}
 
--- fn(info, notes) adds lines to Hearth Info's notes, after the attachment's. info = { copper (the attachment's state),
+-- fn(info, notes) adds lines to Hearth Info's notes, after the attachment's. info = { cauldron (the attachment's state),
 -- state (the fire's), lit, banked, fuelMin, burnHours }.
 function HearthUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
 
 -- Notes on the fire itself, fitted or not, last in its Info (after the connection's own notes). info = { state
--- (the fire's), joined (the connection's state, if any), copper (the attachment's state, or the fire's when nothing is fitted), lit, banked,
+-- (the fire's), joined (the connection's state, if any), cauldron (the attachment's state, or the fire's when nothing is fitted), lit, banked,
 -- fuelMin, burnHours, firebox }.
 function HearthUI.addFireboxNotes(fn)
     table.insert(FIREBOX_NOTES, fn)
@@ -373,7 +373,7 @@ function HearthWindow:refresh()
     local state = Hearth.fireStateOf(hearth)
     local spec, part = Hearth.attachmentOf(hearth)
     local joinedSpec, joined = Hearth.connectionOf(hearth)
-    self.info = { copper = part or state, state = state, spec = spec, joinedSpec = joinedSpec, joined = joined, lit = Hearth.isBurning(hearth),
+    self.info = { cauldron = part or state, state = state, spec = spec, joinedSpec = joinedSpec, joined = joined, lit = Hearth.isBurning(hearth),
         banked = Hearth.isBanked(hearth), fuelMin = hearth:getFuelAmount(), burnHours = Hearth.fuelHours(hearth),
         firebox = Hearth.isFirebox(hearth) }
 end

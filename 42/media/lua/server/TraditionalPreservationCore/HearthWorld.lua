@@ -1,4 +1,4 @@
--- Traditional Preservation core: keeps track of every Hearth and Firebox and brings what is fitted (the copper) up to the hour: heated while
+-- Traditional Preservation core: keeps track of every Hearth and Firebox and brings what is fitted (the cauldron) up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
 -- the hearth tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
 -- weather (Weather.shared), so the Hearth works whichever TP mods are on. A banked Hearth's vanilla fire is out: its
@@ -11,7 +11,7 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local log = require "TraditionalPreservationCore/Log"
-require "TraditionalPreservationCore/Copper"
+require "TraditionalPreservationCore/Cauldron"
 
 local World = {}
 Hearth.World = World
@@ -78,8 +78,8 @@ local function showEmbers(fire, banked)
     end
 end
 
--- The copper's simmer: a looping TPSimmering on the Hearth's square while what it holds is at HOT_C or more, one per
--- Hearth. A free world emitter (the world ticks it); stopped when the copper cools, empties, or the Hearth unloads.
+-- The cauldron's simmer: a looping TPSimmering on the Hearth's square while what it holds is at HOT_C or more, one per
+-- Hearth. A free world emitter (the world ticks it); stopped when the cauldron cools, empties, or the Hearth unloads.
 World.SIMMER_SOUND = "TPSimmering"
 local simmers = {}
 
@@ -95,7 +95,7 @@ local function simmer(fire, on)
     if emitter then simmers[fire] = { emitter = emitter, id = emitter:playSoundLooped(World.SIMMER_SOUND) } end
 end
 
-Hearth.attach({ id = Hearth.COPPER, onFire = function(copper, fire) simmer(fire, Hearth.isHot(copper)) end })
+Hearth.attach({ id = Hearth.CAULDRON, onFire = function(cauldron, fire) simmer(fire, Hearth.isHot(cauldron)) end })
 
 -- The overlay (a Stone Hearth's glow, or what the cauldron holds) and its tint. The tint isn't saved, so it is set
 -- again the first time a fire is seen after a load (tints starts empty), and whenever it changes.
@@ -155,13 +155,13 @@ local tracker = Station.tracker({
         simmer(fire, false)
         cookSeen[fire] = nil
     end,
-    -- A hearth just built or put down shows its copper (a Firebox its flue and hole) at once.
+    -- A hearth just built or put down shows its cauldron (a Firebox its flue and hole) at once.
     scan = true,
 })
 
 World.track = tracker.track
 
--- Banks a lit fire (vanilla's fire put out), stokes a banked one up again (lit), or puts a banked one out. The copper
+-- Banks a lit fire (vanilla's fire put out), stokes a banked one up again (lit), or puts a banked one out. The cauldron
 -- is brought up to now first, so it heated as the fire was until now.
 function World.setFire(fire, mode, now)
     local state = World.update(fire, now)

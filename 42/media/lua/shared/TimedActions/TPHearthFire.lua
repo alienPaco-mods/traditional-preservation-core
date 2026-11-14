@@ -1,6 +1,6 @@
 -- Traditional Preservation core: banking a Hearth's fire down under its ash ("bank"), stoking it up again ("stoke"),
 -- or putting a banked fire out ("out", vanilla's Put out Fire). A banked fire burns a third of the wood, keeps the
--- copper about 50 C, warms only beside it and cooks a third as fast.
+-- cauldron about 50 C, warms only beside it and cooks a third as fast.
 require "TimedActions/ISBaseTimedAction"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local Action = require "TraditionalPreservationCore/Action"

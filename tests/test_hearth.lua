@@ -1,4 +1,4 @@
--- Checks the Hearth's copper and hooks in 42/media/lua. Run from TraditionalPreservationCore: luajit tests/test_hearth.lua
+-- Checks the Hearth's cauldron and hooks in 42/media/lua. Run from TraditionalPreservationCore: luajit tests/test_hearth.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 package.path = "42/media/lua/shared/?.lua;" .. package.path
@@ -6,27 +6,27 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 
 -- Item heat
 check("room heat is room temperature", Hearth.heatCelsius(1.0) == Hearth.ROOM_C)
-check("an item never reads hotter than the copper gets", Hearth.heatCelsius(3.0) == Hearth.MAX_C)
+check("an item never reads hotter than the cauldron gets", Hearth.heatCelsius(3.0) == Hearth.MAX_C)
 check("heat goes back to the item it came from", near(Hearth.heatCelsius(Hearth.itemHeat(60)), 60))
 check("an item from the fridge reads cold, not frozen", near(Hearth.heatCelsius(0.2), Hearth.COLD_C))
 check("and never colder than the fridge", Hearth.heatCelsius(0) == Hearth.COLD_C and Hearth.heatCelsius(-5) == Hearth.COLD_C)
 check("cold heat goes back to the item too", near(Hearth.heatCelsius(Hearth.itemHeat(10)), 10))
-check("a freezing copper fills at the engine's floor", Hearth.itemHeat(-10) == Hearth.COLD_HEAT)
+check("a freezing cauldron fills at the engine's floor", Hearth.itemHeat(-10) == Hearth.COLD_HEAT)
 
 -- Filling and emptying
-local copper = {}
-check("an empty copper takes any fluid", Hearth.pourInto(copper, "Water", 4000, 20, 0) == 4000 and copper.fluid == "Water")
-check("but not a second one", select(2, Hearth.pourInto(copper, "CowMilk", 1000, 20, 0)) == "Mixed")
-check("emptied, it forgets the fluid", Hearth.take(copper) == 4000 and copper.fluid == nil and copper.tempC == nil)
-check("cow's and sheep's milk don't mix", Hearth.pourInto(copper, "CowMilk", 60000, 20, 0) == 60000
-    and select(2, Hearth.pourInto(copper, "SheepMilk", 100, 20, 0)) == "Mixed")
-check("60 L fills it", select(2, Hearth.pourInto(copper, "CowMilk", 100, 20, 0)) == "Full")
+local cauldron = {}
+check("an empty cauldron takes any fluid", Hearth.pourInto(cauldron, "Water", 4000, 20, 0) == 4000 and cauldron.fluid == "Water")
+check("but not a second one", select(2, Hearth.pourInto(cauldron, "CowMilk", 1000, 20, 0)) == "Mixed")
+check("emptied, it forgets the fluid", Hearth.take(cauldron) == 4000 and cauldron.fluid == nil and cauldron.tempC == nil)
+check("cow's and sheep's milk don't mix", Hearth.pourInto(cauldron, "CowMilk", 60000, 20, 0) == 60000
+    and select(2, Hearth.pourInto(cauldron, "SheepMilk", 100, 20, 0)) == "Mixed")
+check("60 L fills it", select(2, Hearth.pourInto(cauldron, "CowMilk", 100, 20, 0)) == "Full")
 
--- Fluids a mod has said may share the copper
+-- Fluids a mod has said may share the cauldron
 Hearth.blend("CowMilk", "SheepMilk")
 local herd = {}
 Hearth.pourInto(herd, "CowMilk", 3000, 20, 0)
-check("fluids that blend share the copper, heat mixing by volume", Hearth.pourInto(herd, "SheepMilk", 1000, 60, 0) == 1000
+check("fluids that blend share the cauldron, heat mixing by volume", Hearth.pourInto(herd, "SheepMilk", 1000, 60, 0) == 1000
     and herd.ml == 4000 and near(herd.tempC, 30) and herd.fluid == "CowMilk" and herd.parts.SheepMilk == 1000)
 check("but nothing else joins them", select(2, Hearth.pourInto(herd, "Water", 100, 20, 0)) == "Mixed")
 local outMl, outFluid, _, outParts = Hearth.take(herd, 2000)
@@ -42,24 +42,24 @@ local _, _, _, waterParts = Hearth.take(plain, 400)
 check("one fluid is one part", plain.parts == nil and waterParts.Water == 400)
 
 -- Heating and cooling
-copper = {}
-Hearth.pourInto(copper, "CowMilk", 10000, 20, 0)
-copper.fireUntil = 100
+cauldron = {}
+Hearth.pourInto(cauldron, "CowMilk", 10000, 20, 0)
+cauldron.fireUntil = 100
 local hot
 for minute = 6, 240, 6 do
-    Hearth.advance(copper, minute / 60, 20)
-    if not hot and Hearth.isHot(copper) then hot = minute / 60 end
+    Hearth.advance(cauldron, minute / 60, 20)
+    if not hot and Hearth.isHot(cauldron) then hot = minute / 60 end
 end
 check("10 L over the fire is hot in about an hour and a half", hot and hot > 1.3 and hot < 1.7)
-check("milk counts its hours at the steam, as any fluid does", near(Hearth.heldHours(copper), 4 - hot, 0.15))
-Hearth.pourInto(copper, "CowMilk", 1000, 20, 4)
-check("pouring more in starts the count over", Hearth.heldHours(copper) == 0)
-check("an empty copper has held nothing", Hearth.heldHours({ held = 2 }) == 0)
+check("milk counts its hours at the steam, as any fluid does", near(Hearth.heldHours(cauldron), 4 - hot, 0.15))
+Hearth.pourInto(cauldron, "CowMilk", 1000, 20, 4)
+check("pouring more in starts the count over", Hearth.heldHours(cauldron) == 0)
+check("an empty cauldron has held nothing", Hearth.heldHours({ held = 2 }) == 0)
 check("20 L takes about two hours", Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 1.8
     and Hearth.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.1)
-check("a full 60 L copper under three hours", Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 2.6
+check("a full 60 L cauldron under three hours", Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 2.6
     and Hearth.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.9)
-check("and never boils", copper.tempC <= Hearth.MAX_C)
+check("and never boils", cauldron.tempC <= Hearth.MAX_C)
 local split = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
 Hearth.advance(split, 1, 20)
 Hearth.advance(split, 2, 20)
@@ -69,18 +69,18 @@ check("ticks or one catch-up give the same heat", near(split.tempC, once.tempC, 
 local small = { ml = 1000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100 }
 Hearth.advance(small, 1, 20)
 check("a litre heats faster", Hearth.isHot(small))
-check("cold fluid poured in lowers the heat", Hearth.take(copper, 5000) == 5000
-    and Hearth.pourInto(copper, "CowMilk", 5000, 5, 4) == 5000 and copper.tempC < Hearth.HOT_C and not Hearth.isHot(copper))
+check("cold fluid poured in lowers the heat", Hearth.take(cauldron, 5000) == 5000
+    and Hearth.pourInto(cauldron, "CowMilk", 5000, 5, 4) == 5000 and cauldron.tempC < Hearth.HOT_C and not Hearth.isHot(cauldron))
 local outFire = { ml = 10000, fluid = "CowMilk", tempC = 90, last = 0, fireUntil = 1 }
 Hearth.advance(outFire, 3, 20)
-local byFireThenOut = Hearth.cool(Hearth.cool(90, Hearth.MAX_C, 1, Hearth.copperTau(10000, true)), 20, 2,
-    Hearth.copperTau(10000, false))
+local byFireThenOut = Hearth.cool(Hearth.cool(90, Hearth.MAX_C, 1, Hearth.cauldronTau(10000, true)), 20, 2,
+    Hearth.cauldronTau(10000, false))
 check("out of fuel it cools to the room from then on", near(outFire.tempC, byFireThenOut, 1e-6))
-check("slower than it heated: the stone holds it", Hearth.copperTau(10000, false) > 2 * Hearth.copperTau(10000, true))
+check("slower than it heated: the stone holds it", Hearth.cauldronTau(10000, false) > 2 * Hearth.cauldronTau(10000, true))
 local unlit = { ml = 10000, fluid = "CowMilk", tempC = 90, last = 0 }
 Hearth.advance(unlit, 2, 20)
-check("a copper with no fire cools", unlit.tempC < 60 and unlit.tempC > 20)
-check("the copper shows empty, full or steaming", Hearth.look({}) == "Empty"
+check("a cauldron with no fire cools", unlit.tempC < 60 and unlit.tempC > 20)
+check("the cauldron shows empty, full or steaming", Hearth.look({}) == "Empty"
     and Hearth.look({ ml = 100, tempC = 40 }) == "Full" and Hearth.look({ ml = 100, fluid = "Water", tempC = 90 }) == "Hot")
 for _, fluid in ipairs({ "CowMilk", "Water" }) do
     local warming = { ml = 10000, fluid = fluid, tempC = 20, last = 0, fireUntil = 100 }
@@ -90,7 +90,7 @@ for _, fluid in ipairs({ "CowMilk", "Water" }) do
     Hearth.advance(warming, eta + 0.01, 20)
     check("the time to hot is right: " .. fluid, not before and Hearth.isHot(warming) and Hearth.hoursToHot(warming) == 0)
 end
-check("an empty copper is never hot", Hearth.hoursToHot({}) == nil)
+check("an empty cauldron is never hot", Hearth.hoursToHot({}) == nil)
 
 -- Water boils
 local pot = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
@@ -105,11 +105,11 @@ check("water at the boil pours out hot enough for vanilla to call it clean", Hea
 local stepped = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
 for minute = 1, 114 do Hearth.advance(stepped, minute / 60, 20) end
 check("minute by minute it boils clean as well", stepped.fluid == "Water")
-local fullCopper = { ml = 60000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
-Hearth.advance(fullCopper, 2.9, 20)
-local notYet = fullCopper.tempC < Hearth.BOIL_C
-Hearth.advance(fullCopper, 3.3, 20)
-check("a full copper of water boils clean in about three hours", notYet and fullCopper.fluid == "Water")
+local fullCauldron = { ml = 60000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+Hearth.advance(fullCauldron, 2.9, 20)
+local notYet = fullCauldron.tempC < Hearth.BOIL_C
+Hearth.advance(fullCauldron, 3.3, 20)
+check("a full cauldron of water boils clean in about three hours", notYet and fullCauldron.fluid == "Water")
 local interrupted = { ml = 10000, fluid = "TaintedWater", tempC = 99, last = 0, fireUntil = 0.1 }
 Hearth.advance(interrupted, 0.2, 20)
 interrupted.fireUntil = 100
@@ -125,7 +125,7 @@ local bankedWater = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, 
 Hearth.advance(bankedWater, 24, 20)
 check("banked embers never boil water", bankedWater.fluid == "TaintedWater" and bankedWater.tempC < 60)
 
--- Fluids a mod has the copper change
+-- Fluids a mod has the cauldron change
 Hearth.turnsHot("RawFat", "MeltedFat", 1)
 Hearth.goesOff("RawFat", "RancidFat")
 Hearth.staysIn("RawFat")
@@ -134,7 +134,7 @@ Hearth.pourInto(fat, "RawFat", 1500, 20, 0)
 check("a fluid that stays in can't be filled out", not Hearth.poursOut(fat) and Hearth.poursOut({ fluid = "Water" }))
 check("it has its whole hour of steaming to go", Hearth.hoursToTurn(fat) == 1 and Hearth.hoursToTurn({ ml = 1000, fluid = "Water" }) == nil)
 Hearth.advance(fat, 5, 20)
-check("a cold copper turns nothing", fat.fluid == "RawFat" and fat.hot == 0)
+check("a cold cauldron turns nothing", fat.fluid == "RawFat" and fat.hot == 0)
 fat.fireUntil = 100
 local toSteam = Hearth.hoursToHot(fat)
 Hearth.advance(fat, 5 + toSteam + 0.5, 20)
@@ -155,7 +155,7 @@ for minute = 101, 110 do Hearth.advance(stepped, minute / 60, 20) end
 check("and is ten minutes on", stepped.fluid == "MeltedFat")
 local dying = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 0.5 }
 Hearth.advance(dying, 10, 20)
-check("a fire that dies counts the steaming while the copper cools, and no more", dying.fluid == "RawFat" and dying.hot > 0.5 and dying.hot < 1)
+check("a fire that dies counts the steaming while the cauldron cools, and no more", dying.fluid == "RawFat" and dying.hot > 0.5 and dying.hot < 1)
 local more = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 100, hot = 0.9 }
 Hearth.pourInto(more, "RawFat", 500, 20, 0)
 check("more put in starts the hour over", more.hot == nil)
@@ -192,18 +192,18 @@ late.fireUntil = 100
 Hearth.advance(late, 500, 20)
 check("a fire lit in time turns it, however late it is looked at", late.fluid == "MeltedFat")
 Hearth.take(old)
-check("emptied, the copper forgets both clocks", old.hot == nil and old.offAt == nil)
+check("emptied, the cauldron forgets both clocks", old.hot == nil and old.offAt == nil)
 
 -- Banked
 local banked = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100, banked = true }
 Hearth.advance(banked, 24, 20)
-check("banked embers keep the copper about 50 C and never steam it", near(banked.tempC, Hearth.BANKED_C, 0.5)
+check("banked embers keep the cauldron about 50 C and never steam it", near(banked.tempC, Hearth.BANKED_C, 0.5)
     and Hearth.hoursToHot(banked) == nil)
 local fromHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0, fireUntil = 100, banked = true }
 local outHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0 }
 Hearth.advance(fromHot, 2, 20)
 Hearth.advance(outHot, 2, 20)
-check("a hot copper over banked embers cools, slower than with the fire out", fromHot.tempC < 90 and fromHot.tempC > outHot.tempC)
+check("a hot cauldron over banked embers cools, slower than with the fire out", fromHot.tempC < 90 and fromHot.tempC > outHot.tempC)
 
 -- Banked, vanilla's fire is out and its fuel stays put: only the mod's count burns.
 local fire = {}
@@ -251,7 +251,7 @@ Fluid = savedFluid
 
 -- The Stone Hearth with nothing fitted (the Firebox)
 local fireboxTile = Hearth.fireboxSprite(false, nil, 1)
-check("every Stone Hearth tile is known with its facing, apart from the copper's", #Hearth.FIREBOX_SPRITES == 6
+check("every Stone Hearth tile is known with its facing, apart from the cauldron's", #Hearth.FIREBOX_SPRITES == 6
     and Hearth.fireboxFace(fireboxTile) == 1 and Hearth.face(fireboxTile) == nil and Hearth.fireFace(fireboxTile) == 1
     and Hearth.fireboxFace(Hearth.sprite("Empty", 0)) == nil and Hearth.fireFace(Hearth.sprite("Hot", 1)) == 1
     and #Hearth.FIRE_SPRITES == 18)
@@ -382,7 +382,7 @@ end
 local plain = item(1)
 check("with no hook an item pours at vanilla's heat", Hearth.heatOf(plain, 0) == Hearth.ROOM_C)
 Hearth.filledFrom(plain, { ml = 1000, fluid = "Water", tempC = 90 })
-check("and a fill sets vanilla's heat to the copper's", near(Hearth.heatCelsius(plain.heat()), 90))
+check("and a fill sets vanilla's heat to the cauldron's", near(Hearth.heatCelsius(plain.heat()), 90))
 local kept = item(1)
 kept.keeps = true
 Hearth.hook("heatOf", function(i) return i.keeps and 70 or nil end)
@@ -402,10 +402,10 @@ check("taken hooks hear how much left", took == 250)
 
 -- Save key
 local modData = {}
-local saved = Hearth.copperState(modData)
+local saved = Hearth.cauldronState(modData)
 Hearth.pourInto(saved, "Water", 1000, 20, 0)
-check("the copper lives under its id inside one prefixed key", modData.tpHearth.copper.ml == 1000 and modData.tpHearth.ml == nil
-    and modData.ml == nil and Hearth.copperState(modData) == saved)
+check("the cauldron lives under its id inside one prefixed key", modData.tpHearth.cauldron.ml == 1000 and modData.tpHearth.ml == nil
+    and modData.ml == nil and Hearth.cauldronState(modData) == saved)
 
 -- The attachment registry
 local first = Hearth.attach({ id = "testPan", look = function() return "Full" end })

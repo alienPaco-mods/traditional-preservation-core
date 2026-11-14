@@ -131,7 +131,7 @@ cell.squares["5,6,0"] = nil
 for _ = 1, 200 do H.fire("OnTick") end
 check("its area unloaded, the embers' heat and light are taken away", count(cell.heat) == 0 and count(cell.lights) == 0)
 
--- The Stone Hearth with nothing fitted (the Firebox): the same fire, no copper; its tile follows its flue and hole.
+-- The Stone Hearth with nothing fitted (the Firebox): the same fire, no cauldron; its tile follows its flue and hole.
 cell.squares["5,6,0"] = square
 local boxData = {}
 local boxItems = {}
@@ -145,7 +145,7 @@ end
 World.track(box)
 World.update(box, 110)
 check("a lit Firebox is tracked, open, its smoke out of the hole", box.sprite:getName() == Hearth.fireboxSprite(false, "Open", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, false, "Open", 0) and boxData[Hearth.KEY].copper == nil
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, false, "Open", 0) and boxData[Hearth.KEY].cauldron == nil
     and Hearth.isFirebox(box) and not Hearth.isHearth(box))
 boxItems[1] = food("Base.PieWholeRaw")
 World.update(box, 110)
@@ -167,63 +167,63 @@ check("its flue joined, the lid goes on and the smoke goes up it (the shed draws
 boxItems[1] = nil
 World.update(box, 111)
 check("joined and empty, the lid stays on", box.sprite:getName() == Hearth.fireboxSprite(true, "Lid", 0))
-check("and it never grows a copper", boxData[Hearth.KEY].copper == nil and boxData[Hearth.KEY].ml == nil
+check("and it never grows a cauldron", boxData[Hearth.KEY].cauldron == nil and boxData[Hearth.KEY].ml == nil
     and boxData[Hearth.KEY].attached == nil and Hearth.attachmentOf(box) == nil and Hearth.canRemove(box) == false)
 World.setFire(box, "stoke", 111)
 
--- The copper, fitted through the attachment registry
+-- The cauldron, fitted through the attachment registry
 fire.fuel, fire.lit = 600, true
 H.setHours(120)
 World.setFire(fire, "stoke", 120)
-local spec, copper = Hearth.attachmentOf(fire)
-check("a Hearth's attachment is the copper, its state under its id", spec == Hearth.attachment(Hearth.COPPER)
-    and copper == modData[Hearth.KEY].copper and spec.heats ~= nil and spec.onFire ~= nil)
-check("known by its copper tile, it is noted as fitted", modData[Hearth.KEY].attached == Hearth.COPPER and Hearth.isHearth(fire)
+local spec, cauldron = Hearth.attachmentOf(fire)
+check("a Hearth's attachment is the cauldron, its state under its id", spec == Hearth.attachment(Hearth.CAULDRON)
+    and cauldron == modData[Hearth.KEY].cauldron and spec.heats ~= nil and spec.onFire ~= nil)
+check("known by its cauldron tile, it is noted as fitted", modData[Hearth.KEY].attached == Hearth.CAULDRON and Hearth.isHearth(fire)
     and not Hearth.isFirebox(fire))
-check("the fire's own state stays outside the copper's", modData[Hearth.KEY].fireUntil ~= nil and copper.ml == nil)
-Hearth.pourInto(copper, "Water", 10000, 20, 120)
+check("the fire's own state stays outside the cauldron's", modData[Hearth.KEY].fireUntil ~= nil and cauldron.ml == nil)
+Hearth.pourInto(cauldron, "Water", 10000, 20, 120)
 H.setHours(120.5)
 World.update(fire, 120.5)
-check("the copper heats by the fire through its heats, as the fire was until now", copper.tempC > 40
-    and copper.last == 120.5 and copper.fireUntil ~= nil and copper.banked == nil)
-check("what it holds shows as the overlay, tinted", fire.overlay:getName() == Hearth.liquidOverlay(copper, 0)
+check("the cauldron heats by the fire through its heats, as the fire was until now", cauldron.tempC > 40
+    and cauldron.last == 120.5 and cauldron.fireUntil ~= nil and cauldron.banked == nil)
+check("what it holds shows as the overlay, tinted", fire.overlay:getName() == Hearth.liquidOverlay(cauldron, 0)
     and fire.tint ~= nil and fire.tint[1] == 1)
 fire.tint = nil
-fire.overlay = getSprite(Hearth.liquidOverlay(copper, 0))
+fire.overlay = getSprite(Hearth.liquidOverlay(cauldron, 0))
 World.update(fire, 120.5)
 check("an overlay already shown is not tinted again", fire.tint == nil)
 check("lit, nothing may come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Burning")
 World.setFire(fire, "out", 120.5)
 fire.lit = false
-check("out, a copper holding fluid may not come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Full")
-Hearth.take(copper)
+check("out, a cauldron holding fluid may not come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Full")
+Hearth.take(cauldron)
 check("out and empty, it may", Hearth.canRemove(fire) == true)
 
 -- Two slots: the Cauldron and the Smokehouse's flue go together; Remove leaves the bare Stone Hearth.
-local cauldron = Hearth.attachment(Hearth.COPPER)
-check("fitted, a second fit is refused", Hearth.fitRefusal(fire, cauldron) == "Fitted")
+local cauldronSpec = Hearth.attachment(Hearth.CAULDRON)
+check("fitted, a second fit is refused", Hearth.fitRefusal(fire, cauldronSpec) == "Fitted")
 Hearth.join(modData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
 check("a fitted Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Hearth.isHearth(fire))
-check("Remove gives the whole kit back", #Hearth.fitBack(cauldron) == 4)
-check("taken off, the copper's state goes and nothing is fitted", Hearth.unfit(fire) == Hearth.COPPER
-    and modData[Hearth.KEY].copper == nil and modData[Hearth.KEY].attached == false and Hearth.attachmentOf(fire) == nil)
+check("Remove gives the whole kit back", #Hearth.fitBack(cauldronSpec) == 4)
+check("taken off, the cauldron's state goes and nothing is fitted", Hearth.unfit(fire) == Hearth.CAULDRON
+    and modData[Hearth.KEY].cauldron == nil and modData[Hearth.KEY].attached == false and Hearth.attachmentOf(fire) == nil)
 World.update(fire, 121)
-check("its copper tile turns to the bare Stone Hearth's, the flue still joined", Hearth.isFirebox(fire)
+check("its cauldron tile turns to the bare Stone Hearth's, the flue still joined", Hearth.isFirebox(fire)
     and fire.sprite:getName() == Hearth.fireboxSprite(true, "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
-check("the joined flue never blocks the fit", Hearth.fitRefusal(fire, cauldron) == nil)
+check("the joined flue never blocks the fit", Hearth.fitRefusal(fire, cauldronSpec) == nil)
 fire.lit = true
-check("but a burning fire does", Hearth.fitRefusal(fire, cauldron) == "Burning")
+check("but a burning fire does", Hearth.fitRefusal(fire, cauldronSpec) == "Burning")
 fire.lit = false
 Hearth.connect({ id = "testWall", kinds = { "Pipe" }, kits = { Pipe = Smokehouse.FLUE_KITS.Pipe }, blocks = "both" })
 Hearth.join(modData[Hearth.KEY], "testWall", "Pipe", "Back")
-check("a connection that blocks both slots refuses the fit", Hearth.fitRefusal(fire, cauldron) == "Blocked")
+check("a connection that blocks both slots refuses the fit", Hearth.fitRefusal(fire, cauldronSpec) == "Blocked")
 World.update(fire, 121)
 check("a connection that doesn't take the smoke leaves the hole open", fire.sprite:getName() == Hearth.fireboxSprite(false, "Open", 0))
 Hearth.join(modData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
 check("joined again to the Smokehouse, the other is gone", modData[Hearth.KEY].testWall == nil and Smokehouse.flueOf(fire) == "Pipe")
-Hearth.fit(fire, Hearth.COPPER)
+Hearth.fit(fire, Hearth.CAULDRON)
 World.update(fire, 121)
-check("fitted again, the copper's tile, its state empty", Hearth.isHearth(fire) and Hearth.face(fire.sprite:getName()) == 0
-    and next(modData[Hearth.KEY].copper) == nil)
+check("fitted again, the cauldron's tile, its state empty", Hearth.isHearth(fire) and Hearth.face(fire.sprite:getName()) == 0
+    and next(modData[Hearth.KEY].cauldron) == nil)
 
 H.done()

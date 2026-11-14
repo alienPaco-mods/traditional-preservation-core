@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the Stone Hearth, a low stone firebox with a lined hole in its top, shared by every TP
--- mod; with the copper fitted (Stone Hearth (Copper), "the Hearth" in the code) a copper kettle hangs over the hole.
+-- mod; with the cauldron fitted (Stone Hearth (Cauldron), "the Hearth" in the code) the Forged Cauldron hangs over the hole.
 -- The built tile is swapped for a vanilla fireplace, as the Barrel Oven's is (BuildRecipeCode.barrelOven.OnCreate),
--- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The copper holds one fluid at
+-- so vanilla gives it fuel, lighting, burn time, room heat and a firebox to cook in. The cauldron holds one fluid at
 -- a time, or a blend of fluids a mod has said may share it (Hearth.blend: Dairy's milks): it heats towards MAX_C (water boils, and boils clean) while the fire burns and cools to the room when it is out. Its state is a plain
 -- table in the fireplace's modData under KEY; every rule here works on it without the engine.
 --
@@ -9,17 +9,17 @@
 -- the Hearth or not. Indoors it holds FIRE_C whatever the weather; under an open roof or in the open the air takes
 -- the heat away, so there it is that place's air plus FIRE_LIFT, never past FIRE_C (places PLACE .. "Covered", ..
 -- "Open"; a campfire in a January field is cold at the back). It is opt-in: Weather.placeOf never returns it, Hearth.placeOf does, so only a mod that asks
--- for it gets it. Mods hook into the copper with Hearth.hook (see HOOKS below).
+-- for it gets it. Mods hook into the cauldron with Hearth.hook (see HOOKS below).
 --
--- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the copper is the first, written in
--- Copper.lua, CopperUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
+-- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the cauldron is the first, written in
+-- Cauldron.lua, CauldronUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
 -- Two slots (user, 2026-11-13): one attachment fitted on the fire (the Cauldron, later Salt's pan) and one connection
 -- built onto it (Hearth.connect: the Smokehouse's flue), each free of the other unless the connection blocks both. The fire's state names the attachment (attached:
 -- false once one has come off), and the attachment's own state is kept under its id there. Fit and Remove are
 -- Core's (Hearth.canFit, Hearth.fit, Hearth.unfit; TPHearthFit), by the attachment's fit.
 --
 -- A lit Hearth can be banked: the fire raked down under its ash. It burns BANKED_BURN of the wood a lit fire does,
--- the copper settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
+-- the cauldron settles at BANKED_C, and beside it is a place of its own (EMBERS, at EMBERS_C). Vanilla's fireplace has
 -- one speed and heats and lights 8 tiles whatever its fuel (ENGINE_NOTES), so a banked Hearth's vanilla fire is out:
 -- the mod counts its fuel from the clock (Hearth.reckonFuel) and sets vanilla's to the count, gives it its own small
 -- heat and faint light, and keeps the firebox hot (HearthWorld). Hearth.isBurning is a fire lit or banked.
@@ -43,10 +43,10 @@ local Hearth = {}
 -- joined, its kind and side under that id);
 -- the fire's record (Hearth.logFire):
 -- fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session, sessionBase, stokedLast; and each attachment's
--- state under its id: the copper's (COPPER) ml, fluid, parts, tempC, last, boiled, hot, held, offAt, with fireUntil and
+-- state under its id: the cauldron's (CAULDRON) ml, fluid, parts, tempC, last, boiled, hot, held, offAt, with fireUntil and
 -- banked copied from the fire as it heats.
 Hearth.KEY = "tpHearth"
-Hearth.COPPER = "copper"
+Hearth.CAULDRON = "cauldron"
 
 -- By a fire. A fireplace, an antique stove or a campfire, never an electric or gas stove.
 Hearth.PLACE = "Hearth"
@@ -54,7 +54,7 @@ Hearth.FIRE_C = 28
 Hearth.FIRE_RADIUS = 2
 
 -- Banked
-Hearth.BANKED_C = 50               -- the copper's heat over banked embers
+Hearth.BANKED_C = 50               -- the cauldron's heat over banked embers
 Hearth.BANKED_BURN = 1 / 3         -- of the wood a lit fire burns: a banked fire lasts three times as long
 Hearth.EMBERS = "Embers"           -- the place by a banked Hearth
 Hearth.EMBERS_C = 24
@@ -134,8 +134,8 @@ function Hearth.firePlace(place, under)
     return place
 end
 
--- The copper
-Hearth.COPPER_ML = 60000            -- a farmhouse copper (real ones 40 to 100 L)
+-- The cauldron
+Hearth.CAULDRON_ML = 60000            -- a farmhouse copper's size (real ones 40 to 100 L)
 Hearth.TAU_ML = 10000              -- the litres the time constants below are for; more heats and cools slower
 Hearth.MAX_C = 95                  -- over a fire; nothing in it quite boils
 Hearth.HOT_C = 85                  -- steaming
@@ -151,7 +151,7 @@ Hearth.BOIL_HOURS = 1 / 6
 Hearth.BOILS = { Water = true, TaintedWater = true }
 Hearth.BOILED = { TaintedWater = "Water" }
 
--- Vanilla's item heat, for fluids poured between the copper and the player's containers. Vanilla cools a
+-- Vanilla's item heat, for fluids poured between the cauldron and the player's containers. Vanilla cools a
 -- container in the player's hands to room heat within seconds.
 Hearth.ROOM_C = 20
 Hearth.HEAT_PER_DEGREE = 1 / 133   -- itemHeat 1.0 is room temperature; 1.6 (water turns clean) is about 100 C
@@ -193,8 +193,8 @@ function Hearth.partState(modData, id)
     return state[id]
 end
 
-function Hearth.copperState(modData)
-    return Hearth.partState(modData, Hearth.COPPER)
+function Hearth.cauldronState(modData)
+    return Hearth.partState(modData, Hearth.CAULDRON)
 end
 
 -- Attachments: what is fitted on a fire, one at a time. Hearth.attach(spec) registers one by spec.id, or adds the
@@ -206,16 +206,16 @@ end
 --                                         = true } }; Remove gives the items back, all but lost ones
 --   fitHelp, fitIcon                      client: Fit's tooltip line (a text key) and Fit / Remove's icon path
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
---   look(part, fire)                      the look its tile shows (the copper's: Empty, Full, Hot)
+--   look(part, fire)                      the look its tile shows (the cauldron's: Empty, Full, Hot)
 --   sprite(look, face, burning, banked)   its tile by look, facing and fire, the fire's glow drawn in it (the
---                                         copper's Hearth.sprite if left out)
+--                                         cauldron's Hearth.sprite if left out)
 --   overlay(part, face, burning, banked)  its overlay sprite and, to tint it, { r, g, b } (0-1), or nil (the
---                                         copper's Hearth.liquidOverlay if left out: what it holds, coloured)
+--                                         cauldron's Hearth.liquidOverlay if left out: what it holds, coloured)
 --   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
 --   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
 --   status(part)                          client: the menu's first row, text and icon
 --   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
---   rows(window, y, info) -> y            client: its rows in the Info window; info.copper is the part
+--   rows(window, y, info) -> y            client: its rows in the Info window; info.cauldron is the part
 --   notes(info, notes)                    client: its Info notes, before HearthUI.addNotes'
 local ATTACHMENTS, ORDER = {}, {}
 
@@ -238,25 +238,25 @@ function Hearth.attachments()
     return list
 end
 
--- Copper rules
+-- Cauldron rules
 
-function Hearth.copperTau(ml, lit)
+function Hearth.cauldronTau(ml, lit)
     local base = lit and Hearth.LIT_TAU or Hearth.OUT_TAU
     return base * (math.max(ml, Hearth.FLOOR_ML) / Hearth.TAU_ML) ^ (1 / 3)
 end
 
--- Whether the copper's fluid is let boil: water on its own.
-function Hearth.boils(copper)
-    return Hearth.BOILS[copper.fluid] == true and not copper.parts
+-- Whether the cauldron's fluid is let boil: water on its own.
+function Hearth.boils(cauldron)
+    return Hearth.BOILS[cauldron.fluid] == true and not cauldron.parts
 end
 
--- The heat the copper heats towards while the fire burns.
-function Hearth.fireTarget(copper)
-    if copper.banked then return Hearth.BANKED_C end
-    return Hearth.boils(copper) and Hearth.WATER_FIRE_C or Hearth.MAX_C
+-- The heat the cauldron heats towards while the fire burns.
+function Hearth.fireTarget(cauldron)
+    if cauldron.banked then return Hearth.BANKED_C end
+    return Hearth.boils(cauldron) and Hearth.WATER_FIRE_C or Hearth.MAX_C
 end
 
--- Fluids that may share the copper, as a cow's and a sheep's milk do: a mod names each group. Anything else is
+-- Fluids that may share the cauldron, as a cow's and a sheep's milk do: a mod names each group. Anything else is
 -- one fluid at a time.
 local BLENDS = {}
 
@@ -281,7 +281,7 @@ function Hearth.share(parts, ml)
     return shares
 end
 
--- What ml of a store (the copper, or a mod's own: anything with ml, fluid and parts) is, by fluid: { name = ml }.
+-- What ml of a store (the cauldron, or a mod's own: anything with ml, fluid and parts) is, by fluid: { name = ml }.
 -- parts is kept only for a blend, and only its shares count; fluid is then the largest of them.
 function Hearth.partsOf(state, ml)
     ml = ml or state.ml or 0
@@ -304,7 +304,7 @@ function Hearth.addParts(state, fluid, ml)
 end
 
 -- What a fluid container holds, { name = ml }, and its main fluid: one fluid, or a blend of fluids that may share
--- the copper. nil for none, or for any other mixture.
+-- the cauldron. nil for none, or for any other mixture.
 function Hearth.partsIn(container)
     if not container or container:isEmpty() then return nil end
     local primary = container:getPrimaryFluid()
@@ -324,11 +324,11 @@ function Hearth.partsIn(container)
     return parts, name
 end
 
--- Fluids the copper changes, as a mod names them (Fish & Meat's fat).
+-- Fluids the cauldron changes, as a mod names them (Fish & Meat's fat).
 -- Hearth.turnsHot(from, to, hours): from, on its own and kept steaming (HOT_C or more) for hours in all, becomes to:
--- raw fat renders. The hours are kept in the copper's hot, and start over when more is put in.
--- Hearth.goesOff(from, to): from becomes to at the copper's offAt (Hearth.offBy sets it), unless it turned first.
--- Hearth.staysIn(name): the copper holds it, but no container can be filled with it.
+-- raw fat renders. The hours are kept in the cauldron's hot, and start over when more is put in.
+-- Hearth.goesOff(from, to): from becomes to at the cauldron's offAt (Hearth.offBy sets it), unless it turned first.
+-- Hearth.staysIn(name): the cauldron holds it, but no container can be filled with it.
 local TURNS, OFF, STAYS = {}, {}, {}
 
 function Hearth.turnsHot(from, to, hours)
@@ -343,65 +343,65 @@ function Hearth.staysIn(name)
     STAYS[name] = true
 end
 
--- Whether containers can be filled with what the copper holds.
-function Hearth.poursOut(copper)
-    return not STAYS[copper.fluid]
+-- Whether containers can be filled with what the cauldron holds.
+function Hearth.poursOut(cauldron)
+    return not STAYS[cauldron.fluid]
 end
 
--- The copper's fluid goes off at the hour at, or sooner if it was already going to.
-function Hearth.offBy(copper, at)
-    copper.offAt = math.min(copper.offAt or at, at)
+-- The cauldron's fluid goes off at the hour at, or sooner if it was already going to.
+function Hearth.offBy(cauldron, at)
+    cauldron.offAt = math.min(cauldron.offAt or at, at)
 end
 
--- Hours of steaming still to go before the copper's fluid turns; nil if it never will.
-function Hearth.hoursToTurn(copper)
-    local turn = (copper.ml or 0) > 0 and not copper.parts and TURNS[copper.fluid]
+-- Hours of steaming still to go before the cauldron's fluid turns; nil if it never will.
+function Hearth.hoursToTurn(cauldron)
+    local turn = (cauldron.ml or 0) > 0 and not cauldron.parts and TURNS[cauldron.fluid]
     if not turn then return nil end
-    return math.max(turn.hours - (copper.hot or 0), 0)
+    return math.max(turn.hours - (cauldron.hot or 0), 0)
 end
 
 -- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend.
-function Hearth.copperRoom(copper, fluid, ml)
-    if (copper.ml or 0) > 0 then
+function Hearth.cauldronRoom(cauldron, fluid, ml)
+    if (cauldron.ml or 0) > 0 then
         for name in pairs(type(fluid) == "table" and fluid or { [fluid] = true }) do
-            if not Hearth.blends(copper.fluid, name) then return 0, "Mixed" end
+            if not Hearth.blends(cauldron.fluid, name) then return 0, "Mixed" end
         end
     end
-    local room = Hearth.COPPER_ML - (copper.ml or 0)
+    local room = Hearth.CAULDRON_ML - (cauldron.ml or 0)
     if room <= 0 then return 0, "Full" end
     return math.min(ml, room)
 end
 
 -- Pours a fluid (a name, or parts) in; the temperatures mix by volume. Returns the ml taken (0 with a reason when
 -- refused).
-function Hearth.pourInto(copper, fluid, ml, fluidC, now)
-    local taken, reason = Hearth.copperRoom(copper, fluid, ml)
+function Hearth.pourInto(cauldron, fluid, ml, fluidC, now)
+    local taken, reason = Hearth.cauldronRoom(cauldron, fluid, ml)
     if taken <= 0 then return 0, reason end
-    local had = copper.ml or 0
-    copper.tempC = had > 0 and (copper.tempC * had + fluidC * taken) / (had + taken) or fluidC
-    copper.boiled = nil
-    copper.hot = nil
-    copper.held = nil
-    Hearth.addParts(copper, fluid, taken)
-    copper.ml = had + taken
-    copper.last = copper.last or now
+    local had = cauldron.ml or 0
+    cauldron.tempC = had > 0 and (cauldron.tempC * had + fluidC * taken) / (had + taken) or fluidC
+    cauldron.boiled = nil
+    cauldron.hot = nil
+    cauldron.held = nil
+    Hearth.addParts(cauldron, fluid, taken)
+    cauldron.ml = had + taken
+    cauldron.last = cauldron.last or now
     return taken
 end
 
 -- Takes up to maxMl out, all of it if left out. Returns the ml, the main fluid, its temperature, and the ml by
--- fluid ({ name = ml }: more than one name when the copper holds a blend).
-function Hearth.take(copper, maxMl)
-    local ml = math.min(copper.ml or 0, maxMl or copper.ml or 0)
+-- fluid ({ name = ml }: more than one name when the cauldron holds a blend).
+function Hearth.take(cauldron, maxMl)
+    local ml = math.min(cauldron.ml or 0, maxMl or cauldron.ml or 0)
     if ml <= 0 then return 0 end
-    local fluid, tempC, parts = copper.fluid, copper.tempC, Hearth.partsOf(copper, ml)
-    copper.ml = copper.ml - ml
-    if copper.ml <= 0 then
-        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "held", "offAt" }) do copper[key] = nil end
+    local fluid, tempC, parts = cauldron.fluid, cauldron.tempC, Hearth.partsOf(cauldron, ml)
+    cauldron.ml = cauldron.ml - ml
+    if cauldron.ml <= 0 then
+        for _, key in ipairs({ "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "held", "offAt" }) do cauldron[key] = nil end
     end
     return ml, fluid, tempC, parts
 end
 
--- The hours out of hours that a copper at tempC, moving towards target, spends at HOT_C or more.
+-- The hours out of hours that a cauldron at tempC, moving towards target, spends at HOT_C or more.
 local function hoursHot(tempC, target, hours, tau)
     local hot = Hearth.HOT_C
     if tempC >= hot and target >= hot then return hours end
@@ -413,95 +413,95 @@ end
 
 -- Counts the steaming hours of a fluid that turns hot (Hearth.turnsHot), before tempC moves towards target, and
 -- turns it when it has had them all. What has turned no longer goes off.
-local function keepHot(copper, target, hours, tau)
-    local turn = not copper.parts and TURNS[copper.fluid]
+local function keepHot(cauldron, target, hours, tau)
+    local turn = not cauldron.parts and TURNS[cauldron.fluid]
     if not turn then return end
-    copper.hot = (copper.hot or 0) + hoursHot(copper.tempC, target, hours, tau)
-    if copper.hot >= turn.hours then
-        copper.fluid, copper.hot, copper.offAt = turn.to, nil, nil
+    cauldron.hot = (cauldron.hot or 0) + hoursHot(cauldron.tempC, target, hours, tau)
+    if cauldron.hot >= turn.hours then
+        cauldron.fluid, cauldron.hot, cauldron.offAt = turn.to, nil, nil
     end
 end
 
--- Counts the hours at HOT_C or more of whatever the copper holds, in all since it was last poured into
+-- Counts the hours at HOT_C or more of whatever the cauldron holds, in all since it was last poured into
 -- (Hearth.heldHours): a mod can ask for a hold at the heat, as Dairy's scald does.
-local function countHeld(copper, target, hours, tau)
-    copper.held = (copper.held or 0) + hoursHot(copper.tempC, target, hours, tau)
+local function countHeld(cauldron, target, hours, tau)
+    cauldron.held = (cauldron.held or 0) + hoursHot(cauldron.tempC, target, hours, tau)
 end
 
 -- A fluid past its offAt becomes what it goes off to (Hearth.goesOff).
-local function goOff(copper, now)
-    if not copper.offAt or copper.offAt > now then return end
-    if OFF[copper.fluid] and not copper.parts then copper.fluid = OFF[copper.fluid] end
-    copper.hot, copper.offAt = nil, nil
+local function goOff(cauldron, now)
+    if not cauldron.offAt or cauldron.offAt > now then return end
+    if OFF[cauldron.fluid] and not cauldron.parts then cauldron.fluid = OFF[cauldron.fluid] end
+    cauldron.hot, cauldron.offAt = nil, nil
 end
 
--- Hours of a lit fire under the copper: water stops at BOIL_C, and the time it spends there counts towards boiling
+-- Hours of a lit fire under the cauldron: water stops at BOIL_C, and the time it spends there counts towards boiling
 -- tainted water clean.
-local function heat(copper, hours)
-    local target, tau = Hearth.fireTarget(copper), Hearth.copperTau(copper.ml, not copper.banked)
-    keepHot(copper, target, hours, tau)
-    countHeld(copper, target, hours, tau)
+local function heat(cauldron, hours)
+    local target, tau = Hearth.fireTarget(cauldron), Hearth.cauldronTau(cauldron.ml, not cauldron.banked)
+    keepHot(cauldron, target, hours, tau)
+    countHeld(cauldron, target, hours, tau)
     if target <= Hearth.BOIL_C then
-        copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
+        cauldron.tempC = Hearth.cool(cauldron.tempC, target, hours, tau)
         return
     end
-    local toBoil = copper.tempC >= Hearth.BOIL_C and 0
-        or tau * math.log((target - copper.tempC) / (target - Hearth.BOIL_C))
+    local toBoil = cauldron.tempC >= Hearth.BOIL_C and 0
+        or tau * math.log((target - cauldron.tempC) / (target - Hearth.BOIL_C))
     if hours <= toBoil then
-        copper.tempC = Hearth.cool(copper.tempC, target, hours, tau)
+        cauldron.tempC = Hearth.cool(cauldron.tempC, target, hours, tau)
         return
     end
-    copper.tempC = Hearth.BOIL_C
-    copper.boiled = (copper.boiled or 0) + hours - toBoil
-    if copper.boiled >= Hearth.BOIL_HOURS and Hearth.BOILED[copper.fluid] then
-        copper.fluid = Hearth.BOILED[copper.fluid]
+    cauldron.tempC = Hearth.BOIL_C
+    cauldron.boiled = (cauldron.boiled or 0) + hours - toBoil
+    if cauldron.boiled >= Hearth.BOIL_HOURS and Hearth.BOILED[cauldron.fluid] then
+        cauldron.fluid = Hearth.BOILED[cauldron.fluid]
     end
 end
 
--- Brings the copper up to now: heating while the fire burns (to fireUntil), cooling to roomC after. Over banked
+-- Brings the cauldron up to now: heating while the fire burns (to fireUntil), cooling to roomC after. Over banked
 -- embers it settles at BANKED_C, as slowly as it cools: the fire is low and the stone holds the heat.
-function Hearth.advance(copper, now, roomC)
-    if (copper.ml or 0) <= 0 then return end
-    local t = copper.last or now
-    goOff(copper, t)
-    if copper.fireUntil and copper.fireUntil > t then
-        local stop = math.min(copper.fireUntil, now)
-        heat(copper, stop - t)
+function Hearth.advance(cauldron, now, roomC)
+    if (cauldron.ml or 0) <= 0 then return end
+    local t = cauldron.last or now
+    goOff(cauldron, t)
+    if cauldron.fireUntil and cauldron.fireUntil > t then
+        local stop = math.min(cauldron.fireUntil, now)
+        heat(cauldron, stop - t)
         t = stop
     end
     if now > t then
-        local tau = Hearth.copperTau(copper.ml, false)
-        keepHot(copper, roomC, now - t, tau)
-        countHeld(copper, roomC, now - t, tau)
-        copper.tempC = Hearth.cool(copper.tempC, roomC, now - t, tau)
-        copper.boiled = nil
+        local tau = Hearth.cauldronTau(cauldron.ml, false)
+        keepHot(cauldron, roomC, now - t, tau)
+        countHeld(cauldron, roomC, now - t, tau)
+        cauldron.tempC = Hearth.cool(cauldron.tempC, roomC, now - t, tau)
+        cauldron.boiled = nil
     end
-    goOff(copper, now)
-    copper.last = now
+    goOff(cauldron, now)
+    cauldron.last = now
 end
 
--- What the copper shows: Empty, Full or Hot (steaming, whatever the fluid).
-function Hearth.look(copper)
-    if (copper.ml or 0) <= 0 then return "Empty" end
-    return copper.tempC >= Hearth.HOT_C and "Hot" or "Full"
+-- What the cauldron shows: Empty, Full or Hot (steaming, whatever the fluid).
+function Hearth.look(cauldron)
+    if (cauldron.ml or 0) <= 0 then return "Empty" end
+    return cauldron.tempC >= Hearth.HOT_C and "Hot" or "Full"
 end
 
-function Hearth.isHot(copper)
-    return (copper.ml or 0) > 0 and (copper.tempC or 0) >= Hearth.HOT_C
+function Hearth.isHot(cauldron)
+    return (cauldron.ml or 0) > 0 and (cauldron.tempC or 0) >= Hearth.HOT_C
 end
 
--- Hours what the copper holds has spent at HOT_C or more, in all, since it was last poured into.
-function Hearth.heldHours(copper)
-    return (copper.ml or 0) > 0 and copper.held or 0
+-- Hours what the cauldron holds has spent at HOT_C or more, in all, since it was last poured into.
+function Hearth.heldHours(cauldron)
+    return (cauldron.ml or 0) > 0 and cauldron.held or 0
 end
 
--- Hours until the copper is hot if the fire burns on; 0 if it is already, nil if it is empty or banked.
-function Hearth.hoursToHot(copper)
-    if (copper.ml or 0) <= 0 then return nil end
-    if copper.tempC >= Hearth.HOT_C then return 0 end
-    if copper.banked then return nil end
-    local target = Hearth.fireTarget(copper)
-    return Hearth.copperTau(copper.ml, true) * math.log((target - copper.tempC) / (target - Hearth.HOT_C))
+-- Hours until the cauldron is hot if the fire burns on; 0 if it is already, nil if it is empty or banked.
+function Hearth.hoursToHot(cauldron)
+    if (cauldron.ml or 0) <= 0 then return nil end
+    if cauldron.tempC >= Hearth.HOT_C then return 0 end
+    if cauldron.banked then return nil end
+    local target = Hearth.fireTarget(cauldron)
+    return Hearth.cauldronTau(cauldron.ml, true) * math.log((target - cauldron.tempC) / (target - Hearth.HOT_C))
 end
 
 -- Banks the fire (banked true) or stokes it up again, with fuel minutes in vanilla's fireplace now.
@@ -544,12 +544,12 @@ function Hearth.bankedCooking(before, now)
     return before + (now - before) * Hearth.BANKED_BURN
 end
 
--- Hooks: other mods' say on fluid going in and out of the copper. Each is a list of functions, called in order.
+-- Hooks: other mods' say on fluid going in and out of the cauldron. Each is a list of functions, called in order.
 --   heatOf(item, now, character)  the heat in C of the fluid in item, or nil to let the next one (or vanilla's
 --                                 item heat) say. A container that keeps its own heat answers here.
---   taken(item, ml)               ml left item for the copper.
+--   taken(item, ml)               ml left item for the cauldron.
 --   filled(item, fill)            fill = { ml, fluid, parts, tempC, hot, hadMl, hadC, now, character }: ml went into
---                                 item from the copper. Return true if it set the item's heat itself.
+--                                 item from the cauldron. Return true if it set the item's heat itself.
 local HOOKS = { heatOf = {}, taken = {}, filled = {} }
 
 function Hearth.hook(name, fn)
@@ -569,7 +569,7 @@ function Hearth.tookFrom(item, ml)
     for _, fn in ipairs(HOOKS.taken) do fn(item, ml) end
 end
 
--- After a fill from the copper: the hooks first, else vanilla's item heat is set to the copper's.
+-- After a fill from the cauldron: the hooks first, else vanilla's item heat is set to the cauldron's.
 function Hearth.filledFrom(item, fill)
     local handled = false
     for _, fn in ipairs(HOOKS.filled) do handled = fn(item, fill) or handled end
@@ -585,18 +585,18 @@ Hearth.FACE_COUNT = Tiles.FACE_COUNT or 2
 -- The hearth's own sprite is swapped among its looks, so each look is a "kind" of tile here.
 local _, HEARTH_TILES = Station.kinds(Tiles.PREFIX, Hearth.FACE_COUNT, Hearth.LOOKS)
 
--- The facing (0 S, 1 E) of a copper tile, whatever the copper shows; nil for any other tile.
+-- The facing (0 S, 1 E) of a cauldron tile, whatever the cauldron shows; nil for any other tile.
 function Hearth.face(spriteName)
     return spriteName and HEARTH_TILES.face[spriteName]
 end
 
--- The tile for the copper's look (Empty, Full, Hot: Hot steams) and the fire, lit or banked; out if neither is given.
+-- The tile for the cauldron's look (Empty, Full, Hot: Hot steams) and the fire, lit or banked; out if neither is given.
 function Hearth.sprite(look, face, burning, banked)
     local tile = (burning and (banked and "Banked" or "Lit") or "") .. (look == "Hot" and "Steam" or "")
     return Tiles.PREFIX .. (Hearth.LOOKS[tile ~= "" and tile or "Cold"] + face)
 end
 
--- What the copper holds, as the overlay: a pale surface in the kettle's mouth, tinted the colour of its fluids (each
+-- What the cauldron holds, as the overlay: a pale surface in the kettle's mouth, tinted the colour of its fluids (each
 -- vanilla fluid's own, mixed by their shares). Nil when it is empty.
 Hearth.LIQUID = Tiles.LIQUID
 local fluidColours = {}
@@ -621,9 +621,9 @@ function Hearth.liquidColour(state)
     return { mix[1] / total, mix[2] / total, mix[3] / total }
 end
 
-function Hearth.liquidOverlay(copper, face)
-    if not Hearth.LIQUID or (copper.ml or 0) <= 0 then return nil end
-    return Tiles.PREFIX .. (Hearth.LIQUID + face), Hearth.liquidColour(copper)
+function Hearth.liquidOverlay(cauldron, face)
+    if not Hearth.LIQUID or (cauldron.ml or 0) <= 0 then return nil end
+    return Tiles.PREFIX .. (Hearth.LIQUID + face), Hearth.liquidColour(cauldron)
 end
 
 -- The Stone Hearth with nothing fitted: one tile per hole look and facing (FIREBOX_LOOKS: Open, Lid, Pot), its glow by
@@ -680,18 +680,18 @@ function Hearth.isFire(object)
     return sprite ~= nil and FIRE_TILES[sprite:getName()] == true and instanceof(object, "IsoFireplace")
 end
 
--- The id of what is fitted on a fire, or nil. A copper tile with nothing noted (a Hearth picked up and put down: its
--- modData doesn't go with it) is the copper fitted; attached false is nothing, whatever the tile shows until redrawn.
+-- The id of what is fitted on a fire, or nil. A cauldron tile with nothing noted (a Hearth picked up and put down: its
+-- modData doesn't go with it) is the cauldron fitted; attached false is nothing, whatever the tile shows until redrawn.
 function Hearth.attachedTo(fire)
     local state = fire:getModData()[Hearth.KEY]
     local id = state and state.attached
     if id ~= nil then return id or nil end
-    if Hearth.face(fire:getSprite():getName()) then return Hearth.COPPER end
+    if Hearth.face(fire:getSprite():getName()) then return Hearth.CAULDRON end
 end
 
--- A Stone Hearth with the copper fitted ("the Hearth").
+-- A Stone Hearth with the cauldron fitted ("the Hearth").
 function Hearth.isHearth(object)
-    return Hearth.isFire(object) and Hearth.attachedTo(object) == Hearth.COPPER
+    return Hearth.isFire(object) and Hearth.attachedTo(object) == Hearth.CAULDRON
 end
 
 -- A Stone Hearth with nothing fitted ("the Firebox").
@@ -969,10 +969,10 @@ function Hearth.fireStateOf(fire)
     return Hearth.stateOf(fire:getModData())
 end
 
--- The copper's state, brought up to now the same way.
-function Hearth.copperOf(fire)
+-- The cauldron's state, brought up to now the same way.
+function Hearth.cauldronOf(fire)
     Hearth.fireStateOf(fire)
-    return Hearth.copperState(fire:getModData())
+    return Hearth.cauldronState(fire:getModData())
 end
 
 -- Fires

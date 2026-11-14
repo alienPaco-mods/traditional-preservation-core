@@ -3,7 +3,7 @@
 if not isDebugEnabled() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
-require "TraditionalPreservationCore/Copper"
+require "TraditionalPreservationCore/Cauldron"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 TPC = {}
@@ -32,10 +32,10 @@ end
 local KITS = {
     hearth = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Stone Hearth (Masonry 2), and Fit "
         .. "Cauldron's kit: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers",
-        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2, [Hearth.CAULDRON] = 1,
+        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2, [Hearth.CAULDRON_ITEM] = 1,
         ["Base.MetalPipe"] = 2, ["Base.HeavyChain"] = 1, ["Base.LargeHook"] = 1, ["Base.Pliers"] = 1 },
     cauldron = { about = "Fit Cauldron's kit: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers",
-        [Hearth.CAULDRON] = 1, ["Base.MetalPipe"] = 2, ["Base.HeavyChain"] = 1, ["Base.LargeHook"] = 1, ["Base.Pliers"] = 1 },
+        [Hearth.CAULDRON_ITEM] = 1, ["Base.MetalPipe"] = 2, ["Base.HeavyChain"] = 1, ["Base.LargeHook"] = 1, ["Base.Pliers"] = 1 },
     forge = { about = "2 sheet metal, 3 charcoal, wire, a ball-peen hammer, tongs and a metalworking chisel to forge the "
         .. "cauldron (Blacksmith 4, at a forge), and the magazine that teaches it (Smithing Magazine Vol. 2)",
         ["Base.SheetMetal"] = 2, ["Base.Charcoal"] = 3, ["Base.Wire"] = 1, ["Base.BallPeenHammer"] = 1, ["Base.Tongs"] = 1,
@@ -129,25 +129,25 @@ end
 function TPC.cauldronInfo()
     local hearth = nearestHearth()
     if not hearth then return end
-    local copper = Hearth.copperOf(hearth)
+    local cauldron = Hearth.cauldronOf(hearth)
     local state = Hearth.stateOf(hearth:getModData())
-    local hotIn = Hearth.hoursToHot(copper)
+    local hotIn = Hearth.hoursToHot(cauldron)
     say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; cauldron %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         hearth:getX(), hearth:getY(), hearth:getZ(),
         Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", state.fuel or 0)
             or hearth:isLit() and "lit" or "out", hearth:getFuelAmount(),
-        hearth:getSprite():getName(), (copper.ml or 0) / 1000, tostring(copper.fluid), copper.tempC or 0, Hearth.look(copper),
+        hearth:getSprite():getName(), (cauldron.ml or 0) / 1000, tostring(cauldron.fluid), cauldron.tempC or 0, Hearth.look(cauldron),
         hotIn and string.format("in %.1f h", hotIn) or "never", state.fireUntil and string.format("%.2f", state.fireUntil) or "-",
-        (copper.boiled or 0) * 60))
+        (cauldron.boiled or 0) * 60))
 end
 
 function TPC.cauldron(litres, celsius, fluid)
     local hearth = nearestHearth()
     if not hearth then return end
-    local copper = Hearth.copperOf(hearth)
-    Hearth.take(copper)
+    local cauldron = Hearth.cauldronOf(hearth)
+    Hearth.take(cauldron)
     litres = litres or 10
-    if litres > 0 then Hearth.pourInto(copper, fluid or "CowMilk", math.floor(litres * 1000), celsius or 20, getGameTime():getWorldAgeHours()) end
+    if litres > 0 then Hearth.pourInto(cauldron, fluid or "CowMilk", math.floor(litres * 1000), celsius or 20, getGameTime():getWorldAgeHours()) end
     Hearth.World.refresh(hearth)
     TPC.cauldronInfo()
 end
@@ -169,10 +169,10 @@ end
 function TPC.hot(minutes)
     local hearth = nearestHearth()
     if not hearth then return end
-    local copper = Hearth.copperOf(hearth)
-    if (copper.ml or 0) <= 0 then return say("The cauldron is empty: TPC.cauldron() first.") end
-    copper.tempC = 90
-    copper.held = (minutes or 60) / 60
+    local cauldron = Hearth.cauldronOf(hearth)
+    if (cauldron.ml or 0) <= 0 then return say("The cauldron is empty: TPC.cauldron() first.") end
+    cauldron.tempC = 90
+    cauldron.held = (minutes or 60) / 60
     Hearth.World.refresh(hearth)
     TPC.cauldronInfo()
 end
@@ -240,7 +240,7 @@ end
 function TPC.fit(on)
     local fire = nearestFirebox()
     if not fire then return end
-    if on == false then Hearth.unfit(fire) else Hearth.fit(fire, Hearth.COPPER) end
+    if on == false then Hearth.unfit(fire) else Hearth.fit(fire, Hearth.CAULDRON) end
     Hearth.World.refresh(fire)
     TPC.stone()
 end

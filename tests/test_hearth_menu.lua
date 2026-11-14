@@ -23,7 +23,7 @@ end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
 require "TraditionalPreservationCore/HearthUI"
-require "TraditionalPreservationCore/CopperUI"
+require "TraditionalPreservationCore/CauldronUI"
 local onFillMenu = H.handlers.OnFillWorldObjectContextMenu[1]
 
 local menu = H.menu
@@ -33,12 +33,12 @@ local function named(aMenu, key, ...)
 end
 
 -- Fit Cauldron, Remove Cauldron.
-local function cauldron(aMenu, key)
-    return named(aMenu, key, getText("IGUI_TraditionalPreservationCore_InfoCopper"))
+local function fitRow(aMenu, key)
+    return named(aMenu, key, getText("IGUI_TraditionalPreservationCore_InfoCauldron"))
 end
 
-local function hearth(copper, lit)
-    local modData = { [Hearth.KEY] = { [Hearth.COPPER] = copper or {} } }
+local function hearth(cauldron, lit)
+    local modData = { [Hearth.KEY] = { [Hearth.CAULDRON] = cauldron or {} } }
     local square = { getX = function() return 5 end, getY = function() return 5 end, getZ = function() return 0 end }
     return {
         class = "IsoFireplace",
@@ -71,16 +71,16 @@ check("the controller's probe is told there is a menu, and nothing is built", ui
 onFillMenu(0, context, { fireplace }, false)
 check("any other fireplace gets no menu from us", #context.options == 0)
 
--- An empty copper, nothing to pour
+-- An empty cauldron, nothing to pour
 local sub = open(hearth())
 check("a Hearth gets its own menu when vanilla has made none", sub ~= nil)
-check("the first line is the copper's status, greyed", sub.options[1].name == getText("IGUI_TraditionalPreservationCore_CopperEmpty")
+check("the first line is the cauldron's status, greyed", sub.options[1].name == getText("IGUI_TraditionalPreservationCore_CauldronEmpty")
     and sub.options[1].isDisabled == true)
 check("Hearth Info is on it", named(sub, "ContextMenu_TraditionalPreservationCore_HearthInfo") ~= nil)
-local pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper")
+local pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron")
 check("pouring is greyed with nothing to pour", pour.isDisabled == true and pour.subOption == nil
     and pour.toolTip.description == getText("IGUI_TraditionalPreservationCore_NoFluidItem"))
-check("an empty copper has nothing to fill from", named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCopper") == nil)
+check("an empty cauldron has nothing to fill from", named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCauldron") == nil)
 check("a cold hearth has no fire to bank", named(sub, "ContextMenu_TraditionalPreservationCore_BankFire") == nil
     and named(sub, "ContextMenu_TraditionalPreservationCore_StokeFire") == nil)
 
@@ -89,7 +89,7 @@ context = menu()
 local vanilla = context:addOption("Stone Oven")
 context:addSubMenu(vanilla, menu())
 sub = open(hearth(), context)
-check("the copper's options go into vanilla's submenu, not a second one", #context.options == 1 and sub == vanilla.subOption
+check("the cauldron's options go into vanilla's submenu, not a second one", #context.options == 1 and sub == vanilla.subOption
     and #sub.options >= 3)
 
 -- The fire
@@ -197,85 +197,85 @@ local empty = H.vessel("Empty Bucket", nil, 0, 10)
 ui.carried = { milk, water, mixture, kept, empty }
 local holdsWater = hearth({ ml = 2000, fluid = "Water", tempC = 20 })
 sub = open(holdsWater)
-check("the status line reads the copper", sub.options[1].name:find("2.0", 1, true) ~= nil and sub.options[1].name:find("Water", 1, true) ~= nil)
-pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper")
+check("the status line reads the cauldron", sub.options[1].name:find("2.0", 1, true) ~= nil and sub.options[1].name:find("Water", 1, true) ~= nil)
+pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron")
 local entries = pour.subOption.options
 check("pouring lists every container with fluid in it, favourites and empties left out", #entries == 3
     and entries[1].args[2] == milk and entries[2].args[2] == water and entries[3].args[2] == mixture)
-check("the copper's lines show the cauldron, full when it holds something", sub.options[1].iconTexture == "media/textures/Item_TPCauldronFull.png"
+check("the cauldron's lines show the cauldron, full when it holds something", sub.options[1].iconTexture == "media/textures/Item_TPCauldronFull.png"
     and pour.iconTexture == "media/textures/Item_TPCauldron.png")
 check("each container shows as the inventory draws it, its fluid's colour and all", entries[2].itemForTexture == water
     and entries[2].iconTexture == nil)
 check("each with its litres", entries[2].name:find("Bucket of Water", 1, true) ~= nil and entries[2].name:find("8.0", 1, true) ~= nil)
-check("another fluid than the copper's is red, with the reason", entries[1].notAvailable == true
+check("another fluid than the cauldron's is red, with the reason", entries[1].notAvailable == true
     and entries[1].toolTip.description:find("Water", 1, true) ~= nil)
-check("the copper's own fluid is offered", entries[2].notAvailable == nil and entries[2].toolTip == nil)
+check("the cauldron's own fluid is offered", entries[2].notAvailable == nil and entries[2].toolTip == nil)
 check("a mixture is red too", entries[3].notAvailable == true
     and entries[3].toolTip.description == getText("IGUI_TraditionalPreservationCore_NotOneFluid"))
 entries[2].onSelect(character, unpack(entries[2].args))
 local poured = ui.queued[#ui.queued]
-check("choosing one brings it to hand and queues the pour", ui.moved[1] == water and poured.Type == "TPHearthCopper"
+check("choosing one brings it to hand and queues the pour", ui.moved[1] == water and poured.Type == "TPHearthCauldron"
     and poured.mode == "pourIn" and poured.item == water and poured.hearth == holdsWater)
 
 sub = open(hearth({}))
-entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper").subOption.options
-check("an empty copper takes any one fluid", entries[1].notAvailable == nil and entries[2].notAvailable == nil
+entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron").subOption.options
+check("an empty cauldron takes any one fluid", entries[1].notAvailable == nil and entries[2].notAvailable == nil
     and entries[3].notAvailable == true)
 
-sub = open(hearth({ ml = Hearth.COPPER_ML, fluid = "Water", tempC = 20 }))
-pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper")
-check("a full copper takes no more", pour.isDisabled == true and pour.subOption == nil
-    and pour.toolTip.description == getText("IGUI_TraditionalPreservationCore_CopperFull"))
+sub = open(hearth({ ml = Hearth.CAULDRON_ML, fluid = "Water", tempC = 20 }))
+pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron")
+check("a full cauldron takes no more", pour.isDisabled == true and pour.subOption == nil
+    and pour.toolTip.description == getText("IGUI_TraditionalPreservationCore_CauldronFull"))
 
--- Filling from the copper
+-- Filling from the cauldron
 sub = open(holdsWater)
-local fill = named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCopper")
+local fill = named(sub, "ContextMenu_TraditionalPreservationCore_FillFromCauldron")
 entries = fill.subOption.options
 check("Fill from shows the cauldron full", fill.iconTexture == "media/textures/Item_TPCauldronFull.png" and entries[2].itemForTexture == empty)
-check("filling lists empty containers and those of the copper's fluid with room", #entries == 2
+check("filling lists empty containers and those of the cauldron's fluid with room", #entries == 2
     and entries[1].args[2] == water and entries[2].args[2] == empty)
 entries[2].onSelect(character, unpack(entries[2].args))
 local filled = ui.queued[#ui.queued]
-check("choosing one queues the fill", filled.Type == "TPHearthCopper" and filled.mode == "fillFrom" and filled.item == empty)
+check("choosing one queues the fill", filled.Type == "TPHearthCauldron" and filled.mode == "fillFrom" and filled.item == empty)
 ui.carried = { milk, mixture }
-fill = named(open(holdsWater), "ContextMenu_TraditionalPreservationCore_FillFromCopper")
+fill = named(open(holdsWater), "ContextMenu_TraditionalPreservationCore_FillFromCauldron")
 check("with nothing to fill, the option is greyed with the reason", fill.isDisabled == true
     and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_NoRoomItem"))
 
--- A fluid that stays in the copper, and a mod's own rows
+-- A fluid that stays in the cauldron, and a mod's own rows
 Hearth.staysIn("RawFat")
-fill = named(open(hearth({ ml = 1000, fluid = "RawFat", tempC = 20 })), "ContextMenu_TraditionalPreservationCore_FillFromCopper")
+fill = named(open(hearth({ ml = 1000, fluid = "RawFat", tempC = 20 })), "ContextMenu_TraditionalPreservationCore_FillFromCauldron")
 check("a fluid that stays in can't be filled from, with the reason", fill.isDisabled == true and fill.subOption == nil
-    and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_CopperStaysIn", "RawFat"))
+    and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_CauldronStaysIn", "RawFat"))
 local HearthUI = require "TraditionalPreservationCore/HearthUI"
 local rowFor
-HearthUI.addMenu(function(aMenu, playerObj, aHearth, copper)
-    rowFor = { playerObj, aHearth, copper }
+HearthUI.addMenu(function(aMenu, playerObj, aHearth, cauldron)
+    rowFor = { playerObj, aHearth, cauldron }
     aMenu:addOption("A mod's row")
 end)
 local withRow = hearth({ ml = 1000, fluid = "Water", tempC = 20 })
 sub = open(withRow)
-check("a mod's row goes in the Hearth's menu, with the hearth and its copper",
+check("a mod's row goes in the Hearth's menu, with the hearth and its cauldron",
     sub:getOptionFromName("A mod's row") ~= nil and rowFor[2] == withRow and rowFor[3].fluid == "Water")
 
--- Emptying the copper
-check("an empty copper has nothing to empty", named(open(hearth()), "ContextMenu_TraditionalPreservationCore_EmptyCopper") == nil)
+-- Emptying the cauldron
+check("an empty cauldron has nothing to empty", named(open(hearth()), "ContextMenu_TraditionalPreservationCore_EmptyCauldron") == nil)
 local rotten = hearth({ ml = 6000, fluid = "RottenCowMilk", tempC = 20, tpFluidAge = { kind = "milk", age = 80 } })
-local emptyIt = named(open(rotten), "ContextMenu_TraditionalPreservationCore_EmptyCopper")
-check("a copper holding anything can be emptied, the hover saying how much of what", emptyIt ~= nil and emptyIt.isDisabled == nil
+local emptyIt = named(open(rotten), "ContextMenu_TraditionalPreservationCore_EmptyCauldron")
+check("a cauldron holding anything can be emptied, the hover saying how much of what", emptyIt ~= nil and emptyIt.isDisabled == nil
     and emptyIt.toolTip.description:find("6.0", 1, true) ~= nil)
 local moved = #ui.moved
 emptyIt.onSelect(character, unpack(emptyIt.args))
 local emptying = ui.queued[#ui.queued]
-check("choosing it queues the emptying, with nothing brought to hand", emptying.Type == "TPHearthCopper"
+check("choosing it queues the emptying, with nothing brought to hand", emptying.Type == "TPHearthCauldron"
     and emptying.mode == "empty" and not emptying.item and emptying.hearth == rotten and #ui.moved == moved)
 check("it takes longer the more there is", emptying.maxTime > 0 and emptying:isValid())
 emptying:complete()
 local left = rotten:getModData()[Hearth.KEY]
-check("done, the copper is empty and its age forgotten", left.ml == nil and left.fluid == nil and left.tpFluidAge == nil
+check("done, the cauldron is empty and its age forgotten", left.ml == nil and left.fluid == nil and left.tpFluidAge == nil
     and not emptying:isValid())
 
--- A Stone Hearth with nothing fitted: the copper tile, attached noted false.
+-- A Stone Hearth with nothing fitted: the cauldron tile, attached noted false.
 local function bare(lit)
     local fire = hearth(nil, lit)
     fire:getModData()[Hearth.KEY] = { attached = false }
@@ -285,24 +285,24 @@ end
 -- Fit Cauldron
 ui.carried = {}
 sub = open(bare())
-local fit = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit")
+local fit = fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit")
 check("a bare Stone Hearth offers Fit Cauldron, greyed with what is missing", fit ~= nil and fit.isDisabled == true
     and fit.toolTip.description:find("ForgedCauldron", 1, true) ~= nil and fit.toolTip.description:find("Pliers", 1, true) ~= nil)
-check("and no Remove, no pouring", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove") == nil
-    and named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCopper") == nil)
+check("and no Remove, no pouring", fitRow(sub, "ContextMenu_TraditionalPreservationCore_Remove") == nil
+    and named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron") == nil)
 local kit = { thing("TraditionalPreservationCore.ForgedCauldron"), thing("Base.MetalPipe"), thing("Base.MetalPipe"),
     thing("Base.HeavyChain"), thing("Base.LargeHook"), thing("Base.Pliers", { ["base:pliers"] = true }) }
 ui.carried = kit
 local spare = bare()
 sub = open(spare)
-fit = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit")
+fit = fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit")
 check("with the kit in reach it can be chosen", fit.isDisabled ~= true and fit.toolTip.description:find("Missing", 1, true) == nil)
 fit.onSelect(character, unpack(fit.args))
 local fitting = ui.queued[#ui.queued]
 check("choosing it brings the kit to hand and queues the fit", fitting.Type == "TPHearthFit" and fitting.fitting == true
-    and fitting.fire == spare and fitting.spec.id == Hearth.COPPER and #ui.moved >= #kit)
+    and fitting.fire == spare and fitting.spec.id == Hearth.CAULDRON and #ui.moved >= #kit)
 sub = open(bare(true))
-check("not while the fire burns", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit").isDisabled == true)
+check("not while the fire burns", fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit").isDisabled == true)
 
 -- The fit itself: the kit goes in, the cauldron is on; Remove gives it all back.
 local pack, given, xp = {}, {}, 0
@@ -328,33 +328,33 @@ local smith = {
     } end,
 }
 local onto = bare()
-local action = TPHearthFit:new(smith, onto, Hearth.COPPER)
+local action = TPHearthFit:new(smith, onto, Hearth.CAULDRON)
 check("Fit takes an hour's work and is valid with the kit", action.maxTime == 600 and action:isValid())
 action:complete()
 check("done, the kit is used, only the pliers are left, the cauldron is on and empty", #pack == 1
-    and Hearth.attachedTo(onto) == Hearth.COPPER and next(Hearth.copperState(onto:getModData())) == nil and xp == 5)
-check("a second fit is refused", not TPHearthFit:new(smith, onto, Hearth.COPPER):isValid())
+    and Hearth.attachedTo(onto) == Hearth.CAULDRON and next(Hearth.cauldronState(onto:getModData())) == nil and xp == 5)
+check("a second fit is refused", not TPHearthFit:new(smith, onto, Hearth.CAULDRON):isValid())
 local off = TPHearthFit:new(smith, onto)
 check("Remove is shorter, and valid while the cauldron is empty", off.maxTime == 300 and off:isValid())
-Hearth.copperState(onto:getModData()).ml = 1000
+Hearth.cauldronState(onto:getModData()).ml = 1000
 check("not while it holds anything", not off:isValid())
-Hearth.copperState(onto:getModData()).ml = nil
+Hearth.cauldronState(onto:getModData()).ml = nil
 off:complete()
 table.sort(given)
 check("done, every part is back and nothing is fitted", table.concat(given, " ") == "Base.HeavyChain Base.LargeHook Base.MetalPipe "
     .. "Base.MetalPipe TraditionalPreservationCore.ForgedCauldron" and Hearth.attachedTo(onto) == nil
-    and onto:getModData()[Hearth.KEY].copper == nil)
+    and onto:getModData()[Hearth.KEY].cauldron == nil)
 
 -- Remove Cauldron
 sub = open(hearth())
-local remove = cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove")
+local remove = fitRow(sub, "ContextMenu_TraditionalPreservationCore_Remove")
 check("a fitted Hearth offers Remove Cauldron, saying what comes back", remove ~= nil and remove.isDisabled ~= true
-    and remove.toolTip.description:find("HeavyChain", 1, true) ~= nil and cauldron(sub, "ContextMenu_TraditionalPreservationCore_Fit") == nil)
+    and remove.toolTip.description:find("HeavyChain", 1, true) ~= nil and fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit") == nil)
 sub = open(holdsWater)
-check("greyed while the cauldron holds anything", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
+check("greyed while the cauldron holds anything", fitRow(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
 sub = open(hearth({}, true))
-check("and while the fire burns", cauldron(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
-remove = cauldron(open(hearth()), "ContextMenu_TraditionalPreservationCore_Remove")
+check("and while the fire burns", fitRow(sub, "ContextMenu_TraditionalPreservationCore_Remove").isDisabled == true)
+remove = fitRow(open(hearth()), "ContextMenu_TraditionalPreservationCore_Remove")
 remove.onSelect(character, unpack(remove.args))
 check("choosing it queues the removal", ui.queued[#ui.queued].Type == "TPHearthFit" and ui.queued[#ui.queued].fitting == false)
 
@@ -424,7 +424,7 @@ check("done, the kit is used, the tool kept, it is joined on the back", #pack ==
     and joinState.testDuct.kind == "Pipe" and joinState.testDuct.side == "Back" and xp == 5 and changed == joinable.beside)
 check("a second Connect is refused", not TPHearthConnect:new(smith, joinable, joinable.beside, "testDuct", "Pipe"):isValid()
     and Hearth.connectRefusal(joinable, duct, joinable.beside) == "IGUI_TraditionalPreservationCore_FlueFireboxJoined")
-check("it never blocks the fit", Hearth.fitRefusal(joinable, Hearth.attachment(Hearth.COPPER)) == nil)
+check("it never blocks the fit", Hearth.fitRefusal(joinable, Hearth.attachment(Hearth.CAULDRON)) == nil)
 check("before, the same bare one could be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare()) == true)
 check("joined, it can't be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, joinable) == false)
 sub = open(joinable)

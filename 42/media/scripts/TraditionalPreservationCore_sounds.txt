@@ -3,7 +3,7 @@ module Base
     /* TP's own cooking sounds (vanilla's BoilingFood sizzles). Both clips are "boiling water loops" by TinyWorlds,
        OpenGameArt, CC0: cooking without cover for a rolling boil, with cover for a gentler simmer.
        TPBoiling: the CookingSound of every TP item that boils (stock, soup and stew pots, the pot of blood sausages,
-       a bucket of boiling brine). TPSimmering: the Hearth's copper at 85 C or more (HearthWorld). */
+       a bucket of boiling brine). TPSimmering: the Hearth's cauldron at 85 C or more (HearthWorld). */
     sound TPBoiling
     {
         category = Player,

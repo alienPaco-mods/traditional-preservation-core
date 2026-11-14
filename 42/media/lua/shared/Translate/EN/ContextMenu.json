@@ -1,8 +1,8 @@
 {
   "ContextMenu_TraditionalPreservationCore_HearthInfo": "Stone Hearth Info",
-  "ContextMenu_TraditionalPreservationCore_PourIntoCopper": "Pour into the Cauldron",
-  "ContextMenu_TraditionalPreservationCore_FillFromCopper": "Fill from the Cauldron",
-  "ContextMenu_TraditionalPreservationCore_EmptyCopper": "Empty the Cauldron",
+  "ContextMenu_TraditionalPreservationCore_PourIntoCauldron": "Pour into the Cauldron",
+  "ContextMenu_TraditionalPreservationCore_FillFromCauldron": "Fill from the Cauldron",
+  "ContextMenu_TraditionalPreservationCore_EmptyCauldron": "Empty the Cauldron",
   "ContextMenu_TraditionalPreservationCore_FluidItem": "%1 (%2 L)",
   "ContextMenu_TraditionalPreservationCore_Holds": "%1 (holds %2 L)",
   "ContextMenu_TraditionalPreservationCore_BankFire": "Bank the Fire",

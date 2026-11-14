@@ -84,7 +84,8 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installClock(hours)`, `H.setHours(h)` | `getGameTime():getWorldAgeHours()`. |
 | `H.installModData()` | `ModData.getOrCreate`, one table per key in `H.modData`. |
 | `H.installEvents()`, `H.fire(name, ...)` | `Events.<Any>.Add`, and firing the handlers added. |
-| `H.useModPaths()` | `require` finds the mod's own Lua and TP Core's as the game does, e.g. `require "TraditionalPreservationCore/Weather"`. |
+| `H.useModPaths()` | `require` finds the mod's own Lua and TP Core's as the game does, e.g. `require "TraditionalPreservationCore/Weather"`. Also runs `H.preloadVanilla()`. |
+| `H.preloadVanilla()` | The vanilla files TP code `require`s before wrapping them (`H.VANILLA`) load as nothing, so the action's global stays the test's stub, or nil and the wrap is skipped. A new plain `require` of a vanilla file goes in `H.VANILLA`. |
 | `H.installGetText()` | `getText` with the mod's real EN translations. Notes the game formatter's `%` errors in `H.textWarnings`. |
 | `H.player{ x, y, z, outside }` | A player for a console or a menu: a square, an inventory, and the full types it was given in `.given`. |
 | `H.checkConsole(path, name)` | Loads a Dev console as debug mode does: it stays out of a normal game, and `help()` lists every command it has and none it hasn't. Returns the console and `run("command", ...)`, which gives back what the command printed. |
@@ -271,8 +272,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Pour.before(name, fn)` / `Pour.after(name, fn)` (name is `start`, `stop` or `complete`) and `Pour.owner`:
      handlers on the one wrap of the fluid transfer, for what rides along with a fluid.
    - `Uses.count(character, tag)` / `Uses.take(character, tag, owed)`: salt, vinegar or any tagged food or drainable
-     by the use from what a character carries, part-used first; emptied salt goes back to the Salt mod. Charge
-     what a recipe line can't (Fish & Meat's salt by weight, a cure by the litre) here, not in a copy.
+     by the use from what a character carries, part-used first. `Uses.onEmptied(tag, fn)`: fn(character, emptied)
+     for items of the tag a take used up (Salt gives back its empty shakers and bags). Charge what a recipe line
+     can't (Fish & Meat's salt by weight, a cure by the litre) here, not in a copy.
    - `FluidAgeing` treatments: a kind registered with `treatments`, `litresPerUse` and `treatMenu` gets a submenu on
      its containers (Fish & Meat's *Cure Blood > -n Salt / -n Vinegar*), greyed with the reason; the timed action is
      `TPFluidTreat`. `FluidTreat.treatRefusal` / `treatBy` / `litresIn` / `treatUses` for a mod's own code (also
@@ -358,6 +360,12 @@ of all:
 Two mods wrapping the same function each call the one before, so load order doesn't matter. A new wrap goes in this
 table. **When a second mod needs a vanilla function a first one wraps, the wrap moves to the core** and both add
 handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`): one place to compare with vanilla after a game update.
+The handler order differs: Transfer runs its handlers in the order added, Pour and Handcraft as nested wraps would
+(the last added's before first). Each module's header says which; a handler that depends on another's must not
+assume the other order.
+A wrap `require`s the vanilla file plainly before it wraps (`require "Fluids/ISFluidTransferAction"`), never through
+`pcall`: the engine's `require` of a missing file only warns, and vanilla's file is loaded first anyway (ENGINE_NOTES
+"require"). The test harness stands in for the file (`H.preloadVanilla`).
 
 ## Tile numbers: the generated Tiles.lua
 
@@ -435,6 +443,11 @@ lists every finding.
     same day): FluidAgeing's `scalded` (Dairy's milk) was the same idea as its `states` (a variant of the fresh fluid
     with its own name and spoiling), only brought about by heat instead of by hand; it is now a state with
     `heat = true`, so any kind can have a heat-made variant without its own field in Core.
+13. **No guard for what the engine always has.** `x.method and x:method()` or a `pcall` around an engine call is for
+    a real second kind only (a server or a test with no inventory menu, a non-food item that has no spices); say
+    which in a comment. A guard that only covers a test stand-in missing the method is wrong: give the stand-in the
+    method. A `pcall` that puts something back before raising the error again (Salt's tooltip draw) is a real case.
+    Check the class in the Umbrella stubs (and `decompile.sh` for whether the call can fail) before guarding.
 
 ## FAQ: why the series does it this way
 

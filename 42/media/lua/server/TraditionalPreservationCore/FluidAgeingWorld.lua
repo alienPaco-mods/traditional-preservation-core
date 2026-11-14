@@ -44,7 +44,7 @@ end
 -- Bleeding a carcass (vanilla's ISGatherBloodFromAnimal adds blood a tick at a time), for a mod that ages blood
 -- (Fish & Meat): a container holding none of the kind starts a new record, and fresh blood gathered onto treated
 -- blood makes the lot untreated, as pouring does. Nothing happens to a fluid no kind is registered for.
-if not ISGatherBloodFromAnimal then pcall(require, "TimedActions/Animals/ISGatherBloodFromAnimal") end
+require "TimedActions/Animals/ISGatherBloodFromAnimal"
 if ISGatherBloodFromAnimal then
     local vanillaUpdateBucket = ISGatherBloodFromAnimal.updateBucket
     function ISGatherBloodFromAnimal:updateBucket()

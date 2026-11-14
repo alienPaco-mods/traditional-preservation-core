@@ -57,7 +57,7 @@ function FluidTreat.treatBy(owner, spec, treatment, character, now)
     local uses = FluidTreat.treatUses(spec, usable)
     if not FluidAgeing.treat(owner, now, treatment.name) then return false end
     Uses.take(character, treatment.tag(), uses)
-    if owner.sendSyncEntity then owner:sendSyncEntity(nil) end
+    owner:sendSyncEntity(nil)
     return true
 end
 

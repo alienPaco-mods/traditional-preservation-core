@@ -47,16 +47,12 @@ function Doors.blocker(front, facing)
     return nil
 end
 
-local function blocked(front, facing)
-    return Doors.blocker(front, facing) ~= nil
-end
-
 -- The tile in front of a door opening that way from square is free (no square there is open ground).
 function Doors.frontFree(square, facing)
     local step = Doors.FRONT[facing]
     if not step then return true end
     local front = squareAt(square, step, 1)
-    return not front or not blocked(front, facing)
+    return not front or Doors.blocker(front, facing) == nil
 end
 
 -- The sprite name of a registered door on a neighbouring tile that opens onto square, or nil.

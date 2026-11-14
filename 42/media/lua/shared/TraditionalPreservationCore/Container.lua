@@ -1,13 +1,21 @@
 -- Traditional Preservation core: fluid containers. What one holds (fluidIn, ml, isEmptyVessel), and a bucket that goes through
 -- several items coming back as the bucket it was: a recipe that uses a container up turns it into another item,
 -- so its type is noted on that item and handed on at each step, until the last recipe gives the container back.
+local Uses = require "TraditionalPreservationCore/Uses"
+
 local Container = {}
+
+-- Litres a container's main fluid may fall short of its whole amount and still count as all one kind (the engine's
+-- float rounding).
+Container.MIXTURE_TOLERANCE = 0.001
 
 -- The fluid in a fluid container if it is all one kind, else nil (empty, or a mixture).
 function Container.fluidIn(container)
     if not container or container:isEmpty() then return nil end
     local fluid = container:getPrimaryFluid()
-    if not fluid or container:getPrimaryFluidAmount() < container:getAmount() - 0.001 then return nil end
+    if not fluid or container:getPrimaryFluidAmount() < container:getAmount() - Container.MIXTURE_TOLERANCE then
+        return nil
+    end
     return fluid:getFluidTypeString()
 end
 
@@ -60,16 +68,6 @@ function Container.pass(craftRecipeData, targetType)
     if fullType then write(craftRecipeData, fullType, targetType) end
 end
 
-local function remove(item)
-    local container = item:getContainer()
-    if container then return container:DoRemoveItem(item) end
-    local worldItem = item:getWorldItem()
-    if not worldItem then return end
-    worldItem:getSquare():transmitRemoveItemFromSquare(worldItem)
-    worldItem:removeFromWorld()
-    worldItem:removeFromSquare()
-end
-
 -- OnCreate of the last recipe, whose script gives back placeholderType: swaps that for the container noted.
 -- Returns the item the player ends up with, empty. An item from before the note comes back as the placeholder.
 function Container.giveBack(craftRecipeData, character, placeholderType)
@@ -85,7 +83,7 @@ function Container.giveBack(craftRecipeData, character, placeholderType)
     if not item then return placeholder end
     local fluid = item:getFluidContainer()
     if fluid then fluid:Empty() end
-    remove(placeholder)
+    Uses.remove(placeholder)
     Actions.addOrDropItem(character, item)
     return item
 end

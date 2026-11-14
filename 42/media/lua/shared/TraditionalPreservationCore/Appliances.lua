@@ -12,7 +12,7 @@ function Appliances.is(object)
     for _, class in ipairs(CLASSES) do
         if instanceof(object, class) then return true end
     end
-    for index = 0, (object.getContainerCount and object:getContainerCount() or 0) - 1 do
+    for index = 0, object:getContainerCount() - 1 do
         local container = object:getContainerByIndex(index)
         if container and COLD_CONTAINERS[container:getType()] then return true end
     end

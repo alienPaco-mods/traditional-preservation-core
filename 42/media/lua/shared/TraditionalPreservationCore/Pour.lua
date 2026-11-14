@@ -7,6 +7,8 @@
 -- Handlers run as nested wraps would: of the befores the last added runs first, of the afters the first added.
 -- Pour.owner(fluidObject) is the item or world object a pour's source or target belongs to.
 -- Outside the game (tests) there may be no transfer action: then nothing is wrapped.
+require "Fluids/ISFluidTransferAction"
+
 local Pour = {}
 
 local NAMES = { "start", "stop", "complete" }
@@ -26,18 +28,24 @@ end
 
 local function install()
     if installed then return end
-    if not ISFluidTransferAction then pcall(require, "Fluids/ISFluidTransferAction") end
     if not ISFluidTransferAction then return end
     installed = true
     for _, name in ipairs(NAMES) do wrap(name) end
 end
 
+-- A handler for an action name Pour doesn't wrap is a mistake: say which.
+local function checkName(name)
+    assert(befores[name], "Pour: no action called " .. tostring(name) .. " (start, stop or complete)")
+end
+
 function Pour.before(name, fn)
+    checkName(name)
     install()
     table.insert(befores[name], fn)
 end
 
 function Pour.after(name, fn)
+    checkName(name)
     install()
     table.insert(afters[name], fn)
 end

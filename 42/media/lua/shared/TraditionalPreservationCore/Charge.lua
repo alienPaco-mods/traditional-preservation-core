@@ -27,11 +27,22 @@ local function carried(character, fullType, amount)
     return Uses.items(character, fullType)
 end
 
+-- amounts = { [full type] = { uses = n } or { count = n } }: one of the two, a positive number, per kind. No two
+-- lines may list the same kinds (the craft window finds a line by them).
 function Charge.line(amounts)
+    assert(type(amounts) == "table", "Charge.line: amounts must be a table")
     local line = { amounts = amounts }
     local types = {}
-    for fullType in pairs(amounts) do table.insert(types, fullType) end
-    lines[Charge.key(types)] = line
+    for fullType, amount in pairs(amounts) do
+        local n = amount.uses or amount.count
+        assert(not (amount.uses and amount.count), "Charge.line " .. fullType .. ": uses or count, not both")
+        assert(type(n) == "number" and n > 0, "Charge.line " .. fullType .. ": needs a positive uses or count")
+        table.insert(types, fullType)
+    end
+    assert(#types > 0, "Charge.line: no kinds")
+    local key = Charge.key(types)
+    assert(not lines[key], "Charge.line: a line for " .. key .. " is registered already")
+    lines[key] = line
 
     -- The amount a kind takes (its uses or its count), or nil for an item the line doesn't list.
     function line.need(fullType)
@@ -47,9 +58,10 @@ function Charge.line(amounts)
 
     -- OnTest: an item of a listed kind passes only with enough of that kind carried; any other item passes.
     function line.onTest(item, character)
-        local amount = amounts[item:getFullType()]
-        if not amount or not character then return true end
-        return carried(character, item:getFullType(), amount) >= (amount.uses or amount.count)
+        local fullType = item:getFullType()
+        local need = line.need(fullType)
+        if not need or not character then return true end
+        return line.has(character, fullType) >= need
     end
 
     -- OnCreate: takes the amount of the kind the recipe kept.
@@ -69,13 +81,21 @@ function Charge.line(amounts)
     return line
 end
 
--- The line registered for a script line's items ("item 1 [A;B] mode:keep"), or nil.
+-- The line registered for a script line's items ("item 1 [A;B] mode:keep"), or nil. The craft window asks every
+-- frame, so each script line's key is worked out once.
+local keyOfText = {}
+
 function Charge.forScriptLine(text)
-    local list = text and text:match("%[([^%]]*)%]")
-    if not list then return nil end
-    local types = {}
-    for fullType in list:gmatch("[^;]+") do table.insert(types, fullType) end
-    return lines[Charge.key(types)]
+    if not text then return nil end
+    local key = keyOfText[text]
+    if key == nil then
+        local list = text:match("%[([^%]]*)%]")
+        local types = {}
+        for fullType in (list or ""):gmatch("[^;]+") do table.insert(types, fullType) end
+        key = list and Charge.key(types) or false
+        keyOfText[text] = key
+    end
+    return key and lines[key] or nil
 end
 
 return Charge

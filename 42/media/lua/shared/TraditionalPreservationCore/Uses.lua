@@ -19,7 +19,7 @@ end
 
 -- Takes an item away wherever it is: an item lying on the floor goes from its square too.
 local function remove(item)
-    local world = item.getWorldItem and item:getWorldItem()
+    local world = item:getWorldItem()
     if world and world:getSquare() then
         -- As vanilla's transfer takes an item off the floor.
         world:getSquare():transmitRemoveItemFromSquare(world)
@@ -63,8 +63,19 @@ function Uses.count(character, tag, byType)
     return uses
 end
 
--- Takes owed uses of the tag, part-used items first; an item emptied goes. The Salt mod gives back an empty shaker
--- or paper bag for salt emptied so, as it does for what a recipe empties.
+-- What runs when Uses.take empties items of a tag: fn(character, emptied), emptied a Java list. A mod that gives
+-- something back for an emptied item registers here (Salt: an empty shaker or paper bag, as for what a recipe
+-- empties). Only for a take by tag, not by full type.
+local onEmptied = {}
+
+function Uses.onEmptied(tag, fn)
+    assert(tag ~= nil, "Uses.onEmptied: no tag")
+    assert(type(fn) == "function", "Uses.onEmptied " .. tostring(tag) .. ": fn must be a function")
+    onEmptied[tag] = onEmptied[tag] or {}
+    table.insert(onEmptied[tag], fn)
+end
+
+-- Takes owed uses of the tag, part-used items first; an item emptied goes, and the tag's onEmptied handlers get it.
 function Uses.take(character, tag, owed, byType)
     if owed <= 0 or not character then return end
     local items = Uses.carried(character, tag, byType)
@@ -81,8 +92,8 @@ function Uses.take(character, tag, owed, byType)
             emptied:add(item)
         end
     end
-    local Salt = TraditionalPreservationSalt
-    if not byType and tag == ItemTag.SALT and Salt and Salt.returnEmpties and emptied:size() > 0 then Salt.returnEmpties(character, emptied) end
+    local handlers = not byType and emptied:size() > 0 and onEmptied[tag]
+    for _, fn in ipairs(handlers or {}) do fn(character, emptied) end
 end
 
 -- How many items of a full type are in reach.

@@ -53,10 +53,11 @@ function SlotRules.slotRules(rules)
     end
 
     -- The short name of the recipe selected in the station's window: selecting one sets it on the station's
-    -- CraftLogic too (its craft test data, which getCurrentRecipe reads). Guarded: another station may lack it.
+    -- CraftLogic too (its craft test data, which getCurrentRecipe reads). Every crafting component a station() gives
+    -- has it (CraftLogic, DryingCraftLogic, FurnaceLogic, MashingLogic), and CraftLogic's never fails.
     local function selectedRecipe(component)
-        local ok, recipe = pcall(function() return component:getCurrentRecipe() end)
-        return ok and recipe and UI.shortName(recipe) or nil
+        local recipe = component:getCurrentRecipe()
+        return recipe and UI.shortName(recipe) or nil
     end
 
     -- The slot record the rules are given.

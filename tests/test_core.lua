@@ -376,7 +376,7 @@ ISMouseDrag = {}
 ISInventoryPane = { getActualItems = function(dragging) return dragging end }
 function getPlayer() return "player" end
 local function station(name, free)
-    local entity = { name = name, component = { free = free } }
+    local entity = { name = name, component = { free = free, getCurrentRecipe = function() return nil end } }
     local resource = { getIO = function() return ResourceIO.Input end, getGameEntity = function() return entity end }
     return { resource = resource }, entity
 end
@@ -444,8 +444,6 @@ select("Long")
 check("recipeRefusal: another recipe takes it", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
 select(nil)
 check("recipeRefusal: no recipe, no recipe rule", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
-tub.component.getCurrentRecipe = nil
-check("recipeRefusal: a station that can't say is left alone", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
 halos = {}
 select("Short")
 ISMouseDrag.dragging = { "leg" }

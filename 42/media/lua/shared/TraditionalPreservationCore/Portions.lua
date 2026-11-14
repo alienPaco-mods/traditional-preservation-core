@@ -3,6 +3,8 @@
 -- it; what a mod adds is the name with the portions left (or a plain name: Portions.weigh), the vessel's weight under
 -- them and the empty vessel back with the last bite. A mod keeps its own modData keys and one portion's food; this holds what the two share, and
 -- the one wrap of vanilla's eat action (Portions.onEat), so a mod adds a handler instead of wrapping it again.
+require "TimedActions/ISEatFoodAction"
+
 local Portions = {}
 
 local KEY = "IGUI_TraditionalPreservationCore_"
@@ -57,11 +59,12 @@ end
 -- it was in) is relabelled; an emptied one goes back to that container as its empty vessel (a full type). Returns
 -- the empty vessel, if any.
 function Portions.used(item, container, stillHolds, vesselType, relabel)
-    if container and container:contains(item) and stillHolds(item) then
+    local inPlace = container and container:contains(item)
+    if inPlace and stillHolds(item) then
         relabel(item)
         return nil
     end
-    if container and container:contains(item) then container:DoRemoveItem(item) end
+    if inPlace then container:DoRemoveItem(item) end
     local target = container or item:getContainer()
     return target and target:AddItem(vesselType)
 end
@@ -87,18 +90,19 @@ local function wrap(name)
 end
 
 -- Wraps ISEatFoodAction.complete and serverStop, once for every mod: compare them with vanilla after a game update.
--- Outside the game (tests) there is no eat action unless one is stubbed.
+-- Outside the game (tests) there may be no eat action: then nothing is wrapped.
 local function install()
     if installed then return end
-    if not ISEatFoodAction then pcall(require, "TimedActions/ISEatFoodAction") end
     if not ISEatFoodAction then return end
     installed = true
     wrap("complete")
     wrap("serverStop")
 end
 
--- Handlers for items of fullType eaten through vanilla's eat action.
+-- Handlers for items of fullType eaten through vanilla's eat action, one set a type.
 function Portions.onEat(fullType, before, after)
+    assert(type(after) == "function", "Portions.onEat " .. tostring(fullType) .. ": no after handler")
+    assert(not handlers[fullType], "Portions.onEat: " .. tostring(fullType) .. " already has handlers")
     install()
     handlers[fullType] = { before = before, after = after }
 end

@@ -64,8 +64,9 @@ end
 -- The kinds already in an item, by name.
 function Season.added(item)
     local found, spec = {}, Season.specFor(item)
-    local spices = item.getSpices and item:getSpices()
-    if not spec or not spices then return found end
+    if not spec then return found end
+    local spices = item:getSpices()
+    if not spices then return found end
     for i = 0, spices:size() - 1 do
         local kind = Season.kindOf(spec, spices:get(i))
         if kind then found[kind.name] = true end

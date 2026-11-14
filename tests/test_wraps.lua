@@ -4,6 +4,7 @@
 local H = dofile("tests/harness.lua")
 local check = H.check
 package.path = "42/media/lua/shared/?.lua;" .. package.path
+H.preloadVanilla()
 
 -- Handcraft
 local seen = {}
@@ -42,6 +43,8 @@ local pour = setmetatable({}, { __index = ISFluidTransferAction })
 check("each passes vanilla's result back", pour:start() == "started" and pour:stop() == "stoped" and pour:complete() == "completeed")
 check("as nested wraps would run: the later mod's before first, the core's after first", table.concat(seen, "|")
     == "dairy start|core start|vanilla start|dairy stop|vanilla stop|core stop|vanilla complete|core complete|dairy complete")
+check("a handler for an action Pour doesn't wrap is refused", not pcall(Pour.before, "begin", function() end)
+    and not pcall(Pour.after, nil, function() end))
 local item, object = { class = "InventoryItem" }, { class = "IsoObject" }
 check("the owner of a pour's end is its item or its world object",
     Pour.owner({ getOwner = function() return item end }) == item and Pour.owner({ getOwner = function() return object end }) == object

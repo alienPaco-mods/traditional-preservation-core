@@ -7,6 +7,8 @@
 --   Handcraft.after(after)           the same with nothing to keep
 -- Handlers run as nested wraps would: the last one added is outermost, so its before runs first and its after last.
 -- Outside the game (tests) there may be no hand craft action: then nothing is wrapped.
+require "Entity/TimedActions/ISHandcraftAction"
+
 local Handcraft = {}
 
 local handlers = {}
@@ -14,7 +16,6 @@ local installed = false
 
 local function install()
     if installed then return end
-    if not ISHandcraftAction then pcall(require, "Entity/TimedActions/ISHandcraftAction") end
     if not ISHandcraftAction then return end
     installed = true
     local vanillaPerformRecipe = ISHandcraftAction.performRecipe

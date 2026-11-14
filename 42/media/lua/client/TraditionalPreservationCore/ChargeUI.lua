@@ -1,6 +1,7 @@
 -- Traditional Preservation core: the craft window shows a charged line (Charge) with its real amount. Vanilla shows
 -- such a line as one item kept and given back; for the kind showing (or picked) it now reads "12 Uses" or "7/12",
 -- with the consumed icon, red when too little is carried. Wraps ISWidgetInput.updateValues, which runs every frame.
+require "Entity/ISUI/CraftRecipe/ISWidgetInput"
 local Charge = require "TraditionalPreservationCore/Charge"
 
 local function relabel(widget)
@@ -27,7 +28,6 @@ local function relabel(widget)
 end
 
 local function install()
-    if not ISWidgetInput then pcall(require, "Entity/ISUI/CraftRecipe/ISWidgetInput") end
     if not ISWidgetInput or ISWidgetInput.tpChargeWrapped then return end
     ISWidgetInput.tpChargeWrapped = true
     local vanillaUpdateValues = ISWidgetInput.updateValues

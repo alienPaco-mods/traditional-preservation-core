@@ -3,6 +3,7 @@
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 package.path = "42/media/lua/shared/?.lua;" .. package.path
+H.preloadVanilla()
 H.installGetText(H.loadTranslations("42/media/lua/shared/Translate/EN"))
 
 local eaten = {}
@@ -98,4 +99,6 @@ Portions.onEat("Mod.Crock", nil, function() table.insert(seen, "crock") end)
 seen, eaten = {}, {}
 setmetatable({ item = crock, share = 0 }, { __index = ISEatFoodAction }):complete()
 check("a second kind is added without wrapping twice, and needs no before", #eaten == 1 and seen[1] == "crock")
+check("a kind takes one set of handlers, and needs an after", not pcall(Portions.onEat, "Mod.Crock", nil, function() end)
+    and not pcall(Portions.onEat, "Mod.Pot", nil, nil))
 H.done()

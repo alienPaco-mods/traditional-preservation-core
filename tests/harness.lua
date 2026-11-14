@@ -32,6 +32,21 @@ function H.useModPaths()
     local core = (os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/42/media/lua/"
     package.path = "42/media/lua/shared/?.lua;42/media/lua/client/?.lua;42/media/lua/server/?.lua;"
         .. core .. "shared/?.lua;" .. core .. "client/?.lua;" .. package.path
+    H.preloadVanilla()
+end
+
+-- The vanilla files TP code requires before wrapping them. In game they are loaded already (require only returns
+-- them); here each loads as nothing, so the global stays whatever the test stubbed, or nil, and the wrap is skipped.
+H.VANILLA = {
+    "Entity/TimedActions/ISHandcraftAction", "TimedActions/ISEatFoodAction", "Fluids/ISFluidTransferAction",
+    "Entity/ISUI/CraftRecipe/ISWidgetInput", "TimedActions/Animals/ISGatherBloodFromAnimal",
+    "Entity/TimedActions/ISItemSlotRemoveAction", "TimedActions/ISInventoryTransferAction",
+}
+
+function H.preloadVanilla()
+    for _, path in ipairs(H.VANILLA) do
+        package.preload[path] = package.preload[path] or function() return true end
+    end
 end
 
 -- A game clock the test moves with H.setHours.

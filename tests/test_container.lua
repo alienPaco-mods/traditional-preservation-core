@@ -12,6 +12,7 @@ local function item(fullType, holdsFluid)
     function self:getFluidContainer() return holdsFluid and { Empty = function() self.emptied = true end } or nil end
     function self:getContainer() return self.container end
     function self:getWorldItem() return self.worldItem end
+    function self:setWorldItem(worldItem) self.worldItem = worldItem end
     return self
 end
 local function recipe(used, created)
@@ -48,15 +49,20 @@ check("empty", back.emptied)
 check("in place of the script's bucket", bag.removed[1] == plain and #bag.removed == 1)
 
 -- A placeholder dropped at the player's feet (no room to carry it)
+-- Taken off as vanilla's transfer takes an item off the floor (Uses.remove): the square's removeWorldObject also
+-- redraws the floor tile.
 local taken = {}
-local dropped = item("Base.BucketEmpty", true)
-dropped.worldItem = {
-    getSquare = function() return { transmitRemoveItemFromSquare = function(_, worldItem) table.insert(taken, worldItem) end } end,
-    removeFromWorld = function() table.insert(taken, "world") end,
-    removeFromSquare = function() table.insert(taken, "square") end,
+local square = {
+    transmitRemoveItemFromSquare = function(_, worldItem) table.insert(taken, worldItem) end,
+    removeWorldObject = function(_, worldItem) table.insert(taken, "removed " .. worldItem.name) end,
 }
+local dropped = item("Base.BucketEmpty", true)
+local onFloor = { name = "bucket", getSquare = function() return square end }
+dropped.worldItem = onFloor
 Container.giveBack(recipe({ brine }, { dropped }), "player", "Base.BucketEmpty")
-check("a bucket dropped on the floor is swapped too", taken[1] == dropped.worldItem and #taken == 3 and #given == 2)
+check("a bucket dropped on the floor is swapped too", taken[1] == onFloor and taken[2] == "removed bucket"
+    and #taken == 2 and #given == 2)
+check("and no longer points at the floor", dropped.worldItem == nil)
 
 -- Nothing to swap
 given = {}

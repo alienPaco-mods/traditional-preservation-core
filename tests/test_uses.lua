@@ -21,6 +21,7 @@ local function thing(tag, uses)
     local o = { tag = tag, uses = uses }
     function o:getCurrentUses() return self.uses end
     function o:setCurrentUses(n) self.uses = n end
+    function o:getWorldItem() return nil end
     function o:getContainer() return { DoRemoveItem = function() o.removed = true end } end
     return o
 end
@@ -40,13 +41,14 @@ check("count adds the tag's uses, empty ones none", Uses.count(who, "base:salt")
 Uses.take(who, "base:salt", 3)
 check("take empties the part-used one first", part.uses == 0 and part.removed and full.uses == 9 and not full.removed)
 local returned
-TraditionalPreservationSalt = { returnEmpties = function(_, list) returned = list:size() end }
+Uses.onEmptied("base:salt", function(_, list) returned = list:size() end)
 local shaker = thing("base:salt", 1)
 Uses.take(carrying({ shaker }), "base:salt", 1)
-check("an emptied salt goes back to the Salt mod", returned == 1)
+check("an emptied salt goes to the tag's onEmptied handler", returned == 1)
 returned = nil
 Uses.take(carrying({ thing("base:vinegar", 1) }), "base:vinegar", 1)
 check("other emptied things don't", returned == nil)
+check("onEmptied names a missing handler", not pcall(Uses.onEmptied, "base:salt", nil))
 Uses.take(nil, "base:salt", 1)
 check("no character, nothing taken", true)
 
@@ -88,6 +90,7 @@ local function food(fullType, uses)
     function o:getFullType() return self.fullType end
     function o:getCurrentUses() return self.uses end
     function o:setCurrentUses(n) self.uses = n end
+    function o:getWorldItem() return nil end
     function o:getContainer() return { DoRemoveItem = function() o.removed = true end } end
     return o
 end
@@ -115,6 +118,16 @@ filler.take({ getAllKeepInputItems = function() return H.list({ oats }) end }, c
 check("take: 12 uses of oats, the part-used bag first", more.removed and oats.uses == 3)
 check("the line is found by its item list", Charge.forScriptLine("item 1 [Base.BarleySeed;Base.OatsRaw] mode:keep") == filler
     and filler.need("Base.OatsRaw") == 12 and Charge.forScriptLine("item 1 [Base.OatsRaw] mode:keep") == nil)
+check("and found again from the kept key", Charge.forScriptLine("item 1 [Base.BarleySeed;Base.OatsRaw] mode:keep") == filler
+    and Charge.forScriptLine("item 1 [Base.OatsRaw] mode:keep") == nil and Charge.forScriptLine("no list") == nil
+    and Charge.forScriptLine(nil) == nil)
+Charge.forScriptLine("item 1 [Base.Rye]")
+local late = Charge.line({ ["Base.Rye"] = { count = 4 } })
+check("a line registered after its script line was asked for is found", Charge.forScriptLine("item 1 [Base.Rye]") == late)
+check("Charge.line refuses the same kinds twice", not pcall(Charge.line, { ["Base.OatsRaw"] = { uses = 1 }, ["Base.BarleySeed"] = { count = 1 } }))
+check("uses and count both, or neither, or none above 0, or no kinds",
+    not pcall(Charge.line, { ["A.B"] = { uses = 1, count = 1 } }) and not pcall(Charge.line, { ["A.C"] = {} })
+    and not pcall(Charge.line, { ["A.D"] = { count = 0 } }) and not pcall(Charge.line, {}))
 
 -- Station.onHeatNear: one look a minute near each player, each watcher told of the containers at its heat or hotter.
 local Station = require "TraditionalPreservationCore/Station"

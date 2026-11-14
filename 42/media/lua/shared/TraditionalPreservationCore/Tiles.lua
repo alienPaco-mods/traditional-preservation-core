@@ -39,5 +39,5 @@ return {
     CHAMBERS = { "traditionalpreservationcore_01_32", "traditionalpreservationcore_01_33", "traditionalpreservationcore_01_34", "traditionalpreservationcore_01_35" },
     CHAMBER_STACKS = 6,
     CHAMBER_ENTRY = 36,
-    CHAMBER_HAM = 44,
+    CHAMBER_READY = 44,
 }

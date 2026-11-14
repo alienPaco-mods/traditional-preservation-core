@@ -6,10 +6,13 @@ local UI = require "TraditionalPreservationCore/UI"
 local HearthUI = require "TraditionalPreservationCore/HearthUI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
-local Tiles = require "TraditionalPreservationCore/Tiles"
 
 Hearth.connect({
     id = Smokehouse.ID,
+    connectText = "ContextMenu_TraditionalPreservationCore_ConnectFirebox",
+    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectFirebox",
+    disconnectHelp = "IGUI_TraditionalPreservationCore_DisconnectHelp",
+    icon = "media/textures/Item_TPFirebox.png",
     notes = function(_, notes, part)
         local kit = part and Smokehouse.FLUE_KITS[part.kind]
         if kit then table.insert(notes, UI.say("IGUI_TraditionalPreservationCore_FlueJoined", getText(kit.name))) end
@@ -26,10 +29,7 @@ local function onFillChamberMenu(playerNum, context, worldobjects, test)
             local spec = Hearth.connection(Smokehouse.ID)
             local firebox, joined = Smokehouse.joinedFirebox(object)
             if firebox then return HearthUI.addDisconnect(context, playerObj, firebox, joined.tile, spec) end
-            local candidates = Smokehouse.fireboxesBy(object)
-            -- One that may join first, so a refusal shows only when none fits.
-            table.sort(candidates, function(a, b) return (Smokehouse.connectRefusalFor(a) == nil) and (Smokehouse.connectRefusalFor(b) ~= nil) end)
-            local found = candidates[1]
+            local found = Smokehouse.connectCandidate(object)
             if found then HearthUI.addConnect(context, playerObj, found.firebox, found.tile, spec) end
             return
         end
@@ -44,7 +44,5 @@ UI.keepInPlace(function(object)
 end)
 
 -- The shed stands in the open or under an open roof, never in a room, and keeps its door's front free.
-local chambers = {}
-for _, name in ipairs(Tiles.CHAMBERS) do chambers[name] = true end
-UI.notInRooms(chambers)
-UI.keepDoorsFree(chambers)
+UI.notInRooms(Smokehouse.CHAMBER_NAMES)
+UI.keepDoorsFree(Smokehouse.CHAMBER_NAMES)

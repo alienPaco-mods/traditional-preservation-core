@@ -22,7 +22,7 @@ check("anything else isn't a chamber tile", Smokehouse.tileOfName(name(Tiles.CHA
     and Smokehouse.tileOfName(name(Tiles.CHAMBER - 1)) == nil and Smokehouse.tileOfName(nil) == nil)
 check("an entry overlay isn't a chamber tile", Smokehouse.tileOfName(name(Tiles.CHAMBER_ENTRY)) == nil)
 check("nor is another mod's tile", Smokehouse.tileOfName("traditionalpreservationfishmeat_02_448") == nil)
-check("the chamber, its entries and the ham fit the core's sheet", Tiles.CHAMBER_HAM + 1 < Tiles.SHEETS[1].tiles)
+check("the chamber, its entries and the ham fit the core's sheet", Tiles.CHAMBER_READY + 1 < Tiles.SHEETS[1].tiles)
 check("each door tile opens its way, the back tiles have no door", Doors.facingOf(name(Tiles.CHAMBER + 1)) == "S"
     and Doors.facingOf(name(Tiles.CHAMBER + 3)) == "E" and Doors.facingOf(name(Tiles.CHAMBER)) == nil)
 check("the shed takes 6 stacks", Smokehouse.STACKS == 6)
@@ -50,10 +50,10 @@ check("trench, facing S, door tile", Smokehouse.entrySprite("Stones", 0, 1, 1, 0
 check("trench, facing E, back tile", Smokehouse.entrySprite("Stones", 1, 0, 0, 1) == Tiles.CHAMBER_ENTRY + 6)
 check("nothing on hidden sides", Smokehouse.entrySprite("Pipe", 0, 0, -1, 0) == nil and Smokehouse.entrySprite("Pipe", 0, 0, 0, -1) == nil)
 check("nothing when the flue isn't laid", Smokehouse.entrySprite(nil, 0, 0, 1, 0) == nil)
-check("the ham hangs on the door's tile while stacks wait", Smokehouse.hamSprite(0, 1, true) == Tiles.CHAMBER_HAM
-    and Smokehouse.hamSprite(1, 1, true) == Tiles.CHAMBER_HAM + 1)
-check("never on the back tile, nor with nothing finished", Smokehouse.hamSprite(0, 0, true) == nil and Smokehouse.hamSprite(0, 1, false) == nil)
-check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_HAM) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_HAM)
+check("the ham hangs on the door's tile while stacks wait", Smokehouse.readySprite(0, 1, true) == Tiles.CHAMBER_READY
+    and Smokehouse.readySprite(1, 1, true) == Tiles.CHAMBER_READY + 1)
+check("never on the back tile, nor with nothing finished", Smokehouse.readySprite(0, 0, true) == nil and Smokehouse.readySprite(0, 1, false) == nil)
+check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_READY) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_READY)
 
 -- The shed's own refusals (Hearth.connectRefusal asks them after "already joined").
 check("a long side of a free shed joins", Smokehouse.chamberRefusal({ allowed = true }) == nil)

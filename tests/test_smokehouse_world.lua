@@ -70,7 +70,7 @@ check("either tile finds the slots", Smokehouse.slotTile(door) == back and Smoke
 local full = chamber(20, 20, Tiles.CHAMBER, true, 2)
 local fullDoor = chamber(20, 21, Tiles.CHAMBER + 1, false)
 World.refresh(fullDoor)
-check("finished stacks waiting hang a ham by the door", table.concat(fullDoor.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_HAM)
+check("finished stacks waiting hang a ham by the door", table.concat(fullDoor.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_READY)
 World.refresh(full)
 check("never on the back tile", #full.sprites == 0)
 
@@ -91,6 +91,35 @@ check("the shed knows its fire", Smokehouse.joinedFirebox(door) == firebox and S
 local redraws = back.clears
 World.refresh(back)
 check("and doesn't redraw while nothing changes", back.clears == redraws)
+
+-- The connection's lookups find the tile from the Firebox's own squares, and refuse a tile it isn't beside.
+local flue = Hearth.connection(Smokehouse.ID)
+check("finds: the chamber tile on the flue's side", flue.finds(firebox) == back and flue.joined(firebox) == back)
+check("a shed already joined refuses another", flue.refusal(firebox, back) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
+check("a tile the Firebox isn't beside counts as not allowed", flue.refusal(firebox, full) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
+
+-- Connect on a shed with two Fireboxes beside it offers the one that may join, whichever is found first (rule 9).
+local function fireboxAt(x, y)
+    local fire = { square = square(x, y), modData = {} }
+    table.insert(fire.square.objects, fire)
+    function fire:getModData() return self.modData end
+    function fire:getSquare() return self.square end
+    return fire
+end
+local shed = chamber(30, 30, Tiles.CHAMBER, true, 0)
+chamber(30, 31, Tiles.CHAMBER + 1, false)
+local west, east = fireboxAt(29, 30), fireboxAt(31, 30)
+local refusal = Hearth.connectRefusal
+Hearth.isFire = function(object) return object == west or object == east end
+for _, refused in ipairs({ west, east }) do
+    Hearth.connectRefusal = function(fire) return fire == refused and "refused" or nil end
+    local found = Smokehouse.connectCandidate(shed)
+    check("two Fireboxes, " .. (refused == west and "west" or "east") .. " refused: the other is offered",
+        found ~= nil and found.firebox ~= refused)
+end
+Hearth.connectRefusal = function() return "refused" end
+check("both refused: the first found, for its refusal", Smokehouse.connectCandidate(shed).firebox == Smokehouse.fireboxesBy(shed)[1].firebox)
+Hearth.connectRefusal = refusal
 Hearth.isFire, Hearth.flueSquare = isFire, flueSquare
 
 H.done()

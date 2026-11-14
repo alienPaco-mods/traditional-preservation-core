@@ -1,6 +1,6 @@
 -- Traditional Preservation core: keeps track of every Smokehouse chamber tile and draws its look. The chamber is
 -- closed: nothing hangs in sight. Each tile shows where a joined Firebox's flue enters it, master or not (the other
--- tile has no slots), and the door's tile a ham while finished stacks wait. What hangs inside is stepped by the mod
+-- tile has no slots), and the door's tile a ham (Smokehouse.readySprite) while finished stacks wait. What hangs inside is stepped by the mod
 -- that owns each stack (Smokehouse.startCounters).
 if isClient() then return end
 
@@ -27,9 +27,9 @@ local function refresh(station, entry)
     local face, part = Smokehouse.tileOf(station)
     local sprites = {}
     local flue = Smokehouse.chamberEntry(station)
-    local ham = Smokehouse.hamSprite(face, part, part == 1 and hasFinished(station))
+    local ready = Smokehouse.readySprite(face, part, part == 1 and hasFinished(station))
     if flue then table.insert(sprites, Smokehouse.spriteName(flue)) end
-    if ham then table.insert(sprites, Smokehouse.spriteName(ham)) end
+    if ready then table.insert(sprites, Smokehouse.spriteName(ready)) end
     Station.showSprites(station, entry, table.concat(sprites, ","), sprites)
 end
 

@@ -191,8 +191,8 @@ CHAMBER_FOOT_SHADE = 0.5
 CHAMBER_ENTRY = 36
 FLUE_KINDS = ["Pipe", "Stones"]
 # A ham hung by the door while finished stacks wait in the chamber (user's idea): one overlay per face, on the
-# door's tile, on the door's end wall beside the door.
-CHAMBER_HAM = 44
+# door's tile, on the door's end wall beside the door. Named for what it means, not the ham (Core names no product).
+CHAMBER_READY = 44
 HAM_A = -0.44             # across the end wall (was -0.37, moved out for the wider door), on the door's far side from the long wall in view: it overhangs the corner
 HAM_TOP = 98              # px up to the bone's knob; the nail is above it
 HAM_SCALE = 1.35          # its width against the first ham's
@@ -1049,7 +1049,7 @@ for face_index, face in enumerate(FACES):
                                                        ("solidtrans", ""), ("ForceSingleItem", ""), ("SpriteGridPos", grid)]
         for kind in FLUE_KINDS:
             TILE_PROPS[chamber_entry_index(kind, face_index, part)] = [("Facing", face)]
-    TILE_PROPS[CHAMBER_HAM + face_index] = [("Facing", face)]
+    TILE_PROPS[CHAMBER_READY + face_index] = [("Facing", face)]
 
 
 # --- The Smokehouse chamber ----------------------------------------------------------------------------------
@@ -1393,12 +1393,12 @@ def lua_tiles():
         "FIREBOXES": [prefix + str(base + offset) for base in FIREBOX_LOOKS.values() for offset in range(len(FACES))],
         "FIREBOX_GLOWS": FIREBOX_GLOWS,
         # The Smokehouse chamber: both tiles of each face (back, then the door's), its stacks, the flue's entry
-        # overlays (Pipe then Stones, each face, each part) and the ham by the door, one a face.
+        # overlays (Pipe then Stones, each face, each part) and the ready overlay (a ham) by the door, one a face.
         "CHAMBER": CHAMBER,
         "CHAMBERS": [prefix + str(chamber_index(face, part)) for face in range(len(FACES)) for part in range(2)],
         "CHAMBER_STACKS": CHAMBER_STACKS,
         "CHAMBER_ENTRY": CHAMBER_ENTRY,
-        "CHAMBER_HAM": CHAMBER_HAM,
+        "CHAMBER_READY": CHAMBER_READY,
     }
 
 
@@ -1436,7 +1436,7 @@ def main():
             tiles[chamber_index(face, part)] = paint_chamber(FACES[face], part)
             for kind in FLUE_KINDS:
                 tiles[chamber_entry_index(kind, face, part)] = paint_chamber_entry(kind, FACES[face], part)
-        tiles[CHAMBER_HAM + face] = paint_chamber_ham(FACES[face])
+        tiles[CHAMBER_READY + face] = paint_chamber_ham(FACES[face])
     (media / "texturepacks").mkdir(parents=True, exist_ok=True)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)

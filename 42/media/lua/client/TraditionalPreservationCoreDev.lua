@@ -224,7 +224,7 @@ function TPC.stone()
     if not firebox then return end
     local state = Hearth.fireStateOf(firebox)
     local sides = {}
-    for _, side in ipairs({ "Back", "Left", "Right" }) do
+    for _, side in ipairs(require("TraditionalPreservationCore/HearthConnect").SIDES) do
         local square = Hearth.flueSquare(firebox, side)
         table.insert(sides, string.format("%s %s", side, square and (square:getX() .. "," .. square:getY()) or "-"))
     end

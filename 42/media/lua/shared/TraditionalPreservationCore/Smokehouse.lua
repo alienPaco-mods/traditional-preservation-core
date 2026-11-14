@@ -5,10 +5,9 @@
 -- (Hearth.connect, id ID), so Core's Connect / Disconnect build it: the link lives on the Firebox alone (its kind and
 -- side under ID in tpHearth), the chamber tile it joins is the square on that side. It blocks only its own slot: the
 -- Cauldron fits while it is joined. Each chamber tile is checked on its own, so a bigger shed can reuse the rules.
--- What hangs inside is each mod's: a stack records its owner when it starts (startCounters), and a mod steps only
--- its own stacks. The core counts the joined fire for them: hot, the hours of the stoked session now running
--- (Hearth.logFire), and cold, banked hours and the hours of stoked sessions that broke off (fireStep).
+-- What hangs inside is each mod's, counted by SmokehouseStacks (startCounters, fireStep, ...), passed on here.
 local Hearth = require "TraditionalPreservationCore/Hearth"
+local HearthConnect = require "TraditionalPreservationCore/HearthConnect"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 
@@ -41,6 +40,11 @@ Smokehouse.FLUE_KITS = {
 }
 
 local FACES = #Tiles.CHAMBERS / 2
+-- Each facing's door, as Doors names it.
+local FACE_LETTER = { [0] = "S", [1] = "E" }
+-- The flue's entry overlays come in FLUE_KINDS order, as tools/build_tileset.py lays them out.
+local ENTRY_ORDER = {}
+for n, kind in ipairs(Smokehouse.FLUE_KINDS) do ENTRY_ORDER[kind] = n - 1 end
 -- World steps (+x east, +y south) by facing (0 S, 1 E): towards the door's end, and to the long side the camera sees.
 local DOOR_STEP = { [0] = { 0, 1 }, [1] = { 1, 0 } }
 local VISIBLE_STEP = { [0] = { 1, 0 }, [1] = { 0, 1 } }
@@ -50,10 +54,14 @@ local SIDES = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
 local TILE_OF = {}
 for n, name in ipairs(Tiles.CHAMBERS) do TILE_OF[name] = { math.floor((n - 1) / 2), (n - 1) % 2 } end
 
+-- The chamber's sprite names as a set (name -> true), for the placement rules.
+Smokehouse.CHAMBER_NAMES = {}
+for name in pairs(TILE_OF) do Smokehouse.CHAMBER_NAMES[name] = true end
+
 -- The door's tile of each facing needs its front free, as the Firebox's door does (Doors).
 do
     local doors = {}
-    for face = 0, FACES - 1 do doors[Tiles.CHAMBERS[face * 2 + 2]] = face == 0 and "S" or "E" end
+    for face = 0, FACES - 1 do doors[Tiles.CHAMBERS[face * 2 + 2]] = FACE_LETTER[face] end
     Doors.register(doors)
 end
 
@@ -98,15 +106,16 @@ end
 function Smokehouse.entrySprite(kind, face, part, dx, dy)
     local step = VISIBLE_STEP[face]
     if dx ~= step[1] or dy ~= step[2] then return nil end
-    local kindIndex = kind == "Stones" and 1 or kind == "Pipe" and 0
+    local kindIndex = ENTRY_ORDER[kind]
     if not kindIndex then return nil end
     return Tiles.CHAMBER_ENTRY + (kindIndex * FACES + face) * 2 + part
 end
 
--- The ham hung by the door while finished stacks wait in the shed (user's idea): on the door's tile only, by facing.
-function Smokehouse.hamSprite(face, part, finished)
+-- The overlay hung by the door while finished stacks wait in the shed (a ham, the user's idea): on the door's tile
+-- only, by facing.
+function Smokehouse.readySprite(face, part, finished)
     if part ~= 1 or not finished then return nil end
-    return Tiles.CHAMBER_HAM + face
+    return Tiles.CHAMBER_READY + face
 end
 
 -- The shed's own refusal, as a translation key, or nil (Hearth.connectRefusal asks it after "already joined").
@@ -128,24 +137,24 @@ local function squareAt(square, dx, dy)
     return getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
 end
 
--- The chamber tile on a square, with its facing and part.
-function Smokehouse.chamberOn(square)
+-- The first object on a square that test(object) answers, with the two values test gave back.
+local function firstOn(square, test)
     if not square then return nil end
     local objects = square:getObjects()
     for i = 0, objects:size() - 1 do
         local object = objects:get(i)
-        local face, part = Smokehouse.tileOf(object)
-        if face then return object, face, part end
+        local a, b = test(object)
+        if a then return object, a, b end
     end
 end
 
+-- The chamber tile on a square, with its facing and part.
+function Smokehouse.chamberOn(square)
+    return firstOn(square, Smokehouse.tileOf)
+end
+
 local function fireboxOn(square)
-    if not square then return nil end
-    local objects = square:getObjects()
-    for i = 0, objects:size() - 1 do
-        local object = objects:get(i)
-        if Hearth.isFire(object) then return object end
-    end
+    return (firstOn(square, Hearth.isFire))
 end
 
 -- A Firebox's flue kind (Pipe or Stones) and side if it's joined to a Smokehouse, else nil.
@@ -182,6 +191,12 @@ function Smokehouse.slotTile(tile)
     return tile
 end
 
+-- fireboxesBy's entry for a Firebox one step (sx, sy) from a chamber tile.
+local function entryOf(firebox, tile, face, part, sx, sy)
+    return { firebox = firebox, tile = tile, face = face, part = part, dx = -sx, dy = -sy,
+        allowed = Smokehouse.sideAllowed(face, part, sx, sy) }
+end
+
 -- Every Firebox beside a chamber tile, joined or not: { firebox, tile, face, part, dx, dy, allowed }.
 function Smokehouse.fireboxesBy(tile)
     local found = {}
@@ -189,10 +204,7 @@ function Smokehouse.fireboxesBy(tile)
         local here, face, part = entry[1], entry[2], entry[3]
         for _, step in ipairs(SIDES) do
             local firebox = fireboxOn(squareAt(here:getSquare(), step[1], step[2]))
-            if firebox then
-                table.insert(found, { firebox = firebox, tile = here, face = face, part = part, dx = -step[1], dy = -step[2],
-                    allowed = Smokehouse.sideAllowed(face, part, step[1], step[2]) })
-            end
+            if firebox then table.insert(found, entryOf(firebox, here, face, part, step[1], step[2])) end
         end
     end
     return found
@@ -212,16 +224,20 @@ function Smokehouse.fireOf(tile)
     return firebox and Hearth.stateOf(firebox:getModData()) or nil, firebox
 end
 
--- The entry fireboxesBy gives for this Firebox beside this chamber tile, or nil.
+-- The entry fireboxesBy gives for this Firebox beside this chamber tile, or nil, from the two squares alone (no scan
+-- round the shed): the Firebox one step away and the first fire on its square, as fireboxesBy finds it.
 local function entryFor(firebox, tile)
-    for _, found in ipairs(Smokehouse.fireboxesBy(tile)) do
-        if found.firebox == firebox and found.tile == tile then return found end
-    end
+    local face, part = Smokehouse.tileOf(tile)
+    local here, there = face and tile:getSquare(), firebox:getSquare()
+    if not (here and there) or here:getZ() ~= there:getZ() then return nil end
+    local sx, sy = there:getX() - here:getX(), there:getY() - here:getY()
+    if math.abs(sx) + math.abs(sy) ~= 1 or fireboxOn(there) ~= firebox then return nil end
+    return entryOf(firebox, tile, face, part, sx, sy)
 end
 
 -- The chamber tile beside a Firebox that it could join, or the one it's joined to: { tile, ... } as fireboxesBy, or nil.
-function Smokehouse.chamberBy(firebox)
-    for _, side in ipairs({ "Back", "Left", "Right" }) do
+local function chamberBy(firebox)
+    for _, side in ipairs(HearthConnect.SIDES) do
         local tile = Smokehouse.chamberOn(Hearth.flueSquare(firebox, side))
         local found = tile and entryFor(firebox, tile)
         if found then return found end
@@ -233,20 +249,23 @@ function Smokehouse.connectRefusalFor(found)
     return Hearth.connectRefusal(found.firebox, Hearth.connection(Smokehouse.ID), found.tile)
 end
 
+-- The Firebox the chamber's Connect offers: the first beside it that may join, so a refusal shows only when none
+-- fits (then the first found); fireboxesBy's entry, or nil with none beside it. Never by a sort (rule 9).
+function Smokehouse.connectCandidate(tile)
+    local candidates = Smokehouse.fireboxesBy(tile)
+    for _, found in ipairs(candidates) do
+        if Smokehouse.connectRefusalFor(found) == nil then return found end
+    end
+    return candidates[1]
+end
+
 local function redrawChamber(tile)
     if not (tile and Smokehouse.World) then return end
     for _, entry in ipairs(Smokehouse.chamberTiles(tile)) do Smokehouse.World.refresh(entry[1]) end
 end
 
--- Lays the flue, or takes it up (kind nil), at once. The Firebox and both chamber tiles redraw.
-function Smokehouse.setFlue(firebox, tile, kind)
-    local state = Hearth.stateOf(firebox:getModData())
-    if kind then Hearth.join(state, Smokehouse.ID, kind, Hearth.flueSideTo(firebox, tile:getSquare())) else Hearth.unjoin(state) end
-    if Hearth.World then Hearth.World.refresh(firebox) end
-    redrawChamber(tile)
-end
-
--- The flue as a Hearth connection: Core's Connect / Disconnect build it, its menu texts and notes are SmokehouseUI's.
+-- The flue as a Hearth connection: Core's Connect / Disconnect build it; its menu texts, icon and notes are
+-- SmokehouseUI's.
 Hearth.connect({
     id = Smokehouse.ID,
     kinds = Smokehouse.FLUE_KINDS,
@@ -254,7 +273,7 @@ Hearth.connect({
     blocks = "connection",
     smoke = true,
     finds = function(fire)
-        local found = Smokehouse.chamberBy(fire)
+        local found = chamberBy(fire)
         return found and found.tile
     end,
     joined = function(fire) return Smokehouse.joinedChamber(fire) end,
@@ -263,10 +282,6 @@ Hearth.connect({
         return Smokehouse.chamberRefusal({ chamberJoined = Smokehouse.joinedFirebox(tile) ~= nil, allowed = found and found.allowed })
     end,
     onChange = function(_, tile) redrawChamber(tile) end,
-    connectText = "ContextMenu_TraditionalPreservationCore_ConnectFirebox",
-    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectFirebox",
-    disconnectHelp = "IGUI_TraditionalPreservationCore_DisconnectHelp",
-    icon = "media/textures/Item_TPFirebox.png",
 })
 
 -- The overlay a chamber tile shows now: where a joined Firebox's flue enters it, if the camera sees that side.
@@ -279,72 +294,9 @@ function Smokehouse.chamberEntry(tile)
     return Smokehouse.entrySprite(Smokehouse.flueOf(firebox), face, part, step[1], step[2])
 end
 
--- The stacks
-
--- Starts a new stack's fire counters: owner is the mod whose recipe hung it (its id), hotNeed the stoked hours in
--- a row its cook takes (nil for a stack that never cooks).
-function Smokehouse.startCounters(modData, owner, hotNeed)
-    modData.smokeOwner = owner
-    modData.hotNeed = hotNeed
-    modData.hot, modData.hotCool, modData.cold = 0, 0, 0
-    modData.smokeFrom, modData.smokeSession, modData.lastStoked, modData.lastBanked = nil, nil, nil, nil
-end
-
--- Whether a stack is this mod's to step.
-function Smokehouse.owns(modData, owner)
-    return modData.smokeOwner == owner
-end
-
-local function hotToCold(modData)
-    modData.cold = (modData.cold or 0) + (modData.hotCool or modData.hot or 0)
-    modData.hot, modData.hotCool = 0, 0
-end
-
--- Brings a stack's counters up to the fire's record (a Firebox's Hearth state), or none (not joined). A new or
--- rebuilt Firebox starts from what it has now; whatever hot the stack had becomes cold, as it does when the session
--- it counted in ends. Of the stoked hours since the last look, those in a session that has since begun are hot.
--- coolShare (default 1) is the share of the hours since the last look that were cool enough for cold smoke: fire
--- hours count as cold only then, stoked or banked, so hot keeps its cool part (hotCool) for when its session breaks
--- off. A stack marked noHot takes no cook: its stoked hours are smoke at once.
--- Returns the stoked and banked hours since the last look for the mod's own use (its drying by the fire's warmth),
--- or nil when the stack starts counting from this fire (none, or another).
-function Smokehouse.fireStep(modData, fire, coolShare)
-    coolShare = coolShare or 1
-    modData.burning = fire and fire.fireMode or nil
-    if not fire or fire.fireId ~= modData.smokeFrom or (fire.stokedHours or 0) < (modData.lastStoked or 0) then
-        hotToCold(modData)
-        if fire and fire.fireId then
-            modData.smokeFrom, modData.smokeSession = fire.fireId, fire.session
-            modData.lastStoked, modData.lastBanked = fire.stokedHours or 0, fire.bankedHours or 0
-        else
-            modData.smokeFrom, modData.smokeSession = nil, nil
-        end
-        return nil
-    end
-    local stoked = (fire.stokedHours or 0) - modData.lastStoked
-    local banked = math.max((fire.bankedHours or 0) - (modData.lastBanked or 0), 0)
-    -- No session running now: whatever was stoked since belonged to one that has ended (even one that began and
-    -- ended between two looks, while away).
-    if not fire.session or fire.session ~= modData.smokeSession then
-        local inNew = fire.session and math.min(stoked, (fire.stokedHours or 0) - fire.sessionBase) or 0
-        hotToCold(modData)
-        modData.cold = modData.cold + (stoked - inNew) * coolShare
-        modData.hot, modData.hotCool = inNew, inNew * coolShare
-        modData.smokeSession = fire.session
-    else
-        modData.hotCool = (modData.hotCool or modData.hot) + stoked * coolShare
-        modData.hot = modData.hot + stoked
-    end
-    modData.cold = modData.cold + banked * coolShare
-    modData.lastStoked, modData.lastBanked = fire.stokedHours or 0, fire.bankedHours or 0
-    if modData.noHot then hotToCold(modData) end
-    return stoked, banked
-end
-
--- Whether a stack's hot counter has done its cook.
-function Smokehouse.hotDone(modData)
-    return modData.hotNeed ~= nil and not modData.noHot and (modData.hot or 0) >= modData.hotNeed
-end
+-- The stacks: SmokehouseStacks', reached here so no caller changes (DEVGUIDE refactoring rule 5).
+local SmokehouseStacks = require "TraditionalPreservationCore/SmokehouseStacks"
+for _, name in ipairs({ "startCounters", "owns", "fireStep", "hotDone" }) do Smokehouse[name] = SmokehouseStacks[name] end
 
 TraditionalPreservationCore = TraditionalPreservationCore or {}
 

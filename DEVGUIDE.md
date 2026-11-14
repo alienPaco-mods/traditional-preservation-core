@@ -138,7 +138,8 @@ mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
 `OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../HearthConnect.lua` (connections), `.../HearthPlace.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
-Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
+Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13; the one name callers use, passing on
+`.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
@@ -164,7 +165,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 4. **Modules only the required mod has:** `Hearth` (the Stone Hearth and its cauldron, save key `tpHearth`, the opt-in "by
    a fire" place, hooks) and `Cauldron`, its `Tiles`, the server's `HearthWorld`, and the client's `HearthUI`, `CauldronUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
-   mods can't both ship; the Smokehouse's three files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
+   mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
    makes a click on the station open it.

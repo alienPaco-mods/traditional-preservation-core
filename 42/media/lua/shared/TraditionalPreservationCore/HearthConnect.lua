@@ -15,6 +15,8 @@ HearthConnect.FLUE_SIDES = {
     [0] = { Back = { 0, -1 }, Left = { -1, 0 }, Right = { 1, 0 } },
     [1] = { Back = { -1, 0 }, Left = { 0, -1 }, Right = { 0, 1 } },
 }
+-- FLUE_SIDES' sides in the order a search goes through them.
+HearthConnect.SIDES = { "Back", "Left", "Right" }
 
 -- connect(spec) registers one by spec.id, or adds the fields given to one already registered (Hearth.registry), so
 -- its rules can be given in shared Lua and its notes in client Lua. kinds and kits come together, a kit for every

@@ -6,31 +6,31 @@
 -- counts at FRIDGE_C by the clock, a powered freezer not at all.
 --
 -- Stages: Fresh, then Turned (each fresh fluid swapped for its twin: soured milk) at turnHours, then Spoiled (each
--- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours. A scalded record never turns: scalding kills what
--- would sour it, so it stays fresh until spoilHours and then spoils. A kind may name a scalded twin for each fresh fluid
--- (Cow's Milk (Scalded)): while a fresh record is scalded its fresh fluids go by that name, and by the plain one again once
--- raw is mixed in. A kind may also name a scalding heat (scaldHeat, vanilla item heat): fluid seen in an item that hot,
--- on a stove or a fire, is scalded from then on, as vanilla's boiling makes tainted water clean. With a hold
--- (scaldHold, hours) it scalds only once it has been that hot for so long in all: an item counts its hours under
--- HELD_KEY, a cauldron by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep
--- their own scalded flag.
+-- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours.
 --
--- Treatments (states, optional): a kind may also name what can be done to its fresh fluid to keep it longer, each with
--- its own twin and spoilHours (Fish & Meat's blood: Salted, Vinegared, and Cured for both). A record keeps the
--- treatments done (treated = { Salted = true }); the state is the one whose treatments match exactly. A treated
--- record never turns either. Fluid seen for the first time under a state's name takes that state.
+-- States (optional): a kind may name variants of its fresh fluid, each with its own name for each fresh fluid and,
+-- if it keeps longer, its own spoilHours (Fish & Meat's blood: Cured; Dairy's milk: Scalded, Cow's Milk (Scalded)).
+-- A record keeps the treatments done (treated = { Cured = true }); its state is the one whose treatments match
+-- exactly. A record in a state never turns: it stays fresh until its spoilHours and then spoils. Fluid seen for the
+-- first time under a state's name takes that state; a mix of two states' names takes none.
+-- Most states are done by hand (FluidTreat). One state may be made by heat instead (heat = true: scalding kills what
+-- would sour milk): a kind may name a scalding heat (scaldHeat, vanilla item heat), and fluid seen in an item that
+-- hot, on a stove or a fire, takes the heat state from then on, as vanilla's boiling makes tainted water clean. With a
+-- hold (scaldHold, hours) only once it has been that hot for so long in all: an item counts its hours under HELD_KEY,
+-- a cauldron by Hearth.heldHours. The hold is counted even with the kind's ageing off, for mods that keep their own
+-- scalded flag. A fluid is in one state at a time: heat leaves a fluid already in a state as it is, and a treatment
+-- by hand replaces the heat state.
 --
--- Pouring: the older age wins, and a raw share makes the whole lot raw again (and an untreated share untreated: a
--- mix keeps only the treatments both sides had). An empty container takes the source's
--- record, so pouring never makes milk young. Sealed items (store milk) keep their own fluid without a record; poured
--- out, it counts as scalded. Every rule here works on plain tables; the engine parts are at the end. Treating by hand
+-- Pouring: the older age wins, and a raw share makes the whole lot raw again (a mix keeps only the treatments both
+-- sides had). An empty container takes the source's record, so pouring never makes milk young. Sealed items (store
+-- milk) keep their own fluid without a record; poured out, it is in the heat state. Every rule here works on plain tables; the engine parts are at the end. Treating by hand
 -- (the treat menu, the uses it takes) is FluidTreat's; its functions are reached here too.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 
 local FluidAgeing = {}
 
--- Save key: never rename it once the mod is out. Inside: kind, age, scalded, treated, place, marks, hour.
+-- Save key: never rename it once the mod is out. Inside: kind, age, treated, place, marks, hour.
 FluidAgeing.KEY = "tpFluidAge"
 FluidAgeing.FRIDGE = "Fridge"
 FluidAgeing.FREEZER = "Freezer"
@@ -51,20 +51,19 @@ local FIRST_HOT_LOOK = 1e-6
 --   spoiled       { fresh name = what it ends as }
 --   getLedger     function(): the mod's weather ledger
 --   optional:
---   scalded       { fresh name = its scalded twin }
---   scaldHeat     vanilla item heat that scalds it
---   scaldHold     hours at scaldHeat before it scalds
+--   scaldHeat     vanilla item heat that brings about the heat state
+--   scaldHold     hours at scaldHeat before it does
 --   sealed        { item fullType = true }: holds the fluid with no record (store milk)
 --   enabled       function(): false while the kind's ageing is off
 --   speed         function(): the sandbox's multiplier on the age
---   states        { name = { fluids = { fresh name = its name in this state }, spoilHours,
---                   of = { treatment names } (default { name }),
+--   states        { name = { fluids = { fresh name = its name in this state }, spoilHours (default the kind's),
+--                   of = { treatment names } (default { name }), heat (true: made by heat, not by hand; one at most),
 --                   kind, rate (the state's own ledger kind and curve, when it slows in the cold unlike the plain
 --                   fluid; the mod's ledger must count that kind) } }
 --   treatments, litresPerUse, treatMenu, treatTooltip: treating by hand (FluidTreat)
 -- }
 -- enabled and speed are asked each time, so the sandbox can change them. register adds spoiledOf, plainOf,
--- stateOfFluid and isSpoiled to the spec, and name and treatments (sorted) to each state.
+-- stateOfFluid, heatState and isSpoiled to the spec, and name and treatments (sorted) to each state.
 local specs = {}
 local byFluid = {}
 local lowestHeat
@@ -86,7 +85,6 @@ function FluidAgeing.register(spec)
         need(spec, field)
     end
     -- What each of the kind's fluids ends as: a fresh fluid, its twin and its spoiled one all end as the spoiled one.
-    -- A scalded fluid ends the same way, and goes back to its plain one (plainOf) when raw is mixed in.
     local claimed = {}
     spec.spoiledOf, spec.plainOf, spec.isSpoiled = {}, {}, {}
     for fresh, twin in pairs(spec.fresh) do
@@ -97,15 +95,11 @@ function FluidAgeing.register(spec)
         claim(spec, claimed, spoiled)
         spec.spoiledOf[fresh], spec.spoiledOf[twin], spec.spoiledOf[spoiled] = spoiled, spoiled, spoiled
         spec.isSpoiled[spoiled] = true
-        local scalded = spec.scalded and spec.scalded[fresh]
-        if scalded then
-            claim(spec, claimed, scalded)
-            spec.spoiledOf[scalded], spec.plainOf[scalded] = spoiled, fresh
-        end
     end
-    -- Each state's treatments, sorted; no two states may have the same ones.
+    -- Each state's treatments, sorted; no two states may have the same ones. A state's fluid ends as its fresh one's
+    -- spoiled fluid, and goes back to the fresh one (plainOf) when raw is mixed in.
     local keys = {}
-    spec.stateOfFluid = {}
+    spec.stateOfFluid, spec.heatState = {}, nil
     for name, state in pairs(spec.states or {}) do
         local of = {}
         for _, treatment in ipairs(state.of or { name }) do table.insert(of, treatment) end
@@ -114,6 +108,11 @@ function FluidAgeing.register(spec)
         local key = table.concat(of, "+")
         assert(not keys[key], "FluidAgeing.register: " .. spec.kind .. " has two states done by " .. key)
         keys[key] = true
+        if state.heat then
+            assert(not spec.heatState, "FluidAgeing.register: " .. spec.kind .. " has two states made by heat")
+            assert(#of == 1 and of[1] == name, "FluidAgeing.register: " .. spec.kind .. "'s heat state " .. name .. " is done by hand")
+            spec.heatState = state
+        end
         for fresh, named in pairs(state.fluids) do
             claim(spec, claimed, named)
             spec.spoiledOf[named], spec.plainOf[named] = spec.spoiled[fresh], fresh
@@ -157,9 +156,14 @@ local function agingOf(record, spec)
     return spec.kind, spec.rate
 end
 
--- True if nothing will turn the record before it spoils: scalded or treated.
+-- True if nothing will turn the record before it spoils: it is in a state.
 local function neverTurns(record)
-    return record.scalded or record.treated ~= nil
+    return record.treated ~= nil
+end
+
+-- True if the record is in the state called name (Dairy's "Scalded").
+function FluidAgeing.inState(record, name)
+    return record ~= nil and record.treated ~= nil and record.treated[name] == true
 end
 
 function FluidAgeing.spec(kind)
@@ -191,9 +195,9 @@ function FluidAgeing.hoursLeft(record, spec)
     return next - record.age
 end
 
--- A new record: nothing done yet, marked on the ledger now.
-function FluidAgeing.newRecord(spec, ledger, now, place, scalded)
-    return { kind = spec.kind, age = 0, scalded = scalded or nil, place = place, hour = now,
+-- A new record, marked on the ledger now: nothing done yet, or in the state called stateName.
+function FluidAgeing.newRecord(spec, ledger, now, place, stateName)
+    return { kind = spec.kind, age = 0, treated = stateName and { [stateName] = true } or nil, place = place, hour = now,
         marks = Weather.mark({}, ledger, spec.kind) }
 end
 
@@ -205,14 +209,15 @@ local function shallowCopy(t)
 end
 
 function FluidAgeing.copy(record)
-    return { kind = record.kind, age = record.age, scalded = record.scalded, treated = shallowCopy(record.treated),
+    return { kind = record.kind, age = record.age, treated = shallowCopy(record.treated),
         markKind = record.markKind, place = record.place, hour = record.hour, marks = shallowCopy(record.marks or {}) }
 end
 
--- Scalds a fresh record (scalding kills what would sour it). Returns true if it is fresh.
+-- Puts a fresh record in the kind's heat state (scalding kills what would sour it), unless it is in a state already.
+-- Returns true if it is fresh.
 local function scaldIfFresh(record, spec)
     if FluidAgeing.stage(record, spec) ~= "Fresh" then return false end
-    record.scalded = true
+    if spec.heatState and not record.treated then record.treated = { [spec.heatState.name] = true } end
     return true
 end
 
@@ -236,10 +241,9 @@ function FluidAgeing.advance(record, spec, ledger, now, place)
     return record
 end
 
--- into takes from: the older age, scalded only while both were, and the treatments both had.
+-- into takes from: the older age and the treatments both had.
 function FluidAgeing.merge(into, from)
     into.age = math.max(into.age, from.age)
-    into.scalded = (into.scalded and from.scalded) or nil
     local shared
     for treatment in pairs(into.treated or {}) do
         if from.treated and from.treated[treatment] then
@@ -294,37 +298,24 @@ local function swap(container, spec, from, to, amount)
 end
 
 -- The name a fluid goes by at a stage: a fresh fluid's twin once turned, its spoiled fluid once spoiled; while fresh,
--- its state's name when treated (state, a spec.states entry), its scalded twin when the record is scalded and its
--- plain one when neither.
-local function nameAt(spec, stage, name, scalded, state)
+-- its state's name when in one (state, a spec.states entry), else its plain one.
+local function nameAt(spec, stage, name, state)
     if stage == "Spoiled" then return spec.spoiledOf[name] or name end
     local plain = spec.plainOf[name] or name
     if stage == "Turned" then return spec.fresh[plain] or name end
     if state then return state.fluids[plain] or name end
-    if scalded and spec.scalded then return spec.scalded[plain] or name end
     return plain
 end
 FluidAgeing.nameAt = nameAt
 
--- True if the fresh fluid in found ({ name = litres }) is all scalded: it came from a cauldron steaming, so a container
--- seen for the first time with it is scalded.
-local function allScalded(spec, found)
-    local any = false
-    for name in pairs(found) do
-        if spec.fresh[name] then return false end
-        if spec.plainOf[name] and not spec.stateOfFluid[name] then any = true end
-    end
-    return any
-end
-
 -- The treatments of the fluid in found ({ name = litres }) if every fresh share of it goes by one state's name: a
--- container seen for the first time with salted blood is salted. Turned and spoiled shares say nothing either way
--- (as for allScalded); a plain, scalded or other state's share makes it nil.
+-- container seen for the first time with cured blood is cured, with scalded milk scalded. Turned and spoiled shares
+-- say nothing either way; a plain or other state's share makes it nil.
 local function treatedIn(spec, found)
     local state
     for name in pairs(found) do
         local named = spec.stateOfFluid[name]
-        if spec.fresh[name] or (named and state and named ~= state) or (not named and spec.plainOf[name]) then
+        if spec.fresh[name] or (named and state and named ~= state) then
             return nil
         end
         state = named or state
@@ -335,11 +326,12 @@ local function treatedIn(spec, found)
     return treated
 end
 
--- A new record for the fluid in found ({ name = litres }): scalded if all of it is (or scalds), treated as its names
--- say.
+-- A new record for the fluid in found ({ name = litres }): in the state its names say, else in the heat state if it
+-- scalds.
 local function startRecord(spec, found, now, place, scalds)
-    local record = FluidAgeing.newRecord(spec, spec.getLedger(), now, place, allScalded(spec, found) or scalds or nil)
+    local record = FluidAgeing.newRecord(spec, spec.getLedger(), now, place)
     record.treated = treatedIn(spec, found)
+    if scalds then scaldIfFresh(record, spec) end
     return record
 end
 
@@ -350,7 +342,7 @@ function FluidAgeing.apply(container, record, spec, found)
     local state = FluidAgeing.state(record, spec)
     local changed = false
     for name, amount in pairs(found or FluidAgeing.amounts(container, spec)) do
-        local target = nameAt(spec, stage, name, record.scalded, state)
+        local target = nameAt(spec, stage, name, state)
         if target ~= name then
             swap(container, spec, name, target, amount)
             changed = true
@@ -459,20 +451,23 @@ function FluidAgeing.look(owner, now, place)
 end
 
 -- The age of the fluid leaving an owner, brought up to now: its record, or for a sealed item (store milk) a new
--- scalded one, since it was pasteurised. Nil when it holds none of a kind's fluid. Call it before the fluid leaves.
+-- one in the heat state, since it was pasteurised. Nil when it holds none of a kind's fluid. Call it before the fluid leaves.
 function FluidAgeing.sourceRecord(source, now)
     local record, spec, sealed = see(source, now)
     if record then return FluidAgeing.copy(record), spec end
     if not sealed then return nil end
-    return FluidAgeing.newRecord(sealed, sealed.getLedger(), now, placeOfOwner(source) or FluidAgeing.DEFAULT_PLACE, true),
-        sealed
+    return FluidAgeing.newRecord(sealed, sealed.getLedger(), now, placeOfOwner(source) or FluidAgeing.DEFAULT_PLACE,
+        sealed.heatState and sealed.heatState.name), sealed
 end
 
 -- holder (a modData table, or a cauldron's state) gets fluid of age record: it takes the record if it held none of
 -- the kind (hadSome false), else the older age.
 function FluidAgeing.receive(holder, record, hadSome, place)
-    -- Raw fluid coming in starts the hold at the heat over.
-    if not record.scalded then holder[FluidAgeing.HELD_KEY] = nil end
+    -- Fluid coming in not in the heat state starts the hold at the heat over.
+    local spec = specs[record.kind]
+    if not (spec and spec.heatState and FluidAgeing.inState(record, spec.heatState.name)) then
+        holder[FluidAgeing.HELD_KEY] = nil
+    end
     local into = hadSome and holder[FluidAgeing.KEY]
     if into and into.kind == record.kind then
         FluidAgeing.merge(into, record)
@@ -486,8 +481,7 @@ end
 -- Brings what a cauldron's state ({ ml, fluid, parts }, Hearth's) holds up to now at the Hearth's place and renames
 -- its fluids for their stage, as a container's are swapped, so turned milk in the cauldron is no longer milk to
 -- anything that reads it. Milk that has steamed in the cauldron for the kind's hold (heldHours, Hearth.heldHours) is
--- scalded from then on, and renamed so; raw milk
--- poured onto it makes it plain again. An empty cauldron forgets; one holding a kind's fluid with no record (filled before
+-- in the heat state from then on, and renamed so; raw milk poured onto it makes it plain again. An empty cauldron forgets; one holding a kind's fluid with no record (filled before
 -- the kind aged, or by a debug command) starts one.
 function FluidAgeing.updateCauldron(cauldron, now, place, heldHours)
     local record = cauldron[FluidAgeing.KEY]
@@ -511,7 +505,7 @@ function FluidAgeing.updateCauldron(cauldron, now, place, heldHours)
     if cauldron.parts then
         local parts, count, most, changed = {}, 0, nil, false
         for name, part in pairs(cauldron.parts) do
-            local renamed = nameAt(spec, stage, name, record.scalded, state)
+            local renamed = nameAt(spec, stage, name, state)
             if not parts[renamed] then count = count + 1 end
             parts[renamed] = (parts[renamed] or 0) + part
             changed = changed or renamed ~= name
@@ -523,7 +517,7 @@ function FluidAgeing.updateCauldron(cauldron, now, place, heldHours)
         cauldron.parts = count > 1 and parts or nil
         cauldron.fluid = most
     elseif cauldron.fluid then
-        cauldron.fluid = nameAt(spec, stage, cauldron.fluid, record.scalded, state)
+        cauldron.fluid = nameAt(spec, stage, cauldron.fluid, state)
     end
     return record, spec
 end
@@ -557,8 +551,8 @@ local function changeRecord(owner, now, change)
     return true
 end
 
--- Marks the fluid an owner holds as scalded (drawn hot from the Hearth's cauldron): a fresh record, or the one it has.
--- Its fresh fluids are renamed to their scalded twins.
+-- Puts the fluid an owner holds in the kind's heat state (drawn hot from the Hearth's cauldron): a fresh record, or
+-- the one it has. Its fresh fluids are renamed to the state's.
 function FluidAgeing.markScalded(owner, now)
     changeRecord(owner, now, scaldIfFresh)
 end
@@ -568,6 +562,8 @@ end
 function FluidAgeing.treat(owner, now, treatment)
     return changeRecord(owner, now, function(record, spec)
         if FluidAgeing.stage(record, spec) ~= "Fresh" then return false end
+        -- A treatment by hand replaces the heat state: one state at a time.
+        if spec.heatState and FluidAgeing.inState(record, spec.heatState.name) then record.treated = nil end
         record.treated = record.treated or {}
         record.treated[treatment] = true
         return true

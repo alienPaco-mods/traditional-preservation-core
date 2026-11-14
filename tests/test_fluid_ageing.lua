@@ -9,6 +9,11 @@ ModData = { getOrCreate = function() return {} end }
 
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 
+-- True if a record is scalded (in milk's heat state).
+local function scalded(record)
+    return FluidAgeing.inState(record, "Scalded")
+end
+
 -- A ledger the test moves by hand: hours of work at each place.
 local ledger = { milkOpen = 0, milkSheltered = 0, milkBasement = 0 }
 local function pass(place, work)
@@ -23,7 +28,7 @@ local spec = FluidAgeing.register({
     spoilHours = 72,
     fresh = { CowMilk = "SourCowMilk", SheepMilk = "SourSheepMilk" },
     spoiled = { CowMilk = "RottenCowMilk", SheepMilk = "RottenSheepMilk" },
-    scalded = { CowMilk = "ScaldedCowMilk", SheepMilk = "ScaldedSheepMilk" },
+    states = { Scalded = { fluids = { CowMilk = "ScaldedCowMilk", SheepMilk = "ScaldedSheepMilk" }, heat = true } },
     sealed = { ["Base.Milk"] = true },
     getLedger = function() return ledger end,
     enabled = function() return on end,
@@ -54,10 +59,10 @@ end
 check("fresh milk is fresh", FluidAgeing.stage({ age = 35 }, spec) == "Fresh")
 check("raw milk turns at 36", FluidAgeing.stage({ age = 36 }, spec) == "Turned")
 check("and spoils at 72", FluidAgeing.stage({ age = 72 }, spec) == "Spoiled")
-check("scalded milk never turns", FluidAgeing.stage({ age = 50, scalded = true }, spec) == "Fresh")
-check("but spoils at the same age", FluidAgeing.stage({ age = 72, scalded = true }, spec) == "Spoiled")
+check("scalded milk never turns", FluidAgeing.stage({ age = 50, treated = { Scalded = true } }, spec) == "Fresh")
+check("but spoils at the same age", FluidAgeing.stage({ age = 72, treated = { Scalded = true } }, spec) == "Spoiled")
 check("hours left: to souring when raw", FluidAgeing.hoursLeft({ age = 30 }, spec) == 6)
-check("to spoiling when scalded", FluidAgeing.hoursLeft({ age = 30, scalded = true }, spec) == 42)
+check("to spoiling when scalded", FluidAgeing.hoursLeft({ age = 30, treated = { Scalded = true } }, spec) == 42)
 
 -- Catching up by place
 local record = FluidAgeing.newRecord(spec, ledger, 0, "Basement")
@@ -82,8 +87,8 @@ speed = 1
 
 -- Mixing
 check("the older age wins", FluidAgeing.merge({ age = 5 }, { age = 40 }).age == 40)
-check("raw milk makes scalded raw", FluidAgeing.merge({ age = 5, scalded = true }, { age = 1 }).scalded == nil)
-check("scalded into scalded stays scalded", FluidAgeing.merge({ age = 5, scalded = true }, { age = 1, scalded = true }).scalded)
+check("raw milk makes scalded raw", not scalded(FluidAgeing.merge({ age = 5, treated = { Scalded = true } }, { age = 1 })))
+check("scalded into scalded stays scalded", scalded(FluidAgeing.merge({ age = 5, treated = { Scalded = true } }, { age = 1, treated = { Scalded = true } })))
 
 -- Looking: records, swaps
 local bucket = item({ CowMilk = 3, SheepMilk = 1 })
@@ -117,11 +122,11 @@ local carton = item({ CowMilk = 1 }, "Base.Milk")
 check("a sealed carton keeps with no record", FluidAgeing.look(carton, 0) == nil and carton.md.tpFluidAge == nil)
 local jug = item({})
 FluidAgeing.pour(carton, jug, 0)
-check("poured out, store milk counts as scalded", jug.md.tpFluidAge and jug.md.tpFluidAge.scalded and jug.md.tpFluidAge.age == 0)
+check("poured out, store milk counts as scalded", jug.md.tpFluidAge and scalded(jug.md.tpFluidAge) and jug.md.tpFluidAge.age == 0)
 local old = item({ CowMilk = 1 })
 old.md.tpFluidAge = { kind = "milk", age = 20, place = "Sheltered", hour = 0, marks = { Sheltered = ledger.milkSheltered } }
 FluidAgeing.pour(old, carton, 0)
-check("raw milk poured into a carton ages there", carton.md.tpFluidAge and carton.md.tpFluidAge.age == 20 and not carton.md.tpFluidAge.scalded)
+check("raw milk poured into a carton ages there", carton.md.tpFluidAge and carton.md.tpFluidAge.age == 20 and not scalded(carton.md.tpFluidAge))
 
 -- Pouring
 local empty = item({})
@@ -152,13 +157,13 @@ check("and the older age when more is poured onto it", cauldron.tpFluidAge.age =
 local pail = item({ CowMilk = 1 })
 FluidAgeing.receive(pail:getModData(), out, false, "Sheltered")
 FluidAgeing.markScalded(pail, 0)
-check("drawn steaming, it is scalded, and renamed so", pail.md.tpFluidAge.scalded and pail.md.tpFluidAge.age == 12
+check("drawn steaming, it is scalded, and renamed so", scalded(pail.md.tpFluidAge) and pail.md.tpFluidAge.age == 12
     and pail.fc.fluids.ScaldedCowMilk == 1 and pail.fc.fluids.CowMilk == nil)
 check("an empty cauldron has no age to give", FluidAgeing.cauldronRecord({ ml = 0, tpFluidAge = { kind = "milk", age = 1 } }, 0, "Open") == nil)
 
 -- Scalded milk in containers
 local jar = item({ ScaldedCowMilk = 1 })
-check("scalded milk seen for the first time is scalded", FluidAgeing.look(jar, 0).scalded and jar.fc.fluids.ScaldedCowMilk == 1)
+check("scalded milk seen for the first time is scalded", scalded(FluidAgeing.look(jar, 0)) and jar.fc.fluids.ScaldedCowMilk == 1)
 local mixed = item({ ScaldedCowMilk = 1, CowMilk = 0.5 })
 mixed.md.tpFluidAge = { kind = "milk", age = 4, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
 FluidAgeing.look(mixed, 0, "Sheltered")
@@ -168,11 +173,11 @@ turned.md.tpFluidAge = { kind = "milk", age = 40, place = "Sheltered", marks = {
 FluidAgeing.look(turned, 0, "Sheltered")
 check("raw again past souring age, it sours", turned.fc.fluids.SourSheepMilk == 1)
 local storeJug = item({ CowMilk = 1 })
-storeJug.md.tpFluidAge = { kind = "milk", age = 0, scalded = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
+storeJug.md.tpFluidAge = { kind = "milk", age = 0, treated = { Scalded = true }, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
 FluidAgeing.look(storeJug, 0, "Sheltered")
 check("store milk poured out is scalded", storeJug.fc.fluids.ScaldedCowMilk == 1)
-check("nameAt: rotten stays rotten", FluidAgeing.nameAt(spec, "Fresh", "RottenCowMilk", true) == "RottenCowMilk")
-check("nameAt: soured is never scalded", FluidAgeing.nameAt(spec, "Fresh", "SourCowMilk", true) == "SourCowMilk")
+check("nameAt: rotten stays rotten", FluidAgeing.nameAt(spec, "Fresh", "RottenCowMilk", spec.states.Scalded) == "RottenCowMilk")
+check("nameAt: soured is never scalded", FluidAgeing.nameAt(spec, "Fresh", "SourCowMilk", spec.states.Scalded) == "SourCowMilk")
 
 -- Scalding on a stove or a fire: the item's own heat
 spec.scaldHeat = 1.5
@@ -181,21 +186,21 @@ check("the lowest scalding heat is worked out at register", FluidAgeing.lowestSc
 local onStove = item({ CowMilk = 2 })
 onStove.heat = 1.6
 function onStove:getItemHeat() return self.heat end
-check("milk first seen on the heat is scalded", FluidAgeing.look(onStove, 0, "Sheltered").scalded and onStove.fc.fluids.ScaldedCowMilk == 2)
+check("milk first seen on the heat is scalded", scalded(FluidAgeing.look(onStove, 0, "Sheltered")) and onStove.fc.fluids.ScaldedCowMilk == 2)
 local warming = item({ SheepMilk = 1 })
 warming.heat = 1.2
 function warming:getItemHeat() return self.heat end
 FluidAgeing.look(warming, 0, "Sheltered")
-check("warm is not enough", not warming.md.tpFluidAge.scalded and warming.fc.fluids.SheepMilk == 1)
+check("warm is not enough", not scalded(warming.md.tpFluidAge) and warming.fc.fluids.SheepMilk == 1)
 warming.heat = 1.55
 FluidAgeing.look(warming, 0, "Sheltered")
-check("brought to the steam later, it scalds", warming.md.tpFluidAge.scalded and warming.fc.fluids.ScaldedSheepMilk == 1)
+check("brought to the steam later, it scalds", scalded(warming.md.tpFluidAge) and warming.fc.fluids.ScaldedSheepMilk == 1)
 local soured = item({ SourCowMilk = 1 })
 soured.md.tpFluidAge = { kind = "milk", age = 40, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
 soured.heat = 2
 function soured:getItemHeat() return self.heat end
 FluidAgeing.look(soured, 0, "Sheltered")
-check("soured milk boiled stays soured", soured.fc.fluids.SourCowMilk == 1 and not soured.md.tpFluidAge.scalded)
+check("soured milk boiled stays soured", soured.fc.fluids.SourCowMilk == 1 and not scalded(soured.md.tpFluidAge))
 spec.scaldHeat = nil
 
 -- Milk left in the cauldron turns there too
@@ -220,7 +225,7 @@ FluidAgeing.receive(hotCauldron, { kind = "milk", age = 30, place = "Sheltered",
 FluidAgeing.updateCauldron(hotCauldron, 0, "Sheltered", 1)
 pass("Sheltered", 10)
 FluidAgeing.updateCauldron(hotCauldron, 0, "Sheltered", 0)
-check("milk scalded in the cauldron doesn't sour there, and is scalded", hotCauldron.tpFluidAge.scalded
+check("milk scalded in the cauldron doesn't sour there, and is scalded", scalded(hotCauldron.tpFluidAge)
     and hotCauldron.fluid == "ScaldedCowMilk")
 check("raw milk poured onto old scalded milk sours it all", (function()
     FluidAgeing.receive(hotCauldron, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
@@ -229,11 +234,11 @@ check("raw milk poured onto old scalded milk sours it all", (function()
     return hotCauldron.fluid == "SourCowMilk" and hotCauldron.parts == nil
 end)())
 local youngCauldron = { ml = 1500, fluid = "ScaldedCowMilk", parts = { ScaldedCowMilk = 1000, CowMilk = 500 } }
-FluidAgeing.receive(youngCauldron, { kind = "milk", age = 2, scalded = true, marks = {} }, false, "Sheltered")
+FluidAgeing.receive(youngCauldron, { kind = "milk", age = 2, treated = { Scalded = true }, marks = {} }, false, "Sheltered")
 FluidAgeing.receive(youngCauldron, { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
 FluidAgeing.updateCauldron(youngCauldron, 0, "Sheltered", 0)
 check("raw milk poured onto it makes it all plain again", youngCauldron.fluid == "CowMilk" and youngCauldron.parts == nil
-    and not youngCauldron.tpFluidAge.scalded)
+    and not scalded(youngCauldron.tpFluidAge))
 local blendCauldron = { ml = 2000, fluid = "CowMilk", parts = { CowMilk = 1500, SheepMilk = 500 } }
 FluidAgeing.receive(blendCauldron, { kind = "milk", age = 0, marks = {} }, false, "Sheltered")
 FluidAgeing.updateCauldron(blendCauldron, 0, "Sheltered", 1)
@@ -243,7 +248,7 @@ FluidAgeing.updateCauldron(blendCauldron, 0, "Sheltered", 0)
 check("and scalded milk spoils to its own milk's rotten one", blendCauldron.fluid == "RottenCowMilk"
     and blendCauldron.parts.RottenSheepMilk == 500)
 local cooled = { ml = 1000, fluid = "ScaldedCowMilk" }
-FluidAgeing.receive(cooled, { kind = "milk", age = 2, scalded = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
+FluidAgeing.receive(cooled, { kind = "milk", age = 2, treated = { Scalded = true }, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }, false, "Sheltered")
 FluidAgeing.updateCauldron(cooled, 0, "Sheltered", 0)
 check("cooled, scalded milk stays scalded", cooled.fluid == "ScaldedCowMilk")
 local debugCauldron = { ml = 5000, fluid = "CowMilk" }
@@ -261,26 +266,26 @@ check("an emptied cauldron forgets the age", drained.tpFluidAge == nil)
 spec.scaldHold = 1 / 3
 local heldCauldron = { ml = 1000, fluid = "CowMilk" }
 FluidAgeing.updateCauldron(heldCauldron, 0, "Sheltered", 0.2)
-check("steaming 12 minutes is not yet scalded", not heldCauldron.tpFluidAge.scalded and heldCauldron.fluid == "CowMilk")
+check("steaming 12 minutes is not yet scalded", not scalded(heldCauldron.tpFluidAge) and heldCauldron.fluid == "CowMilk")
 FluidAgeing.updateCauldron(heldCauldron, 0, "Sheltered", 1 / 3)
-check("20 minutes at the steam scalds it", heldCauldron.tpFluidAge.scalded and heldCauldron.fluid == "ScaldedCowMilk")
-check("a copy taken before the hold is not scalded", not FluidAgeing.cauldronRecord({ ml = 500, fluid = "CowMilk" }, 0, "Sheltered", 0.1).scalded)
+check("20 minutes at the steam scalds it", scalded(heldCauldron.tpFluidAge) and heldCauldron.fluid == "ScaldedCowMilk")
+check("a copy taken before the hold is not scalded", not scalded(FluidAgeing.cauldronRecord({ ml = 500, fluid = "CowMilk" }, 0, "Sheltered", 0.1)))
 spec.scaldHeat = 1.5
 local pot = item({ CowMilk = 2 })
 pot.heat = 1.6
 function pot:getItemHeat() return self.heat end
 FluidAgeing.look(pot, 10, "Sheltered")
-check("a pot first seen on the heat starts its hold, not scalded", not pot.md.tpFluidAge.scalded and pot.fc.fluids.CowMilk == 2
+check("a pot first seen on the heat starts its hold, not scalded", not scalded(pot.md.tpFluidAge) and pot.fc.fluids.CowMilk == 2
     and FluidAgeing.heldHours(pot) > 0)
 FluidAgeing.look(pot, 10.2, "Sheltered")
-check("12 minutes on, still not", not pot.md.tpFluidAge.scalded and math.abs(FluidAgeing.heldHours(pot) - 0.2) < 1e-4)
+check("12 minutes on, still not", not scalded(pot.md.tpFluidAge) and math.abs(FluidAgeing.heldHours(pot) - 0.2) < 1e-4)
 pot.heat = 1.2
 FluidAgeing.look(pot, 10.5, "Sheltered")
 check("off the heat, the hold stops counting", math.abs(FluidAgeing.heldHours(pot) - 0.2) < 1e-4)
 pot.heat = 1.6
 FluidAgeing.look(pot, 11, "Sheltered")
 FluidAgeing.look(pot, 11.14, "Sheltered")
-check("back on, the hours add up, and at 20 minutes in all it scalds", pot.md.tpFluidAge.scalded and pot.fc.fluids.ScaldedCowMilk == 2)
+check("back on, the hours add up, and at 20 minutes in all it scalds", scalded(pot.md.tpFluidAge) and pot.fc.fluids.ScaldedCowMilk == 2)
 local topped = item({ CowMilk = 1 })
 topped.md.tpHeldHot = { hours = 0.3 }
 FluidAgeing.receive(topped:getModData(), { kind = "milk", age = 1, marks = {} }, true, "Sheltered")
@@ -331,7 +336,7 @@ check("poured, the blood stays cured", cup.md.tpFluidAge.treated.Salted and cup.
     and cup.fc.fluids.CuredBlood == 1)
 local salted = item({ SaltedBlood = 1 })
 check("salted blood seen for the first time is salted", FluidAgeing.look(salted, 0, "Sheltered").treated.Salted
-    and not salted.md.tpFluidAge.scalded and salted.fc.fluids.SaltedBlood == 1)
+    and not scalded(salted.md.tpFluidAge) and salted.fc.fluids.SaltedBlood == 1)
 local vinegared = item({ VinegaredBlood = 1 })
 FluidAgeing.look(vinegared, 0, "Sheltered")
 FluidAgeing.pour(vinegared, salted, 0)
@@ -392,7 +397,32 @@ check("treated, it ages on the state's totals", jar.md.tpFluidAge.age == 16)
 jar.md.tpFluidAge.place, jar.md.tpFluidAge.hour = FluidAgeing.FRIDGE, 0
 FluidAgeing.look(jar, 10, "Sheltered")
 check("in a fridge, by the state's curve", jar.md.tpFluidAge.age == 16 + 10 * 0.5)
-check("nameAt with no state is unchanged for milk", FluidAgeing.nameAt(spec, "Fresh", "CowMilk", true) == "ScaldedCowMilk")
+check("nameAt: milk in the heat state goes by its scalded name", FluidAgeing.nameAt(spec, "Fresh", "CowMilk", spec.states.Scalded) == "ScaldedCowMilk")
+-- One state at a time, for a kind with a heat state and one by hand.
+local whey = FluidAgeing.register({
+    kind = "whey", rate = function() return 1 end, turnHours = 36, spoilHours = 72,
+    fresh = { Whey = "SourWhey" }, spoiled = { Whey = "RottenWhey" },
+    states = { Scalded = { fluids = { Whey = "ScaldedWhey" }, heat = true },
+        Salted = { fluids = { Whey = "SaltedWhey" }, spoilHours = 200 } },
+    getLedger = function() return { wheySheltered = 0 } end,
+})
+check("register finds the heat state", whey.heatState == whey.states.Scalded)
+local saltedWhey = item({ SaltedWhey = 1 })
+FluidAgeing.look(saltedWhey, 0, "Sheltered")
+FluidAgeing.markScalded(saltedWhey, 0)
+check("heat leaves fluid already in a state as it is", saltedWhey.md.tpFluidAge.treated.Salted
+    and not scalded(saltedWhey.md.tpFluidAge) and saltedWhey.fc.fluids.SaltedWhey == 1)
+local scaldedWhey = item({ Whey = 1 })
+FluidAgeing.markScalded(scaldedWhey, 0)
+check("scalded whey is scalded", scalded(scaldedWhey.md.tpFluidAge) and scaldedWhey.fc.fluids.ScaldedWhey == 1)
+FluidAgeing.treat(scaldedWhey, 0, "Salted")
+check("a treatment by hand replaces the heat state", scaldedWhey.md.tpFluidAge.treated.Salted
+    and not scalded(scaldedWhey.md.tpFluidAge) and scaldedWhey.fc.fluids.SaltedWhey == 1)
+FluidAgeing.untreat(scaldedWhey, 0)
+check("untreated after, it is plain, not scalded", scaldedWhey.md.tpFluidAge.treated == nil and scaldedWhey.fc.fluids.Whey == 1)
+local twoStates = item({ ScaldedWhey = 1, SaltedWhey = 1 })
+check("first seen, scalded and salted shares together are plain", FluidAgeing.look(twoStates, 0, "Sheltered").treated == nil
+    and twoStates.fc.fluids.Whey == 2)
 
 -- register checks what it is given.
 local function refused(bad, says)
@@ -416,6 +446,12 @@ local twice = base("twice")
 twice.states = { A = { fluids = { Ooze = "AOoze" }, spoilHours = 3, of = { "X" } },
     B = { fluids = { Ooze = "BOoze" }, spoilHours = 3, of = { "X" } } }
 check("two states done by the same treatments are refused", refused(twice, "twice has two states done by X"))
+local twoHeat = base("twoHeat")
+twoHeat.states = { A = { fluids = { Ooze = "AOoze" }, heat = true }, B = { fluids = { Ooze = "BOoze" }, heat = true } }
+check("two states made by heat are refused", refused(twoHeat, "twoHeat has two states made by heat"))
+local handHeat = base("handHeat")
+handHeat.states = { A = { fluids = { Ooze = "AOoze" }, heat = true, of = { "X", "Y" } } }
+check("a heat state done by treatments is refused", refused(handHeat, "handHeat's heat state A is done by hand"))
 check("registering a kind again is allowed", FluidAgeing.register(base("again")) and FluidAgeing.register(base("again")))
 
 -- Each fluid is looked up in the engine once, not on every look.

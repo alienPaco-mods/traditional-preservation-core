@@ -218,9 +218,12 @@ local Weather = require "TraditionalPreservationCore/Weather"
      fitted, `Hearth.isFire` either): the same fire with nothing fitted, in the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
      door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES`
      matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the fitted one; their rows show on a fitted Stone Hearth too.
-   - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
+   - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
-     it, swaps the fluid when it turns and spoils, and hands the age on through pours and the cauldron.
+     it, swaps the fluid when it turns and spoils, and hands the age on through pours and the cauldron. `states` are
+     variants of the fresh fluid that never turn (Fish & Meat's Cured blood, done by hand; Dairy's Scalded milk,
+     `heat = true`, made by `scaldHeat` and `scaldHold`). One state at a time: heat leaves a fluid in a state as it
+     is, a treatment by hand replaces the heat state. `FluidAgeing.inState(record, name)` asks.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
    - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
      `Smokehouse.startCounters(modData, owner, hotNeed)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
@@ -401,10 +404,10 @@ lists every finding.
 12. **Core is mod-agnostic.** Core names mechanisms, not one mod's product: no milk, blood or fish words in its
     fields, functions or save keys, and no special case that only one mod's fluid or station can use. What a mod
     brings is data it registers (names, numbers, curves, rules as functions). When a Core feature was built for one
-    mod, fold it into the general mechanism once that mechanism can carry it. Example, planned (user, 2026-11-14):
-    FluidAgeing's `scalded` (Dairy's milk) is the same idea as its `states` (a variant of the fresh fluid with its own
-    name and spoiling), only brought about by heat instead of by hand; it is to become a state with a heat cause, so
-    any kind can have a heat-made variant without its own field in Core.
+    mod, fold it into the general mechanism once that mechanism can carry it. Example (user, 2026-11-14, done the
+    same day): FluidAgeing's `scalded` (Dairy's milk) was the same idea as its `states` (a variant of the fresh fluid
+    with its own name and spoiling), only brought about by heat instead of by hand; it is now a state with
+    `heat = true`, so any kind can have a heat-made variant without its own field in Core.
 
 ## FAQ: why the series does it this way
 

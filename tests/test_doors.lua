@@ -75,4 +75,33 @@ local function params(sq, name) return { square = sq, tileInfo = { getSpriteName
 check("the build ghost asks the same", not TraditionalPreservationCore.doorFits(params(open, fireboxS))
     and TraditionalPreservationCore.doorFits(params(open, fireboxE)))
 
+-- A table-top station's build check (Appliances): no appliance under it, and no door's front.
+instanceof = function(object, class) return object.class == class end
+require "TraditionalPreservationCore/Appliances"
+local stoveTop = square(60, 60)
+local plainObjects = stoveTop.getObjects
+function stoveTop:getObjects()
+    local stove = { class = "IsoStove" }
+    return { size = function() return 1 end, get = function() return stove end }
+end
+check("offAppliances: the build ghost refuses a stove", not TraditionalPreservationCore.offAppliances(params(stoveTop, "crock_0")))
+stoveTop.getObjects = plainObjects
+check("offAppliances: takes a bare counter", TraditionalPreservationCore.offAppliances(params(stoveTop, "crock_0")))
+check("offAppliances: but not in front of a door", not TraditionalPreservationCore.offAppliances(params(grid["20,21"], "crock_0")))
+
+-- Every TP station's build recipe minds the doors: each entity script of every TP mod beside this one has an OnIsValid.
+local missing, seen = {}, 0
+local list = io.popen("ls ../TraditionalPreservation*/42/media/scripts/entities/entity_*.txt 2>/dev/null")
+for path in list:lines() do
+    if not path:find("xuiSkin", 1, true) then
+        seen = seen + 1
+        local file = io.open(path)
+        if not file:read("*a"):find("OnIsValid", 1, true) then table.insert(missing, path:match("[^/]+$")) end
+        file:close()
+    end
+end
+list:close()
+check("every TP station's build checks the doors (" .. seen .. " entities)" .. (missing[1] and ": " .. table.concat(missing, ", ") or ""),
+    seen > 2 and #missing == 0)
+
 H.done()

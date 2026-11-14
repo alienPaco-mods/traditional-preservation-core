@@ -4,6 +4,8 @@
 -- compare them with vanilla after a game update.
 require "Moveables/ISMoveableSpriteProps"
 
+local Appliances = require "TraditionalPreservationCore/Appliances"
+
 local Placement = {}
 
 -- Picking a station up can break it, and one that holds something would lose it. mustStay(object) names the
@@ -77,8 +79,9 @@ function Placement.notInRooms(sprites)
 end
 
 -- Putting down any station whose door is registered with Doors (the Hearth, the Firebox, a mod's): its own door's
--- front tile must be free, and it can't stand in front of another one's door. sprites (a set of names, optional)
--- adds stations without a door that are kept out of a door's front too. One rule, for every mod.
+-- front tile must be free, and it can't stand in front of another one's door. sprites (optional; a set of names or
+-- a list, as a mod's Tiles.STATIONS) adds stations without a door that are kept out of a door's front too: every TP
+-- station is. One rule, for every mod.
 local doorKept
 function Placement.keepDoorsFree(sprites)
     if not doorKept then
@@ -88,35 +91,17 @@ function Placement.keepDoorsFree(sprites)
             return not (doorKept[spriteName] or Doors.facingOf(spriteName)) or Doors.fits(square, spriteName)
         end)
     end
-    for name in pairs(sprites or {}) do doorKept[name] = true end
-end
-
-local APPLIANCES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombinationWasherDryer" }
-local COLD_CONTAINERS = { fridge = true, freezer = true }
-
--- A stove, a fridge or freezer, or a washer or dryer: something that heats, chills or shakes what stands on it.
-local function isAppliance(object)
-    for _, class in ipairs(APPLIANCES) do
-        if instanceof(object, class) then return true end
+    for key, value in pairs(sprites or {}) do
+        doorKept[type(key) == "number" and value or key] = true
     end
-    for index = 0, (object.getContainerCount and object:getContainerCount() or 0) - 1 do
-        local container = object:getContainerByIndex(index)
-        if container and COLD_CONTAINERS[container:getType()] then return true end
-    end
-    return false
 end
 
 -- Table-top stations refuse a square holding an appliance. Vanilla only asks for IsTable, which electric stoves
--- and chest freezers carry, and the build ghost of an IsStackable tile asks canPlaceMoveable too, so this covers
--- building and putting down. sprites is a set of sprite names.
+-- and chest freezers carry. This covers putting down; the build menu asks TraditionalPreservationCore.offAppliances
+-- (OnIsValid) too, as the build ghost of an IsStackable tile asks canPlaceMoveable only on a solid square. sprites
+-- is a set of sprite names.
 function Placement.offAppliances(sprites)
-    placeOnly(sprites, function(square)
-        local objects = square:getObjects()
-        for index = 0, objects:size() - 1 do
-            if isAppliance(objects:get(index)) then return false end
-        end
-        return true
-    end)
+    placeOnly(sprites, function(square) return not Appliances.onSquare(square) end)
 end
 
 return Placement

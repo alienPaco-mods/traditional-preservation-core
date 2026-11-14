@@ -79,7 +79,7 @@ Right-click it. Its **Stone Hearth** submenu has:
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
 | **Connect the Stone Hearth** | With a Smokehouse beside it: lays the flue (chapter 6) |
 
-**Keep the door clear.** The tile in front of the Stone Hearth's door must be free: it won't build or go down with a crate, a fence, a wall on that edge or another station there, and nothing of the Traditional Preservation mods can be built on that tile afterwards. Picked up, it turns between its two facings as you put it down.
+**Keep the door clear.** The tile in front of the Stone Hearth's door must be free: it won't build or go down with a crate, a fence, a wall on that edge or another station there, and nothing of the Traditional Preservation mods can be built or put down on that tile afterwards. Picked up, it turns between its two facings as you put it down.
 
 **You can't pick a Stone Hearth up** while it burns (it's too hot), while a cauldron is fitted, or while it's joined to a Smokehouse.
 

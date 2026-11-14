@@ -327,6 +327,20 @@ check("offAppliances: a counter with drawers goes to vanilla", ISMoveableSpriteP
 placed = false
 check("offAppliances: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, squareWith(thing("IsoStove"))) and placed)
 
+-- keepDoorsFree takes a mod's Tiles.STATIONS list as well as a set.
+local Doors = require "TraditionalPreservationCore/Doors"
+local savedFits, asked = Doors.fits, {}
+Doors.fits = function(_, name) table.insert(asked, name) return false end
+UI.keepDoorsFree({ "cask_0", "cask_1" })
+UI.keepDoorsFree({ shelf_0 = true })
+local refused = 0
+for _, name in ipairs({ "cask_0", "cask_1", "shelf_0", "rug_0" }) do
+    placed = false
+    if ISMoveableSpriteProps.canPlaceMoveable({ spriteName = name }, nil, squareWith()) == false then refused = refused + 1 end
+end
+check("keepDoorsFree: a list or a set, other sprites not asked", refused == 3 and #asked == 3)
+Doors.fits = savedFits
+
 -- slotRules, twice as two mods would: each mod's stations go to its own rules, the rest on to vanilla.
 ResourceIO = { Input = "in", Output = "out" }
 local vanillaAdds, vanillaUps, halos, queuedActions = 0, 0, {}, {}

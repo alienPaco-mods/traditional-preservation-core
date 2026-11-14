@@ -43,6 +43,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 ### The cauldron
 
 - Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Hearth.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
+- **Tainted water taints clean water** (`Hearth.taints`): poured together, either way round and whatever the share, the whole cauldron is tainted water and must be boiled clean again. A bucket that already holds both pours in as tainted water. Pour into the Cauldron's hover says so, unless the sandbox hides tainted water.
 - Poured fluid mixes its temperature with what is there, by volume.
 - **Lit fire:** it heats towards 95 C and **steams at 85 C**; milk and every other fluid are kept off the boil.
 - **Water boils.** Water on its own heats towards 110 C and holds at **100 C**. Tainted water kept at the boil for

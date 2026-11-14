@@ -130,6 +130,46 @@ function CauldronFluid.addParts(state, fluid, ml)
     state.parts = count > 1 and parts or nil
 end
 
+-- Fluids that taint another (user, 2026-11-14): poured in with it, either way round and whatever the share, the
+-- whole lot becomes the tainting fluid. Clean water with tainted water is all tainted, and must be boiled clean
+-- again (pourInto starts the boil over). A fluid taints one other, and is tainted by none.
+local TAINTS, TAINTED = {}, {}   -- clean -> what taints it, and back
+
+function CauldronFluid.taints(fluid, other)
+    for _, name in ipairs({ fluid, other }) do
+        assert(TAINTS[name] == nil and TAINTED[name] == nil, "Hearth.taints: " .. tostring(name) .. " is already named")
+    end
+    TAINTS[other], TAINTED[fluid] = fluid, other
+end
+
+-- The one fluid's name of fluid (a name, or parts), or nil for parts of more than one.
+local function oneName(fluid)
+    if type(fluid) ~= "table" then return fluid end
+    local found
+    for name in pairs(fluid) do
+        if found then return nil end
+        found = name
+    end
+    return found
+end
+
+-- The fluid one of a and b makes of both when it taints the other, or nil.
+local function tainting(a, b)
+    if a == nil or b == nil or a == b then return nil end
+    if TAINTS[a] == b then return b end
+    if TAINTS[b] == a then return a end
+end
+
+-- What the cauldron's fluid becomes with fluid (a name, or parts) poured in, when one taints the other; nil if
+-- neither does, or the cauldron is empty or holds a blend.
+function CauldronFluid.taintedBy(cauldron, fluid)
+    if (cauldron.ml or 0) <= 0 or cauldron.parts then return nil end
+    return tainting(cauldron.fluid, oneName(fluid))
+end
+
+-- Vanilla's water: tainted taints clean.
+CauldronFluid.taints("TaintedWater", "Water")
+
 -- Fluids the cauldron changes, as a mod names them (Fish & Meat's fat), each named once.
 -- turnsHot(from, to, hours): from, on its own and kept steaming (HOT_C or more) for hours in all, becomes to:
 -- raw fat renders. The hours are kept in the cauldron's hot, and start over when more is put in.
@@ -168,9 +208,10 @@ function CauldronFluid.hoursToTurn(cauldron)
     return math.max(turn.hours - (cauldron.hot or 0), 0)
 end
 
--- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend.
+-- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend
+-- or one taints the other.
 function CauldronFluid.cauldronRoom(cauldron, fluid, ml)
-    if (cauldron.ml or 0) > 0 then
+    if (cauldron.ml or 0) > 0 and not CauldronFluid.taintedBy(cauldron, fluid) then
         for name in pairs(type(fluid) == "table" and fluid or { [fluid] = true }) do
             if not CauldronFluid.blends(cauldron.fluid, name) then return 0, "Mixed" end
         end
@@ -180,11 +221,13 @@ function CauldronFluid.cauldronRoom(cauldron, fluid, ml)
     return math.min(ml, room)
 end
 
--- Pours a fluid (a name, or parts) in; the temperatures mix by volume. Returns the ml taken (0 with a reason when
--- refused).
+-- Pours a fluid (a name, or parts) in; the temperatures mix by volume, and a tainting fluid makes the lot itself.
+-- Returns the ml taken (0 with a reason when refused).
 function CauldronFluid.pourInto(cauldron, fluid, ml, fluidC, now)
     local taken, reason = CauldronFluid.cauldronRoom(cauldron, fluid, ml)
     if taken <= 0 then return 0, reason end
+    local tainted = CauldronFluid.taintedBy(cauldron, fluid)
+    if tainted then cauldron.fluid, fluid = tainted, tainted end
     local had = cauldron.ml or 0
     cauldron.tempC = had > 0 and (cauldron.tempC * had + fluidC * taken) / (had + taken) or fluidC
     cauldron.boiled = nil
@@ -336,8 +379,9 @@ local function fluidObject(name)
     return fluid
 end
 
--- What a fluid container holds, { name = ml }, and its main fluid: one fluid, or a blend of fluids that may share
--- the cauldron. nil for none, or for any other mixture.
+-- What a fluid container holds, { name = ml }, and its main fluid: one fluid, a blend of fluids that may share the
+-- cauldron, or a fluid and the one it taints (vanilla's clean and tainted water in one bucket: all of it the
+-- tainting fluid). nil for none, or for any other mixture.
 function CauldronFluid.partsIn(container)
     if not container or container:isEmpty() then return nil end
     local primary = container:getPrimaryFluid()
@@ -353,8 +397,14 @@ function CauldronFluid.partsIn(container)
             found = found + amount
         end
     end
-    if found < container:getAmount() - CauldronFluid.AMOUNT_TOLERANCE_L then return nil end
-    return parts, name
+    local total = container:getAmount()
+    if found >= total - CauldronFluid.AMOUNT_TOLERANCE_L then return parts, name end
+    local partner = TAINTS[name] or TAINTED[name]
+    local fluid = partner and fluidObject(partner)
+    local amount = fluid and container:getSpecificFluidAmount(fluid) or 0
+    if amount <= 0 or found + amount < total - CauldronFluid.AMOUNT_TOLERANCE_L then return nil end
+    local tainted = tainting(name, partner)
+    return { [tainted] = total * CauldronFluid.ML_PER_L }, tainted
 end
 
 -- The heat of an item's fluid, by the hooks, else vanilla's item heat.

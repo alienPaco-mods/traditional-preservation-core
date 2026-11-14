@@ -120,6 +120,7 @@ The window updates while it's open, and closes when you walk more than 6 squares
 
 - **60 L, one fluid at a time.** Any fluid: water, milk, whatever a container holds. A mixture is refused, and so is a fluid that doesn't go with what's already in the cauldron. Both show in red, with the reason.
 - **Some fluids may share it.** A mod can say which: Dairy lets cow's, sheep's and animal's milk mix, and the blend keeps its shares in and out.
+- **Tainted water taints the lot.** Pour clean water onto tainted, or tainted onto clean, and the whole cauldron is tainted: a splash is enough. Boil it again. The pour's hover warns you (unless your sandbox hides tainted water).
 - **Heat mixes by volume.** Cold poured onto hot cools the lot.
 - **Lit:** it heats towards 95 C. Milk and the rest are kept off the boil.
 - **Water boils.** Water on its own comes to a rolling boil at 100 C. Tainted water held there for **10 minutes** comes out clean: a whole cauldron of rain-barrel water made safe at once. If the fire goes out or you pour more in, the 10 minutes start over.
@@ -333,7 +334,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Fit Cauldron is greyed out | The fire is lit, or you're missing a piece (its note says which). Pliers are kept |
 | Remove Cauldron is greyed out | The fire is lit, or the cauldron holds something: Empty the Cauldron first |
 | Pour into the Cauldron is greyed out | The cauldron is full, or you have no container with a fluid in it |
-| A container shows in red | It holds a mixture, or a fluid that doesn't go with what's in the cauldron. It takes one fluid at a time |
+| A container shows in red | It holds a mixture, or a fluid that doesn't go with what's in the cauldron. It takes one fluid at a time (clean and tainted water are the exception: together they are tainted water) |
 | Fill from the Cauldron is greyed out | You need an empty container, or one holding the same fluid with room left |
 | Steaming says "Not yet (85 C)" | The fire is out, or its fuel won't last until the cauldron steams. Add wood |
 | Steaming says "Not while banked" | A banked fire holds 50 C. Stoke it |

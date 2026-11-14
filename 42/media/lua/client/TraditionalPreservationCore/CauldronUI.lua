@@ -40,7 +40,8 @@ local function cauldronStatus(cauldron)
 end
 
 -- Every container with a fluid in it. A mix, or a fluid that doesn't go with the cauldron's, shows in red with the
--- reason.
+-- reason. One that taints the cauldron's, or is tainted by it, says the lot will be tainted (unless the sandbox keeps
+-- the taint from the player), and that it boils clean again when it does.
 local function addPourInMenu(menu, playerObj, hearth, cauldron)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_PourIntoCauldron"))
     option.iconTexture = getTexture(CAULDRON_ICON)
@@ -65,9 +66,14 @@ local function addPourInMenu(menu, playerObj, hearth, cauldron)
         elseif select(2, Hearth.cauldronRoom(cauldron, parts, 1)) == "Mixed" then
             refusal = say("IGUI_TraditionalPreservationCore_CauldronMixed", holds(cauldron))
         end
+        local tainted = not refusal and Hearth.taintedBy(cauldron, parts)
         if refusal then
             entry.notAvailable = true
             tooltipFor(entry, refusal)
+        elseif tainted and not UI.hidesTaint(tainted) then
+            local lines = { say("IGUI_TraditionalPreservationCore_CauldronTaints", fluidName(tainted)) }
+            if Hearth.BOILED[tainted] then table.insert(lines, getText("IGUI_TraditionalPreservationCore_CauldronBoilAgain")) end
+            tooltipFor(entry, table.concat(lines, " <LINE> "))
         end
     end
 end

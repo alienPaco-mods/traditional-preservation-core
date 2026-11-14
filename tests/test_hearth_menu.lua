@@ -217,6 +217,23 @@ local poured = ui.queued[#ui.queued]
 check("choosing one brings it to hand and queues the pour", ui.moved[1] == water and poured.Type == "TPHearthCauldron"
     and poured.mode == "pourIn" and poured.item == water and poured.hearth == holdsWater)
 
+local UI = require "TraditionalPreservationCore/UI"
+local showTaint = true
+getSandboxOptions = function()
+    return { getOptionByName = function() return { getValue = function() return showTaint end } end }
+end
+sub = open(hearth({ ml = 2000, fluid = "TaintedWater", tempC = 20 }))
+entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron").subOption.options
+check("clean water poured on tainted is offered, and says the lot will be tainted and must boil again",
+    entries[2].notAvailable == nil and entries[2].toolTip.description
+        == UI.say("IGUI_TraditionalPreservationCore_CauldronTaints", UI.fluidName("TaintedWater")) .. " <LINE> "
+        .. getText("IGUI_TraditionalPreservationCore_CauldronBoilAgain"))
+showTaint = false
+sub = open(hearth({ ml = 2000, fluid = "TaintedWater", tempC = 20 }))
+entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron").subOption.options
+check("with the sandbox's tainted water text off, it says nothing", entries[2].notAvailable == nil and entries[2].toolTip == nil)
+getSandboxOptions = nil
+
 sub = open(hearth({}))
 entries = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron").subOption.options
 check("an empty cauldron takes any one fluid", entries[1].notAvailable == nil and entries[2].notAvailable == nil

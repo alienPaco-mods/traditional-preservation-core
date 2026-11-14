@@ -6,6 +6,8 @@
   "IGUI_TraditionalPreservationCore_CauldronEmpty": "Cauldron: empty",
   "IGUI_TraditionalPreservationCore_CauldronMixed": "The cauldron holds %1: fluids don't mix. Empty it first.",
   "IGUI_TraditionalPreservationCore_NotOneFluid": "A mix of fluids: only one plain fluid goes into the cauldron.",
+  "IGUI_TraditionalPreservationCore_CauldronTaints": "Everything in the cauldron becomes %1.",
+  "IGUI_TraditionalPreservationCore_CauldronBoilAgain": "Boil it again to make it safe.",
   "IGUI_TraditionalPreservationCore_CauldronFull": "The cauldron is full.",
   "IGUI_TraditionalPreservationCore_CauldronStaysIn": "%1 can't be ladled out.",
   "IGUI_TraditionalPreservationCore_NoFluidItem": "You have nothing with a fluid in it.",

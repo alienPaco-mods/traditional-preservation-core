@@ -183,6 +183,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
+   - `Hearth.taints(fluid, other)`: `fluid` taints `other`; poured in together, either way round, the lot becomes
+     `fluid` (Core names vanilla's `TaintedWater` and `Water`). `Hearth.taintedBy(cauldron, fluid)` says what a pour
+     would make; `Hearth.partsIn` reads a container holding both as all `fluid`. Each fluid in one taint only.
    - `Hearth.blend("A", "B")`: fluids that may share the cauldron. `Hearth.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.

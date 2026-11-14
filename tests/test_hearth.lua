@@ -240,6 +240,40 @@ local overlay, tint = Hearth.liquidOverlay({ ml = 1000, fluid = "Water" }, 1)
 check("what it holds is the overlay, tinted (white when a fluid has no colour); none when empty",
     overlay == "traditionalpreservationcore_01_7" and tint[1] == 1 and tint[3] == 1
     and Hearth.liquidOverlay({ ml = 0, fluid = "Water" }, 0) == nil and Hearth.face(overlay) == nil)
+-- Tainted water taints clean, either way round and whatever the share; the lot boils clean again.
+local tub = { ml = 10000, fluid = "Water", tempC = 60, last = 0, boiled = 0.5 }
+check("clean water takes tainted water: the whole lot is tainted", Hearth.pourInto(tub, "TaintedWater", 100, 20, 0) == 100
+    and tub.fluid == "TaintedWater" and tub.ml == 10100 and tub.parts == nil and tub.boiled == nil)
+local foul = { ml = 1000, fluid = "TaintedWater", tempC = 20, last = 0 }
+check("tainted water takes clean, and stays tainted", Hearth.pourInto(foul, { Water = 9000 }, 9000, 20, 0) == 9000
+    and foul.fluid == "TaintedWater" and foul.ml == 10000 and foul.parts == nil)
+foul.fireUntil = 100
+Hearth.advance(foul, 2, 20, foul)
+check("and boils clean again", foul.fluid == "Water")
+check("neither mixes with anything else", select(2, Hearth.cauldronRoom({ ml = 1000, fluid = "TaintedWater" }, "CowMilk", 10)) == "Mixed"
+    and select(2, Hearth.cauldronRoom({ ml = 1000, fluid = "CowMilk" }, "TaintedWater", 10)) == "Mixed"
+    and Hearth.taintedBy({ ml = 1000, fluid = "Water" }, "Water") == nil and Hearth.taintedBy({}, "TaintedWater") == nil)
+check("a fluid is named in one taint only", select(1, pcall(Hearth.taints, "TestFoul", "Water")) == false)
+local function bucket(primary, amounts)
+    local total = 0
+    for _, litres in pairs(amounts) do total = total + litres end
+    return {
+        isEmpty = function() return total <= 0 end,
+        getAmount = function() return total end,
+        getPrimaryFluid = function() return { getFluidTypeString = function() return primary end } end,
+        getPrimaryFluidAmount = function() return amounts[primary] end,
+        getSpecificFluidAmount = function(_, fluid) return amounts[fluid.name] or 0 end,
+    }
+end
+local savedFluid = Fluid
+Fluid = { Get = function(name) return { name = name } end }
+local bucketParts, bucketFluid = Hearth.partsIn(bucket("Water", { Water = 8, TaintedWater = 2 }))
+check("vanilla's bucket of clean and tainted water pours in as tainted water", bucketFluid == "TaintedWater"
+    and bucketParts.TaintedWater == 10000 and bucketParts.Water == nil)
+check("tainted first the same", select(2, Hearth.partsIn(bucket("TaintedWater", { TaintedWater = 6, Water = 4 }))) == "TaintedWater"
+    and Hearth.partsIn(bucket("Water", { Water = 8, CowMilk = 2 })) == nil)
+Fluid = savedFluid
+
 local savedFluid = Fluid
 Fluid = {}
 local function colour(r, g, b) return { getRedFloat = function() return r end, getGreenFloat = function() return g end, getBlueFloat = function() return b end } end

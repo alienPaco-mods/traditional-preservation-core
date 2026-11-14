@@ -117,6 +117,11 @@ local function showsTainted()
     return option ~= nil and option:getValue() == true
 end
 
+-- Whether a fluid's taint is kept from the player: tainted water while the sandbox's tainted water text is off.
+function UI.hidesTaint(name)
+    return name == TAINTED and not showsTainted()
+end
+
 -- A fluid's name as the game shows it, from its type ("CowMilk"): tainted water as vanilla names it.
 function UI.fluidName(name)
     local fluid = name and Fluid.Get(name)

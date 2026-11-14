@@ -3,6 +3,7 @@
 -- anything tagged whose uses are hunger points (food: Food.getCurrentUses is |HungChange| x 100) or a drainable's.
 -- A recipe line takes its own uses; a mod that charges more than that (Fish & Meat's salt by the fish's weight, a
 -- cure by the litre) counts and takes the rest here.
+local Action = require "TraditionalPreservationCore/Action"
 local Uses = {}
 
 -- Everything in reach, as a craft has it: the player's inventory and bags and the containers and floor round them
@@ -26,8 +27,7 @@ local function remove(item)
         world:getSquare():removeWorldObject(world)
         item:setWorldItem(nil)
     end
-    local container = item:getContainer()
-    if container then container:DoRemoveItem(item) end
+    Action.removeItem(item)
 end
 Uses.remove = remove
 

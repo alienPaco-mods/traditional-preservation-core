@@ -46,10 +46,11 @@ function Action.giveItems(character, needs)
     end
 end
 
--- Takes an item out of whatever holds it (the inventory or a bag in it); nothing if it is held by nothing.
+-- Takes an item out of whatever holds it (the inventory or a bag in it); nothing if it is held by nothing. Vanilla's
+-- Remove, not DoRemoveItem: from a character's inventory it takes the item out of the hands too (ENGINE_NOTES).
 function Action.removeItem(item)
     local container = item:getContainer()
-    if container then container:DoRemoveItem(item) end
+    if container then container:Remove(item) end
 end
 
 -- xp is { perk name, amount }, or nil for none.

@@ -11,7 +11,7 @@ ISEatFoodAction = {}
 function ISEatFoodAction:complete(...)
     table.insert(eaten, "complete " .. self.item:getFullType())
     self.item.hunger = self.item.hunger * (1 - self.share)
-    if self.item.hunger > -0.01 and self.item.container then self.item.container:DoRemoveItem(self.item) end
+    if self.item.hunger > -0.01 and self.item.container then self.item.container:Remove(self.item) end
     return "eaten"
 end
 function ISEatFoodAction:serverStop() table.insert(eaten, "stop " .. self.item:getFullType()) end
@@ -23,7 +23,7 @@ end } }
 local function bag()
     local self = { items = {}, added = {} }
     function self:contains(item) return self.items[item] == true end
-    function self:DoRemoveItem(item) self.items[item] = nil end
+    function self:Remove(item) self.items[item] = nil end
     function self:AddItem(fullType) table.insert(self.added, fullType) return fullType end
     return self
 end

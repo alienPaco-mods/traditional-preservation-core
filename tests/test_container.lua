@@ -20,7 +20,7 @@ local function recipe(used, created)
 end
 local function inventory()
     local self = { removed = {} }
-    function self:DoRemoveItem(it) table.insert(self.removed, it) end
+    function self:Remove(it) table.insert(self.removed, it) end
     return self
 end
 
@@ -79,5 +79,18 @@ end)())
 instanceItem = function() return nil end
 same.modData[Container.KEY] = "Gone.Bucket"
 check("a bucket type that no longer exists gives the script's bucket", Container.giveBack(recipe({ same }, { kept }), "player", "Base.BucketEmpty") == kept)
+
+-- Action.removeItem goes through vanilla's Remove, which also takes the item out of the hands; Remove doesn't.
+local Action = require "TraditionalPreservationCore/Action"
+local held = item("Base.Cup")
+local bag = { removed = {}, done = {} }
+function bag:Remove(it) table.insert(self.removed, it) end
+function bag:DoRemoveItem(it) table.insert(self.done, it) end
+held.container = bag
+Action.removeItem(held)
+check("removeItem takes it out through Remove (the hands too), not DoRemoveItem", bag.removed[1] == held and #bag.done == 0)
+held.container = nil
+Action.removeItem(held)
+check("and does nothing to an item held by nothing", #bag.removed == 1)
 
 H.done()

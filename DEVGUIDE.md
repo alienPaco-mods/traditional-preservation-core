@@ -493,7 +493,7 @@ Smokehouse's day's temperature was one until it became the Enclosed place, step 
 - **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
   were aged through the summer heat on purpose.
 - **Salt fish's and charque's muggy spoiling reads the ten-day mean**, not the day's temperature, in the open air
-  and in the Smokehouse (`F.saltSpoilPlace` returns "" for both; user, 2026-11-13): mould and rancid fat come of
+  and in the Smokehouse (`F.TOTALS.saltSpoil` reads the season's `saltSpoil` for both; user, 2026-11-13): mould and rancid fat come of
   days of damp warmth, not of one hot afternoon. By the day's temperature July's muggy hours would go from 78 to
   about 220 and a stack hung all July would lose near half its keeping, where it loses a sixth.
 - **Unsalted fish's warm rot is weighted by its wetness squared** (a process number, not a temperature: a dried skin

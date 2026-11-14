@@ -3,6 +3,7 @@
 -- it; what a mod adds is the name with the portions left (or a plain name: Portions.weigh), the vessel's weight under
 -- them and the empty vessel back with the last bite. A mod keeps its own modData keys and one portion's food; this holds what the two share, and
 -- the one wrap of vanilla's eat action (Portions.onEat), so a mod adds a handler instead of wrapping it again.
+local Action = require "TraditionalPreservationCore/Action"
 require "TimedActions/ISEatFoodAction"
 
 local Portions = {}
@@ -64,7 +65,7 @@ function Portions.used(item, container, stillHolds, vesselType, relabel)
         relabel(item)
         return nil
     end
-    if inPlace then container:DoRemoveItem(item) end
+    if inPlace then Action.removeItem(item) end
     local target = container or item:getContainer()
     return target and target:AddItem(vesselType)
 end

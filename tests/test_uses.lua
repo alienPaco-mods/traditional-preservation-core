@@ -22,7 +22,7 @@ local function thing(tag, uses)
     function o:getCurrentUses() return self.uses end
     function o:setCurrentUses(n) self.uses = n end
     function o:getWorldItem() return nil end
-    function o:getContainer() return { DoRemoveItem = function() o.removed = true end } end
+    function o:getContainer() return { Remove = function() o.removed = true end } end
     return o
 end
 local function carrying(items)
@@ -91,7 +91,7 @@ local function food(fullType, uses)
     function o:getCurrentUses() return self.uses end
     function o:setCurrentUses(n) self.uses = n end
     function o:getWorldItem() return nil end
-    function o:getContainer() return { DoRemoveItem = function() o.removed = true end } end
+    function o:getContainer() return { Remove = function() o.removed = true end } end
     return o
 end
 local function pantry(items)

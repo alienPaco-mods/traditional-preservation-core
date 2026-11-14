@@ -3,10 +3,15 @@
 if not isDebugEnabled() then return end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
-require "TraditionalPreservationCore/Cauldron"
+require "TraditionalPreservationCore/Cauldron"   -- puts Hearth.CAULDRON_ITEM and the cauldron's attachment on Hearth
+local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
+local HearthConnect = require "TraditionalPreservationCore/HearthConnect"
+local Doors = require "TraditionalPreservationCore/Doors"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 TPC = {}
+
+local HOT_TEST_C = 90   -- TPC.hot's steam: above CauldronFluid.HOT_C, so it shows Hot at once
 
 local function say(text) print("[TPC] " .. text) end
 
@@ -16,24 +21,20 @@ function TPC.help()
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default: the Stone Hearth and Fit Cauldron's kit), \"firebox\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
-    say("TPC.cauldronInfo()   the nearest Stone Hearth with the Cauldron within 2 tiles: fire (lit, banked or out), fuel, the cauldron, when it steams")
-    say("TPC.cauldron(l, c, f) fill its cauldron: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
+    say(string.format("TPC.cauldronInfo()   the nearest Stone Hearth with the Cauldron within %d tiles: fire (lit, banked or out), fuel, the cauldron, when it steams", Hearth.FIRE_RADIUS))
+    say(string.format("TPC.cauldron(l, c, f) fill its cauldron: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds %g; f TaintedWater to boil)", CauldronFluid.CAULDRON_ML / 1000))
     say("TPC.fuel(minutes)    set the nearest Stone Hearth's fuel, fitted or not (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
-    say("TPC.hot(minutes)     bring its cauldron to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
+    say(string.format("TPC.hot(minutes)     bring its cauldron to the steam (%d C) now, counted as steaming that long (60; 0 to watch a hold)", HOT_TEST_C))
     say("TPC.warmth()         air C and light 1-6 tiles east of the Stone Hearth (Cauldron) and on your square, firebox heat, each food's cooking")
-    say("TPC.stone()          the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks")
+    say(string.format("TPC.stone()          the nearest Stone Hearth within %d tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks", Hearth.FIRE_RADIUS))
     say("TPC.fit()            fit the Cauldron on the nearest Stone Hearth now, no items (TPC.fit(false) takes off what is fitted, nothing back)")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Stone Hearths beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
 
--- What building each of the core's stations takes.
+-- What building each of the core's stations takes ("hearth" is firebox and cauldron together, below).
 local KITS = {
-    hearth = { about = "a mason's trowel, 8 clay bricks and 2 clay, to build a Stone Hearth (Masonry 2), and Fit "
-        .. "Cauldron's kit: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers",
-        ["Base.MasonsTrowel_Wood"] = 1, ["Base.ClayBrick"] = 8, ["Base.Clay"] = 2, [Hearth.CAULDRON_ITEM] = 1,
-        ["Base.MetalPipe"] = 2, ["Base.HeavyChain"] = 1, ["Base.LargeHook"] = 1, ["Base.Pliers"] = 1 },
     cauldron = { about = "Fit Cauldron's kit: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers",
         [Hearth.CAULDRON_ITEM] = 1, ["Base.MetalPipe"] = 2, ["Base.HeavyChain"] = 1, ["Base.LargeHook"] = 1, ["Base.Pliers"] = 1 },
     forge = { about = "2 sheet metal, 3 charcoal, wire, a ball-peen hammer, tongs and a metalworking chisel to forge the "
@@ -50,10 +51,27 @@ local KITS = {
         ["Base.ClayPipeSegment"] = 2, ["Base.FlatStone"] = 3, ["Base.Clay"] = 3, ["Base.MasonsTrowel"] = 1, ["Base.Shovel"] = 1 },
 }
 
+-- Kits put together: the items of each part, counts added, and their abouts joined.
+local function joinKits(about, parts)
+    local kit = { about = about }
+    for _, part in ipairs(parts) do
+        for fullType, count in pairs(KITS[part]) do
+            if fullType ~= "about" then kit[fullType] = (kit[fullType] or 0) + count end
+        end
+    end
+    return kit
+end
+
+KITS.hearth = joinKits(KITS.firebox.about .. ", and " .. KITS.cauldron.about, { "firebox", "cauldron" })
+
+local KIT_NAMES = {}
+for name in pairs(KITS) do table.insert(KIT_NAMES, name) end
+table.sort(KIT_NAMES)
+
 function TPC.kit(kind)
     local kit = KITS[kind or "hearth"]
     if not kit then
-        for name, entry in pairs(KITS) do say("TPC.kit(\"" .. name .. "\"): " .. entry.about) end
+        for _, name in ipairs(KIT_NAMES) do say("TPC.kit(\"" .. name .. "\"): " .. KITS[name].about) end
         return
     end
     local inventory = getPlayer():getInventory()
@@ -117,14 +135,22 @@ function TPC.speed(x)
     say(string.format("Game speed x%g.", time:getTrueMultiplier()))
 end
 
+-- The nearest Stone Hearth within FIRE_RADIUS, tracked by the World; with fitted (Hearth.CAULDRON), only one with that
+-- fitted, named in the message by label.
+local function nearestFire(fitted, label)
+    local square = getPlayer():getSquare()
+    local fire = (fitted and Hearth.fittedNear(square, fitted) or Hearth.near(square, Hearth.isFire))[1]
+    if not fire then
+        say(string.format("No Stone Hearth%s within %d tiles.", label and (" with " .. label) or "", Hearth.FIRE_RADIUS))
+        return nil
+    end
+    Hearth.World.track(fire)
+    return fire
+end
+
 -- The Stone Hearth with the Cauldron fitted
 
-local function nearestHearth()
-    local hearth = Hearth.fittedNear(getPlayer():getSquare(), Hearth.CAULDRON)[1]
-    if not hearth then say("No Stone Hearth with the Cauldron within 2 tiles.") end
-    if hearth and Hearth.World then Hearth.World.track(hearth) end
-    return hearth
-end
+local function nearestHearth() return nearestFire(Hearth.CAULDRON, "the Cauldron") end
 
 function TPC.cauldronInfo()
     local hearth = nearestHearth()
@@ -154,9 +180,8 @@ end
 
 -- The nearest Stone Hearth: TPC.fuel works fitted or not.
 function TPC.fuel(minutes)
-    local fire = Hearth.near(getPlayer():getSquare(), Hearth.isFire)[1]
-    if not fire then return say("No Stone Hearth within 2 tiles.") end
-    if Hearth.World then Hearth.World.track(fire) end
+    local fire = nearestFire()
+    if not fire then return end
     minutes = minutes or 600
     fire:setFuelAmount(minutes)
     local state = Hearth.fireStateOf(fire)
@@ -171,7 +196,7 @@ function TPC.hot(minutes)
     if not hearth then return end
     local cauldron = Hearth.cauldronOf(hearth)
     if (cauldron.ml or 0) <= 0 then return say("The cauldron is empty: TPC.cauldron() first.") end
-    cauldron.tempC = 90
+    cauldron.tempC = HOT_TEST_C
     cauldron.held = (minutes or 60) / 60
     Hearth.World.refresh(hearth)
     TPC.cauldronInfo()
@@ -211,20 +236,14 @@ end
 
 -- Firebox
 
--- Any Stone Hearth, fitted or not: its flue is its own.
-local function nearestFirebox()
-    local firebox = Hearth.near(getPlayer():getSquare(), Hearth.isFire)[1]
-    if not firebox then say("No Stone Hearth within 2 tiles.") end
-    if firebox and Hearth.World then Hearth.World.track(firebox) end
-    return firebox
-end
+-- Any Stone Hearth, fitted or not (nearestFire()): its flue is its own.
 
 function TPC.stone()
-    local firebox = nearestFirebox()
+    local firebox = nearestFire()
     if not firebox then return end
     local state = Hearth.fireStateOf(firebox)
     local sides = {}
-    for _, side in ipairs(require("TraditionalPreservationCore/HearthConnect").SIDES) do
+    for _, side in ipairs(HearthConnect.SIDES) do
         local square = Hearth.flueSquare(firebox, side)
         table.insert(sides, string.format("%s %s", side, square and (square:getX() .. "," .. square:getY()) or "-"))
     end
@@ -238,7 +257,7 @@ end
 
 -- Fits the Cauldron on the nearest Stone Hearth at once, or with false takes off what is fitted.
 function TPC.fit(on)
-    local fire = nearestFirebox()
+    local fire = nearestFire()
     if not fire then return end
     if on == false then Hearth.unfit(fire) else Hearth.fit(fire, Hearth.CAULDRON) end
     Hearth.World.refresh(fire)
@@ -246,7 +265,7 @@ function TPC.fit(on)
 end
 
 function TPC.flue(kind, side)
-    local firebox = nearestFirebox()
+    local firebox = nearestFire()
     if not firebox then return end
     local state = Hearth.fireStateOf(firebox)
     if kind then Hearth.join(state, Smokehouse.ID, kind, side or "Back") else Hearth.unjoin(state) end
@@ -255,9 +274,8 @@ function TPC.flue(kind, side)
 end
 
 function TPC.doors()
-    local Doors = require "TraditionalPreservationCore/Doors"
     local square = getPlayer():getSquare()
-    for _, facing in ipairs({ "S", "E" }) do
+    for _, facing in ipairs({ Hearth.FACE_NAMES[0], Hearth.FACE_NAMES[1] }) do
         local step = Doors.FRONT[facing]
         local front = getCell():getGridSquare(square:getX() + step[1], square:getY() + step[2], square:getZ())
         local blocker = front and Doors.blocker(front, facing)
@@ -287,7 +305,7 @@ function TPC.smokehouse()
                             or (Smokehouse.connectRefusalFor(found) or "may join")))
                     end
                 end
-                say(string.format("%d,%d facing %s, %s tile, entry art %s; %s", tile:getX(), tile:getY(), face == 0 and "S" or "E",
+                say(string.format("%d,%d facing %s, %s tile, entry art %s; %s", tile:getX(), tile:getY(), Hearth.FACE_NAMES[face],
                     PARTS[part], tostring(Smokehouse.chamberEntry(tile)), #lines > 0 and table.concat(lines, "; ") or "no Stone Hearth beside it"))
             end
         end

@@ -398,9 +398,9 @@ function Hearth.fitBack(spec)
 end
 
 -- The Hearth's open mouth and the Firebox's door need their front tile free (Doors), every look of each.
-local FACE_NAMES = { [0] = "S", [1] = "E" }
+Hearth.FACE_NAMES = { [0] = "S", [1] = "E" }   -- a face number (fireFace, Smokehouse.chamberOn) as Doors names it
 local doorFacings = {}
-for _, name in ipairs(Hearth.FIRE_SPRITES) do doorFacings[name] = FACE_NAMES[Hearth.fireFace(name)] end
+for _, name in ipairs(Hearth.FIRE_SPRITES) do doorFacings[name] = Hearth.FACE_NAMES[Hearth.fireFace(name)] end
 Doors.register(doorFacings)
 
 -- Stove or oven: where a food is cooked, which picks what shows in the hole. A stove food (a pot on the hob: stews,

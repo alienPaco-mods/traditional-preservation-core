@@ -21,8 +21,9 @@ World.getLedger = Weather.shared
 
 -- The cooking time each food in a banked firebox had at the last look, by fire and item id. Cooking only runs in
 -- loaded areas, as the refresh does, so this needn't be saved. Vanilla adds cooking time every tick, so a banked
--- firebox is set back every tick too (slowAll): once a refresh made the cooking bar climb and snap back.
-local cookSeen = setmetatable({}, { __mode = "k" })
+-- firebox is set back every tick too (slowAll): once a refresh made the cooking bar climb and snap back. Kahlua has
+-- no weak tables (ENGINE_NOTES), so a fire's entry goes when the tracker drops it.
+local cookSeen = {}
 
 local function slowCooking(fire)
     local seen = cookSeen[fire] or {}
@@ -44,10 +45,9 @@ local function slowCooking(fire)
     cookSeen[fire] = now
 end
 
+-- Kahlua's pairs goes over the keys as they were when it started, so slowCooking may set a fire's entry meanwhile.
 local function slowAll()
-    local fires = {}
-    for fire in pairs(cookSeen) do table.insert(fires, fire) end
-    for _, fire in ipairs(fires) do slowCooking(fire) end
+    for fire in pairs(cookSeen) do slowCooking(fire) end
 end
 
 local function addEmbers(fire, entry)
@@ -98,8 +98,8 @@ end
 Hearth.attach({ id = Hearth.CAULDRON, onFire = function(cauldron, fire) simmer(fire, Hearth.isHot(cauldron)) end })
 
 -- The overlay (a Stone Hearth's glow, or what the cauldron holds) and its tint. The tint isn't saved, so it is set
--- again the first time a fire is seen after a load (tints starts empty), and whenever it changes.
-local tints = setmetatable({}, { __mode = "k" })
+-- again the first time a fire is seen after a load (tints starts empty), and whenever it changes. Dropped with the fire.
+local tints = {}
 
 local function showOverlay(fire, overlay, colour)
     local shown = fire:getOverlaySprite()
@@ -123,17 +123,19 @@ function World.update(fire, now)
     if spec then state.attached = spec.id end
     local before = spec and spec.look and spec.look(part, fire)
     if spec and spec.heats then
-        spec.heats(part, fire, now, state, Weather.placeTemperature(World.getLedger(), Weather.placeOf(fire)))
+        local place = Weather.placeOf(fire)
+        spec.heats(part, fire, now, state, Weather.placeTemperature(World.getLedger(), place), place)
     end
     local fuel = Hearth.reckonFuel(state, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end
     local banked = Hearth.isBanked(fire)
     showEmbers(fire, banked)
     if banked then slowCooking(fire) else cookSeen[fire] = nil end
-    state.fireUntil = Hearth.isBurning(fire) and now + Hearth.fuelHours(fire) or nil
+    local burning = Hearth.isBurning(fire)
+    state.fireUntil = burning and now + Hearth.fuelHours(fire) or nil
     local mode = banked and Hearth.BANKED or fire:isLit() and Hearth.STOKED or nil
     Hearth.logFire(state, now, mode, state.fireUntil)
-    local name, overlay, colour = Hearth.showing(fire, state, Hearth.isBurning(fire), banked)
+    local name, overlay, colour = Hearth.showing(fire, state, burning, banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
     showOverlay(fire, overlay, colour)
     if spec and spec.onFire then spec.onFire(part, fire, now, state) end
@@ -154,6 +156,7 @@ local tracker = Station.tracker({
         removeEmbers(entry)
         simmer(fire, false)
         cookSeen[fire] = nil
+        tints[fire] = nil
     end,
     -- A hearth just built or put down shows its cauldron (a Firebox its flue and hole) at once.
     scan = true,

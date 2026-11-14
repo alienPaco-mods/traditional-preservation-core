@@ -17,6 +17,10 @@ local IRON_COLOUR = { 0.42, 0.42, 0.44 }   -- the bar with nothing to colour it:
 local litresText, degrees, fluidName, hoursText = UI.litres, UI.degrees, UI.fluidName, UI.hoursText
 local tooltipFor, disableWith, findItems = UI.tooltip, UI.disable, UI.findItems
 
+local function mlOf(cauldron)
+    return cauldron.ml or 0
+end
+
 local function onHearthAction(playerObj, hearth, item, mode)
     if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
     if item then ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
@@ -25,19 +29,33 @@ end
 
 -- The cauldron's fluid by name; a blend names each, the largest share first.
 local function holds(cauldron)
+    local parts = Hearth.partsOf(cauldron)
     local names = {}
-    for name in pairs(Hearth.partsOf(cauldron)) do table.insert(names, name) end
+    for name in pairs(parts) do table.insert(names, name) end
     if #names < 2 then return fluidName(cauldron.fluid) end
-    local parts = cauldron.parts
     table.sort(names, function(a, b) return parts[a] > parts[b] or (parts[a] == parts[b] and a < b) end)
     for index, name in ipairs(names) do names[index] = fluidName(name) end
     return table.concat(names, " + ")
 end
 
 local function cauldronStatus(cauldron)
-    if (cauldron.ml or 0) <= 0 then return getText("IGUI_TraditionalPreservationCore_CauldronEmpty") end
+    if mlOf(cauldron) <= 0 then return getText("IGUI_TraditionalPreservationCore_CauldronEmpty") end
     return say("IGUI_TraditionalPreservationCore_CauldronStatus", litresText(cauldron.ml), litresText(Hearth.CAULDRON_ML),
         holds(cauldron), degrees(cauldron.tempC))
+end
+
+-- The option's submenu: one entry per item, labelled by label(item), drawn as the inventory draws it (a bucket shows
+-- the colour of what is in it), queuing mode on the hearth. Returns each entry with its item.
+local function itemSubMenu(menu, option, playerObj, hearth, items, label, mode)
+    local sub = menu:getNew(menu)
+    menu:addSubMenu(option, sub)
+    local entries = {}
+    for _, item in ipairs(items) do
+        local entry = sub:addOption(label(item), playerObj, onHearthAction, hearth, item, mode)
+        entry.itemForTexture = item
+        table.insert(entries, { entry = entry, item = item })
+    end
+    return entries
 end
 
 -- Every container with a fluid in it. A mix, or a fluid that doesn't go with the cauldron's, shows in red with the
@@ -46,21 +64,19 @@ end
 local function addPourInMenu(menu, playerObj, hearth, cauldron)
     local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_PourIntoCauldron"))
     option.iconTexture = getTexture(CAULDRON_ICON)
-    if (cauldron.ml or 0) >= Hearth.CAULDRON_ML then return disableWith(option, getText("IGUI_TraditionalPreservationCore_CauldronFull")) end
+    if mlOf(cauldron) >= Hearth.CAULDRON_ML then return disableWith(option, getText("IGUI_TraditionalPreservationCore_CauldronFull")) end
     local items = findItems(playerObj, function(item)
         local container = item:getFluidContainer()
         return container ~= nil and not container:isEmpty()
     end)
     if #items == 0 then return disableWith(option, getText("IGUI_TraditionalPreservationCore_NoFluidItem")) end
-    local sub = menu:getNew(menu)
-    menu:addSubMenu(option, sub)
-    for _, item in ipairs(items) do
-        local container = item:getFluidContainer()
-        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_FluidItem", UI.itemName(item),
-            litresText(container:getAmount() * 1000)), playerObj, onHearthAction, hearth, item, "pourIn")
-        -- Drawn as the inventory draws it: a bucket shows the colour of what is in it.
-        entry.itemForTexture = item
-        local parts = Hearth.partsIn(container)
+    local entries = itemSubMenu(menu, option, playerObj, hearth, items, function(item)
+        return say("ContextMenu_TraditionalPreservationCore_FluidItem", UI.itemName(item),
+            litresText(item:getFluidContainer():getAmount() * 1000))
+    end, "pourIn")
+    for _, made in ipairs(entries) do
+        local entry = made.entry
+        local parts = Hearth.partsIn(made.item:getFluidContainer())
         local refusal
         if not parts then
             refusal = getText("IGUI_TraditionalPreservationCore_NotOneFluid")
@@ -89,13 +105,10 @@ local function addFillMenu(menu, playerObj, hearth, cauldron)
         return container ~= nil and TPHearthCauldron.canFillFrom(container, cauldron)
     end)
     if #items == 0 then return disableWith(option, getText("IGUI_TraditionalPreservationCore_NoRoomItem")) end
-    local sub = menu:getNew(menu)
-    menu:addSubMenu(option, sub)
-    for _, item in ipairs(items) do
-        local entry = sub:addOption(say("ContextMenu_TraditionalPreservationCore_Holds", UI.itemName(item),
-            litresText(item:getFluidContainer():getCapacity() * 1000)), playerObj, onHearthAction, hearth, item, "fillFrom")
-        entry.itemForTexture = item
-    end
+    itemSubMenu(menu, option, playerObj, hearth, items, function(item)
+        return say("ContextMenu_TraditionalPreservationCore_Holds", UI.itemName(item),
+            litresText(item:getFluidContainer():getCapacity() * 1000))
+    end, "fillFrom")
 end
 
 -- Pours the cauldron away, whatever it holds: rotten milk would otherwise go out a container at a time.
@@ -117,7 +130,7 @@ local function steamText(info)
 end
 
 local function cauldronRows(window, y, info)
-    local cauldron, ml = info.part, info.part.ml or 0
+    local cauldron, ml = info.part, mlOf(info.part)
     y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCauldron", ml / Hearth.CAULDRON_ML, Hearth.liquidColour(cauldron) or IRON_COLOUR,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.CAULDRON_ML)))
     y = window:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
@@ -142,8 +155,7 @@ function CauldronUI.addNotes(fn)
 end
 
 local function cauldronNotes(info, notes)
-    local ml = info.part.ml or 0
-    if ml <= 0 then
+    if mlOf(info.part) <= 0 then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpEmpty"))
     elseif not info.lit then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpOut"))
@@ -158,11 +170,11 @@ Hearth.attach({
     display = { icon = "media/textures/Item_TPHearth.png", title = "IGUI_CraftingWindow_TPHearth",
         info = "ContextMenu_TraditionalPreservationCore_HearthInfo",
         fire = { bank = "media/textures/Item_TPHearthBanked.png", stoke = "media/textures/Item_TPHearthLit.png" } },
-    status = function(cauldron) return cauldronStatus(cauldron), (cauldron.ml or 0) > 0 and CAULDRON_FULL_ICON or CAULDRON_ICON end,
+    status = function(cauldron) return cauldronStatus(cauldron), mlOf(cauldron) > 0 and CAULDRON_FULL_ICON or CAULDRON_ICON end,
     menu = function(menu, playerObj, hearth, cauldron)
         addPourInMenu(menu, playerObj, hearth, cauldron)
         for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, cauldron) end
-        if (cauldron.ml or 0) > 0 then
+        if mlOf(cauldron) > 0 then
             addFillMenu(menu, playerObj, hearth, cauldron)
             addEmptyOption(menu, playerObj, hearth, cauldron)
         end

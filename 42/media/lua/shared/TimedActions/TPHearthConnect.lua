@@ -8,22 +8,6 @@ TPHearthConnect = ISBaseTimedAction:derive("TPHearthConnect")
 local Action = require "TraditionalPreservationCore/Action"
 local Hearth = require "TraditionalPreservationCore/Hearth"
 
-local function toolHere(self)
-    return self.character:getInventory():containsTagRecurse(ItemTag[self.kit.tool])
-end
-
--- The kit's items, all in the main inventory (the menu brings them there first).
-local function kitItems(self)
-    local inventory = self.character:getInventory()
-    local items = {}
-    for _, need in ipairs(self.kit.items) do
-        local found = inventory:getSomeType(need[1], need[2], ArrayList.new())
-        if found:size() < need[2] then return nil end
-        for i = 0, need[2] - 1 do table.insert(items, found:get(i)) end
-    end
-    return items
-end
-
 local function stillFits(self)
     if not self.fire:getSquare() then return false end
     if self.kind then
@@ -33,7 +17,8 @@ local function stillFits(self)
 end
 
 function TPHearthConnect:isValid()
-    return toolHere(self) and stillFits(self) and (not self.kind or kitItems(self) ~= nil)
+    return Action.hasTool(self.character, self.kit.tool) and stillFits(self)
+        and (not self.kind or Action.kitItems(self.character, self.kit.items) ~= nil)
 end
 
 function TPHearthConnect:waitToStart()
@@ -47,22 +32,18 @@ end
 
 function TPHearthConnect:complete()
     if not stillFits(self) then return false end
-    local inventory = self.character:getInventory()
     local state = Hearth.stateOf(self.fire:getModData())
     if self.kind then
-        local items = kitItems(self)
+        local items = Action.kitItems(self.character, self.kit.items)
         if not items then return false end
-        for _, item in ipairs(items) do inventory:Remove(item) end
+        Action.takeItems(self.character, items)
         Hearth.join(state, self.spec.id, self.kind, Hearth.flueSideTo(self.fire, self.target:getSquare()))
     else
-        for _, need in ipairs(Hearth.kitBack(self.kit)) do
-            for _ = 1, need[2] do inventory:AddItem(need[1]) end
-        end
+        Action.giveItems(self.character, Hearth.kitBack(self.kit))
         Hearth.unjoin(state)
     end
-    local xp = self.kit.xp
-    if xp and Perks[xp[1]] then self.character:getXp():AddXP(Perks[xp[1]], xp[2]) end
-    if Hearth.World then Hearth.World.refresh(self.fire) end
+    Action.addXp(self.character, self.kit.xp)
+    Hearth.redraw(self.fire)
     if self.spec.onChange then self.spec.onChange(self.fire, self.target) end
     return true
 end

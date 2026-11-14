@@ -192,6 +192,19 @@ fire.tint = nil
 fire.overlay = getSprite(Hearth.liquidOverlay(cauldron, 0))
 World.update(fire, 120.5)
 check("an overlay already shown is not tinted again", fire.tint == nil)
+local Weather = require "TraditionalPreservationCore/Weather"
+local heats, heatsPlace = spec.heats, nil
+spec.heats = function(...) heatsPlace = select(6, ...) return heats(...) end
+World.update(fire, 120.5)
+spec.heats = heats
+check("heats is given the place the Hearth stands in", heatsPlace ~= nil and heatsPlace == Weather.placeOf(fire))
+-- Kahlua has no weak tables: the tint seen goes with the fire when its area unloads, so it is set again on return.
+cell.squares["5,6,0"] = nil
+for _ = 1, 200 do H.fire("OnTick") end
+cell.squares["5,6,0"] = square
+fire.tint = nil
+World.update(fire, 120.5)
+check("unloaded and back, the overlay is tinted again", fire.tint ~= nil and fire.tint[1] == 1)
 check("lit, nothing may come off", Hearth.canRemove(fire) == false and select(2, Hearth.canRemove(fire)) == "Burning")
 World.setFire(fire, "out", 120.5)
 fire.lit = false

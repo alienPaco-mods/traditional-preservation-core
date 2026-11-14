@@ -182,7 +182,8 @@ end
 --                                         cauldron's Hearth.sprite if left out)
 --   overlay(part, face, burning, banked)  its overlay sprite and, to tint it, { r, g, b } (0-1), or nil (the
 --                                         cauldron's Hearth.liquidOverlay if left out: what it holds, coloured)
---   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
+--   heats(part, fire, now, fireState, airC, place)  brings what it holds up to now, by the fire and the air of the
+--                                         place the Hearth stands in (Weather.placeOf)
 --   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
 --   display                               client: how the fitted Stone Hearth shows, { icon, title (a text key: its
 --                                         submenu and Info window), info (the Info row's text key), fire = { bank,
@@ -464,6 +465,11 @@ end
 function Hearth.fireStateOf(fire)
     if Hearth.World then return Hearth.World.update(fire, getGameTime():getWorldAgeHours()) end
     return Hearth.stateOf(fire:getModData())
+end
+
+-- Redraws a Stone Hearth now (HearthWorld.refresh) where the World runs, e.g. after a pour or a fit.
+function Hearth.redraw(fire)
+    if Hearth.World then Hearth.World.refresh(fire) end
 end
 
 -- The cauldron's state, brought up to now the same way.

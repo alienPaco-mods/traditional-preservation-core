@@ -6,7 +6,6 @@
 -- use them (Fish & Meat's fat, Dairy's milk) name Hearth only. Its menu and Info rows are CauldronUI's, its simmer HearthWorld's.
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
-local Weather = require "TraditionalPreservationCore/Weather"
 local Recipes = require "TraditionalPreservationCore/Recipes"
 
 Hearth.CAULDRON_ITEM = "TraditionalPreservationCore.ForgedCauldron"
@@ -29,11 +28,11 @@ local Cauldron = Hearth.attach({
         if (cauldron.ml or 0) > 0 then return false, "Full" end
         return true
     end,
-    look = function(cauldron) return Hearth.look(cauldron) end,
+    look = Hearth.look,
     -- Heated as the fire was until now, cooled to the air after; its fluid aged where the Hearth stands.
-    heats = function(cauldron, fire, now, fireState, airC)
+    heats = function(cauldron, fire, now, fireState, airC, place)
         Hearth.advance(cauldron, now, airC, fireState)
-        FluidAgeing.updateCauldron(cauldron, now, Weather.placeOf(fire), Hearth.heldHours(cauldron))
+        FluidAgeing.updateCauldron(cauldron, now, place, Hearth.heldHours(cauldron))
     end,
 })
 

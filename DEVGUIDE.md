@@ -246,6 +246,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
      `Station.squareAt(square, dx, dy)`: the square beside one, on its level.
+   - `Action`: a timed action's time (`duration`, `pourDuration`) and a kit's parts: `hasTool(character, tag)`,
+     `kitItems(character, needs)` (the items, all from the main inventory, or nil), `takeItems`, `giveItems(character,
+     needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them. `Hearth.redraw(fire)`
+     redraws a Stone Hearth after an action changed it (nothing where the World doesn't run).
    - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
      default and old-save migration (Yeast, Vinegar, the template).

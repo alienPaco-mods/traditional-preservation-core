@@ -87,7 +87,7 @@ function TPC.here()
     local player = getPlayer()
     local place = Hearth.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
-        Hearth.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
+        Weather.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
 end
 
 -- Pretends the weather for a test that wants a cold month or a warm day. The day's temperature goes through the
@@ -131,7 +131,7 @@ function TPC.cauldronInfo()
     if not hearth then return end
     local cauldron = Hearth.cauldronOf(hearth)
     local state = Hearth.stateOf(hearth:getModData())
-    local hotIn = Hearth.hoursToHot(cauldron)
+    local hotIn = Hearth.hoursToHot(cauldron, state.banked)
     say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; cauldron %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         hearth:getX(), hearth:getY(), hearth:getZ(),
         Hearth.isBanked(hearth) and string.format("banked (%.1f min reckoned)", state.fuel or 0)

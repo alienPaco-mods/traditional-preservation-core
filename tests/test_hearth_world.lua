@@ -184,8 +184,8 @@ check("the fire's own state stays outside the cauldron's", modData[Hearth.KEY].f
 Hearth.pourInto(cauldron, "Water", 10000, 20, 120)
 H.setHours(120.5)
 World.update(fire, 120.5)
-check("the cauldron heats by the fire through its heats, as the fire was until now", cauldron.tempC > 40
-    and cauldron.last == 120.5 and cauldron.fireUntil ~= nil and cauldron.banked == nil)
+check("the cauldron heats by the fire through its heats, as the fire was until now, the fire's fields kept the fire's",
+    cauldron.tempC > 40 and cauldron.last == 120.5 and cauldron.fireUntil == nil and cauldron.banked == nil)
 check("what it holds shows as the overlay, tinted", fire.overlay:getName() == Hearth.liquidOverlay(cauldron, 0)
     and fire.tint ~= nil and fire.tint[1] == 1)
 fire.tint = nil

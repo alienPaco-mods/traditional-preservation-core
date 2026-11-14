@@ -2,8 +2,8 @@
 -- mod's would be: the Forged Cauldron (user, 2026-11-13: forged iron; copper is kept for Dairy's cheese vat). Fit
 -- Cauldron hangs it from two metal pipes set in the stone and a heavy chain on a large hook; Remove gives them all
 -- back. The cauldron is forged as the forged pot is, learned from the same magazine or researched from the cauldron
--- itself. Its fluid rules stay in Hearth.lua (pourInto, take, advance, the hooks), so mods that use them (Fish & Meat's
--- fat, Dairy's milk) reach it as before. Its menu and Info rows are CauldronUI's, its simmer HearthWorld's.
+-- itself. Its fluid rules are CauldronFluid's (pourInto, take, advance, the hooks), reached through Hearth, so mods that
+-- use them (Fish & Meat's fat, Dairy's milk) name Hearth only. Its menu and Info rows are CauldronUI's, its simmer HearthWorld's.
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 local Weather = require "TraditionalPreservationCore/Weather"
@@ -32,8 +32,7 @@ local Cauldron = Hearth.attach({
     look = function(cauldron) return Hearth.look(cauldron) end,
     -- Heated as the fire was until now, cooled to the air after; its fluid aged where the Hearth stands.
     heats = function(cauldron, fire, now, fireState, airC)
-        cauldron.fireUntil, cauldron.banked = fireState.fireUntil, fireState.banked
-        Hearth.advance(cauldron, now, airC)
+        Hearth.advance(cauldron, now, airC, fireState)
         FluidAgeing.updateCauldron(cauldron, now, Weather.placeOf(fire), Hearth.heldHours(cauldron))
     end,
 })

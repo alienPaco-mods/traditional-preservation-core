@@ -24,7 +24,7 @@ M.MIN_RATE = 0.02
 -- mod's public names for them, used by the Dev console and the tests. A station within reach of a lit fire is by a
 -- fire (TP Core's Hearth); PLACES are the weather's, which the ledger keeps totals for.
 M.PLACES = Weather.PLACES
-M.placeTemperature = Hearth.placeTemperature
+M.placeTemperature = Weather.placeTemperature
 M.placeOf = Hearth.placeOf
 
 function M.processRate(celsius)

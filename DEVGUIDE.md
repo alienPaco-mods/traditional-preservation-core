@@ -137,7 +137,7 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../HearthConnect.lua` (connections), `.../HearthPlace.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
@@ -198,7 +198,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Hearth.cauldronOf(fire)` brings it up to now). `Hearth.attachmentOf(fire)` gives the spec and state;
      `Hearth.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
      `Hearth.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
-     `Hearth.lua` above `Hearth.attach`. Fit / Remove are Core's (`TPHearthFit`, by the attachment's `fit`).
+     `Hearth.lua` above `Hearth.attach`; `attach` and `connect` share `Hearth.registry`, which refuses a spec without an
+     id and a field given again as something else. Fit / Remove are Core's (`TPHearthFit`, by the attachment's `fit`).
    - **Connections** (`Hearth.connect{ id, kinds, kits, blocks, finds, joined, refusal, onChange, connectText,
      disconnectText, disconnectHelp, icon, notes, smoke }`, the hub's step iii, 2026-11-14): what is built onto a fire in
      its second slot, one at a time; the Smokehouse's flue is the first (`Smokehouse.ID`, in `Smokehouse.lua`, its notes
@@ -216,7 +217,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      bare Stone Hearth's hole is lidded and its glow goes up the flue.
    - The bare Stone Hearth (`Hearth.isFirebox`, "the Firebox" in the code; `Hearth.isHearth` is one with the cauldron
      fitted, `Hearth.isFire` either): the same fire with nothing fitted, in the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
-     door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES`
+     door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `HearthConnect.FLUE_SIDES`
      matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the fitted one; their rows show on a fitted Stone Hearth too.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds

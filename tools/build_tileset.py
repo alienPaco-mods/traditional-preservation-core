@@ -9,7 +9,7 @@ across, with its iron door on the side it faces, closed on top but for a small r
 what the fitting takes: two Metal Pipes set in the stone along the door's side, a Heavy Chain slung between their
 tops and a Large Hook in its middle, all sooted; nearly on the hole, a round-bellied kettle of dark forged iron,
 greased and blacked, sooted below its shoulder, hanging by its bail from the hook. The bail runs towards the door. It
-is drawn as a 100-120 L kettle; it holds 60 L (Hearth.lua). The game turns it into a vanilla fireplace when it is
+is drawn as a 100-120 L kettle; it holds 60 L (CauldronFluid.lua). The game turns it into a vanilla fireplace when it is
 built. Vanilla draws the fireplace's flames and fuel as attached sprites, so HearthWorld swaps the hearth's own sprite
 among whole-hearth tiles (HEARTH_LOOKS), the fire out, lit or banked and the kettle still or steaming, and every one
 of them carries the fireplace's tile properties. The fire's glow is baked into them (the door's vents, the hole and
@@ -59,7 +59,7 @@ LIQUID = 6
 # (the Smokehouse's entry overlay, below). The flue leaves for the building on one side, never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
 # into the wall (user, 2026-11-13: it climbed past the top before, and met the cauldron's pipes), or a trench in the
 # ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
-# generator's). Sides by facing, as world steps (+x east, +y south), the same table as Hearth.FLUE_SIDES in Lua.
+# generator's). Sides by facing, as world steps (+x east, +y south), the same table as HearthConnect.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
               "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
 # Tile numbers: the Firebox's old 10-15. Joined, the stone shows Lid or Pot: the Smokehouse's entry overlay draws the

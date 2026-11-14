@@ -252,6 +252,7 @@ Hearth.connect({
     kinds = Smokehouse.FLUE_KINDS,
     kits = Smokehouse.FLUE_KITS,
     blocks = "connection",
+    smoke = true,
     finds = function(fire)
         local found = Smokehouse.chamberBy(fire)
         return found and found.tile

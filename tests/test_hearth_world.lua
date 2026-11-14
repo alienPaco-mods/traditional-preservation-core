@@ -136,7 +136,7 @@ cell.squares["5,6,0"] = square
 local boxData = {}
 local boxItems = {}
 local boxContainer = setmetatable({ getItems = function() return H.list(boxItems) end }, { __index = container })
-local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Hearth.fireboxSprite(nil, nil, nil, 0)) }, { __index = fire })
+local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Hearth.fireboxSprite(false, nil, 0)) }, { __index = fire })
 function box:getModData() return boxData end
 function box:getContainer() return boxContainer end
 local function food(fullType)
@@ -144,29 +144,29 @@ local function food(fullType)
 end
 World.track(box)
 World.update(box, 110)
-check("a lit Firebox is tracked, open, its smoke out of the hole", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Open", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Open", 0) and boxData[Hearth.KEY].copper == nil
+check("a lit Firebox is tracked, open, its smoke out of the hole", box.sprite:getName() == Hearth.fireboxSprite(false, "Open", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, false, "Open", 0) and boxData[Hearth.KEY].copper == nil
     and Hearth.isFirebox(box) and not Hearth.isHearth(box))
 boxItems[1] = food("Base.PieWholeRaw")
 World.update(box, 110)
-check("oven food in it: the lid, the smoke round the door", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Lid", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Lid", 0))
+check("oven food in it: the lid, the smoke round the door", box.sprite:getName() == Hearth.fireboxSprite(false, "Lid", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, false, "Lid", 0))
 boxItems[2] = food("Base.PotOfStew")
 World.update(box, 110)
-check("a stew too: the pot", box.sprite:getName() == Hearth.fireboxSprite(nil, nil, "Pot", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, false, nil, "Pot", 0))
+check("a stew too: the pot", box.sprite:getName() == Hearth.fireboxSprite(false, "Pot", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, false, false, "Pot", 0))
 World.setFire(box, "bank", 110)
 check("it banks as the Hearth does", not box:isLit() and Hearth.isBanked(box) and count(cell.heat) >= 1
-    and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, "Pot", 0))
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, false, "Pot", 0))
 boxItems[2] = nil
 Hearth.join(boxData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
 World.update(box, 111)
-check("its flue joined, its tile shows the pipe and the lid, and the smoke goes up it",
-    box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0)
-    and box.overlay:getName() == Hearth.fireboxGlow(true, true, "Pipe", "Lid", 0))
+check("its flue joined, the lid goes on and the smoke goes up it (the shed draws the pipe)",
+    box.sprite:getName() == Hearth.fireboxSprite(true, "Lid", 0)
+    and box.overlay:getName() == Hearth.fireboxGlow(true, true, true, "Lid", 0))
 boxItems[1] = nil
 World.update(box, 111)
-check("joined and empty, the lid stays on", box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0))
+check("joined and empty, the lid stays on", box.sprite:getName() == Hearth.fireboxSprite(true, "Lid", 0))
 check("and it never grows a copper", boxData[Hearth.KEY].copper == nil and boxData[Hearth.KEY].ml == nil
     and boxData[Hearth.KEY].attached == nil and Hearth.attachmentOf(box) == nil and Hearth.canRemove(box) == false)
 World.setFire(box, "stoke", 111)
@@ -209,7 +209,7 @@ check("taken off, the copper's state goes and nothing is fitted", Hearth.unfit(f
     and modData[Hearth.KEY].copper == nil and modData[Hearth.KEY].attached == false and Hearth.attachmentOf(fire) == nil)
 World.update(fire, 121)
 check("its copper tile turns to the bare Stone Hearth's, the flue still joined", Hearth.isFirebox(fire)
-    and fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
+    and fire.sprite:getName() == Hearth.fireboxSprite(true, "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
 check("the joined flue never blocks the fit", Hearth.fitRefusal(fire, cauldron) == nil)
 fire.lit = true
 check("but a burning fire does", Hearth.fitRefusal(fire, cauldron) == "Burning")
@@ -218,7 +218,7 @@ Hearth.connect({ id = "testWall", kinds = { "Pipe" }, kits = { Pipe = Smokehouse
 Hearth.join(modData[Hearth.KEY], "testWall", "Pipe", "Back")
 check("a connection that blocks both slots refuses the fit", Hearth.fitRefusal(fire, cauldron) == "Blocked")
 World.update(fire, 121)
-check("any connection by a pipe kit shows the pipe", fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0))
+check("a connection that doesn't take the smoke leaves the hole open", fire.sprite:getName() == Hearth.fireboxSprite(false, "Open", 0))
 Hearth.join(modData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
 check("joined again to the Smokehouse, the other is gone", modData[Hearth.KEY].testWall == nil and Smokehouse.flueOf(fire) == "Pipe")
 Hearth.fit(fire, Hearth.COPPER)

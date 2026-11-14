@@ -55,19 +55,16 @@ LIQUID = 6
 # The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no copper and an
 # iron door on its mouth, and a stone-lined hole in its top (HOLE_D): a cooking source. What shows in the hole is a look
 # (Hearth.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
-# food only, or joined to a flue with nothing for the pot). Joined, its flue leaves for the building on one side,
-# never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
+# food only, or joined to a flue with nothing for the pot). The stone draws no flue: a connection owns its sprites
+# (the Smokehouse's entry overlay, below). The flue leaves for the building on one side, never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
 # into the wall (user, 2026-11-13: it climbed past the top before, and met the cauldron's pipes), or a trench in the
 # ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
 # generator's). Sides by facing, as world steps (+x east, +y south), the same table as Hearth.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
               "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
-# Tile numbers: the first seven looks take the Firebox's old 10-23, the rest run on after the Smokehouse's.
-FIREBOX_SLOTS = list(range(10, 24, 2)) + list(range(54, 128, 2))
-FIREBOX_LOOKS = {}
-for _look in ["Open", "Lid", "Pot"] + [f"{kind}_{side}_{hole}" for hole in ("Lid", "Pot") for kind in ("Pipe", "Stones")
-                                       for side in ("Back", "Left", "Right")]:
-    FIREBOX_LOOKS[_look] = FIREBOX_SLOTS[len(FIREBOX_LOOKS)]
+# Tile numbers: the Firebox's old 10-15. Joined, the stone shows Lid or Pot: the Smokehouse's entry overlay draws the
+# whole flue, so the Pipe_ and Stones_ looks that drew the same were dropped (2026-11-14; 16-23 and 54-69 free).
+FIREBOX_LOOKS = {"Open": 10, "Lid": 12, "Pot": 14}
 FIREBOX = FIREBOX_LOOKS["Open"]
 # Its glow shows through the door's vents. Under the lid with no flue the smoke leaks round the door (Lit, Banked);
 # joined, it goes up the flue (Flue); open, the fire shows in the hole and the smoke climbs out of it (Open); with the
@@ -740,9 +737,29 @@ def pot_radius(t):
     return POT_PROFILE[-1][1]
 
 
+POT_LID_DOME = 2.2             # px the forged lid rises above the pot's rim at its middle
+
+
+def pot_lid(draw, cx, top, rx, ry):
+    """The pot's own lid, forged iron as the pot: it sits just inside the rolled rim and rises in a low dome to a loop
+    handle, so whatever is cooking stays covered (user, 2026-11-13: open, the liquid looked off). Lit from the left."""
+    steps = 12
+    for i in range(steps + 1):
+        t = i / steps
+        k = math.cos(t * math.pi / 2)              # the dome narrows to its crown
+        tone = 0.9 + 0.5 * t
+        draw.ellipse(box(cx, top - 0.2 - t * POT_LID_DOME, (rx - 0.5) * max(k, 0.12), (ry - 0.4) * max(k, 0.12)),
+                     fill=shade(LID, tone))
+    draw.arc(box(cx, top - 0.2, rx - 0.5, ry - 0.4), 20, 160, fill=shade(LID, 0.55), width=SS)
+    draw.arc(box(cx, top - 0.6, rx - 1.0, ry - 0.8), 160, 250, fill=shade(LID, 1.8), width=SS)
+    crown = top - 0.2 - POT_LID_DOME
+    draw.ellipse(box(cx, crown + 0.2, 1.4, 0.7), fill=shade(LID, 0.5))
+    draw.arc(box(cx, crown - 0.6, 1.5, 1.4), 180, 360, fill=shade(LID, 1.3), width=SS)
+
+
 def pot(layer):
     """Vanilla's forged pot set in the hole, its lower belly down in it: dark mottled iron lit from the left, a rolled
-    rim, a ring handle on each side, a stew showing; sooted low."""
+    rim, a ring handle on each side, its lid on (pot_lid); sooted low."""
     draw = ImageDraw.Draw(layer)
     cx, cy = pzart.project(0, 0, HOLE_Z)
     rx0, ry0 = ellipse_r(HOLE_D + 0.03)
@@ -766,8 +783,7 @@ def pot(layer):
     rx, ry = rx0 * k, ry0 * k
     draw.ellipse(box(cx, top, rx, ry), fill=shade(POT, 1.35))
     draw.arc(box(cx, top, rx, ry), 150, 250, fill=shade(POT, 1.8), width=SS)
-    draw.ellipse(box(cx, top + 0.3, rx - 0.9, ry - 0.6), fill=shade(POT, 0.4))
-    draw.ellipse(box(cx, top + 1.0, rx - 1.3, ry - 1.0), fill=shade((150, 92, 52), 0.95))
+    pot_lid(draw, cx, top, rx, ry)
     # Ring handles, hung from lugs just under the rim, on the left and right of the screen.
     for side in (-1, 1):
         x = cx + side * (rx0 * pot_radius(0.75) + 0.4)
@@ -777,10 +793,10 @@ def pot(layer):
 
 
 def paint_firebox(look, face):
-    """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot). The flue's looks
-    (Pipe_ and Stones_) draw the same: the Smokehouse's entry overlay draws the whole flue from the stone to its wall,
-    so it shows by a fitted Hearth too and is never drawn twice (user, 2026-11-13)."""
-    hole = look.split("_")[-1]
+    """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot). No flue: the
+    Smokehouse's entry overlay draws the whole flue from the stone to its wall, so it shows by a fitted Hearth too and
+    is never drawn twice (user, 2026-11-13)."""
+    hole = look
     layer = body(face, False)
     top = pzart.new_layer(SS)
     lining(top, random.Random(300 + face))
@@ -1394,7 +1410,7 @@ def contact_sheet(tiles, path):
     cells = [(index + face, None) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
     cells += [(index + face, LIQUID + face) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
     cells += [(index + face, None) for index in FIREBOX_LOOKS.values() for face in range(len(FACES))]
-    glow_looks = {"": "Lid", "Flue": "Pipe_Back_Lid", "Open": "Open", "Pot": "Pot"}
+    glow_looks = {"": "Lid", "Flue": "Lid", "Open": "Open", "Pot": "Pot"}
     cells += [(FIREBOX_LOOKS[glow_looks[kind.replace("Lit", "").replace("Banked", "")]] + face, FIREBOX_GLOWS[kind] + face)
               for kind in FIREBOX_GLOWS for face in range(len(FACES))]
     sheet = Image.new("RGBA", (TILE_W * len(cells), TILE_H), (96, 110, 88, 255))

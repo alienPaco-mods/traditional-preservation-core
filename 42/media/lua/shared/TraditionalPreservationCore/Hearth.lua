@@ -28,8 +28,9 @@
 -- hole, banked and stoked the same way. Its state is the same table (no attachment). What shows in the hole is its
 -- look (Hearth.holeLook): open, a forged pot when a stove food or a fluid is inside (Hearth.cooksOn), a lid when only
 -- oven food is. Any Stone Hearth, fitted or not, may have something joined to its back or either flank, never the
--- door's side (Hearth.connect, CONNECTIONS below; the Smokehouse's flue): its tile is picked by facing, flue, side and
--- hole, as Fuel Barrel picks its barrel's by the generator's. Hearth.isFire is any Stone Hearth, fitted or not.
+-- door's side (Hearth.connect, CONNECTIONS below; the Smokehouse's flue): its tile is picked by facing and hole alone.
+-- A connection draws itself on its own object (the Smokehouse's entry overlay draws the flue, Smokehouse.entrySprite);
+-- the stone only puts its lid on when the connection takes the smoke (spec.smoke). Hearth.isFire is any Stone Hearth, fitted or not.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -625,14 +626,13 @@ function Hearth.liquidOverlay(copper, face)
     return Tiles.PREFIX .. (Hearth.LIQUID + face), Hearth.liquidColour(copper)
 end
 
--- The Stone Hearth with nothing fitted: one tile per flue, side, hole look and facing (FIREBOX_LOOKS: Open, Lid, Pot,
--- or Flue_Side_Lid / Flue_Side_Pot), its glow by fire, flue and hole.
+-- The Stone Hearth with nothing fitted: one tile per hole look and facing (FIREBOX_LOOKS: Open, Lid, Pot), its glow by
+-- fire, smoke and hole. Connections draw their own sprites, so the stone has no flue tiles (dropped 2026-11-14).
 Hearth.FIREBOX_LOOKS = Tiles.FIREBOX_LOOKS or {}
 Hearth.FIREBOX_SPRITES = Tiles.FIREBOXES or {}
 Hearth.FIREBOX_GLOWS = Tiles.FIREBOX_GLOWS or {}
 Hearth.OPEN, Hearth.LID, Hearth.POT = "Open", "Lid", "Pot"
-Hearth.FLUES = { Pipe = true, Stones = true }
--- The sides a flue may go to, by facing (0 S, 1 E), as world steps (+x east, +y south): the same table as FLUE_SIDES
+-- The sides a connection may go to, by facing (0 S, 1 E), as world steps (+x east, +y south): the same table as FLUE_SIDES
 -- in tools/build_tileset.py. The door's side is never one.
 Hearth.FLUE_SIDES = {
     [0] = { Back = { 0, -1 }, Left = { -1, 0 }, Right = { 1, 0 } },
@@ -650,16 +650,16 @@ function Hearth.fireFace(spriteName)
     return Hearth.fireboxFace(spriteName) or Hearth.face(spriteName)
 end
 
--- Joined to a flue the hole is never open: the smoke must go up the flue.
-function Hearth.fireboxSprite(flue, side, hole, face)
+-- With a connection that takes the smoke (smoke true) the hole is never open: the smoke must go up the flue.
+function Hearth.fireboxSprite(smoke, hole, face)
     local look = hole or Hearth.OPEN
-    if flue and side then look = flue .. "_" .. side .. "_" .. (look == Hearth.OPEN and Hearth.LID or look) end
+    if smoke and look == Hearth.OPEN then look = Hearth.LID end
     return Tiles.PREFIX .. ((Hearth.FIREBOX_LOOKS[look] or Hearth.FIREBOX_LOOKS[Hearth.OPEN]) + face)
 end
 
-function Hearth.fireboxGlow(lit, banked, flue, hole, face)
+function Hearth.fireboxGlow(lit, banked, smoke, hole, face)
     if not lit then return nil end
-    local kind = flue and "Flue" or (hole == Hearth.OPEN or hole == Hearth.POT) and hole or ""
+    local kind = smoke and "Flue" or (hole == Hearth.OPEN or hole == Hearth.POT) and hole or ""
     local base = Hearth.FIREBOX_GLOWS[(banked and "Banked" or "Lit") .. kind]
     return base and Tiles.PREFIX .. (base + face) or nil
 end
@@ -813,7 +813,9 @@ end
 --   connectText, disconnectText, disconnectHelp, icon   client: its menu rows, Disconnect's hover (%1 what comes
 --                                         back, %2 the tool), their icon path
 --   notes(info, notes, part)              client: its Info notes
--- A kind with its own stone tiles (Hearth.FLUES) shows its pipe on the Stone Hearth.
+--   smoke                                 true when it takes the fire's smoke: the hole is lidded, the glow goes up
+--                                         it (the Smokehouse's flue)
+-- A connection owns its sprites: it draws itself on its own object (onChange redraws it), never on the stone.
 local CONNECTIONS, CONNECTION_ORDER = {}, {}
 
 function Hearth.connect(spec)
@@ -939,7 +941,7 @@ function Hearth.flueSquare(firebox, side)
     return getCell():getGridSquare(here:getX() + step[1], here:getY() + step[2], here:getZ())
 end
 
--- The sprite and glow a Stone Hearth shows now: its attachment's look, or its flue and hole (Hearth.holeLook), and
+-- The sprite and glow a Stone Hearth shows now: its attachment's look, or its hole (lidded under a smoke connection) (Hearth.holeLook), and
 -- its fire. nil for anything else.
 function Hearth.showing(fire, state, burning, banked)
     local face = Hearth.fireFace(fire:getSprite():getName())
@@ -952,10 +954,10 @@ function Hearth.showing(fire, state, burning, banked)
     end
     local container = fire:getContainer()
     local hole = Hearth.holeLook(container and container:getItems())
-    local flue, side = Hearth.joinOf(state)
-    if not Hearth.FLUES[flue] then flue, side = nil, nil end
-    return Hearth.fireboxSprite(flue, side, hole, face),
-        Hearth.fireboxGlow(burning, banked, flue, flue and Hearth.LID or hole, face)
+    local id = Hearth.connectedTo(state)
+    local smoke = id and CONNECTIONS[id] and CONNECTIONS[id].smoke and Hearth.joinOf(state) ~= nil or false
+    return Hearth.fireboxSprite(smoke, hole, face),
+        Hearth.fireboxGlow(burning, banked, smoke, smoke and Hearth.LID or hole, face)
 end
 
 -- The fire's state, brought up to now where the World runs (a server or single player).

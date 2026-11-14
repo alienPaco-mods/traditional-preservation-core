@@ -33,12 +33,12 @@ local Hearth = require "TraditionalPreservationCore/Hearth"
 local Doors = require "TraditionalPreservationCore/Doors"
 
 local hearthS, hearthE = Hearth.sprite("Empty", 0), Hearth.sprite("Empty", 1)
-local fireboxS, fireboxE = Hearth.fireboxSprite(nil, nil, nil, 0), Hearth.fireboxSprite(nil, nil, nil, 1)
+local fireboxS, fireboxE = Hearth.fireboxSprite(false, nil, 0), Hearth.fireboxSprite(false, nil, 1)
 check("the Hearth's mouth opens its way, every look", Doors.facingOf(hearthS) == "S" and Doors.facingOf(hearthE) == "E"
     and Doors.facingOf(Hearth.sprite("Hot", 1)) == "E")
 check("so does the Stone Hearth's door, with any flue or hole", Doors.facingOf(fireboxS) == "S" and Doors.facingOf(fireboxE) == "E"
-    and Doors.facingOf(Hearth.fireboxSprite("Pipe", "Left", "Pot", 0)) == "S"
-    and Doors.facingOf(Hearth.fireboxSprite("Stones", "Right", "Lid", 1)) == "E")
+    and Doors.facingOf(Hearth.fireboxSprite(true, "Pot", 0)) == "S"
+    and Doors.facingOf(Hearth.fireboxSprite(true, "Lid", 1)) == "E")
 check("anything else has no door", Doors.facingOf("vanilla_crate") == nil and Doors.facingOf(nil) == nil)
 
 -- Its own front: facing S the tile south, facing E the tile east.

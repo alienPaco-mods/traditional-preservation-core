@@ -11,7 +11,7 @@ require "TraditionalPreservationCore/Copper"
 local say = UI.say
 local COPPER_ICON = "media/textures/Item_TPCauldron.png"
 local COPPER_FULL_ICON = "media/textures/Item_TPCauldronFull.png"
-local COPPER_COLOUR = { 0.72, 0.45, 0.3 }
+local IRON_COLOUR = { 0.42, 0.42, 0.44 }   -- the bar with nothing to colour it: the cauldron's iron
 
 local litresText, degrees, fluidName, hoursText = UI.litres, UI.degrees, UI.fluidName, UI.hoursText
 local tooltipFor, disableWith, findItems = UI.tooltip, UI.disable, UI.findItems
@@ -111,7 +111,7 @@ end
 
 local function copperRows(window, y, info)
     local copper, ml = info.copper, info.copper.ml or 0
-    y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCopper", ml / Hearth.COPPER_ML, COPPER_COLOUR,
+    y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCopper", ml / Hearth.COPPER_ML, Hearth.liquidColour(copper) or IRON_COLOUR,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.COPPER_ML)))
     y = window:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
         ml > 0 and holds(copper) or getText("IGUI_TraditionalPreservationCore_InfoNothing"))

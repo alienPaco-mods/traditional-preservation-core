@@ -108,10 +108,22 @@ function UI.hoursText(hours)
     return UI.say("IGUI_TraditionalPreservationCore_Hours", tostring(math.ceil(hours)))
 end
 
--- A fluid's name as the game shows it, from its type ("CowMilk").
+-- Vanilla names tainted water "Water" and adds its "(Tainted)" only when the sandbox's tainted water text is on
+-- (ENGINE_NOTES: getUiName; sinks and rain barrels ask the same option).
+local TAINTED = "TaintedWater"
+
+local function showsTainted()
+    local option = getSandboxOptions():getOptionByName("EnableTaintedWaterText")
+    return option ~= nil and option:getValue() == true
+end
+
+-- A fluid's name as the game shows it, from its type ("CowMilk"): tainted water as vanilla names it.
 function UI.fluidName(name)
     local fluid = name and Fluid.Get(name)
-    return fluid and fluid:getTranslatedName() or tostring(name)
+    if not fluid then return tostring(name) end
+    local text = fluid:getTranslatedName()
+    if name == TAINTED and showsTainted() then text = text .. " " .. getText("Fluid_Tainted") end
+    return text
 end
 
 -- Right-click menus

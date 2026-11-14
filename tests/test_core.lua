@@ -243,6 +243,20 @@ check("say: values go in after the translator", UI.say("T_Soured", UI.percent(0.
 check("say: a text with no values", UI.say("T_None") == "plain")
 check("timeText: rounds up to the hour", UI.timeText(25.2, "T_Time") == "1 d 2 h")
 check("timeText: whole days", UI.timeText(48, "T_Time") == "2 d 0 h")
+-- Tainted water: "Water", plus vanilla's "(Tainted)" only when the sandbox's tainted water text is on.
+H.texts.Fluid_Tainted = "(Tainted)"
+local savedFluid, taintedText = Fluid, true
+Fluid = { Get = function(name) return { getTranslatedName = function() return name == "CowMilk" and "Cow's Milk" or "Water" end } end }
+getSandboxOptions = function()
+    return { getOptionByName = function(_, option)
+        return option == "EnableTaintedWaterText" and { getValue = function() return taintedText end } or nil
+    end }
+end
+check("fluidName: tainted water says so when the sandbox shows it", UI.fluidName("TaintedWater") == "Water (Tainted)"
+    and UI.fluidName("Water") == "Water" and UI.fluidName("CowMilk") == "Cow's Milk")
+taintedText = false
+check("fluidName: and is plain Water when it doesn't", UI.fluidName("TaintedWater") == "Water")
+Fluid, getSandboxOptions = savedFluid, nil
 local fakeTexts = H.texts
 H.installGetText()
 local words = {}

@@ -11,5 +11,6 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `__SHORT__.age(hours)` | Gives every station this many hours of perfect weather. `__SHORT__.age(72)` finishes a batch. |
 | `__SHORT__.fast(hours)` | Test timer: a batch takes this many hours. `__SHORT__.fast()` goes back to the sandbox time. |
 | `__SHORT__.give(name, n)` | Spawns `n` of: `"batch"` (a raw batch). `__SHORT__.give()` lists them. |
+| `__SHORT__.kit(kind)` | Gives what a test of `kind` needs: `"station"` (the default: a hammer, 4 planks and 8 nails to build the __STATION__, Woodwork 2, and 4 raw batches). `__SHORT__.kit("?")` lists the kinds. Add one kit per feature, covering the whole group. |
 
-**Typical check:** `__SHORT__.give("batch", 4)`, load the station and press Craft, then `__SHORT__.age(72)`.
+**Typical check:** `__SHORT__.kit()`, build the station, load the station and press Craft, then `__SHORT__.age(72)`.

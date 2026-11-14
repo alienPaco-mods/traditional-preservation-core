@@ -16,6 +16,8 @@ function __SHORT__.help()
     say("__SHORT__.age(hours)       give every station this many hours of perfect weather")
     say("__SHORT__.fast(hours)      test timer: a batch takes this many hours. __SHORT__.fast() goes back to the sandbox time")
     say("__SHORT__.give(name, n)    spawn n of: batch (a raw batch). __SHORT__.give() lists them")
+    say("__SHORT__.kit(kind)        the things a test of kind needs; __SHORT__.kit() to build the station, __SHORT__.kit(\"?\") lists the kinds")
+    say("Weather, game speed and the Stone Hearth's commands are TP Core's: TPC.help()")
 end
 
 function __SHORT__.weather()
@@ -58,6 +60,33 @@ function __SHORT__.give(name, count)
     local inventory = getPlayer():getInventory()
     for _ = 1, count or 1 do inventory:AddItem(fullType) end
     say("Gave " .. (count or 1) .. " " .. name .. ".")
+end
+
+-- One kit per kind of test, the whole group (old items too), sorted when listed. TEMPLATE: add one per feature.
+local KITS = {
+    station = {
+        about = "a hammer, 4 planks and 8 nails, to build the __STATION__ (Woodwork 2), and 4 raw batches",
+        give = function(inventory)
+            inventory:AddItem("Base.Hammer")
+            for _ = 1, 4 do inventory:AddItem("Base.Plank") end
+            for _ = 1, 8 do inventory:AddItem("Base.Nails") end
+            for _ = 1, 4 do inventory:AddItem(GIVES.batch) end
+        end,
+    },
+}
+
+local KIT_NAMES = {}
+for name in pairs(KITS) do table.insert(KIT_NAMES, name) end
+table.sort(KIT_NAMES)
+
+function __SHORT__.kit(kind)
+    local kit = KITS[kind or "station"]
+    if not kit then
+        for _, name in ipairs(KIT_NAMES) do say(string.format("__SHORT__.kit(\"%s\"): %s", name, KITS[name].about)) end
+        return
+    end
+    kit.give(getPlayer():getInventory())
+    say("Gave " .. kit.about .. ".")
 end
 
 say("Debug commands loaded. Type __SHORT__.help() in the Lua console.")

@@ -136,16 +136,17 @@ local function lookAtHeat()
     if not lowest then return end
     local now = getGameTime():getWorldAgeHours()
     Station.eachPlayer(function(player)
-        Station.hotContainers(player:getSquare(), Station.HEAT_NEAR, lowest, function(container)
+        Station.hotContainers(player:getSquare(), Station.HEAT_NEAR, lowest, function(container, object)
             local temperature = container:getTemperature()
             for _, watcher in ipairs(ready) do
-                if temperature >= watcher.heat then watcher.fn(container, now) end
+                if temperature >= watcher.heat then watcher.fn(container, now, object) end
             end
         end)
     end)
 end
 
--- Calls fn(container, now) every game minute for each container at heat or hotter near a player. heat is a vanilla
+-- Calls fn(container, now, object) every game minute for each container at heat or hotter near a player (object: the
+-- stove, fire or whatever holds it). heat is a vanilla
 -- container temperature, or a function giving one (nil: nothing to look for this minute).
 function Station.onHeatNear(heat, fn)
     assert(type(heat) == "number" or type(heat) == "function", "Station.onHeatNear: heat must be a number or a function")

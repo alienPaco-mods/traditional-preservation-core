@@ -251,15 +251,17 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Hearth.near` is it at the fire's reach).
      `Station.squareAt(square, dx, dy)`: the square beside one, on its level. `Station.eachPlayer(fn)`: every player
-     here. `Station.onHeatNear(heat, fn)`: `fn(container, now)` each game minute for every container at `heat` or
+     here. `Station.onHeatNear(heat, fn)`: `fn(container, now, object)` each game minute for every container at `heat` or
      hotter within `Station.HEAT_NEAR` (8) of a player, one look shared by every caller (`heat` a number, or a
-     function giving one or nil). FluidAgeing's scalding and OnHeat use it; never add a second minute look.
+     function giving one or nil). FluidAgeing's scalding, OnHeat and Dairy's wrap burning use it; never add a second minute look.
    - `UI.selectedItems(items, wanted)` and `UI.firstSelected(items, wanted)`: an inventory context menu's selected
      items, each once (a collapsed stack lists its first item twice), or the first wanted one, a stack by its first
-     item.
+     item. `UI.disable(option, text)` greys an option with its reason; **`UI.refuse(option, text)`** shows a submenu
+     row in red with its reason (`notAvailable`), still there to read.
    - `Action`: a timed action's time (`duration`, `pourDuration`) and a kit's parts: `hasTool(character, tag)`,
      `kitItems(character, needs)` (the items, all from the main inventory, or nil), `takeItems`, `giveItems(character,
-     needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them. `Hearth.redraw(fire)`
+     needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them.
+     **`Action.removeItem(item)`** takes an item out of whatever holds it (a bag too). `Hearth.redraw(fire)`
      redraws a Stone Hearth after an action changed it (nothing where the World doesn't run).
    - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place

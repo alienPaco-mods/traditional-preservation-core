@@ -203,6 +203,12 @@ function UI.disable(option, text)
     UI.tooltip(option, text)
 end
 
+-- Shows a submenu entry in red, still clickable to read, with the reason it can't be done as its hover.
+function UI.refuse(option, text)
+    option.notAvailable = true
+    UI.tooltip(option, text)
+end
+
 -- colour is { r, g, b }, white if left out.
 function UI.addLine(layout, label, value, colour)
     local item = layout:addItem()

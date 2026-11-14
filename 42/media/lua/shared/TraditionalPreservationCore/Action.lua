@@ -46,6 +46,12 @@ function Action.giveItems(character, needs)
     end
 end
 
+-- Takes an item out of whatever holds it (the inventory or a bag in it); nothing if it is held by nothing.
+function Action.removeItem(item)
+    local container = item:getContainer()
+    if container then container:DoRemoveItem(item) end
+end
+
 -- xp is { perk name, amount }, or nil for none.
 function Action.addXp(character, xp)
     if xp and Perks[xp[1]] then character:getXp():AddXP(Perks[xp[1]], xp[2]) end

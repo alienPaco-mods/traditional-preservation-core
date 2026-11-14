@@ -44,4 +44,9 @@ check("fast with no number goes back to the sandbox time", M.PROCESS_HOURS == 48
 run("give", "batch", 3)
 check("batches land in the inventory", #player.given == 3 and player.given[1] == "__MOD__.RawBatch")
 
+player.given = {}
+run("kit")
+check("the station's kit: its build and four raw batches", #player.given == 17 and player.given[1] == "Base.Hammer")
+check("kit lists the kinds", run("kit", "?"):find("station", 1, true) ~= nil)
+
 H.done()

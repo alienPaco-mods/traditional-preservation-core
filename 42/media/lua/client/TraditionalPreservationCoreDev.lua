@@ -16,12 +16,12 @@ function TPC.help()
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"hearth\" (the default: the Stone Hearth and Fit Cauldron's kit), \"firebox\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
-    say("TPC.hearth()         the nearest Stone Hearth with the Cauldron within 2 tiles: fire (lit, banked or out), fuel, the cauldron, when it steams")
+    say("TPC.cauldronInfo()   the nearest Stone Hearth with the Cauldron within 2 tiles: fire (lit, banked or out), fuel, the cauldron, when it steams")
     say("TPC.cauldron(l, c, f) fill its cauldron: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds 60; f TaintedWater to boil)")
     say("TPC.fuel(minutes)    set the nearest Stone Hearth's fuel, fitted or not (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot(minutes)     bring its cauldron to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Stone Hearth (Cauldron) and on your square, firebox heat, each food's cooking")
-    say("TPC.firebox()        the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks")
+    say("TPC.stone()          the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks")
     say("TPC.fit()            fit the Cauldron on the nearest Stone Hearth now, no items (TPC.fit(false) takes off what is fitted, nothing back)")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Stone Hearths beside it and why each can't join")
@@ -126,7 +126,7 @@ local function nearestHearth()
     return hearth
 end
 
-function TPC.hearth()
+function TPC.cauldronInfo()
     local hearth = nearestHearth()
     if not hearth then return end
     local copper = Hearth.copperOf(hearth)
@@ -149,7 +149,7 @@ function TPC.cauldron(litres, celsius, fluid)
     litres = litres or 10
     if litres > 0 then Hearth.pourInto(copper, fluid or "CowMilk", math.floor(litres * 1000), celsius or 20, getGameTime():getWorldAgeHours()) end
     Hearth.World.refresh(hearth)
-    TPC.hearth()
+    TPC.cauldronInfo()
 end
 
 -- The nearest Stone Hearth: TPC.fuel works fitted or not.
@@ -161,7 +161,7 @@ function TPC.fuel(minutes)
     fire:setFuelAmount(minutes)
     local state = Hearth.fireStateOf(fire)
     if state.banked then Hearth.setBanked(state, true, minutes, getGameTime():getWorldAgeHours()) end
-    if Hearth.isFirebox(fire) then TPC.firebox() else TPC.hearth() end
+    if Hearth.isFirebox(fire) then TPC.stone() else TPC.cauldronInfo() end
 end
 
 -- minutes: how long it counts as having steamed already (an hour if left out; 0 to watch a hold such as Dairy's
@@ -174,7 +174,7 @@ function TPC.hot(minutes)
     copper.tempC = 90
     copper.held = (minutes or 60) / 60
     Hearth.World.refresh(hearth)
-    TPC.hearth()
+    TPC.cauldronInfo()
 end
 
 local function squareLine(label, square, playerNum)
@@ -219,7 +219,7 @@ local function nearestFirebox()
     return firebox
 end
 
-function TPC.firebox()
+function TPC.stone()
     local firebox = nearestFirebox()
     if not firebox then return end
     local state = Hearth.fireStateOf(firebox)
@@ -242,7 +242,7 @@ function TPC.fit(on)
     if not fire then return end
     if on == false then Hearth.unfit(fire) else Hearth.fit(fire, Hearth.COPPER) end
     Hearth.World.refresh(fire)
-    TPC.firebox()
+    TPC.stone()
 end
 
 function TPC.flue(kind, side)
@@ -251,7 +251,7 @@ function TPC.flue(kind, side)
     local state = Hearth.fireStateOf(firebox)
     if kind then Hearth.join(state, Smokehouse.ID, kind, side or "Back") else Hearth.unjoin(state) end
     Hearth.World.refresh(firebox)
-    TPC.firebox()
+    TPC.stone()
 end
 
 function TPC.doors()

@@ -276,9 +276,11 @@ local function food(fullType, fluid)
     return { getFullType = function() return fullType end,
         getFluidContainer = function() return fluid and { isEmpty = function() return fluid == 0 end } or nil end }
 end
-check("vanilla's stews, soups, stir-fries and omelettes are stove food; anything else is oven food",
+check("vanilla's stews, soups, stir-fries, omelettes, pasta and rice are stove food; anything else is oven food",
     Hearth.cookedOn(food("Base.PotOfStew")) == Hearth.STOVE and Hearth.cookedOn(food("Base.EggOmelette")) == Hearth.STOVE
     and Hearth.cookedOn(food("Base.PanFriedVegetablesForged")) == Hearth.STOVE
+    and Hearth.cookedOn(food("Base.WaterPotForgedPasta")) == Hearth.STOVE
+    and Hearth.cookedOn(food("Base.RicePanCopper")) == Hearth.STOVE
     and Hearth.cookedOn(food("Base.PieWholeRaw")) == Hearth.OVEN)
 Hearth.cooksOn(Hearth.STOVE, "Test.PotOfThing")
 check("a mod names its own stove food", Hearth.cookedOn(food("Test.PotOfThing")) == Hearth.STOVE)

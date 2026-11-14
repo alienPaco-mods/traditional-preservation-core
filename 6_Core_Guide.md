@@ -66,7 +66,7 @@ To the game it is a fireplace, so everything a fireplace does, it does: add fuel
 | In the Stone Hearth | The hole shows |
 |---|---|
 | Nothing | Open: firelight down in it, smoke rising out of it while it burns |
-| A stew, a soup or any container holding a fluid (stove food) | A dark forged pot set in the hole, its lid on, steam curling round the rim |
+| A stew, a soup, a stir-fry, an omelette, pasta, rice or any container holding a fluid (stove food) | A dark forged pot set in the hole, its lid on, steam curling round the rim |
 | Only oven food (a pie, bread, a roast) | A sooted steel lid with a flat bar handle; the smoke leaks out round the door |
 | Joined to a Smokehouse | The lid (or the pot, for stove food): the smoke goes up the flue |
 

@@ -773,11 +773,14 @@ function Hearth.cookedOn(item)
     return COOKS_ON[item:getFullType()] or Hearth.OVEN
 end
 
--- Vanilla's stews, soups, stir-fries and omelettes go on the hob.
+-- Vanilla's stews, soups, stir-fries, omelettes, pasta and rice go on the hob.
 Hearth.cooksOn(Hearth.STOVE, "Base.PotOfStew", "Base.PotForgedStew", "Base.BucketOfStew", "Base.PotOfSoup",
     "Base.PotOfSoupRecipe", "Base.PotForgedSoupRecipe", "Base.BucketOfSoup", "Base.PanFriedVegetables",
     "Base.PanFriedVegetables2", "Base.PanFriedVegetablesForged", "Base.GriddlePanFriedVegetables", "Base.OmeletteRecipe",
-    "Base.OmeletteRecipeForged", "Base.EggOmelette")
+    "Base.OmeletteRecipeForged", "Base.EggOmelette", "Base.PastaPot", "Base.PastaPotForged", "Base.RicePot",
+    "Base.RicePotForged", "Base.WaterPotPasta", "Base.WaterPotForgedPasta", "Base.WaterPotRice",
+    "Base.WaterPotForgedRice", "Base.PastaPan", "Base.PastaPanCopper", "Base.RicePan", "Base.RicePanCopper",
+    "Base.WaterSaucepanPasta", "Base.WaterSaucepanPastaCopper", "Base.WaterSaucepanRice", "Base.WaterSaucepanRiceCopper")
 
 -- What shows in the hole, by what is in the fire's container (a Java list of items): the pot for any stove food or
 -- container with fluid in it, the lid for anything else, open when it is empty.

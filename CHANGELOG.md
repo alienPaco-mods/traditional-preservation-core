@@ -1,6 +1,7 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Pasta and rice are stove food** (user, 2026-11-14): vanilla's pasta and rice pots, forged pots and saucepans (cooking, and the water stages) show the forged pot in the Stone Hearth's hole instead of the lid (`Hearth.cooksOn`). Guide 6; test_hearth. In-game step 139 of `TESTING_GUIDE.md` (INGAME_PASS 138).
 - **Console names** (user, 2026-11-14): `TPC.hearth()` is now **`TPC.cauldronInfo()`** and `TPC.firebox()` **`TPC.stone()`** (no aliases); `TPC.kit("hearth")` and `TPC.kit("firebox")` keep their kinds. Help, guide 6, DEVHELP, test_console.
 - **Docs pass after the Stone Hearth hub** (user, 2026-11-14): guide 6 rewritten for the Stone Hearth, the Forged Cauldron (forging, Fit / Remove, its Info bar) and the Smokehouse in Core (flat roof, the low flue, two slots), with the vanilla item names (Steel Sheet, Iron Pipe, *Everyday Smithing - May 1993*); README, DEVGUIDE (the cauldron is still `copper` in the code), DEVHELP and the Workshop text the same. **Console:** `TPC.copper` is now **`TPC.cauldron(l, c, f)`** (no alias), and the help and outputs say Stone Hearth and cauldron (`TPC.hearth`, `fuel`, `hot`, `warmth`, `smokehouse`); test_console.
 - **The pot's lid, connections draw themselves, the cauldron's bar** (the Stone Hearth hub's step iv; user, 2026-11-14):

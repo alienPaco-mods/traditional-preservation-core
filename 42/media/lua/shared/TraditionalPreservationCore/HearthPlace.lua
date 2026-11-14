@@ -52,9 +52,9 @@ local function warmestFire(square)
     if fires[1] then return fires[1], Hearth.EMBERS end
 end
 
--- Hearths within FIRE_RADIUS tiles, nearest first.
-function HearthPlace.hearthsNear(square)
-    return HearthPlace.near(square, Hearth.isHearth)
+-- Stone Hearths with the attachment id fitted within FIRE_RADIUS tiles, nearest first.
+function HearthPlace.fittedNear(square, id)
+    return HearthPlace.near(square, function(object) return Hearth.isFitted(object, id) end)
 end
 
 -- The opt-in place: by a fire (or by banked embers), else below ground, under a roof or in the open. The fire, if any, comes second.

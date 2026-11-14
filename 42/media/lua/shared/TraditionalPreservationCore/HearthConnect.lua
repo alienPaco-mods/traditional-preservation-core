@@ -109,7 +109,7 @@ function HearthConnect.connectRefusalOf(c)
     if c.joined then return "IGUI_TraditionalPreservationCore_FlueFireboxJoined" end
     if c.own then return c.own end
     if not c.side then return "IGUI_TraditionalPreservationCore_FlueFireboxDoor" end
-    if c.burning then return "IGUI_TraditionalPreservationCore_FlueBurning" end
+    if c.burning then return "IGUI_TraditionalPreservationCore_FireBurning" end
     if c.fitted then return "IGUI_TraditionalPreservationCore_ConnectFitted" end
     return nil
 end

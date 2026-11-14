@@ -264,9 +264,9 @@ Hearth.staysIn("RawFat")
 fill = named(open(hearth({ ml = 1000, fluid = "RawFat", tempC = 20 })), "ContextMenu_TraditionalPreservationCore_FillFromCauldron")
 check("a fluid that stays in can't be filled from, with the reason", fill.isDisabled == true and fill.subOption == nil
     and fill.toolTip.description == getText("IGUI_TraditionalPreservationCore_CauldronStaysIn", "RawFat"))
-local HearthUI = require "TraditionalPreservationCore/HearthUI"
+local CauldronUI = require "TraditionalPreservationCore/CauldronUI"
 local rowFor
-HearthUI.addMenu(function(aMenu, playerObj, aHearth, cauldron)
+CauldronUI.addMenu(function(aMenu, playerObj, aHearth, cauldron)
     rowFor = { playerObj, aHearth, cauldron }
     aMenu:addOption("A mod's row")
 end)
@@ -449,7 +449,10 @@ local disconnect = named(sub, "ContextMenu_TraditionalPreservationCore_Disconnec
 check("joined, the menu offers Disconnect, saying what comes back, and no Connect", disconnect ~= nil and disconnect.isDisabled ~= true
     and disconnect.toolTip.description:find("MetalPipe", 1, true) ~= nil and named(sub, "ContextMenu_TraditionalPreservationCore_ConnectFirebox") == nil)
 joinable.lit = true
-check("greyed while the fire burns", named(open(joinable), "ContextMenu_TraditionalPreservationCore_DisconnectFirebox").isDisabled == true)
+local burning = named(open(joinable), "ContextMenu_TraditionalPreservationCore_DisconnectFirebox")
+check("greyed while the fire burns, still saying what comes back", burning.isDisabled == true
+    and burning.toolTip.description == getText("IGUI_TraditionalPreservationCore_DisconnectHelp", "2 MetalPipe",
+        getText("IGUI_TraditionalPreservationCore_ToolPliers")) .. " <LINE> " .. getText("IGUI_TraditionalPreservationCore_FireBurning"))
 local off = TPHearthConnect:new(smith, joinable, joinable.beside, "testDuct")
 check("nor can it be taken up then", not off:isValid())
 joinable.lit = false
@@ -459,6 +462,38 @@ off:complete()
 check("done, the pipes come back, the clay is lost, nothing is joined", table.concat(given, " ") == "Base.MetalPipe Base.MetalPipe"
     and Hearth.connectedTo(joinState) == nil and joinState.testDuct == nil and changed == joinable.beside)
 check("and it can be picked up again", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, joinable) == true)
+
+-- Which is fitted (Hearth.isFitted), and an attachment that shows as its own display says
+local pan = Hearth.attach({ id = "testPan", name = "IGUI_TraditionalPreservationCore_InfoCauldron",
+    display = { icon = "media/textures/Pan.png", title = "A Pan Hearth", info = "Pan Info",
+        fire = { bank = "media/textures/PanBanked.png", stoke = "media/textures/PanLit.png" } } })
+local panFire = hearth(nil, true)
+panFire:getModData()[Hearth.KEY] = { attached = "testPan", testPan = {} }
+check("isFitted names the attachment, or any with none named", Hearth.isFitted(panFire, "testPan") and Hearth.isFitted(panFire)
+    and not Hearth.isFitted(panFire, Hearth.CAULDRON) and Hearth.isFitted(hearth(), Hearth.CAULDRON)
+    and not Hearth.isFitted(bare()) and not Hearth.isFitted(bare(), Hearth.CAULDRON) and not Hearth.isFitted(fireplace))
+context = menu()
+onFillMenu(0, context, { panFire }, false)
+local panMenu = context:getOptionFromName("A Pan Hearth")
+check("a fitted attachment's display names the menu, its Info row and its fire's icons", panMenu ~= nil
+    and panMenu.iconTexture == "media/textures/Pan.png" and panMenu.subOption:getOptionFromName("Pan Info") ~= nil
+    and named(panMenu.subOption, "ContextMenu_TraditionalPreservationCore_BankFire").iconTexture == "media/textures/PanBanked.png")
+pan.display = nil
+context = menu()
+onFillMenu(0, context, { panFire }, false)
+check("without one it shows as the cauldron's", named(context, "IGUI_CraftingWindow_TPHearth") ~= nil)
+
+-- Hearth Info's notes (HearthUI.notes)
+local HearthUI = require "TraditionalPreservationCore/HearthUI"
+CauldronUI.addNotes(function(info, notes) table.insert(notes, "A mod's note on " .. tostring(info.part.fluid)) end)
+HearthUI.addFireboxNotes(function(_, notes) table.insert(notes, "The fire's note") end)
+local cauldronSpec = Hearth.attachment(Hearth.CAULDRON)
+local notes = HearthUI.notes({ spec = cauldronSpec, part = { ml = 1000, fluid = "Water" }, lit = false, banked = false })
+check("a fitted one: the cauldron's notes, then a mod's, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_HearthHelpOut")
+    and notes[2] == "A mod's note on Water" and notes[3] == "The fire's note" and #notes == 3)
+notes = HearthUI.notes({ firebox = true, lit = true, banked = false, joinedSpec = duct, joined = { kind = "Pipe" } })
+check("a bare one: its help first, no cauldron notes, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_FireboxHelpLit")
+    and notes[2] == "The fire's note" and #notes == 2)
 
 check("no text would make the game's formatter warn" .. (H.textWarnings[1] and " (" .. table.concat(H.textWarnings, "; ") .. ")" or ""),
     #H.textWarnings == 0)

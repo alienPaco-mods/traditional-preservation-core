@@ -19,7 +19,6 @@ local function modeOf(object)
     if not object or not Hearth.isFire(object) or not Hearth.isBurning(object) then return nil end
     return Hearth.isBanked(object) and "stoke" or "bank"
 end
-Handler.modeOf = modeOf
 
 function Handler:shouldBeVisible()
     return modeOf(self.object) ~= nil

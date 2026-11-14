@@ -1,12 +1,13 @@
 -- Traditional Preservation core: the cauldron's menu rows and Hearth Info rows, given to Hearth.attach as any mod's
 -- attachment would give its own. The status row says what it holds; Pour into Cauldron takes a container of one fluid
--- (or a blend), Fill from Cauldron and Empty Cauldron only when it holds something; mods' rows (HearthUI.addMenu) go
--- between. Hearth Info shows its litres, fluid, heat and when it steams.
+-- (or a blend), Fill from Cauldron and Empty Cauldron only when it holds something; mods' rows (CauldronUI.addMenu) go
+-- between. Hearth Info shows its litres, fluid, heat and when it steams, then its notes and mods' (CauldronUI.addNotes).
 require "TimedActions/TPHearthCauldron"
 local UI = require "TraditionalPreservationCore/UI"
 local Hearth = require "TraditionalPreservationCore/Hearth"
-local HearthUI = require "TraditionalPreservationCore/HearthUI"
 require "TraditionalPreservationCore/Cauldron"
+
+local CauldronUI = {}
 
 local say = UI.say
 local CAULDRON_ICON = "media/textures/Item_TPCauldron.png"
@@ -107,7 +108,7 @@ end
 
 -- Steaming already, or when it will be while the fire burns on.
 local function steamText(info)
-    local cauldron = info.cauldron
+    local cauldron = info.part
     if Hearth.isHot(cauldron) then return getText("IGUI_TraditionalPreservationCore_InfoHotYes") end
     if info.banked then return getText("IGUI_TraditionalPreservationCore_InfoHotBanked") end
     local hotIn = info.lit and Hearth.hoursToHot(cauldron)
@@ -116,7 +117,7 @@ local function steamText(info)
 end
 
 local function cauldronRows(window, y, info)
-    local cauldron, ml = info.cauldron, info.cauldron.ml or 0
+    local cauldron, ml = info.part, info.part.ml or 0
     y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCauldron", ml / Hearth.CAULDRON_ML, Hearth.liquidColour(cauldron) or IRON_COLOUR,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(Hearth.CAULDRON_ML)))
     y = window:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
@@ -127,23 +128,40 @@ local function cauldronRows(window, y, info)
     return y
 end
 
+local MENUS, NOTES = {}, {}
+
+-- fn(menu, playerObj, hearth, cauldron) adds a mod's own rows to the cauldron's menu, after Pour into Cauldron.
+function CauldronUI.addMenu(fn)
+    table.insert(MENUS, fn)
+end
+
+-- fn(info, notes) adds lines to Hearth Info's notes, after the cauldron's own; info.part is the cauldron's state
+-- (HearthUI.notes has the rest of info).
+function CauldronUI.addNotes(fn)
+    table.insert(NOTES, fn)
+end
+
 local function cauldronNotes(info, notes)
-    local ml = info.cauldron.ml or 0
+    local ml = info.part.ml or 0
     if ml <= 0 then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpEmpty"))
     elseif not info.lit then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpOut"))
     end
     if info.banked then table.insert(notes, getText("IGUI_TraditionalPreservationCore_HearthHelpBanked")) end
+    for _, fn in ipairs(NOTES) do fn(info, notes) end
 end
 
 Hearth.attach({
     id = Hearth.CAULDRON,
     fitIcon = "media/textures/Item_TPCauldronFit.png",
+    display = { icon = "media/textures/Item_TPHearth.png", title = "IGUI_CraftingWindow_TPHearth",
+        info = "ContextMenu_TraditionalPreservationCore_HearthInfo",
+        fire = { bank = "media/textures/Item_TPHearthBanked.png", stoke = "media/textures/Item_TPHearthLit.png" } },
     status = function(cauldron) return cauldronStatus(cauldron), (cauldron.ml or 0) > 0 and CAULDRON_FULL_ICON or CAULDRON_ICON end,
     menu = function(menu, playerObj, hearth, cauldron)
         addPourInMenu(menu, playerObj, hearth, cauldron)
-        HearthUI.modRows(menu, playerObj, hearth, cauldron)
+        for _, fn in ipairs(MENUS) do fn(menu, playerObj, hearth, cauldron) end
         if (cauldron.ml or 0) > 0 then
             addFillMenu(menu, playerObj, hearth, cauldron)
             addEmptyOption(menu, playerObj, hearth, cauldron)
@@ -152,3 +170,5 @@ Hearth.attach({
     rows = cauldronRows,
     notes = cauldronNotes,
 })
+
+return CauldronUI

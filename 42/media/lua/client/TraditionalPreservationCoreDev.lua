@@ -120,7 +120,7 @@ end
 -- The Stone Hearth with the Cauldron fitted
 
 local function nearestHearth()
-    local hearth = Hearth.hearthsNear(getPlayer():getSquare())[1]
+    local hearth = Hearth.fittedNear(getPlayer():getSquare(), Hearth.CAULDRON)[1]
     if not hearth then say("No Stone Hearth with the Cauldron within 2 tiles.") end
     if hearth and Hearth.World then Hearth.World.track(hearth) end
     return hearth

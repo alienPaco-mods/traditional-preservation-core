@@ -346,7 +346,7 @@ check("Connect's refusals, the first that applies", Hearth.connectRefusalOf({ si
     and Hearth.connectRefusalOf({ joined = true, own = "X" }) == "IGUI_TraditionalPreservationCore_FlueFireboxJoined"
     and Hearth.connectRefusalOf({ own = "X", burning = true }) == "X"
     and Hearth.connectRefusalOf({ burning = true }) == "IGUI_TraditionalPreservationCore_FlueFireboxDoor"
-    and Hearth.connectRefusalOf({ side = "Left", burning = true, fitted = true }) == "IGUI_TraditionalPreservationCore_FlueBurning"
+    and Hearth.connectRefusalOf({ side = "Left", burning = true, fitted = true }) == "IGUI_TraditionalPreservationCore_FireBurning"
     and Hearth.connectRefusalOf({ side = "Left", fitted = true }) == "IGUI_TraditionalPreservationCore_ConnectFitted")
 local short, noTool = Hearth.kitMissing(trench, { ["Base.FlatStone"] = 1 }, false)
 check("a kit's shortfall and its tool", #short == 2 and short[1][2] == 2 and short[2][2] == 2 and noTool)

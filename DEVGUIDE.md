@@ -191,8 +191,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
      (the largest share) plus `parts`, kept with `Hearth.addParts` and read with `Hearth.partsOf`.
    - `Hearth.turnsHot(from, to, hours)`, `Hearth.goesOff(from, to)` + `Hearth.offBy(cauldron, hour)` and
      `Hearth.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
-     that can't be filled out (Fish & Meat's raw fat is all three). `HearthUI.addMenu(fn)` and `HearthUI.addNotes(fn)`
-     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info.
+     that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
+     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`info.part` is the
+     cauldron's state; `HearthUI.notes(info)` builds every Info note, so a test can read them).
    - **Attachments** (`Hearth.attach{ id, name, fit, canRemove, look, heats, onFire, status, menu, rows, notes }`, the
      Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
      its simmer in `HearthWorld`) is the first, written against the registry alone. Calling `attach` again with the
@@ -218,8 +219,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
      object (the Smokehouse's entry overlay draws the whole flue, `Smokehouse.entrySprite`; `onChange` redraws it),
      never on the stone, which has no flue tiles. `smoke = true` (the Smokehouse's) says it takes the fire's smoke: the
      bare Stone Hearth's hole is lidded and its glow goes up the flue.
-   - The bare Stone Hearth (`Hearth.isFirebox`, "the Firebox" in the code; `Hearth.isHearth` is one with the cauldron
-     fitted, `Hearth.isFire` either): the same fire with nothing fitted, in the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
+   - The bare Stone Hearth (`Hearth.isFirebox`, "the Firebox" in the code; `Hearth.isFitted(fire, id)` is one with
+     that attachment fitted, any with no id; `Hearth.fittedNear(square, id)` those near; `Hearth.isFire` either). A fitted
+     one shows as its attachment's `display` says (icon, title, Info row, Bank / Stoke icons; the cauldron's if left out): the same fire with nothing fitted, in the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
      door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `HearthConnect.FLUE_SIDES`
      matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the fitted one; their rows show on a fitted Stone Hearth too.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a

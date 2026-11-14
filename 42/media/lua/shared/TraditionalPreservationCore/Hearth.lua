@@ -184,10 +184,13 @@ end
 --                                         cauldron's Hearth.liquidOverlay if left out: what it holds, coloured)
 --   heats(part, fire, now, fireState, airC)  brings what it holds up to now, by the fire and the place's air
 --   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
+--   display                               client: how the fitted Stone Hearth shows, { icon, title (a text key: its
+--                                         submenu and Info window), info (the Info row's text key), fire = { bank,
+--                                         stoke } (Bank / Stoke's icons) }; the cauldron's if left out
 --   status(part)                          client: the menu's first row, text and icon
 --   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
---   rows(window, y, info) -> y            client: its rows in the Info window; info.cauldron is the part
---   notes(info, notes)                    client: its Info notes, before HearthUI.addNotes'
+--   rows(window, y, info) -> y            client: its rows in the Info window; info.part is the part
+--   notes(info, notes)                    client: its Info notes (HearthUI.notes has info)
 local ATTACHMENTS = Hearth.registry("Hearth.attach")
 
 function Hearth.attach(spec)
@@ -326,9 +329,12 @@ function Hearth.attachedTo(fire)
     if Hearth.face(fire:getSprite():getName()) then return Hearth.CAULDRON end
 end
 
--- A Stone Hearth with the cauldron fitted ("the Hearth").
-function Hearth.isHearth(object)
-    return Hearth.isFire(object) and Hearth.attachedTo(object) == Hearth.CAULDRON
+-- A Stone Hearth with the attachment id fitted (Hearth.CAULDRON: "the Hearth"), or with anything fitted when id is nil.
+function Hearth.isFitted(object, id)
+    if not Hearth.isFire(object) then return false end
+    local fitted = Hearth.attachedTo(object)
+    if id == nil then return fitted ~= nil end
+    return fitted == id
 end
 
 -- A Stone Hearth with nothing fitted ("the Firebox").
@@ -500,7 +506,7 @@ end
 
 passOn("HearthConnect", { "connect", "connection", "connections", "connectedTo", "joinOf", "takesSmoke", "connectionOf",
     "join", "unjoin", "connectRefusalOf", "connectRefusal", "kitMissing", "kitBack", "flueSideTo", "flueSquare" })
-passOn("HearthPlace", { "fireC", "isFirePlace", "firePlace", "near", "hearthsNear", "placeOf", "catchUp", "catchUpRun",
+passOn("HearthPlace", { "fireC", "isFirePlace", "firePlace", "near", "fittedNear", "placeOf", "catchUp", "catchUpRun",
     "updateRun", "notePlace", "noteFire" })
 
 -- Building: the entity script's OnCreate, so a global.

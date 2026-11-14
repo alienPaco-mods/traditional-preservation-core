@@ -233,12 +233,16 @@ check("movableData: kept in modData.movableData", movable.modData.movableData.ml
 
 -- UI
 H.installGetText({ T_Time = "%1 d %2 h", T_Soured = "%1 soured", T_None = "plain" })
--- Stand-ins for the requires and the vanilla classes it wraps.
-require = function() end
+-- Stand-ins for the requires and the vanilla classes it wraps: the core's own modules load for real.
+H.useModPaths()
+local realRequire = require
+require = function(name)
+    if name:find("^TraditionalPreservationCore/") then return realRequire(name) end
+end
 ISWidgetCraftLogicOutputProgress = { updateProgressItems = function(self) self.vanillaRan = true end }
 local placed
 ISMoveableSpriteProps = { canPlaceMoveable = function() placed = true return true end }
-local UI = dofile("42/media/lua/client/TraditionalPreservationCore/UI.lua")
+local UI = require "TraditionalPreservationCore/UI"
 check("say: values go in after the translator", UI.say("T_Soured", UI.percent(0.4)) == "40% soured" and #H.textWarnings == 0)
 check("say: a text with no values", UI.say("T_None") == "plain")
 check("timeText: rounds up to the hour", UI.timeText(25.2, "T_Time") == "1 d 2 h")
@@ -287,7 +291,9 @@ UI.outdoorOnly({ beam_0 = true })
 local inside = { isOutside = function() return false end }
 check("outdoorOnly: refuses an indoor square", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "beam_0" }, nil, inside) == false and not placed)
 check("outdoorOnly: other sprites go to vanilla", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "cask_0" }, nil, inside) and placed)
+local placeWrap = ISMoveableSpriteProps.canPlaceMoveable
 UI.notInRooms({ rack_0 = true })
+check("placement: every put-down rule shares one wrap", ISMoveableSpriteProps.canPlaceMoveable == placeWrap)
 local porch = { isOutside = function() return false end, isInARoom = function() return false end }
 local room = { isOutside = function() return false end, isInARoom = function() return true end }
 check("notInRooms: takes a porch", ISMoveableSpriteProps.canPlaceMoveable({ spriteName = "rack_0" }, nil, porch))

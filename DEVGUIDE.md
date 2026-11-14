@@ -141,7 +141,7 @@ that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vani
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
-wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua`, `InfoWindow.lua`, `StationInfo.lua`,
+wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
 `HearthUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `HearthWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
@@ -304,19 +304,17 @@ of all:
 | Wrapped vanilla function | Where | Why |
 |---|---|---|
 | `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, Yeast, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
-| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (Fish, Vinegar, Yeast, template) | Each station's own input rules |
+| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; Fish, Vinegar, Yeast, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
 | `ISWidgetCraftLogicControl.startCraft` | core `UI.slotRules` with `recipeRefusal` (Fish & Meat) | Craft refuses stored inputs the selected recipe can't take |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish) | Outdoor stations can't be carried indoors (or into a room) |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.keepDoorsFree` (Stone Hearth, Smokehouse; Fish's beams) | A station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door; the build menu asks `TraditionalPreservationCore.doorFits` (`OnIsValid`) |
-| `ISMoveableSpriteProps.canPlaceMoveable` | core `UI.offAppliances` (Dairy's crock) | Table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
+| `ISMoveableSpriteProps.canPlaceMoveable` | core `Placement` (one wrap for every rule): `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish, the Smokehouse), `UI.keepDoorsFree` (Stone Hearth, Smokehouse; Fish's beams), `UI.offAppliances` (Dairy's crock) | Outdoor stations can't be carried indoors (or into a room); a station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door (the build menu asks `TraditionalPreservationCore.doorFits`, `OnIsValid`); table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles` | Empty shakers and the right bottles come back |
 | `ISCraftLogicPanel.createChildren` | Vinegar `...UI` | Fluid tank columns in the vessel's window |
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
 | `ISWidgetCraftLogicControl.startCraft` | Vinegar `...UI` | Says why the vessel can't start, and stops a second run |
-| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (Vinegar, the Stone Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit, banked or holds fluid, and the cursor says why |
+| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Hearth that is lit, banked or holds fluid, and the cursor says why |
 | `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |

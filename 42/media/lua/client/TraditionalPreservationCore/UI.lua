@@ -1,9 +1,6 @@
 -- Traditional Preservation core: text and popups for the station windows, and what the right-click menus share.
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
-require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicControl"
-require "Entity/ISUI/Controls/ISItemSlot"
-require "Moveables/ISMoveableSpriteProps"
 
 local UI = {}
 
@@ -12,10 +9,10 @@ UI.TOOLTIP_MIN_WIDTH = 150
 UI.SLOW_RATE = 0.5
 UI.SLOW_COLOUR = { 1, 0.7, 0.4 }
 UI.WARNING_COLOUR = { 1, 0.35, 0.3 }
+-- A popup's title and a line's label, vanilla's pale yellow.
+UI.LABEL_COLOUR = { 1, 1, 0.8 }
 
--- The game's translator reads a finished line again as a format pattern, so a percentage followed by a
--- word ("40% soured") makes it throw, and so does a line with %1 given no values. So it is given plain
--- tokens, and the values go in here.
+-- An option's fields that move with it when a lone recipe option becomes a submenu.
 local OPTION_FIELDS = { "target", "onSelect", "param1", "param2", "param3", "param4", "param5", "param6", "param7",
     "param8", "param9", "param10", "iconTexture", "color", "toolTip", "notAvailable" }
 
@@ -46,6 +43,9 @@ function UI.itemSubMenu(context, item)
     return subMenu
 end
 
+-- The game's translator reads a finished line again as a format pattern, so a percentage followed by a
+-- word ("40% soured") makes it throw, and so does a line with %1 given no values. So it is given plain
+-- tokens, and the values go in here.
 function UI.say(key, ...)
     local values = { ... }
     local tokens = {}
@@ -122,9 +122,21 @@ function UI.hidesTaint(name)
     return name == TAINTED and not showsTainted()
 end
 
+-- The game's fluids by type, looked up once each.
+local fluids = {}
+
+local function fluidOf(name)
+    local fluid = fluids[name]
+    if not fluid then
+        fluid = Fluid.Get(name)
+        fluids[name] = fluid
+    end
+    return fluid
+end
+
 -- A fluid's name as the game shows it, from its type ("CowMilk"): tainted water as vanilla names it.
 function UI.fluidName(name)
-    local fluid = name and Fluid.Get(name)
+    local fluid = name and fluidOf(name)
     if not fluid then return tostring(name) end
     local text = fluid:getTranslatedName()
     if name == TAINTED and showsTainted() then text = text .. " " .. getText("Fluid_Tainted") end
@@ -163,7 +175,8 @@ end
 -- colour is { r, g, b }, white if left out.
 function UI.addLine(layout, label, value, colour)
     local item = layout:addItem()
-    item:setLabel(getText(label) .. ":", 1, 1, 0.8, 1)
+    local lr, lg, lb = unpack(UI.LABEL_COLOUR)
+    item:setLabel(getText(label) .. ":", lr, lg, lb, 1)
     local r, g, b = 1, 1, 1
     if colour then r, g, b = colour[1], colour[2], colour[3] end
     item:setValue(value, r, g, b, 1)
@@ -174,17 +187,28 @@ function UI.addRateLine(layout, label, rate)
     UI.addLine(layout, label, UI.percent(rate), rate < UI.SLOW_RATE and UI.SLOW_COLOUR or nil)
 end
 
--- A popup titled like vanilla's, with fill(layout) adding the lines. It runs twice, once to measure and once to draw.
-function UI.drawTooltip(tooltip, fill)
-    local title = getText("EC_CraftLogic_Progress")
-    tooltip:DrawText(tooltip:getFont(), title, UI.TOOLTIP_PADDING, UI.TOOLTIP_PADDING, 1, 1, 0.8, 1)
+-- A popup's title line; returns where the first line below it goes.
+local function drawTitle(tooltip, title)
+    local r, g, b = unpack(UI.LABEL_COLOUR)
+    tooltip:DrawText(tooltip:getFont(), title, UI.TOOLTIP_PADDING, UI.TOOLTIP_PADDING, r, g, b, 1)
     tooltip:adjustWidth(UI.TOOLTIP_PADDING, title)
-    local layout = tooltip:beginLayout()
-    fill(layout)
-    local bottom = layout:render(UI.TOOLTIP_PADDING, UI.TOOLTIP_PADDING + tooltip:getLineSpacing(), tooltip)
-    tooltip:endLayout(layout)
+    return UI.TOOLTIP_PADDING + tooltip:getLineSpacing()
+end
+
+-- A popup's size, its last line ending at bottom.
+local function closeTooltip(tooltip, bottom)
     tooltip:setHeight(bottom + UI.TOOLTIP_PADDING)
     tooltip:setWidth(math.max(tooltip:getWidth(), UI.TOOLTIP_MIN_WIDTH))
+end
+
+-- A popup titled like vanilla's, with fill(layout) adding the lines. It runs twice, once to measure and once to draw.
+function UI.drawTooltip(tooltip, fill)
+    local top = drawTitle(tooltip, getText("EC_CraftLogic_Progress"))
+    local layout = tooltip:beginLayout()
+    fill(layout)
+    local bottom = layout:render(UI.TOOLTIP_PADDING, top, tooltip)
+    tooltip:endLayout(layout)
+    closeTooltip(tooltip, bottom)
 end
 
 -- A recipe's name without its module.
@@ -262,277 +286,28 @@ end
 
 -- A popup with its own title and plain lines of finished text, for UI.outputTooltips.
 function UI.drawListTooltip(tooltip, title, lines)
-    tooltip:DrawText(tooltip:getFont(), title, UI.TOOLTIP_PADDING, UI.TOOLTIP_PADDING, 1, 1, 0.8, 1)
-    tooltip:adjustWidth(UI.TOOLTIP_PADDING, title)
-    local y = UI.TOOLTIP_PADDING + tooltip:getLineSpacing()
+    local y = drawTitle(tooltip, title)
     for _, line in ipairs(lines) do
         tooltip:DrawText(tooltip:getFont(), line, UI.TOOLTIP_PADDING, y, 1, 1, 1, 1)
         tooltip:adjustWidth(UI.TOOLTIP_PADDING, line)
         y = y + tooltip:getLineSpacing()
     end
-    tooltip:setHeight(y + UI.TOOLTIP_PADDING)
-    tooltip:setWidth(math.max(tooltip:getWidth(), UI.TOOLTIP_MIN_WIDTH))
+    closeTooltip(tooltip, y)
 end
 
--- A station's own input rules in place of vanilla's free-slot limit. One refusal decides adding (each queued
--- action asks again when it runs, as the slot may have filled since), the slot's green border while dragging,
--- and the halo when a drop is refused, so the border never promises what adding then refuses.
---   station(entity)              the entity's crafting component and anything the refusal needs, or nil for an
---                                entity that isn't the mod's
---   refusal(slot, item, queued)  a translation key, or nil if item may go in. slot = { entity, component,
---                                resource, extra }; queued lists the items already on their way in this add
---   added(entity)                optional, before an add: start tracking a station built this session
---   recipeRefusal(slot, item)    optional: a translation key if item can't go in for the window's selected recipe
---                                (slot.recipe, its short name, from the station's CraftLogic; never called
---                                without one). The slot's border goes red and a
---                                drop says why, as for refusal; and since the recipe can change after loading,
---                                Craft also refuses to start while any stored input fails it.
---   owns(entity, item)           optional, for a station several mods use (TP Core's Smokehouse): true for the
---                                items this mod judges there; any other item passes on to the next mod's rules and
---                                vanilla, and an add with one in it is left to them whole
--- Wraps ISCraftLogicPanel.ItemSlotAddItems (its add loop is copied here), ISItemSlot.defaultVerifyItem,
--- ISItemSlot.onMouseUp and, with recipeRefusal, ISWidgetCraftLogicControl.startCraft: compare them with vanilla
--- after a game update. Each mod's call wraps the last, so other entities pass through every mod to vanilla.
-function UI.slotRules(rules)
-    -- An item can be a crafting entity too, and has no sprite for a mod's station() to read.
-    local modStation = rules.station
-    local function station(entity)
-        if not instanceof(entity, "IsoObject") then return nil end
-        return modStation(entity)
-    end
-    local vanillaAddItems = ISCraftLogicPanel.ItemSlotAddItems
-    local vanillaVerifyItem = ISItemSlot.defaultVerifyItem
-    local vanillaMouseUp = ISItemSlot.onMouseUp
-
-    -- A station several mods use (the Smokehouse): rules.owns(entity, item) says which items are this mod's to
-    -- judge; any other passes on to the next mod's rules and vanilla.
-    local function mine(entity, item)
-        return not rules.owns or rules.owns(entity, item)
-    end
-
-    -- The station's own rules, then the selected recipe's.
-    local function refusal(slot, item, queued)
-        if not mine(slot.entity, item) then return nil end
-        local reason = rules.refusal(slot, item, queued)
-        if reason or not rules.recipeRefusal or not slot.recipe then return reason end
-        return rules.recipeRefusal(slot, item)
-    end
-
-    -- The name of the recipe selected in the window an item slot belongs to, if any.
-    -- The short name of the recipe selected in the station's window: selecting one sets it on the station's
-    -- CraftLogic too (its craft test data, which getCurrentRecipe reads). Guarded: another station may lack it.
-    local function selectedRecipe(component)
-        local ok, recipe = pcall(function() return component:getCurrentRecipe() end)
-        return ok and recipe and UI.shortName(recipe) or nil
-    end
-
-    local function canAdd(action)
-        return not refusal(action.tpSlot, action.item, {})
-    end
-
-    function ISCraftLogicPanel.ItemSlotAddItems(player, entity, itemSlot, itemList, component)
-        local ours, extra = station(entity)
-        if ours then
-            for _, item in ipairs(itemList) do
-                if not mine(entity, item) then ours = nil end
-            end
-        end
-        if not ours then return vanillaAddItems(player, entity, itemSlot, itemList, component) end
-        if rules.added then rules.added(entity) end
-
-        local slot = { entity = entity, component = component, resource = itemSlot.resource, extra = extra,
-            recipe = selectedRecipe(component) }
-        local queued = {}
-        for index, item in ipairs(itemList) do
-            local reason = refusal(slot, item, queued)
-            if reason then
-                HaloTextHelper.addBadText(player, getText(reason))
-                return
-            end
-            if index == 1 and not ISEntityUI.WalkToEntity(player, entity) then return end
-
-            local action = ISItemSlotAddAction:new(player, entity, item, itemSlot.resource, itemSlot)
-            action.component = component
-            action.tpSlot = slot
-            action.canAddItem = canAdd
-            ISTimedActionQueue.add(action)
-            table.insert(queued, item)
+-- Functions moved to their own files, still reached here so no caller changes (DEVGUIDE refactoring rule 5). Each
+-- file is required the first time one of its functions is called.
+local function passOn(file, names)
+    local module
+    for _, name in ipairs(names) do
+        UI[name] = function(...)
+            module = module or require("TraditionalPreservationCore/" .. file)
+            return module[name](...)
         end
     end
-
-    -- The mod's input slot an item slot shows, or nil for any other slot.
-    local function slotOf(itemSlot)
-        local resource = itemSlot and itemSlot.resource
-        if not resource or resource:getIO() ~= ResourceIO.Input then return nil end
-        local entity = resource:getGameEntity()
-        local component, extra = station(entity)
-        if not component then return nil end
-        return { entity = entity, component = component, resource = resource, extra = extra,
-            recipe = selectedRecipe(component) }
-    end
-
-    function ISItemSlot:defaultVerifyItem(itemSlot, item)
-        if not vanillaVerifyItem(self, itemSlot, item) then return false end
-        local slot = slotOf(itemSlot)
-        return not slot or not refusal(slot, item, {})
-    end
-
-    -- The reason to show when nothing being dragged can go in this slot.
-    local function dropRefusal(itemSlot)
-        if not ISMouseDrag.dragging or ISMouseDrag.draggingFocus == itemSlot then return nil end
-        local slot = slotOf(itemSlot)
-        if not slot then return nil end
-
-        local reason
-        for _, item in ipairs(ISInventoryPane.getActualItems(ISMouseDrag.dragging)) do
-            local itemReason = refusal(slot, item, {})
-            if not itemReason then return nil end
-            reason = reason or itemReason
-        end
-        return reason
-    end
-
-    -- A refused drop does nothing in vanilla, so this says why.
-    function ISItemSlot:onMouseUp(x, y)
-        local reason = dropRefusal(self)
-        if reason then HaloTextHelper.addBadText(getPlayer(), getText(reason)) end
-        return vanillaMouseUp(self, x, y)
-    end
-
-    if not rules.recipeRefusal then return end
-    -- Loaded under one recipe, started under another: vanilla would run the new one on what it accepts and leave
-    -- the rest in the slots, so Craft says why instead.
-    local vanillaStartCraft = ISWidgetCraftLogicControl.startCraft
-    function ISWidgetCraftLogicControl:startCraft()
-        local component, extra = station(self.entity)
-        local recipe = component and selectedRecipe(component)
-        local resources = recipe and self.entity:getComponent(ComponentType.Resources)
-        if resources then
-            local slot = { entity = self.entity, component = component, extra = extra, recipe = recipe }
-            local group = self.logic:getCraftLogic():getInputsGroupName()
-            local inputs = resources:getResourcesFromGroup(group, ArrayList.new(), ResourceIO.Input, ResourceType.Item)
-            for i = 0, inputs:size() - 1 do
-                slot.resource = inputs:get(i)
-                local stored = slot.resource:getStoredItems()
-                for j = 0, stored:size() - 1 do
-                    local reason = mine(self.entity, stored:get(j)) and rules.recipeRefusal(slot, stored:get(j))
-                    if reason then
-                        HaloTextHelper.addBadText(self.player, getText(reason))
-                        return
-                    end
-                end
-            end
-        end
-        return vanillaStartCraft(self)
-    end
 end
 
--- Picking a station up can break it, and one that holds something would lose it. mustStay(object) names the
--- vanilla pick-up line for a station that has to stay where it is (a test returns true for hasItems, vanilla's line
--- for a full container, or an InfoPanelFlags name: "tooHot" for a fire); nil when it may go. Wraps
--- ISMoveableSpriteProps.canPickUpMoveable and getInfoPanelFlagsPerTile, once for every mod.
-local stayTests = {}
-
-local function mustStay(object)
-    if not object then return nil end
-    for _, test in ipairs(stayTests) do
-        local why = test(object)
-        if why then return why == true and "hasItems" or why end
-    end
-    return nil
-end
-
-local function wrapPickUp()
-    local vanillaCanPickUp = ISMoveableSpriteProps.canPickUpMoveable
-    local vanillaInfoFlags = ISMoveableSpriteProps.getInfoPanelFlagsPerTile
-
-    function ISMoveableSpriteProps:canPickUpMoveable(character, square, object)
-        if mustStay(object) then return false end
-        return vanillaCanPickUp(self, character, square, object)
-    end
-
-    function ISMoveableSpriteProps:getInfoPanelFlagsPerTile(square, object, player, mode)
-        vanillaInfoFlags(self, square, object, player, mode)
-        local why = mode == "pickup" and mustStay(object)
-        if why then InfoPanelFlags[why] = true end
-    end
-end
-
-function UI.keepInPlace(test)
-    if #stayTests == 0 then wrapPickUp() end
-    table.insert(stayTests, test)
-end
-
--- Refuses these sprites on a square that fails fits, when a moveable is put down.
-local function placeOnly(sprites, fits)
-    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
-    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
-        if sprites[self.spriteName] and square and not fits(square) then return false end
-        return vanillaCanPlace(self, character, square, item)
-    end
-end
-
--- Stations built for the open refuse an indoor square, and this stops one being picked up and carried in,
--- as placing a moveable doesn't run that check. sprites is a set of sprite names.
-function UI.outdoorOnly(sprites)
-    placeOnly(sprites, function(square) return square:isOutside() end)
-end
-
--- The same for stations that may stand under a roof (a porch, an open shed) but not in a room.
-function UI.notInRooms(sprites)
-    placeOnly(sprites, function(square) return not square:isInARoom() end)
-end
-
--- Putting down any station whose door is registered with Doors (the Hearth, the Firebox, a mod's): its own door's
--- front tile must be free, and it can't stand in front of another one's door. sprites (a set of names, optional)
--- adds stations without a door that are kept out of a door's front too. Installed once, for every mod.
-local doorKept
-function UI.keepDoorsFree(sprites)
-    if doorKept then
-        for name in pairs(sprites or {}) do doorKept[name] = true end
-        return
-    end
-    doorKept = {}
-    for name in pairs(sprites or {}) do doorKept[name] = true end
-    local Doors = require "TraditionalPreservationCore/Doors"
-    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
-    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
-        if (doorKept[self.spriteName] or Doors.facingOf(self.spriteName)) and not Doors.fits(square, self.spriteName) then
-            return false
-        end
-        return vanillaCanPlace(self, character, square, item)
-    end
-end
-
-local APPLIANCES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombinationWasherDryer" }
-local COLD_CONTAINERS = { fridge = true, freezer = true }
-
--- A stove, a fridge or freezer, or a washer or dryer: something that heats, chills or shakes what stands on it.
-function UI.isAppliance(object)
-    for _, class in ipairs(APPLIANCES) do
-        if instanceof(object, class) then return true end
-    end
-    for index = 0, (object.getContainerCount and object:getContainerCount() or 0) - 1 do
-        local container = object:getContainerByIndex(index)
-        if container and COLD_CONTAINERS[container:getType()] then return true end
-    end
-    return false
-end
-
--- Table-top stations refuse a square holding an appliance. Vanilla only asks for IsTable, which electric stoves
--- and chest freezers carry, and the build ghost of an IsStackable tile asks canPlaceMoveable too, so this covers
--- building and putting down. sprites is a set of sprite names.
-function UI.offAppliances(sprites)
-    local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
-    function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
-        if sprites[self.spriteName] and square then
-            local objects = square:getObjects()
-            for index = 0, objects:size() - 1 do
-                if UI.isAppliance(objects:get(index)) then return false end
-            end
-        end
-        return vanillaCanPlace(self, character, square, item)
-    end
-end
+passOn("SlotRules", { "slotRules" })
+passOn("Placement", { "keepInPlace", "outdoorOnly", "notInRooms", "keepDoorsFree", "offAppliances" })
 
 return UI

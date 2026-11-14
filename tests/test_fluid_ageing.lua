@@ -174,14 +174,10 @@ check("store milk poured out is scalded", storeJug.fc.fluids.ScaldedCowMilk == 1
 check("nameAt: rotten stays rotten", FluidAgeing.nameAt(spec, "Fresh", "RottenCowMilk", true) == "RottenCowMilk")
 check("nameAt: soured is never scalded", FluidAgeing.nameAt(spec, "Fresh", "SourCowMilk", true) == "SourCowMilk")
 
-local oldJug = item({ CowMilk = 1 })
-oldJug.md.tpFluidAge = { kind = "milk", age = 50, steamed = true, place = "Sheltered", marks = { Sheltered = ledger.milkSheltered } }
-FluidAgeing.look(oldJug, 0, "Sheltered")
-check("a record from before the rename (steamed) reads as scalded", oldJug.md.tpFluidAge.scalded and oldJug.md.tpFluidAge.steamed == nil
-    and oldJug.fc.fluids.ScaldedCowMilk == 1)
-
 -- Scalding on a stove or a fire: the item's own heat
 spec.scaldHeat = 1.5
+check("the lowest scalding heat is worked out at register", FluidAgeing.lowestScaldHeat() == nil
+    and FluidAgeing.register(spec) and FluidAgeing.lowestScaldHeat() == 1.5)
 local onStove = item({ CowMilk = 2 })
 onStove.heat = 1.6
 function onStove:getItemHeat() return self.heat end
@@ -200,7 +196,6 @@ soured.heat = 2
 function soured:getItemHeat() return self.heat end
 FluidAgeing.look(soured, 0, "Sheltered")
 check("soured milk boiled stays soured", soured.fc.fluids.SourCowMilk == 1 and not soured.md.tpFluidAge.scalded)
-check("the lowest scalding heat", FluidAgeing.lowestScaldHeat() == 1.5)
 spec.scaldHeat = nil
 
 -- Milk left in the copper turns there too
@@ -346,6 +341,22 @@ check("salted and vinegared mixed keep neither", salted.md.tpFluidAge.treated ==
 local mixed = item({ AnimalBlood = 1, SaltedBlood = 1 })
 check("a fresh share makes a new record untreated", FluidAgeing.look(mixed, 0, "Sheltered").treated == nil
     and mixed.fc.fluids.AnimalBlood == 2)
+-- First seen with spoiled blood in it, salted blood is salted whichever fluid comes first. pairs is swapped for the
+-- one look so the fluids found come in the order given.
+for _, order in ipairs({ { "SaltedBlood", "SpoiledBlood" }, { "SpoiledBlood", "SaltedBlood" } }) do
+    local both = item({ SaltedBlood = 1, SpoiledBlood = 1 })
+    local realPairs = pairs
+    pairs = function(t)
+        if rawget(t, "SaltedBlood") == 1 and rawget(t, "SpoiledBlood") == 1 and t ~= both.fc.fluids then
+            local i = 0
+            return function() i = i + 1 if order[i] then return order[i], t[order[i]] end end
+        end
+        return realPairs(t)
+    end
+    local record = FluidAgeing.look(both, 0, "Sheltered")
+    pairs = realPairs
+    check("salted and spoiled blood, " .. order[1] .. " first: salted", record.treated and record.treated.Salted)
+end
 local gathered = item({ SaltedBlood = 1 })
 FluidAgeing.look(gathered, 0, "Sheltered")
 gathered.fc.fluids.AnimalBlood = 1
@@ -382,5 +393,39 @@ jar.md.tpFluidAge.place, jar.md.tpFluidAge.hour = FluidAgeing.FRIDGE, 0
 FluidAgeing.look(jar, 10, "Sheltered")
 check("in a fridge, by the state's curve", jar.md.tpFluidAge.age == 16 + 10 * 0.5)
 check("nameAt with no state is unchanged for milk", FluidAgeing.nameAt(spec, "Fresh", "CowMilk", true) == "ScaldedCowMilk")
+
+-- register checks what it is given.
+local function refused(bad, says)
+    local ok, err = pcall(FluidAgeing.register, bad)
+    return not ok and tostring(err):find(says, 1, true) ~= nil
+end
+local function base(kind)
+    return { kind = kind, rate = function() return 1 end, turnHours = 1, spoilHours = 2,
+        fresh = { Ooze = "SourOoze" }, spoiled = { Ooze = "RottenOoze" }, getLedger = function() return ledger end }
+end
+local noLedger = base("ooze")
+noLedger.getLedger = nil
+check("a spec with no ledger is refused, by name", refused(noLedger, "ooze has no getLedger"))
+local noSpoiled = base("ooze")
+noSpoiled.spoiled = {}
+check("a fresh fluid with no spoiled one is refused", refused(noSpoiled, "ooze has no spoiled fluid for Ooze"))
+local thief = base("thief")
+thief.fresh, thief.spoiled = { CowMilk = "SourThief" }, { CowMilk = "RottenThief" }
+check("a fluid another kind has is refused", refused(thief, "thief claims CowMilk, already milk"))
+local twice = base("twice")
+twice.states = { A = { fluids = { Ooze = "AOoze" }, spoilHours = 3, of = { "X" } },
+    B = { fluids = { Ooze = "BOoze" }, spoilHours = 3, of = { "X" } } }
+check("two states done by the same treatments are refused", refused(twice, "twice has two states done by X"))
+check("registering a kind again is allowed", FluidAgeing.register(base("again")) and FluidAgeing.register(base("again")))
+
+-- Each fluid is looked up in the engine once, not on every look.
+local gets, realGet = 0, Fluid.Get
+Fluid.Get = function(name) gets = gets + 1 return realGet(name) end
+local counted = FluidAgeing.register({ kind = "counted", rate = function() return 1 end, turnHours = 5, spoilHours = 9,
+    fresh = { Brew = "SourBrew" }, spoiled = { Brew = "FlatBrew" }, getLedger = function() return ledger end })
+local keg = item({ Brew = 1 })
+for _ = 1, 5 do FluidAgeing.amounts(keg.fc, counted) end
+check("fluids are looked up once each", gets == 3)
+Fluid.Get = realGet
 
 H.done()

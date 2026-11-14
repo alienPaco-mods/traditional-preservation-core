@@ -2,6 +2,7 @@
 -- milk left in a fridge or a cupboard has turned by the time anyone looks at it. An item is looked at as it is moved,
 -- while it is still where it was: taken off a stove, its heat is still the stove's, so hot milk scalds.
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
+local FluidTreat = require "TraditionalPreservationCore/FluidTreat"
 local Transfer = require "TraditionalPreservationCore/Transfer"
 local UI = require "TraditionalPreservationCore/UI"
 local Uses = require "TraditionalPreservationCore/Uses"
@@ -28,12 +29,12 @@ end
 local function firstTreatable(items)
     for _, entry in ipairs(items) do
         local item = instanceof(entry, "InventoryItem") and entry or (entry.items and entry.items[1])
-        local spec = item and FluidAgeing.treatableSpec(item)
+        local spec = item and FluidTreat.treatableSpec(item)
         if spec then return item, spec end
     end
 end
 
-function FluidAgeing.fillTreatMenu(playerNum, context, items)
+local function fillTreatMenu(playerNum, context, items)
     local container, spec = firstTreatable(items)
     if not container then return end
     local playerObj = getSpecificPlayer(playerNum)
@@ -46,14 +47,14 @@ function FluidAgeing.fillTreatMenu(playerNum, context, items)
     end
     local subMenu = context:getNew(context)
     context:addSubMenu(parent, subMenu)
-    local litres = FluidAgeing.litresIn(container:getFluidContainer(), spec)
-    local uses = FluidAgeing.treatUses(spec, litres)
+    local litres = FluidTreat.litresIn(container:getFluidContainer(), spec)
+    local uses = FluidTreat.treatUses(spec, litres)
     for _, treatment in ipairs(spec.treatments) do
         -- The label counts what the player carries; the tooltip says what this takes.
         local owned = Uses.count(playerObj, treatment.tag())
         local option = subMenu:addOption(getText(treatment.label, tostring(owned)), playerObj, onTreat, container, spec, treatment)
         option.iconTexture = getTexture(treatment.icon)
-        local refusal = FluidAgeing.treatRefusal(container, spec, treatment, playerObj)
+        local refusal = FluidTreat.treatRefusal(container, spec, treatment, playerObj)
         option.notAvailable = refusal ~= nil
         local tooltip = ISWorldObjectContextMenu.addToolTip()
         tooltip.description = getText(refusal or "IGUI_TraditionalPreservationCore_TreatTakes", string.format("%.1f", litres),
@@ -62,4 +63,4 @@ function FluidAgeing.fillTreatMenu(playerNum, context, items)
     end
 end
 
-Events.OnFillInventoryObjectContextMenu.Add(FluidAgeing.fillTreatMenu)
+Events.OnFillInventoryObjectContextMenu.Add(fillTreatMenu)

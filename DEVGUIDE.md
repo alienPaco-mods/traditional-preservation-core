@@ -137,7 +137,7 @@ every mod's translation files for a literal `%`.
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
-`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Copper.lua` (the Forged Cauldron as the first attachment; in the code it is still `copper`: its id `Hearth.COPPER`, its save key, `Copper.lua`, `CopperUI.lua`, `TPHearthCopper`), `.../Smokehouse.lua` (the
+`OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth, its attachments and connections, and the cauldron's fluid rules), `.../Copper.lua` (the Forged Cauldron as the first attachment; in the code it is still `copper`: its id `Hearth.COPPER`, its save key, `Copper.lua`, `CopperUI.lua`, `TPHearthCopper`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
 `.../Action.lua`, `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
@@ -244,7 +244,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
      what a recipe line can't (Fish & Meat's salt by weight, a cure by the litre) here, not in a copy.
    - `FluidAgeing` treatments: a kind registered with `treatments`, `litresPerUse` and `treatMenu` gets a submenu on
      its containers (Fish & Meat's *Cure Blood > -n Salt / -n Vinegar*), greyed with the reason; the timed action is
-     `TPFluidTreat`. `FluidAgeing.treatRefusal` / `treatBy` / `litresIn` / `treatUses` for a mod's own code.
+     `TPFluidTreat`. `FluidTreat.treatRefusal` / `treatBy` / `litresIn` / `treatUses` for a mod's own code (also
+     reached as `FluidAgeing.<name>`).
    - `TraditionalPreservationCore.OnCreateCooked` (`Recipes.cookOutputs`): a recipe's cookable food comes out cooked.
    - `Charge.line(amounts)`: one recipe line that takes a different amount of each item (uses or a count); the
      craft window shows it (`ChargeUI`). `OnHeat.watch(fullType, minutes, fn)`: food kept at frying heat after it
@@ -360,6 +361,43 @@ overlays, stages, styles, hangers.
   an unloaded object passes both until its chunk has been saved. Compare `getCell():getGridSquare(x, y, z)` with its
   square (see ENGINE_NOTES, "Chunk unload and generators").
 - `mod.info`: `author=alienPaco`.
+
+## Refactoring rules
+
+What a refactor (and new code) aims for. FluidAgeing was the worked example (2026-11-14); its ROADMAP_HISTORY entry
+lists every finding.
+
+1. **Rules on plain tables, engine calls apart.** A module's rules (ages, stages, merges, rates) take and return plain
+   tables and numbers and get luajit tests; the parts that call the engine (`getFluidContainer`, `getModData`,
+   `Fluid.Get`, squares) sit below them, or in their own file.
+2. **Saved data stays plain.** Anything in modData or a ledger is plain tables, strings, numbers and booleans: no
+   metatables (they don't survive a save), no functions. Records are worked on by functions, not turned into classes.
+   A field rename comes with one migration function, in Core when two mods read the field.
+3. **Say it once.** The same three or more lines twice in a file become a local helper; the same idea in two mods
+   goes in Core (see "Core shared wraps"). A family of actions that differ only in their middle step (look, check,
+   change, apply) gets one helper that takes the middle step as a function.
+4. **Work out once what changes once.** What depends only on what was registered (sets of names, the lowest heat,
+   engine objects such as `Fluid.Get`) is worked out at register time, or the first time it is asked for if the
+   engine may not be ready then, and kept on the spec. What a call needs more than once (a record's state, the fluids
+   found in a container) is worked out once in that call and passed down. Code on a timer (every minute, every ten,
+   each loot refresh) matters most.
+5. **One file, one job.** Split a module when it holds parts with different dependencies or different users (a
+   station's state shape, the character's inventory, UI keys). The original module stays the one name callers use and
+   passes the moved functions on, so no other mod changes.
+6. **Check what register is given.** A `register` function `assert`s the fields it needs and that nothing another
+   registration owns is claimed twice, naming the kind and the field, instead of failing later on a `nil` key. Its
+   header says which fields it adds to the spec.
+7. **Client files don't add to shared tables.** A client function lives in a local or on the client module's own table.
+8. **Name the magic values.** A fallback place, a tolerance, a radius: a named constant, one per meaning.
+9. **Order never decides.** A result built while going through `pairs` must not depend on the order (Kahlua's
+   isn't luajit's); test the cases where two orders could differ.
+10. **Nothing changes in game.** A refactor changes no outcome; changing what the player sees or the numbers is a
+    balance pass. `tp test` for the module and every mod that calls it passes before and after, and the golden
+    results don't move. A bug found on the way may be fixed in the refactor, but only once the user has said yes to
+    it (ask first, every time), and with its own test.
+11. **Before the first release, old names can go.** While nothing is on the Workshop, leftover names (a save key, a
+    module, a field from a test build) are renamed outright and their test-build migrations dropped. From the first
+    release on, "Never rename a save key" above holds.
 
 ## FAQ: why the series does it this way
 

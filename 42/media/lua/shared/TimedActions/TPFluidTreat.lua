@@ -1,17 +1,17 @@
 -- Traditional Preservation core: treating the fluid in a carried container by hand (a kind's treatments in
--- FluidAgeing: Fish & Meat's Cure Blood), a use for each litresPerUse litres (FluidAgeing.treatBy).
+-- FluidAgeing: Fish & Meat's Cure Blood), a use for each litresPerUse litres (FluidTreat.treatBy).
 require "TimedActions/ISBaseTimedAction"
 
 TPFluidTreat = ISBaseTimedAction:derive("TPFluidTreat")
 
-local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
+local FluidTreat = require "TraditionalPreservationCore/FluidTreat"
 local Action = require "TraditionalPreservationCore/Action"
 
 TPFluidTreat.TICKS = 100
 
 function TPFluidTreat:isValid()
     return self.character:getInventory():containsRecursive(self.container)
-        and FluidAgeing.treatRefusal(self.container, self.spec, self.treatment, self.character) == nil
+        and FluidTreat.treatRefusal(self.container, self.spec, self.treatment, self.character) == nil
 end
 
 function TPFluidTreat:start()
@@ -19,7 +19,7 @@ function TPFluidTreat:start()
 end
 
 function TPFluidTreat:complete()
-    return FluidAgeing.treatBy(self.container, self.spec, self.treatment, self.character)
+    return FluidTreat.treatBy(self.container, self.spec, self.treatment, self.character)
 end
 
 function TPFluidTreat:perform()

@@ -288,11 +288,33 @@ check("oven food only: the lid", Hearth.holeLook(H.list({ food("Base.PieWholeRaw
 check("an empty pot is oven gear too", Hearth.holeLook(H.list({ food("Base.Pot", 0) })) == Hearth.LID)
 check("any stove food or fluid wins: the pot", Hearth.holeLook(H.list({ food("Base.PieWholeRaw"), food("Base.PotOfSoup") })) == Hearth.POT
     and Hearth.holeLook(H.list({ food("Base.Bread"), food("Base.Pot", 2) })) == Hearth.POT)
+-- Connections (Hearth.connect): one at a time, its kind and side under its id.
+local trench = { tool = "DIG_GRAVE", items = { { "Base.FlatStone", 3 }, { "Base.Clay", 2 } }, back = "Base.FlatStone" }
+local duct = Hearth.connect({ id = "testDuct", kinds = { "Stones" }, kits = { Stones = trench }, blocks = "both" })
+check("a connection registers by its id, its fields given later added to it", Hearth.connection("testDuct") == duct
+    and Hearth.connect({ id = "testDuct", notes = print }) == duct and duct.notes == print and duct.blocks == "both")
 local flue = {}
-Hearth.setFlue(flue, "Stones", "Back")
-check("a flue joined to a side", flue.flue == "Stones" and flue.flueSide == "Back")
-Hearth.setFlue(flue, "Pipe", "Front")
-check("never the door's side: it is capped again", flue.flue == nil and flue.flueSide == nil)
+Hearth.join(flue, "testDuct", "Stones", "Back")
+check("joined to a side, its kind and side under its id", Hearth.connectedTo(flue) == "testDuct"
+    and flue.testDuct.kind == "Stones" and flue.testDuct.side == "Back" and select(2, Hearth.joinOf(flue)) == "Back")
+check("taken up, it says what it was", Hearth.unjoin(flue) == "testDuct" and flue.connected == nil and flue.testDuct == nil
+    and Hearth.joinOf(flue) == nil)
+Hearth.join(flue, "testDuct", "Stones", "Front")
+check("never the door's side: nothing is joined", Hearth.connectedTo(flue) == nil and flue.testDuct == nil)
+Hearth.join(flue, "testDuct", "Pipe", "Back")
+check("nor by a kit it hasn't got", Hearth.connectedTo(flue) == nil)
+Hearth.join(flue, "noSuchThing", "Stones", "Back")
+check("nor an unknown connection", Hearth.connectedTo(flue) == nil)
+check("Connect's refusals, the first that applies", Hearth.connectRefusalOf({ side = "Back" }) == nil
+    and Hearth.connectRefusalOf({ joined = true, own = "X" }) == "IGUI_TraditionalPreservationCore_FlueFireboxJoined"
+    and Hearth.connectRefusalOf({ own = "X", burning = true }) == "X"
+    and Hearth.connectRefusalOf({ burning = true }) == "IGUI_TraditionalPreservationCore_FlueFireboxDoor"
+    and Hearth.connectRefusalOf({ side = "Left", burning = true, fitted = true }) == "IGUI_TraditionalPreservationCore_FlueBurning"
+    and Hearth.connectRefusalOf({ side = "Left", fitted = true }) == "IGUI_TraditionalPreservationCore_ConnectFitted")
+local short, noTool = Hearth.kitMissing(trench, { ["Base.FlatStone"] = 1 }, false)
+check("a kit's shortfall and its tool", #short == 2 and short[1][2] == 2 and short[2][2] == 2 and noTool)
+local back = Hearth.kitBack(trench)
+check("Disconnect gives back only the kit's back items", #back == 1 and back[1][1] == "Base.FlatStone" and back[1][2] == 3)
 for face, sides in pairs(Hearth.FLUE_SIDES) do
     local door = face == 0 and { 0, 1 } or { 1, 0 }
     local ok = true

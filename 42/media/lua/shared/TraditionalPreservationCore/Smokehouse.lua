@@ -1,9 +1,10 @@
 -- Traditional Preservation core: the Smokehouse (moved from Fish & Meat 2026-11-13, so Dairy and later mods share it).
 -- A plank chamber two tiles long; Connect the Firebox lays a clay pipe (2 Clay Pipe Segments + 1 Clay, a mason's
 -- trowel) or a trench roofed with flat stones (3 Flat Stones + 2 Clay, a shovel or spade) from a Firebox to a chamber
--- tile beside it; Disconnect takes it up again, the pipe or stones back, the clay lost. The link lives on the Firebox
--- alone (Hearth's flue and flueSide): the chamber tile it joins is the square on that side. Each chamber tile is
--- checked on its own, so a bigger shed can reuse the rules.
+-- tile beside it; Disconnect takes it up again, the pipe or stones back, the clay lost. The flue is a Hearth connection
+-- (Hearth.connect, id ID), so Core's Connect / Disconnect build it: the link lives on the Firebox alone (its kind and
+-- side under ID in tpHearth), the chamber tile it joins is the square on that side. It blocks only its own slot: the
+-- Cauldron fits while it is joined. Each chamber tile is checked on its own, so a bigger shed can reuse the rules.
 -- What hangs inside is each mod's: a stack records its owner when it starts (startCounters), and a mod steps only
 -- its own stacks. The core counts the joined fire for them: hot, the hours of the stoked session now running
 -- (Hearth.logFire), and cold, banked hours and the hours of stoked sessions that broke off (fireStep).
@@ -13,6 +14,8 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local Smokehouse = {}
 
+-- The connection's id: its save key in tpHearth, never renamed.
+Smokehouse.ID = "smokehouse"
 Smokehouse.CONNECT_TICKS = 400
 Smokehouse.DISCONNECT_TICKS = 200
 Smokehouse.CONNECT_XP = 5
@@ -21,11 +24,20 @@ Smokehouse.CONNECT_XP = 5
 Smokehouse.RECIPES = "Smokehouse"
 Smokehouse.STACKS = Tiles.CHAMBER_STACKS
 
--- The two ways to join them, in menu order. Items are { full type, count }; the tool (an ItemTag's name) stays.
+-- The two ways to join them, in menu order: the connection's kits (Hearth.connect). Items are { full type, count };
+-- the tool (an ItemTag's name) stays.
 Smokehouse.FLUE_KINDS = { "Pipe", "Stones" }
+local function kit(kind, tool, toolText, items, back, anim)
+    return { tool = tool, toolText = toolText, items = items, back = back, anim = anim,
+        ticks = Smokehouse.CONNECT_TICKS, removeTicks = Smokehouse.DISCONNECT_TICKS, xp = { "Masonry", Smokehouse.CONNECT_XP },
+        text = "ContextMenu_TraditionalPreservationCore_Connect" .. kind, help = "IGUI_TraditionalPreservationCore_Flue" .. kind .. "Help",
+        name = "IGUI_TraditionalPreservationCore_Flue" .. kind }
+end
 Smokehouse.FLUE_KITS = {
-    Pipe = { tool = "MASONS_TROWEL", items = { { "Base.ClayPipeSegment", 2 }, { "Base.Clay", 1 } }, back = "Base.ClayPipeSegment" },
-    Stones = { tool = "DIG_GRAVE", items = { { "Base.FlatStone", 3 }, { "Base.Clay", 2 } }, back = "Base.FlatStone" },
+    Pipe = kit("Pipe", "MASONS_TROWEL", "IGUI_TraditionalPreservationCore_ToolTrowel",
+        { { "Base.ClayPipeSegment", 2 }, { "Base.Clay", 1 } }, "Base.ClayPipeSegment", "Build"),
+    Stones = kit("Stones", "DIG_GRAVE", "IGUI_TraditionalPreservationCore_ToolShovel",
+        { { "Base.FlatStone", 3 }, { "Base.Clay", 2 } }, "Base.FlatStone", "DigShovel"),
 }
 
 local FACES = #Tiles.CHAMBERS / 2
@@ -97,25 +109,17 @@ function Smokehouse.hamSprite(face, part, finished)
     return Tiles.CHAMBER_HAM + face
 end
 
--- Why Connect can't be done, as a translation key, or nil. c = { burning, fireboxJoined, chamberJoined, allowed,
--- flueSide (Hearth.flueSideTo: nil on the Firebox's door side) }.
-function Smokehouse.connectRefusal(c)
-    if c.fireboxJoined then return "IGUI_TraditionalPreservationCore_FlueFireboxJoined" end
+-- The shed's own refusal, as a translation key, or nil (Hearth.connectRefusal asks it after "already joined").
+-- c = { chamberJoined, allowed (the side of the chamber the Firebox is on may take a flue) }.
+function Smokehouse.chamberRefusal(c)
     if c.chamberJoined then return "IGUI_TraditionalPreservationCore_FlueChamberJoined" end
     if not c.allowed then return "IGUI_TraditionalPreservationCore_FlueDoorEnd" end
-    if not c.flueSide then return "IGUI_TraditionalPreservationCore_FlueFireboxDoor" end
-    if c.burning then return "IGUI_TraditionalPreservationCore_FlueBurning" end
     return nil
 end
 
 -- What a kit lacks from counts (full type -> how many) and whether the tool is there: { {type, missing} }.
 function Smokehouse.kitMissing(kind, counts, hasTool)
-    local missing = {}
-    for _, need in ipairs(Smokehouse.FLUE_KITS[kind].items) do
-        local short = need[2] - (counts[need[1]] or 0)
-        if short > 0 then table.insert(missing, { need[1], short }) end
-    end
-    return missing, not hasTool
+    return Hearth.kitMissing(Smokehouse.FLUE_KITS[kind], counts, hasTool)
 end
 
 -- The world
@@ -144,10 +148,11 @@ local function fireboxOn(square)
     end
 end
 
--- A Firebox's flue kind (Pipe or Stones) and side if it's joined to anything, else nil.
+-- A Firebox's flue kind (Pipe or Stones) and side if it's joined to a Smokehouse, else nil.
 function Smokehouse.flueOf(firebox)
-    local state = Hearth.stateOf(firebox:getModData())
-    return state.flue, state.flueSide
+    local state = firebox:getModData()[Hearth.KEY]
+    if Hearth.connectedTo(state) ~= Smokehouse.ID then return nil end
+    return Hearth.joinOf(state)
 end
 
 -- The chamber tile a joined Firebox's flue goes into, or nil (capped, or its shed is gone).
@@ -207,38 +212,61 @@ function Smokehouse.fireOf(tile)
     return firebox and Hearth.stateOf(firebox:getModData()) or nil, firebox
 end
 
+-- The entry fireboxesBy gives for this Firebox beside this chamber tile, or nil.
+local function entryFor(firebox, tile)
+    for _, found in ipairs(Smokehouse.fireboxesBy(tile)) do
+        if found.firebox == firebox and found.tile == tile then return found end
+    end
+end
+
 -- The chamber tile beside a Firebox that it could join, or the one it's joined to: { tile, ... } as fireboxesBy, or nil.
 function Smokehouse.chamberBy(firebox)
     for _, side in ipairs({ "Back", "Left", "Right" }) do
         local tile = Smokehouse.chamberOn(Hearth.flueSquare(firebox, side))
-        if tile then
-            for _, found in ipairs(Smokehouse.fireboxesBy(tile)) do
-                if found.firebox == firebox and found.tile == tile then return found end
-            end
-        end
+        local found = tile and entryFor(firebox, tile)
+        if found then return found end
     end
 end
 
 -- The refusal for joining this Firebox to the chamber tile in found (fireboxesBy's), or nil.
 function Smokehouse.connectRefusalFor(found)
-    return Smokehouse.connectRefusal({
-        burning = Hearth.isBurning(found.firebox),
-        fireboxJoined = Smokehouse.flueOf(found.firebox) ~= nil,
-        chamberJoined = Smokehouse.joinedFirebox(found.tile) ~= nil,
-        allowed = found.allowed,
-        flueSide = Hearth.flueSideTo(found.firebox, found.tile:getSquare()),
-    })
+    return Hearth.connectRefusal(found.firebox, Hearth.connection(Smokehouse.ID), found.tile)
 end
 
--- Lays the flue, or takes it up (kind nil). The Firebox and both chamber tiles redraw at once.
-function Smokehouse.setFlue(firebox, tile, kind)
-    local side = kind and Hearth.flueSideTo(firebox, tile:getSquare())
-    Hearth.setFlue(Hearth.stateOf(firebox:getModData()), kind, side)
-    if Hearth.World then Hearth.World.refresh(firebox) end
-    if Smokehouse.World then
-        for _, entry in ipairs(Smokehouse.chamberTiles(tile)) do Smokehouse.World.refresh(entry[1]) end
-    end
+local function redrawChamber(tile)
+    if not (tile and Smokehouse.World) then return end
+    for _, entry in ipairs(Smokehouse.chamberTiles(tile)) do Smokehouse.World.refresh(entry[1]) end
 end
+
+-- Lays the flue, or takes it up (kind nil), at once. The Firebox and both chamber tiles redraw.
+function Smokehouse.setFlue(firebox, tile, kind)
+    local state = Hearth.stateOf(firebox:getModData())
+    if kind then Hearth.join(state, Smokehouse.ID, kind, Hearth.flueSideTo(firebox, tile:getSquare())) else Hearth.unjoin(state) end
+    if Hearth.World then Hearth.World.refresh(firebox) end
+    redrawChamber(tile)
+end
+
+-- The flue as a Hearth connection: Core's Connect / Disconnect build it, its menu texts and notes are SmokehouseUI's.
+Hearth.connect({
+    id = Smokehouse.ID,
+    kinds = Smokehouse.FLUE_KINDS,
+    kits = Smokehouse.FLUE_KITS,
+    blocks = "connection",
+    finds = function(fire)
+        local found = Smokehouse.chamberBy(fire)
+        return found and found.tile
+    end,
+    joined = function(fire) return Smokehouse.joinedChamber(fire) end,
+    refusal = function(fire, tile)
+        local found = entryFor(fire, tile)
+        return Smokehouse.chamberRefusal({ chamberJoined = Smokehouse.joinedFirebox(tile) ~= nil, allowed = found and found.allowed })
+    end,
+    onChange = function(_, tile) redrawChamber(tile) end,
+    connectText = "ContextMenu_TraditionalPreservationCore_ConnectFirebox",
+    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectFirebox",
+    disconnectHelp = "IGUI_TraditionalPreservationCore_DisconnectHelp",
+    icon = "media/textures/Item_TPFirebox.png",
+})
 
 -- The overlay a chamber tile shows now: where a joined Firebox's flue enters it, if the camera sees that side.
 function Smokehouse.chamberEntry(tile)

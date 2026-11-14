@@ -36,6 +36,7 @@ end
 
 local Hearth = require "TraditionalPreservationCore/Hearth"
 local World = require "TraditionalPreservationCore/HearthWorld"
+local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 getSprite = function(name) return { getName = function() return name end } end
 
 local square = { getX = function() return 5 end, getY = function() return 6 end, getZ = function() return 0 end,
@@ -158,7 +159,7 @@ World.setFire(box, "bank", 110)
 check("it banks as the Hearth does", not box:isLit() and Hearth.isBanked(box) and count(cell.heat) >= 1
     and box.overlay:getName() == Hearth.fireboxGlow(true, true, nil, "Pot", 0))
 boxItems[2] = nil
-Hearth.setFlue(boxData[Hearth.KEY], "Pipe", "Back")
+Hearth.join(boxData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
 World.update(box, 111)
 check("its flue joined, its tile shows the pipe and the lid, and the smoke goes up it",
     box.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0)
@@ -201,18 +202,25 @@ check("out and empty, it may", Hearth.canRemove(fire) == true)
 -- Two slots: the Cauldron and the Smokehouse's flue go together; Remove leaves the bare Stone Hearth.
 local cauldron = Hearth.attachment(Hearth.COPPER)
 check("fitted, a second fit is refused", Hearth.fitRefusal(fire, cauldron) == "Fitted")
-Hearth.setFlue(modData[Hearth.KEY], "Pipe", "Back")
-check("a fitted Hearth's flue can be joined, the cauldron kept", modData[Hearth.KEY].flue == "Pipe" and Hearth.isHearth(fire))
+Hearth.join(modData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
+check("a fitted Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Hearth.isHearth(fire))
 check("Remove gives the whole kit back", #Hearth.fitBack(cauldron) == 4)
 check("taken off, the copper's state goes and nothing is fitted", Hearth.unfit(fire) == Hearth.COPPER
     and modData[Hearth.KEY].copper == nil and modData[Hearth.KEY].attached == false and Hearth.attachmentOf(fire) == nil)
 World.update(fire, 121)
 check("its copper tile turns to the bare Stone Hearth's, the flue still joined", Hearth.isFirebox(fire)
-    and fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0) and modData[Hearth.KEY].flue == "Pipe")
+    and fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
 check("the joined flue never blocks the fit", Hearth.fitRefusal(fire, cauldron) == nil)
 fire.lit = true
 check("but a burning fire does", Hearth.fitRefusal(fire, cauldron) == "Burning")
 fire.lit = false
+Hearth.connect({ id = "testWall", kinds = { "Pipe" }, kits = { Pipe = Smokehouse.FLUE_KITS.Pipe }, blocks = "both" })
+Hearth.join(modData[Hearth.KEY], "testWall", "Pipe", "Back")
+check("a connection that blocks both slots refuses the fit", Hearth.fitRefusal(fire, cauldron) == "Blocked")
+World.update(fire, 121)
+check("any connection by a pipe kit shows the pipe", fire.sprite:getName() == Hearth.fireboxSprite("Pipe", "Back", "Lid", 0))
+Hearth.join(modData[Hearth.KEY], Smokehouse.ID, "Pipe", "Back")
+check("joined again to the Smokehouse, the other is gone", modData[Hearth.KEY].testWall == nil and Smokehouse.flueOf(fire) == "Pipe")
 Hearth.fit(fire, Hearth.COPPER)
 World.update(fire, 121)
 check("fitted again, the copper's tile, its state empty", Hearth.isHearth(fire) and Hearth.face(fire.sprite:getName()) == 0

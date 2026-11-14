@@ -55,14 +55,15 @@ check("the ham hangs on the door's tile while stacks wait", Smokehouse.hamSprite
 check("never on the back tile, nor with nothing finished", Smokehouse.hamSprite(0, 0, true) == nil and Smokehouse.hamSprite(0, 1, false) == nil)
 check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_HAM) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_HAM)
 
--- Refusals, the first that applies.
-local ok = { allowed = true, flueSide = "Back" }
-check("a cold Firebox by a long side joins", Smokehouse.connectRefusal(ok) == nil)
-check("door end refused", Smokehouse.connectRefusal({ allowed = false, flueSide = "Back" }) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
-check("the Firebox's door side refused", Smokehouse.connectRefusal({ allowed = true }) == "IGUI_TraditionalPreservationCore_FlueFireboxDoor")
-check("not while it burns", Smokehouse.connectRefusal({ allowed = true, flueSide = "Left", burning = true }) == "IGUI_TraditionalPreservationCore_FlueBurning")
-check("one flue a Firebox", Smokehouse.connectRefusal({ allowed = true, flueSide = "Left", fireboxJoined = true }) == "IGUI_TraditionalPreservationCore_FlueFireboxJoined")
-check("one Firebox a shed", Smokehouse.connectRefusal({ allowed = true, flueSide = "Left", chamberJoined = true }) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
+-- The shed's own refusals (Hearth.connectRefusal asks them after "already joined").
+check("a long side of a free shed joins", Smokehouse.chamberRefusal({ allowed = true }) == nil)
+check("door end refused", Smokehouse.chamberRefusal({ allowed = false }) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
+check("one Firebox a shed", Smokehouse.chamberRefusal({ allowed = true, chamberJoined = true }) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
+local flue = Hearth.connection(Smokehouse.ID)
+check("the flue is a Hearth connection by its kits, blocking only its own slot", flue ~= nil and flue.kits == Smokehouse.FLUE_KITS
+    and flue.kinds == Smokehouse.FLUE_KINDS and flue.blocks == "connection" and flue.finds ~= nil and flue.joined ~= nil)
+check("Connect takes 400 ticks, Disconnect 200, 5 Masonry", flue.kits.Pipe.ticks == 400 and flue.kits.Stones.removeTicks == 200
+    and flue.kits.Pipe.xp[1] == "Masonry" and flue.kits.Pipe.xp[2] == 5 and flue.kits.Stones.anim == "DigShovel")
 
 -- Kits.
 local missing, noTool = Smokehouse.kitMissing("Pipe", { ["Base.ClayPipeSegment"] = 2, ["Base.Clay"] = 1 }, true)
@@ -74,7 +75,8 @@ for _, kind in ipairs(Smokehouse.FLUE_KINDS) do
     local kit = Smokehouse.FLUE_KITS[kind]
     local gives = false
     for _, need in ipairs(kit.items) do gives = gives or need[1] == kit.back end
-    check(kind .. ": what comes back is part of the kit, and a tool is named", gives and kit.tool ~= nil)
+    check(kind .. ": what comes back is part of the kit, and a tool, its text and the kit's texts are named", gives and kit.tool ~= nil
+        and kit.toolText ~= nil and kit.text ~= nil and kit.help ~= nil and kit.name ~= nil)
 end
 
 -- The build menu's check: not in a room, and the door's front free.

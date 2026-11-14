@@ -14,7 +14,7 @@
 -- What sits on the fire is an attachment (Hearth.attach, ATTACHMENTS below): the copper is the first, written in
 -- Copper.lua, CopperUI.lua and HearthWorld against that registry alone, so a mod can add its own (Salt's salt pan).
 -- Two slots (user, 2026-11-13): one attachment fitted on the fire (the Cauldron, later Salt's pan) and one connection
--- built onto it (the Smokehouse's flue), each free of the other. The fire's state names the attachment (attached:
+-- built onto it (Hearth.connect: the Smokehouse's flue), each free of the other unless the connection blocks both. The fire's state names the attachment (attached:
 -- false once one has come off), and the attachment's own state is kept under its id there. Fit and Remove are
 -- Core's (Hearth.canFit, Hearth.fit, Hearth.unfit; TPHearthFit), by the attachment's fit.
 --
@@ -27,9 +27,9 @@
 -- A Stone Hearth with nothing fitted is "the Firebox" in the code (Hearth.isFirebox): a cooking source through the
 -- hole, banked and stoked the same way. Its state is the same table (no attachment). What shows in the hole is its
 -- look (Hearth.holeLook): open, a forged pot when a stove food or a fluid is inside (Hearth.cooksOn), a lid when only
--- oven food is. Any Stone Hearth, fitted or not, may have its flue joined to something on its back or either flank,
--- never the door's side (Hearth.setFlue; the Smokehouse): its tile is picked by facing, flue, side and hole, as Fuel Barrel picks its
--- barrel's by the generator's. Hearth.isFire is any Stone Hearth, fitted or not.
+-- oven food is. Any Stone Hearth, fitted or not, may have something joined to its back or either flank, never the
+-- door's side (Hearth.connect, CONNECTIONS below; the Smokehouse's flue): its tile is picked by facing, flue, side and
+-- hole, as Fuel Barrel picks its barrel's by the generator's. Hearth.isFire is any Stone Hearth, fitted or not.
 local Weather = require "TraditionalPreservationCore/Weather"
 local Station = require "TraditionalPreservationCore/Station"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -38,7 +38,8 @@ local Doors = require "TraditionalPreservationCore/Doors"
 local Hearth = {}
 
 -- Save key: never rename it once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
--- Inside: fireUntil; banked, fuel, fuelAt, fuelSet; a Firebox's flue and flueSide; attached (the id of what is fitted);
+-- Inside: fireUntil; banked, fuel, fuelAt, fuelSet; attached (the id of what is fitted); connected (the id of what is
+-- joined, its kind and side under that id);
 -- the fire's record (Hearth.logFire):
 -- fireId, fireAt, fireMode, fireEnds, stokedHours, bankedHours, session, sessionBase, stokedLast; and each attachment's
 -- state under its id: the copper's (COPPER) ml, fluid, parts, tempC, last, boiled, hot, held, offAt, with fireUntil and
@@ -715,12 +716,15 @@ function Hearth.canRemove(fire)
     return spec.canRemove(part, fire)
 end
 
--- Why spec can't be fitted on this fire now, as a reason (Burning, Fitted, NoFit), or nil. A connection never blocks
--- the attachment slot (the Cauldron fits on a Hearth joined to the Smokehouse).
+-- Why spec can't be fitted on this fire now, as a reason (Burning, Fitted, NoFit, Blocked), or nil. A connection
+-- blocks the attachment slot only when it says so (blocks "both"; the Smokehouse's flue doesn't: the Cauldron fits on
+-- a Hearth joined to it).
 function Hearth.fitRefusal(fire, spec)
     if not (spec and spec.fit) then return "NoFit" end
     if Hearth.attachedTo(fire) then return "Fitted" end
     if Hearth.isBurning(fire) then return "Burning" end
+    local joined = Hearth.connectionOf(fire)
+    if joined and joined.blocks == "both" then return "Blocked" end
     return nil
 end
 
@@ -788,13 +792,130 @@ function Hearth.holeLook(items)
     return look
 end
 
--- Joins a Stone Hearth's flue (Pipe or Stones) to a side (Back, Left or Right), or caps it again (nil).
-function Hearth.setFlue(state, flue, side)
-    if Hearth.FLUES[flue] and Hearth.FLUE_SIDES[0][side] then
-        state.flue, state.flueSide = flue, side
-    else
-        state.flue, state.flueSide = nil, nil
+-- Connections: what is built onto a fire in the second slot (Hearth.connect; the Smokehouse's flue is the first), one
+-- at a time. The fire's state names it (connected), and its own state is kept under its id there: kind (the kit it
+-- was built with) and side (Back, Left or Right, never the door's). Connect and Disconnect are Core's
+-- (Hearth.connectRefusal, Hearth.join, Hearth.unjoin; TPHearthConnect), by the connection's kits, never while the fire
+-- burns. A spec (fields after id are optional unless said):
+--   id                                    its save key under tpHearth: never rename it once out
+--   kinds, kits                           the ways to build it, in menu order (both needed), each kit { tool (an
+--                                         ItemTag's name, kept), items = { {full type, count} }, back (the full type
+--                                         Disconnect gives back, as many as went in; the rest is lost), ticks,
+--                                         removeTicks, xp = { perk, amount }, anim (a CharacterActionAnims name),
+--                                         text, help, name (text keys: its menu row, hover and Info word),
+--                                         toolText (the tool's text key) }
+--   blocks                                "connection" (the default: its own slot) or "both" (no Fit while joined,
+--                                         no Connect while something is fitted)
+--   finds(fire) -> target                 the object beside the fire it could join, or nil
+--   joined(fire, part) -> target          what a joined fire goes into, or nil (it is gone)
+--   refusal(fire, target)                 why not this target, as a text key, or nil
+--   onChange(fire, target)                after it is built or taken up, the fire redrawn (target may be nil)
+--   connectText, disconnectText, disconnectHelp, icon   client: its menu rows, Disconnect's hover (%1 what comes
+--                                         back, %2 the tool), their icon path
+--   notes(info, notes, part)              client: its Info notes
+-- A kind with its own stone tiles (Hearth.FLUES) shows its pipe on the Stone Hearth.
+local CONNECTIONS, CONNECTION_ORDER = {}, {}
+
+function Hearth.connect(spec)
+    if not CONNECTIONS[spec.id] then table.insert(CONNECTION_ORDER, spec.id) end
+    local known = CONNECTIONS[spec.id] or {}
+    for key, value in pairs(spec) do known[key] = value end
+    CONNECTIONS[spec.id] = known
+    return known
+end
+
+function Hearth.connection(id)
+    return CONNECTIONS[id]
+end
+
+-- Every connection, in the order registered.
+function Hearth.connections()
+    local list = {}
+    for _, id in ipairs(CONNECTION_ORDER) do table.insert(list, CONNECTIONS[id]) end
+    return list
+end
+
+-- The id of what is joined to a fire's state, or nil.
+function Hearth.connectedTo(state)
+    return state and state.connected or nil
+end
+
+-- The kind and side of what is joined (Pipe, Back), or nil.
+function Hearth.joinOf(state)
+    local id = Hearth.connectedTo(state)
+    local part = id and state[id]
+    if not part then return nil end
+    return part.kind, part.side
+end
+
+-- What is joined to a fire: its spec and state, or nil.
+function Hearth.connectionOf(fire)
+    local state = fire:getModData()[Hearth.KEY]
+    local id = Hearth.connectedTo(state)
+    local spec = id and CONNECTIONS[id]
+    if not spec then return nil end
+    return spec, Hearth.partState(fire:getModData(), id)
+end
+
+-- Joins connection id to a fire's state by a kit's kind on a side (Back, Left or Right). Anything else (an unknown
+-- id or kind, the door's side) leaves nothing joined.
+function Hearth.join(state, id, kind, side)
+    Hearth.unjoin(state)
+    local spec = CONNECTIONS[id]
+    if spec and spec.kits[kind] and Hearth.FLUE_SIDES[0][side] then
+        state.connected = id
+        state[id] = { kind = kind, side = side }
     end
+end
+
+-- Takes what is joined off a fire's state. Returns its id and state.
+function Hearth.unjoin(state)
+    local id = Hearth.connectedTo(state)
+    local part = id and state[id]
+    if id then state[id] = nil end
+    state.connected = nil
+    return id, part
+end
+
+-- Why Connect can't be done, the first that applies, as a text key, or nil. c = { joined (something is), own (the
+-- connection's refusal), side (the target's side of the fire: nil on the door's), burning, fitted (something is fitted
+-- and the connection blocks both slots) }.
+function Hearth.connectRefusalOf(c)
+    if c.joined then return "IGUI_TraditionalPreservationCore_FlueFireboxJoined" end
+    if c.own then return c.own end
+    if not c.side then return "IGUI_TraditionalPreservationCore_FlueFireboxDoor" end
+    if c.burning then return "IGUI_TraditionalPreservationCore_FlueBurning" end
+    if c.fitted then return "IGUI_TraditionalPreservationCore_ConnectFitted" end
+    return nil
+end
+
+function Hearth.connectRefusal(fire, spec, target)
+    return Hearth.connectRefusalOf({
+        joined = Hearth.connectedTo(fire:getModData()[Hearth.KEY]) ~= nil,
+        own = spec.refusal and spec.refusal(fire, target),
+        side = Hearth.flueSideTo(fire, target:getSquare()),
+        burning = Hearth.isBurning(fire),
+        fitted = spec.blocks == "both" and Hearth.attachedTo(fire) ~= nil,
+    })
+end
+
+-- What a kit lacks from counts (full type -> how many) and whether its tool is there: { {type, missing} }, noTool.
+function Hearth.kitMissing(kit, counts, hasTool)
+    local missing = {}
+    for _, need in ipairs(kit.items) do
+        local short = need[2] - (counts[need[1]] or 0)
+        if short > 0 then table.insert(missing, { need[1], short }) end
+    end
+    return missing, not hasTool
+end
+
+-- What Disconnect gives back of a kit: { {full type, count} }.
+function Hearth.kitBack(kit)
+    local back = {}
+    for _, need in ipairs(kit.items) do
+        if need[1] == kit.back then table.insert(back, need) end
+    end
+    return back
 end
 
 -- The side of a Firebox that square is on (Back, Left or Right): nil for its door's side, a square not beside it,
@@ -831,8 +952,10 @@ function Hearth.showing(fire, state, burning, banked)
     end
     local container = fire:getContainer()
     local hole = Hearth.holeLook(container and container:getItems())
-    return Hearth.fireboxSprite(state.flue, state.flueSide, hole, face),
-        Hearth.fireboxGlow(burning, banked, state.flue, state.flue and Hearth.LID or hole, face)
+    local flue, side = Hearth.joinOf(state)
+    if not Hearth.FLUES[flue] then flue, side = nil, nil end
+    return Hearth.fireboxSprite(flue, side, hole, face),
+        Hearth.fireboxGlow(burning, banked, flue, flue and Hearth.LID or hole, face)
 end
 
 -- The fire's state, brought up to now where the World runs (a server or single player).

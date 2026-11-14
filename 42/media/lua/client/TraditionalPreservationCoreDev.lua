@@ -21,7 +21,7 @@ function TPC.help()
     say("TPC.fuel(minutes)    set the nearest Hearth's or Firebox's fuel (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
     say("TPC.hot(minutes)     bring its copper to the steam (90 C) now, counted as steaming that long (60; 0 to watch a hold)")
     say("TPC.warmth()         air C and light 1-6 tiles east of the Hearth and on your square, firebox heat, each food's cooking")
-    say("TPC.firebox()        the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, flue, hole look and the squares on its flue's sides")
+    say("TPC.firebox()        the nearest Stone Hearth within 2 tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks")
     say("TPC.fit()            fit the Cauldron on the nearest Stone Hearth now, no items (TPC.fit(false) takes off what is fitted, nothing back)")
     say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Fireboxes beside it and why each can't join")
@@ -229,9 +229,10 @@ function TPC.firebox()
         table.insert(sides, string.format("%s %s", side, square and (square:getX() .. "," .. square:getY()) or "-"))
     end
     local container = firebox:getContainer()
-    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, fitted %s, flue %s %s, hole %s; sides: %s", firebox:getX(), firebox:getY(),
+    say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, fitted %s, joined %s %s, hole %s; sides: %s", firebox:getX(), firebox:getY(),
         firebox:getZ(), Hearth.isBanked(firebox) and "banked" or firebox:isLit() and "lit" or "out", firebox:getFuelAmount(),
-        firebox:getSprite():getName(), tostring(Hearth.attachedTo(firebox)), tostring(state.flue), tostring(state.flueSide),
+        firebox:getSprite():getName(), tostring(Hearth.attachedTo(firebox)), tostring(Hearth.connectedTo(state)),
+        table.concat({ Hearth.joinOf(state) }, " "),
         Hearth.holeLook(container and container:getItems()), table.concat(sides, ", ")))
 end
 
@@ -247,7 +248,8 @@ end
 function TPC.flue(kind, side)
     local firebox = nearestFirebox()
     if not firebox then return end
-    Hearth.setFlue(Hearth.fireStateOf(firebox), kind, side or "Back")
+    local state = Hearth.fireStateOf(firebox)
+    if kind then Hearth.join(state, Smokehouse.ID, kind, side or "Back") else Hearth.unjoin(state) end
     Hearth.World.refresh(firebox)
     TPC.firebox()
 end

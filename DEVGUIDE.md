@@ -198,13 +198,24 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Hearth.copperOf(fire)` brings it up to now). `Hearth.attachmentOf(fire)` gives the spec and state;
      `Hearth.canRemove(fire)` refuses while the fire burns, then asks the attachment (the copper: only empty).
      `Hearth.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
-     `Hearth.lua` above `Hearth.attach`. Fit / Remove and `Hearth.connect` (the Smokehouse's join) come with the hub's
-     next steps.
+     `Hearth.lua` above `Hearth.attach`. Fit / Remove are Core's (`TPHearthFit`, by the attachment's `fit`).
+   - **Connections** (`Hearth.connect{ id, kinds, kits, blocks, finds, joined, refusal, onChange, connectText,
+     disconnectText, disconnectHelp, icon, notes }`, the hub's step iii, 2026-11-14): what is built onto a fire in
+     its second slot, one at a time; the Smokehouse's flue is the first (`Smokehouse.ID`, in `Smokehouse.lua`, its notes
+     in `SmokehouseUI`). Its state is `connected` (the id) and `{ kind, side }` under the id in `tpHearth`
+     (`Hearth.join(state, id, kind, side)`, `Hearth.unjoin(state)`, `Hearth.connectedTo(state)`, `Hearth.joinOf(state)`,
+     `Hearth.connectionOf(fire)`). `blocks` is `"connection"` (the default) or `"both"`: then Fit is refused while it
+     is joined and Connect while something is fitted. Each kit is `{ tool, items, back, ticks, removeTicks, xp, anim,
+     text, help, name, toolText }`: Connect uses its items, Disconnect gives back the `back` items, the tool is kept.
+     Core enforces one connection a fire, never the door's side, never while the fire burns (`Hearth.connectRefusal`,
+     after the connection's own `refusal`), builds it with the timed action `TPHearthConnect` and puts Connect /
+     Disconnect on the fire's menu (`HearthUI.addConnect`, `HearthUI.addDisconnect`, which the joined thing's own
+     menu may call too). A joined fire can't be picked up. A kit kind with Stone Hearth tiles (`Hearth.FLUES`: Pipe,
+     Stones) shows its pipe on the bare Hearth.
    - The Firebox (`Hearth.isFirebox`; `Hearth.isFire` is a Hearth or a Firebox): the Hearth's fire with no copper, in
-     the same state table (`tpHearth`). `Hearth.setFlue(state, "Pipe"|"Stones", "Back"|"Left"|"Right")` joins its
-     flue (nil caps it); `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the door's side or
-     not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES` matches the tile
-     builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the Hearth.
+     the same state table (`tpHearth`). `Hearth.flueSideTo(firebox, square)` is the side a square is on (nil for the
+     door's side or not beside it), `Hearth.flueSquare(firebox, side)` the square on a side; `Hearth.FLUE_SIDES`
+     matches the tile builder's. `HearthUI.addFireboxMenu(fn)` and `HearthUI.addFireboxNotes(fn)` as for the Hearth.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, scalded, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the copper.

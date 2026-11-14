@@ -84,7 +84,7 @@ function firebox:getY() return 10 end
 local isFire, flueSquare = Hearth.isFire, Hearth.flueSquare
 Hearth.isFire = function(object) return object == firebox end
 Hearth.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
-Hearth.setFlue(Hearth.stateOf(firebox.modData), "Pipe", "Left")
+Hearth.join(Hearth.stateOf(firebox.modData), Smokehouse.ID, "Pipe", "Left")
 World.refresh(back)
 check("the joined Firebox's pipe shows where it enters", table.concat(back.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_ENTRY)
 check("the shed knows its fire", Smokehouse.joinedFirebox(door) == firebox and Smokehouse.fireOf(back) ~= nil)

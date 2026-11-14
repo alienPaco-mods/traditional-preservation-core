@@ -373,6 +373,76 @@ check("but not for one that can go", InfoPanelFlags.hasItems == false)
 ui.vanillaPickUp = false
 check("vanilla's own refusal still stands", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare()) == false)
 
+-- Connect and Disconnect (Hearth.connect): a test connection whose target stands on the fire's back.
+ui.vanillaPickUp = true
+Perks.Masonry = "Masonry"
+local changed
+local duct = Hearth.connect({ id = "testDuct", kinds = { "Pipe" }, blocks = "connection",
+    kits = { Pipe = { tool = "PLIERS", toolText = "IGUI_TraditionalPreservationCore_ToolPliers", items = { { "Base.MetalPipe", 2 }, { "Base.Clay", 1 } },
+        back = "Base.MetalPipe", ticks = 400, removeTicks = 200, xp = { "Masonry", 5 },
+        text = "ContextMenu_TraditionalPreservationCore_ConnectPipe", help = "IGUI_TraditionalPreservationCore_FluePipeHelp",
+        name = "IGUI_TraditionalPreservationCore_FluePipe" } },
+    finds = function(fire) return fire.beside end,
+    joined = function(fire) return fire.beside end,
+    onChange = function(_, target) changed = target end,
+    connectText = "ContextMenu_TraditionalPreservationCore_ConnectFirebox",
+    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectFirebox",
+    disconnectHelp = "IGUI_TraditionalPreservationCore_DisconnectHelp" })
+local function besides(fire, x, y)
+    local square = { getX = function() return x end, getY = function() return y end, getZ = function() return 0 end }
+    fire.beside = { getSquare = function() return square end }
+    return fire
+end
+ui.carried = {}
+check("nothing beside it: no Connect", named(open(bare()), "ContextMenu_TraditionalPreservationCore_ConnectFirebox") == nil)
+local joinable = besides(bare(), 5, 4)
+local connect = named(open(joinable), "ContextMenu_TraditionalPreservationCore_ConnectFirebox")
+local byPipe = connect and connect.subOption and named(connect.subOption, "ContextMenu_TraditionalPreservationCore_ConnectPipe")
+check("something on its back: Connect, a row per kit, greyed with what is missing", byPipe ~= nil and byPipe.isDisabled == true
+    and byPipe.toolTip.description:find("MetalPipe", 1, true) ~= nil and byPipe.toolTip.description:find("Missing", 1, true) ~= nil)
+check("on a fitted Hearth too", named(open(besides(hearth(), 5, 4)), "ContextMenu_TraditionalPreservationCore_ConnectFirebox") ~= nil)
+local doorSide = named(open(besides(bare(), 5, 6)), "ContextMenu_TraditionalPreservationCore_ConnectFirebox")
+check("on the door's side it is greyed, saying why", doorSide.isDisabled == true and doorSide.subOption == nil
+    and doorSide.toolTip.description == getText("IGUI_TraditionalPreservationCore_FlueFireboxDoor"))
+check("and while the fire burns", named(open(besides(bare(true), 5, 4)), "ContextMenu_TraditionalPreservationCore_ConnectFirebox").isDisabled == true)
+local ductKit = { thing("Base.MetalPipe"), thing("Base.MetalPipe"), thing("Base.Clay"), thing("Base.Pliers", { ["base:pliers"] = true }) }
+ui.carried = ductKit
+byPipe = named(named(open(joinable), "ContextMenu_TraditionalPreservationCore_ConnectFirebox").subOption, "ContextMenu_TraditionalPreservationCore_ConnectPipe")
+check("with the kit in reach it can be chosen", byPipe.isDisabled ~= true)
+byPipe.onSelect(character, unpack(byPipe.args))
+local joining = ui.queued[#ui.queued]
+check("choosing it brings the kit to hand and queues the connection", joining.Type == "TPHearthConnect" and joining.kind == "Pipe"
+    and joining.fire == joinable and joining.target == joinable.beside and joining.spec == duct)
+
+pack, given, xp = {}, {}, 0
+for _, item in ipairs(ductKit) do table.insert(pack, item) end
+local action = TPHearthConnect:new(smith, joinable, joinable.beside, "testDuct", "Pipe")
+check("Connect takes the kit's time and is valid with the kit", action.maxTime == 400 and action:isValid())
+action:complete()
+local joinState = joinable:getModData()[Hearth.KEY]
+check("done, the kit is used, the tool kept, it is joined on the back", #pack == 1 and Hearth.connectedTo(joinState) == "testDuct"
+    and joinState.testDuct.kind == "Pipe" and joinState.testDuct.side == "Back" and xp == 5 and changed == joinable.beside)
+check("a second Connect is refused", not TPHearthConnect:new(smith, joinable, joinable.beside, "testDuct", "Pipe"):isValid()
+    and Hearth.connectRefusal(joinable, duct, joinable.beside) == "IGUI_TraditionalPreservationCore_FlueFireboxJoined")
+check("it never blocks the fit", Hearth.fitRefusal(joinable, Hearth.attachment(Hearth.COPPER)) == nil)
+check("before, the same bare one could be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, bare()) == true)
+check("joined, it can't be picked up", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, joinable) == false)
+sub = open(joinable)
+local disconnect = named(sub, "ContextMenu_TraditionalPreservationCore_DisconnectFirebox")
+check("joined, the menu offers Disconnect, saying what comes back, and no Connect", disconnect ~= nil and disconnect.isDisabled ~= true
+    and disconnect.toolTip.description:find("MetalPipe", 1, true) ~= nil and named(sub, "ContextMenu_TraditionalPreservationCore_ConnectFirebox") == nil)
+joinable.lit = true
+check("greyed while the fire burns", named(open(joinable), "ContextMenu_TraditionalPreservationCore_DisconnectFirebox").isDisabled == true)
+local off = TPHearthConnect:new(smith, joinable, joinable.beside, "testDuct")
+check("nor can it be taken up then", not off:isValid())
+joinable.lit = false
+check("Disconnect takes the kit's shorter time", off.maxTime == 200 and off:isValid())
+changed = nil
+off:complete()
+check("done, the pipes come back, the clay is lost, nothing is joined", table.concat(given, " ") == "Base.MetalPipe Base.MetalPipe"
+    and Hearth.connectedTo(joinState) == nil and joinState.testDuct == nil and changed == joinable.beside)
+check("and it can be picked up again", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, joinable) == true)
+
 check("no text would make the game's formatter warn" .. (H.textWarnings[1] and " (" .. table.concat(H.textWarnings, "; ") .. ")" or ""),
     #H.textWarnings == 0)
 

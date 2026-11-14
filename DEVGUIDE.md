@@ -398,6 +398,13 @@ lists every finding.
 11. **Before the first release, old names can go.** While nothing is on the Workshop, leftover names (a save key, a
     module, a field from a test build) are renamed outright and their test-build migrations dropped. From the first
     release on, "Never rename a save key" above holds.
+12. **Core is mod-agnostic.** Core names mechanisms, not one mod's product: no milk, blood or fish words in its
+    fields, functions or save keys, and no special case that only one mod's fluid or station can use. What a mod
+    brings is data it registers (names, numbers, curves, rules as functions). When a Core feature was built for one
+    mod, fold it into the general mechanism once that mechanism can carry it. Example, planned (user, 2026-11-14):
+    FluidAgeing's `scalded` (Dairy's milk) is the same idea as its `states` (a variant of the fresh fluid with its own
+    name and spoiling), only brought about by heat instead of by hand; it is to become a state with a heat cause, so
+    any kind can have a heat-made variant without its own field in Core.
 
 ## FAQ: why the series does it this way
 

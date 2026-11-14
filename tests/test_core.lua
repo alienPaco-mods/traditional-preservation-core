@@ -2,7 +2,8 @@
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
 
-local Weather = dofile("42/media/lua/shared/TraditionalPreservationCore/Weather.lua")
+package.path = "42/media/lua/shared/?.lua;" .. package.path
+local Weather = require "TraditionalPreservationCore/Weather"
 local Station = dofile("42/media/lua/shared/TraditionalPreservationCore/Station.lua")
 
 -- Weather
@@ -14,6 +15,13 @@ check("scaled: off runs at full speed", Weather.scaled(0.2, 0, 0.02) == 1)
 check("scaled: harsh slows more, down to the floor", near(Weather.scaled(0.8, 1.5, 0.02), 0.7) and Weather.scaled(0, 1.5, 0.02) == 0.02)
 check("frozen: at or below the freezing point on any sensitivity but Off", Weather.frozen(0, 1) and Weather.frozen(-5, 0.5)
     and Weather.frozen(-3, 1.5, -3) and not Weather.frozen(-2, 1, -3) and not Weather.frozen(0.5, 1) and not Weather.frozen(-20, 0))
+local testCurve = { { 0, 0.2 }, { 20, 1 } }
+check("rate: frozen is 0, else the curve after the sensitivity, never under the floor", Weather.rate(testCurve, 0, 1) == 0
+    and Weather.rate(testCurve, -2, 1, 0.5, -3) == 0.5 and near(Weather.rate(testCurve, 10, 1), 0.6)
+    and near(Weather.rate(testCurve, 10, 1.5), 0.4) and Weather.rate(testCurve, 10, 1.5, 0.5) == 0.5
+    and Weather.rate(testCurve, -5, 0) == 1)
+check("an unknown place goes by the day; every place has a rule", Weather.placeTemperature({ temperature = 7, seasonTemperature = 15 }, "Nowhere") == 7
+    and Weather.DEFAULT_PLACE == "Sheltered")
 check("a batch paused there has no time left", Weather.batchStatus(5, 10, { temperature = -5, seasonTemperature = -5 }, "Open",
     function() return 0 end).hoursLeft == nil)
 local ledger = { temperature = 30, seasonTemperature = 12 }
@@ -149,16 +157,16 @@ local late = Weather.getLedger("AddedLater", newLedger)
 check("a mod added later agrees with the others from its first day", late.temperature == 30
     and Weather.placeTemperature(late, "Sheltered") == Weather.placeTemperature(old, "Sheltered"))
 local own = { lastHour = 0 }
-Weather.season(own, "seasonHumidity", 40, 1)
+Weather.seasonHumidity(own, 40, 1)
 check("season: the series' humidity too", own.seasonHumidity == series.seasonHumidity)
 Weather.observe(series, series.lastHour + 1, 5, 50, true)
-Weather.season(own, "seasonTemperature", 5, 1)
+Weather.seasonTemperature(own, 5, 1)
 check("season: a ledger learns the grid is on from the series", own.gridOn == true)
 Weather.observe(series, series.lastHour + 1, 5, 50, false)
-Weather.season(own, "seasonTemperature", 5, 1)
+Weather.seasonTemperature(own, 5, 1)
 check("and that it went off", own.gridOn == nil)
 Weather.share(nil)
-Weather.season(own, "seasonHumidity", 40, Weather.SEASON_HOURS)
+Weather.seasonHumidity(own, 40, Weather.SEASON_HOURS)
 check("season: with no series' weather a ledger grows its own mean", own.seasonHumidity == 40)
 getClimateManager = nil
 

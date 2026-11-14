@@ -464,4 +464,14 @@ for _ = 1, 5 do FluidAgeing.amounts(keg.fc, counted) end
 check("fluids are looked up once each", gets == 3)
 Fluid.Get = realGet
 
+-- Vanilla's Food Spoilage setting
+local sandbox = SandboxVars
+SandboxVars = nil
+check("food rot speed: Normal with no sandbox", FluidAgeing.foodRotSpeed() == 1)
+SandboxVars = { FoodRotSpeed = 1 }
+check("Very Fast ages food 1.7 times as fast", FluidAgeing.foodRotSpeed() == 1.7)
+SandboxVars = { FoodRotSpeed = 5 }
+check("Very Slow 0.4", FluidAgeing.foodRotSpeed() == 0.4)
+SandboxVars = sandbox
+
 H.done()

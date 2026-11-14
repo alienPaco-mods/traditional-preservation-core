@@ -38,7 +38,15 @@ FluidAgeing.FRIDGE_C = 4
 -- An item's hours at its kind's scalding heat: { hours, at }, at the hour it was last seen hot (nil once seen cooler).
 FluidAgeing.HELD_KEY = "tpHeldHot"
 -- Where fluid is when nothing says (no place given, none of its own, no record).
-FluidAgeing.DEFAULT_PLACE = "Sheltered"
+FluidAgeing.DEFAULT_PLACE = Weather.DEFAULT_PLACE
+-- Vanilla's Food Spoilage sandbox steps (Food.getFoodRotSpeed: very fast to very slow).
+local FOOD_ROT_SPEEDS = { 1.7, 1.4, 1, 0.7, 0.4 }
+
+-- The multiplier vanilla's Food Spoilage setting puts on food's age (Normal 1): a spec's speed for anything that
+-- should go off as food does.
+function FluidAgeing.foodRotSpeed()
+    return FOOD_ROT_SPEEDS[SandboxVars and SandboxVars.FoodRotSpeed] or 1
+end
 -- A first look on the heat counts as this many hours, so the hold has started.
 local FIRST_HOT_LOOK = 1e-6
 
@@ -55,7 +63,7 @@ local FIRST_HOT_LOOK = 1e-6
 --   scaldHold     hours at scaldHeat before it does
 --   sealed        { item fullType = true }: holds the fluid with no record (store milk)
 --   enabled       function(): false while the kind's ageing is off
---   speed         function(): the sandbox's multiplier on the age
+--   speed         function(): the sandbox's multiplier on the age (FluidAgeing.foodRotSpeed: vanilla's Food Spoilage)
 --   states        { name = { fluids = { fresh name = its name in this state }, spoilHours (default the kind's),
 --                   of = { treatment names } (default { name }), heat (true: made by heat, not by hand; one at most),
 --                   kind, rate (the state's own ledger kind and curve, when it slows in the cold unlike the plain

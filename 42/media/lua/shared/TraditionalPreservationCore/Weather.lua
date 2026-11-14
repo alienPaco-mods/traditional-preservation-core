@@ -6,6 +6,8 @@
 -- The weather itself is kept once for the whole series (Weather.shared): the last reading and the season's means.
 -- Each mod's ledger copies them at every record, so a mod added to a running save agrees with the others about the
 -- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
+-- A craft recipe's bar and clock (startRun, showProgress, setRecipeHours, startClock, showClock, batchStatus) are
+-- CraftClock's; Weather passes them on, so callers name Weather only.
 local Weather = {}
 
 -- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
@@ -37,8 +39,13 @@ Weather.ROOM_LIFT_NONE = 18
 -- adds them: place -> { celsius, under, lift }. A fire indoors (no under) holds celsius whatever the weather; one
 -- under an open roof or in the open warms that place's air by lift, never past celsius.
 Weather.FIRE_PLACES = {}
+-- Where something stands when nothing says: a room. (Hearth.DEFAULT_UNDER and FluidAgeing.DEFAULT_PLACE are this.)
+Weather.DEFAULT_PLACE = "Sheltered"
 
-local SECONDS_PER_HOUR = 3600
+local NO_SQUARE_PLACE = "Open"   -- placeOf for an object on no square
+local UPSTAIRS_Z = 1             -- the first floor above the ground, where a loft can be
+local HOURS_PER_DAY = 24
+local SETTLE_ROUNDS = 3          -- settledMeans: the year twice to settle, the third read
 
 local function lerp(from, to, amount)
     return from + (to - from) * amount
@@ -57,11 +64,11 @@ function Weather.curve(points, celsius)
 end
 
 -- The sandbox's Temperature Sensitivity, the same four steps in every mod: Off, Forgiving, Normal, Harsh.
-Weather.SENSITIVITY_SCALES = { 0, 0.5, 1, 1.5 }
+local SENSITIVITY_SCALES = { 0, 0.5, 1, 1.5 }
 
 -- The scale for a sandbox option's value; Normal for one out of range.
 function Weather.sensitivity(option)
-    return Weather.SENSITIVITY_SCALES[option] or 1
+    return SENSITIVITY_SCALES[option] or 1
 end
 
 -- Sensitivity says how much of a temperature's slowdown applies: 0 (off) to 1.5 (harsh).
@@ -76,19 +83,28 @@ function Weather.frozen(celsius, sensitivity, freezeC)
     return sensitivity > 0 and celsius <= (freezeC or 0)
 end
 
+-- A culture's, a ferment's or a cure's speed at celsius: 0 frozen (at or below freezeC, default 0 C), else the
+-- curve's rate after the sensitivity, never under minRate (default 0).
+function Weather.rate(curve, celsius, sensitivity, minRate, freezeC)
+    if Weather.frozen(celsius, sensitivity, freezeC) then return 0 end
+    return Weather.scaled(Weather.curve(curve, celsius), sensitivity, minRate or 0)
+end
+
 -- Below ground is a basement, in a room sheltered, under a roof that isn't a room covered (a porch, an open shed),
 -- anything else open. Asks the square, not the object: a player's isOutside() only means "not in a room", while
 -- the square's exterior flag also clears under a floor with no walls round it, as a station's isOutside() and the
 -- game's rain both see. A player-built shed with walls and a whole roof is a room.
 function Weather.placeOf(object)
     local square = object and object:getSquare()
-    if not square then return "Open" end
+    if not square then return NO_SQUARE_PLACE end
     if square:getZ() < 0 then return "Basement" end
     if not square:isOutside() then
         if not square:isInARoom() then return "Covered" end
         -- A loft is the top storey: upstairs, with no room on the square above (a roof's square is in none).
-        local above = square:getZ() >= 1 and square:getSquareAbove()
-        if square:getZ() >= 1 and not (above and above:isInARoom()) then return "Loft" end
+        if square:getZ() >= UPSTAIRS_Z then
+            local above = square:getSquareAbove()
+            if not (above and above:isInARoom()) then return "Loft" end
+        end
         return "Sheltered"
     end
     return "Open"
@@ -111,7 +127,27 @@ function Weather.loftTemperature(seasonTemperature)
         + Weather.LOFT_LIFT * math.max(seasonTemperature - Weather.LOFT_ANCHOR, 0)
 end
 
--- The temperature a place has now, from the ledger's last reading.
+-- Each place in Weather.PLACES by the ledger's readings: day (the last), season (its mean) and the ledger, for the
+-- grid and the ground. The open air and a shed in it (Enclosed) go by the day's.
+local function byDay(day) return day end
+local PLACE_RULES = {
+    Open = byDay,
+    Enclosed = byDay,
+    Covered = function(_, season) return season end,
+    Sheltered = function(_, season, ledger)
+        if ledger.gridOn then return Weather.GRID_ROOM_C end
+        return Weather.roomTemperature(season)
+    end,
+    Loft = function(_, season, ledger)
+        if ledger.gridOn then return Weather.GRID_ROOM_C end
+        return Weather.loftTemperature(season)
+    end,
+    -- A ledger from before the ground's mean (or a test's) goes by the season.
+    Basement = function(_, season, ledger) return Weather.basementTemperature(ledger.groundTemperature or season) end,
+}
+for _, place in ipairs(Weather.PLACES) do assert(PLACE_RULES[place], "Weather: no rule for the place " .. place) end
+
+-- The temperature a place has now, from the ledger's last reading. A place Weather doesn't know goes by the day.
 function Weather.placeTemperature(ledger, place)
     local fire = Weather.FIRE_PLACES[place]
     if fire then
@@ -119,21 +155,19 @@ function Weather.placeTemperature(ledger, place)
         return math.min(Weather.placeTemperature(ledger, fire.under) + fire.lift, fire.celsius)
     end
     local temperature = ledger.temperature or 0
-    local season = ledger.seasonTemperature or temperature
-    -- A ledger from before the ground's mean (or a test's) goes by the season.
-    if place == "Basement" then return Weather.basementTemperature(ledger.groundTemperature or season) end
-    if (place == "Sheltered" or place == "Loft") and ledger.gridOn then return Weather.GRID_ROOM_C end
-    if place == "Loft" then return Weather.loftTemperature(season) end
-    if place == "Sheltered" then return Weather.roomTemperature(season) end
-    if place == "Covered" then return season end
-    -- The open air and a shed in it (Enclosed) by the day's.
-    return temperature
+    return (PLACE_RULES[place] or byDay)(temperature, ledger.seasonTemperature or temperature, ledger)
 end
 
--- Moves ledger[field] towards value as a running mean over length hours (SEASON_HOURS if not given).
-function Weather.seasonMean(ledger, field, value, hours, length)
+-- Moves state[field] towards value as a running mean over length hours (SEASON_HOURS if not given).
+local function seasonMean(state, field, value, hours, length)
     local share = math.min(hours / (length or Weather.SEASON_HOURS), 1)
-    ledger[field] = (ledger[field] or value) * (1 - share) + value * share
+    state[field] = (state[field] or value) * (1 - share) + value * share
+end
+
+-- Moves the season's mean towards temperature, and the ground's (GROUND_HOURS behind) towards the season's.
+local function addSeason(state, temperature, hours)
+    seasonMean(state, "seasonTemperature", temperature, hours)
+    seasonMean(state, "groundTemperature", state.seasonTemperature, hours, Weather.GROUND_HOURS)
 end
 
 -- For tools: a year of daily means in calendar order (each with .month and .mean), settled as a long-running save
@@ -143,11 +177,10 @@ function Weather.settledMeans(year)
     local state = { seasonTemperature = year[#year].mean }
     local season, ground, first = {}, {}, {}
     for index, day in ipairs(year) do first[day.month] = first[day.month] or index end
-    for round = 1, 3 do
+    for round = 1, SETTLE_ROUNDS do
         for index, day in ipairs(year) do
-            if round == 3 then season[index], ground[index] = state.seasonTemperature, state.groundTemperature end
-            Weather.seasonMean(state, "seasonTemperature", day.mean, 24)
-            Weather.seasonMean(state, "groundTemperature", state.seasonTemperature, 24, Weather.GROUND_HOURS)
+            if round == SETTLE_ROUNDS then season[index], ground[index] = state.seasonTemperature, state.groundTemperature end
+            addSeason(state, day.mean, HOURS_PER_DAY)
         end
     end
     return function(month, offset)
@@ -169,9 +202,8 @@ function Weather.observe(state, now, temperature, humidity, gridOn)
     state.lastHour = now
     state.temperature = temperature
     state.gridOn = gridOn or nil
-    Weather.seasonMean(state, "seasonTemperature", temperature, hours)
-    Weather.seasonMean(state, "groundTemperature", state.seasonTemperature, hours, Weather.GROUND_HOURS)
-    if humidity then Weather.seasonMean(state, "seasonHumidity", humidity, hours) end
+    addSeason(state, temperature, hours)
+    if humidity then seasonMean(state, "seasonHumidity", humidity, hours) end
 end
 
 -- The series' weather, made on first use. Until its first record it would read 0 C, so it starts on the weather
@@ -187,23 +219,29 @@ function Weather.shared()
     return state
 end
 
--- For tests: the state Weather.season copies from, or nil for none.
+-- For tests: the state Weather.seasonTemperature and seasonHumidity copy from, or nil for none.
 function Weather.share(state)
     shared = state
 end
 
--- A ledger's season mean (field is "seasonTemperature" or "seasonHumidity"): the series' own where there is one,
--- else a running mean of the ledger's own. The season's temperature brings the grid's state and the ground's
--- along.
-function Weather.season(ledger, field, value, hours)
-    local temperature = field == "seasonTemperature"
-    if shared and temperature then ledger.gridOn = shared.gridOn end
-    if shared and shared[field] ~= nil then
-        ledger[field] = shared[field]
-        if temperature then ledger.groundTemperature = shared.groundTemperature end
+-- A ledger's season temperature, with the grid's state and the ground's: the series' own where there is one, else
+-- running means of the ledger's own.
+function Weather.seasonTemperature(ledger, temperature, hours)
+    if shared then ledger.gridOn = shared.gridOn end
+    if shared and shared.seasonTemperature ~= nil then
+        ledger.seasonTemperature = shared.seasonTemperature
+        ledger.groundTemperature = shared.groundTemperature
     else
-        Weather.seasonMean(ledger, field, value, hours)
-        if temperature then Weather.seasonMean(ledger, "groundTemperature", ledger.seasonTemperature, hours, Weather.GROUND_HOURS) end
+        addSeason(ledger, temperature, hours)
+    end
+end
+
+-- A ledger's season humidity: the series' where there is one, else a running mean of the ledger's own.
+function Weather.seasonHumidity(ledger, humidity, hours)
+    if shared and shared.seasonHumidity ~= nil then
+        ledger.seasonHumidity = shared.seasonHumidity
+    else
+        seasonMean(ledger, "seasonHumidity", humidity, hours)
     end
 end
 
@@ -229,11 +267,14 @@ function Weather.advance(ledger, now, temperature, kinds)
     if hours <= 0 then return nil end
     ledger.lastHour = now
 
-    Weather.season(ledger, "seasonTemperature", temperature, hours)
+    Weather.seasonTemperature(ledger, temperature, hours)
     ledger.temperature = temperature
+    -- Each place's temperature once: it is the same for every kind.
+    local temperatures = {}
+    for _, place in ipairs(Weather.PLACES) do temperatures[place] = Weather.placeTemperature(ledger, place) end
     for kind, rateAt in pairs(kinds) do
         for _, place in ipairs(Weather.PLACES) do
-            local rate = rateAt(Weather.placeTemperature(ledger, place))
+            local rate = rateAt(temperatures[place])
             ledger[kind .. place .. "Rate"] = rate
             ledger[kind .. place] = (ledger[kind .. place] or 0) + rate * hours
         end
@@ -299,65 +340,14 @@ function Weather.catchUp(marks, ledger, kind, place)
     return work
 end
 
--- The engine pools recipe data without clearing its ModData, so a mod's start hook clears its own fields too.
-function Weather.startRun(modData, ledger, kind)
-    modData.done = 0
-    modData.last = Weather.mark({}, ledger, kind)
-    modData.place, modData.fireUntil, modData.under = nil, nil, nil
-end
-
--- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the work
--- done. Weather is only recorded every ten minutes, so the bar carries on at the last rate between
--- records. That part is only shown, and the next record replaces it. rateAt gives the rate by a fire
--- (Weather.FIRE_PLACES), which the ledger keeps none for.
-function Weather.showProgress(craftRecipeData, ledger, kind, place, speed, now, rateAt)
-    local modData = craftRecipeData:getModData()
-    local byFire = Weather.FIRE_PLACES[place] and rateAt
-    local rate = byFire and rateAt(Weather.placeTemperature(ledger, place)) or ledger[kind .. place .. "Rate"] or 0
-    local sinceRecord = math.max(now - ledger.lastHour, 0)
-    local elapsed = (modData.done + sinceRecord * rate) * speed * SECONDS_PER_HOUR
-    craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
-end
-
--- Sets a craft recipe's time from the sandbox, so the bar's full length matches the hours of work it stands for.
--- tag names the mod in the log when the recipe is missing (a renamed or removed script).
-function Weather.setRecipeHours(fullName, hours, tag)
-    local recipe = ScriptManager.instance:getCraftRecipe(fullName)
-    if not recipe then
-        print("[" .. tag .. "] Could not find " .. fullName)
-        return
+-- Moved to CraftClock, still reached here (DEVGUIDE refactoring rule 5). CraftClock requires Weather, so it is
+-- required the first time one of its functions is called.
+local craftClock
+for _, name in ipairs({ "startRun", "showProgress", "setRecipeHours", "startClock", "showClock", "batchStatus" }) do
+    Weather[name] = function(...)
+        craftClock = craftClock or require("TraditionalPreservationCore/CraftClock")
+        return craftClock[name](...)
     end
-    recipe:Load(fullName, "{ time = " .. tostring(math.floor(hours * SECONDS_PER_HOUR)) .. ", }")
-end
-
--- Work that goes by the clock alone (Fish's press, Salt's leaching) needs no ledger, only the hour it began.
--- The engine pools recipe data without clearing its ModData, so every run's OnStart must call startClock.
-function Weather.startClock(craftRecipeData, key, now)
-    craftRecipeData:getModData()[key] = now
-end
-
--- A run with no start hour is left alone. The start hour saves with the recipe. speed (default 1) runs the
--- bar faster, for a run shorter than its recipe's time.
-function Weather.showClock(craftRecipeData, key, now, speed)
-    local startHour = craftRecipeData:getModData()[key]
-    if not startHour then return end
-
-    local elapsed = (now - startHour) * (speed or 1) * SECONDS_PER_HOUR
-    craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
-end
-
--- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds; nil when the batch is
--- paused there (frozen).
-function Weather.batchStatus(done, recipeHours, ledger, place, rateAt)
-    local temperature = Weather.placeTemperature(ledger, place)
-    local rate = rateAt(temperature)
-    return {
-        progress = math.min(done / recipeHours, 1),
-        hoursLeft = rate > 0 and math.max(recipeHours - done, 0) / rate or nil,
-        temperature = temperature,
-        place = place,
-        rate = rate,
-    }
 end
 
 return Weather

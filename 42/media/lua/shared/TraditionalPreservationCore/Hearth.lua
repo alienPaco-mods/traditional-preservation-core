@@ -56,7 +56,7 @@ Hearth.CAULDRON = "cauldron"
 Hearth.PLACE = "Hearth"
 Hearth.FIRE_C = 28
 Hearth.FIRE_RADIUS = 2
-Hearth.DEFAULT_UNDER = "Sheltered"   -- the place under a fire when none was noted: a room
+Hearth.DEFAULT_UNDER = Weather.DEFAULT_PLACE   -- the place under a fire when none was noted: a room
 
 -- Banked
 Hearth.BANKED_BURN = 1 / 3         -- of the wood a lit fire burns: a banked fire lasts three times as long

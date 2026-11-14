@@ -135,7 +135,7 @@ every mod's translation files for a literal `%`.
 
 `~/MODS/TraditionalPreservationCore` is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP
 mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
-`42/media/lua/shared/TraditionalPreservationCore/Weather.lua`, `.../Station.lua`, `.../Container.lua` (a bucket
+`42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (more fluids for a vanilla recipe's fluid line, at
 `OnInitWorld`), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Hearth.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../HearthConnect.lua` (connections), `.../HearthPlace.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Hearth.CAULDRON`, the item `Hearth.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13),
@@ -177,9 +177,13 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `keepInPlace(test)` for a station that mustn't be picked up while it holds something (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
    - Stations (`Station`): `kinds(prefix, faces, bases)` tells a mod's stations by one lookup on the sprite's name
      (never cut the name apart), and the tracker's `scan = true` finds one built or put down this session at once.
-   - Weather: `Weather.sensitivity(option)` for the sandbox's Temperature Sensitivity. The reading and the season's
-     means are kept once for the series (`Weather.shared`, in the core's ModData); every mod's ledger copies them
-     at each `Weather.record`, so never grow a season mean of your own (`Weather.season`, not `seasonMean`).
+   - Weather: `Weather.sensitivity(option)` for the sandbox's Temperature Sensitivity, and `Weather.rate(curve,
+     celsius, sensitivity, minRate, freezeC)` for a stage's speed (0 frozen, else the curve after the sensitivity,
+     never under minRate). The reading and the season's means are kept once for the series (`Weather.shared`, in the
+     core's ModData); every mod's ledger copies them at each `Weather.record`, so never grow a season mean of your
+     own (`Weather.seasonTemperature`, `Weather.seasonHumidity`). A ledger kind that `Weather.advance` can total
+     (one rate a place) goes through it, never a copy of its loop. `Weather.DEFAULT_PLACE` is where something
+     stands when nothing says (a room).
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
@@ -432,7 +436,7 @@ day's weather. A roof doesn't follow the hour: walls follow the season, so Cover
 the outdoor temperature. While the grid is on a room is 22 C (`Weather.GRID_ROOM_C`, vanilla's figure; the ledger
 copies `gridOn` from the series' weather). A basement swings two fifths as far as the ground from 10 C
 (`basementTemperature`); the ground is the season mean's own 30-day mean (`GROUND_HOURS`, `groundTemperature` in the
-series' weather and copied into each ledger by `Weather.season`), so a cellar is coldest in March and warmest in August.
+series' weather and copied into each ledger by `Weather.seasonTemperature`), so a cellar is coldest in March and warmest in August.
 Season tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. Ten days is long enough that one warm afternoon in January does
 nothing, and short enough that spring arrives within a fortnight. Until 2026-11 a room was the mean + 10 C (capped at
 28) and a basement 15 C flat: a heated house, which most players don't keep (consistency sweep, step C).

@@ -261,6 +261,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Action`: a timed action's time (`duration`, `pourDuration`) and a kit's parts: `hasTool(character, tag)`,
      `kitItems(character, needs)` (the items, all from the main inventory, or nil), `takeItems`, `giveItems(character,
      needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them.
+     **`Action.startClock(action)`** in an action's start and **`Action.clockProgress(action, item, minutes)`** in its
+     update run it on the game clock (getDuration -1): the item's job bar follows, done at the minutes (Salt's Dig, Fill).
      **`Action.removeItem(item)`** takes an item out of whatever holds it (a bag too). `Hearth.redraw(fire)`
      redraws a Stone Hearth after an action changed it (nothing where the World doesn't run).
    - `Hearth.catchUpRun(modData, ledger, kind, place, rateAt)` and `Hearth.updateRun(craftRecipeData, ledger, kind,

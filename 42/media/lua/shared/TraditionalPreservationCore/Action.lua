@@ -1,6 +1,6 @@
 -- Traditional Preservation core: what every mod's timed actions share. How long a pour takes, the debug cheat that
 -- makes timed actions instant (an action only honours it if its getDuration asks), and a kit's items, tool and xp
--- (Fit and Connect at the Stone Hearth). A kit's items are { { full type, count } }, its xp { perk name, amount }.
+-- (Fit and Connect at the Stone Hearth), and the game clock for actions timed by it. A kit's items are { { full type, count } }, its xp { perk name, amount }.
 local Action = {}
 
 Action.POUR_BASE = 40
@@ -10,6 +10,19 @@ Action.POUR_PER_LITRE = 12
 function Action.duration(character, ticks)
     if character:isTimedActionInstant() then return 1 end
     return ticks
+end
+
+-- A timed action that runs on the game clock takes the same in-game time at any Day Length (its getDuration is -1).
+-- startClock goes in its start, clockProgress in its update: it moves item's job bar and completes the action once
+-- the minutes are up, at once with the instant-actions cheat.
+function Action.startClock(action)
+    action.startHours = getGameTime():getWorldAgeHours()
+end
+
+function Action.clockProgress(action, item, minutes)
+    local progress = (getGameTime():getWorldAgeHours() - action.startHours) * 60 / minutes
+    item:setJobDelta(math.min(progress, 1))
+    if progress >= 1 or action.character:isTimedActionInstant() then action:forceComplete() end
 end
 
 -- Moving litres of a fluid by hand or hose. Past mostLitres it takes no longer.

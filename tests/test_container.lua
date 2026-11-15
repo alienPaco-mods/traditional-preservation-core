@@ -93,4 +93,24 @@ held.container = nil
 Action.removeItem(held)
 check("and does nothing to an item held by nothing", #bag.removed == 1)
 
+-- A game-clock action: the job bar follows the clock, and it completes when the minutes are up.
+local hours = 10
+_G.getGameTime = function() return { getWorldAgeHours = function() return hours end } end
+local tool = { delta = nil }
+function tool:setJobDelta(d) self.delta = d end
+local instant = false
+local timed = { character = { isTimedActionInstant = function() return instant end }, completed = 0 }
+function timed:forceComplete() self.completed = self.completed + 1 end
+Action.startClock(timed)
+hours = 10 + 1.5 / 60
+Action.clockProgress(timed, tool, 3)
+check("half the minutes: the bar is half way, not done", math.abs(tool.delta - 0.5) < 1e-9 and timed.completed == 0)
+instant = true
+Action.clockProgress(timed, tool, 3)
+check("the instant cheat completes it at once", timed.completed == 1)
+instant = false
+hours = 10 + 4 / 60
+Action.clockProgress(timed, tool, 3)
+check("past the minutes the bar stops at full and it completes", tool.delta == 1 and timed.completed == 2)
+
 H.done()

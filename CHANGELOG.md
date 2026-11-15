@@ -1,6 +1,7 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **Guide shortened** (2026-11-15): repeats cut (the Notebook's cost table, four tips, a history margin note); the Stone Trench takes an Entrenching Tool too, as the code does; `TPC.warmth` says the Stone Hearth's heat (guide and console help). Nothing changes in game.
 - **DEVGUIDE and README say what is** (2026-11-15): no dates, version tags, step labels or pointers to private notes; `tp` described with `TP_MODS` / `TP_INSTALLED` instead of one machine's paths; the save-key FAQ no longer names migrations that are gone. Nothing changes in game.
 - **Docs and comments** (2026-11-15): decisions are stated plainly, without attributions (CHANGELOG, comments, DEVGUIDE, `tools/build_tileset.py`). Nothing changes in game.
 - **README** (2026-11-15): the opening names seasoning a food after it is made.

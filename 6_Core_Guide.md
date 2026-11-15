@@ -182,13 +182,11 @@ A plank shed two tiles long under a flat roof of boards, built of thick planks w
 | To join a Stone Hearth | Takes | Tool, kept |
 |---|---|---|
 | **With a Clay Pipe** | 2 Clay Pipe Segments, 1 Clay | Mason's Trowel |
-| **With a Stone Trench** (a longer, cooler run for the smoke) | 3 Flat Stones, 2 Clay | Shovel or Spade |
+| **With a Stone Trench** (a longer, cooler run for the smoke) | 3 Flat Stones, 2 Clay | Shovel, Spade or Entrenching Tool |
 
 Right-click the Stone Hearth or the shed: **Connect the Stone Hearth**, about half a minute, 5 Masonry XP. Each way shows what it takes, the tool and anything you're missing. Not at the shed's door end, not with the Stone Hearth's door towards it, and not while the fire burns; one Stone Hearth a shed, and one thing joined to a Stone Hearth. **Disconnect the Stone Hearth** gives the pipe segments or stones back; the clay is lost. Neither can be picked up while they are joined.
 
 Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth's hole is covered (its lid, or the pot when stove food is in), and its smoke goes up the flue instead of out of the hole or round the door. Stone Hearth Info says *Flue: joined to the Smokehouse (clay pipe)*. A ham hangs by the door while finished stacks wait inside. You can still cook in the Stone Hearth while it smokes, and still fit the cauldron.
-
-> *Margin note:* the Smokehouse used to belong to *Fish & Meat*. It moved here so cheese, and anything else a later mod smokes, can hang in the same shed over the same fire.
 
 > *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
 
@@ -262,7 +260,7 @@ Each mod has its own idea of a good temperature, and its own **Temperature sensi
 | Normal | As written in each guide |
 | Harsh | Half as much again |
 
-Rooms aren't heated by anything but the grid's power (22 C, as vanilla's rooms are) or a fire beside the station. Once the grid is off, a winter batch wants a fire.
+Once the grid is off, a winter batch wants a fire beside it (chapter 7).
 
 ---
 
@@ -286,17 +284,6 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 *Chalked on a slate by the kiln, half rubbed out.*
 
-### What a Stone Hearth with its cauldron costs, and what it gives
-
-| | |
-|---|---|
-| The stone | 8 Clay Bricks, 2 Clay; Masonry 2 |
-| The cauldron, at a forge | 2 Steel Sheets, 3 Charcoal, 1 Wire; Blacksmith 4 |
-| Hanging it | 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook, all back when you take it down |
-| Holds | 60 L |
-| Wood for a full cauldron | about 2¾ hours of fire to the steam, 3¼ to boil water clean |
-| Banked | the same wood lasts three times as long, the cauldron at 50 C |
-
 ### Why it works the way it does
 
 - **Why iron, not copper?** Copper carries heat better, and the Alpine cheese kettles were copper; but a cauldron can be beaten from iron sheet at any farm forge, and greased and blacked it neither rusts nor taints the milk. Copper is kept for the cheese vat.
@@ -316,13 +303,9 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 
 ## 11. Tips
 
-- **Fill it up.** A full 60 L cauldron takes only about an hour and a quarter longer to steam than 10 L.
 - **Boil your water by the cauldronful.** A rain barrel's tainted water, boiled clean 60 L at a time, saves a stove a whole afternoon of pots.
 - **Bank it overnight.** A third of the wood, and anything beside it still stands at 24 C. The rest of the room cools, so sleep near it.
 - **Build the stations that need it within 2 tiles.** Dairy's incubator and crock pour straight from the cauldron at that range, and sit "by a fire" at the same time.
-- **Check Stone Hearth Info before you walk off.** If the fuel won't last until the steam, it says "Not yet".
-- **One fire, two jobs.** A Stone Hearth joined to a Smokehouse can carry the cauldron too: render fat or scald milk while the hams smoke.
-- **Empty it before you move it.** The cauldron comes off only when it's empty and the fire is out, and the Stone Hearth moves only bare.
 
 ---
 
@@ -364,7 +347,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.cauldronInfo()` | The nearest Stone Hearth with the cauldron within 2 tiles: position, fire (lit, banked or out), fuel in minutes, sprite, the cauldron's litres, fluid and heat, when it will steam, and until when the fire burns. |
 | `TPC.cauldron(litres, c, fluid)` | Empties its cauldron and fills it: `litres` (0 leaves it empty) of `fluid` at `c` degrees. `TPC.cauldron()` is 10 L of CowMilk at 20 C; it holds 60. |
 | `TPC.fuel(minutes)` | Sets the fuel of the nearest Stone Hearth, fitted or not (600, ten hours, if left out); banked, what the embers have left. Vanilla's menu still lights it. |
-| `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Stone Hearth (Cauldron) and on your square, your core heat, the firebox's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
+| `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Stone Hearth (Cauldron) and on your square, your core heat, the Stone Hearth's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
 | `TPC.hot(minutes)` | Brings its cauldron to the steam (90 C) now, counted as having steamed that long (an hour if left out, past Dairy's 20-minute scald). `TPC.hot(0)` lets you watch a hold count up. |
 | `TPC.stone()` | The nearest Stone Hearth within 2 tiles, fitted or not: position, fire, fuel in minutes, sprite, what is fitted, what is joined (its kit and side), the hole's look, and the square on its back and each flank. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Stone Hearth's or Smokehouse's door opens onto it. |

@@ -1,5 +1,5 @@
 -- Traditional Preservation core: seasoning a food after it is made, as vanilla adds a spice to a stew (Fish & Meat's
--- sausage links; user, 2026-11-13). A mod registers its item types with the kinds of seasoning they take; each kind
+-- sausage links). A mod registers its item types with the kinds of seasoning they take; each kind
 -- goes in once, taking the kind's uses (kind.uses, default USES: what vanilla takes for a stew) of whatever item of
 -- the kind is in reach, with no cap on how many kinds. Each kind makes
 -- the whole item `unhappy` and `boredom` nicer to eat (a part-eaten one, its share): vanilla's spice in a stew is -2

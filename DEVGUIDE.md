@@ -447,16 +447,15 @@ lists every finding.
    isn't luajit's); test the cases where two orders could differ.
 10. **Nothing changes in game.** A refactor changes no outcome; changing what the player sees or the numbers is a
     balance pass. `tp test` for the module and every mod that calls it passes before and after, and the golden
-    results don't move. A bug found on the way may be fixed in the refactor, but only once the user has said yes to
-    it (ask first, every time), and with its own test.
+    results don't move. A bug found on the way may be fixed in the refactor, but only once it has been agreed
+    (ask first, every time), and with its own test.
 11. **Before the first release, old names can go.** While nothing is on the Workshop, leftover names (a save key, a
     module, a field from a test build) are renamed outright and their test-build migrations dropped. From the first
     release on, "Never rename a save key" above holds.
 12. **Core is mod-agnostic.** Core names mechanisms, not one mod's product: no milk, blood or fish words in its
     fields, functions or save keys, and no special case that only one mod's fluid or station can use. What a mod
     brings is data it registers (names, numbers, curves, rules as functions). When a Core feature was built for one
-    mod, fold it into the general mechanism once that mechanism can carry it. Example (user, 2026-11-14, done the
-    same day): FluidAgeing's `scalded` (Dairy's milk) was the same idea as its `states` (a variant of the fresh fluid
+    mod, fold it into the general mechanism once that mechanism can carry it. Example: FluidAgeing's `scalded` (Dairy's milk) was the same idea as its `states` (a variant of the fresh fluid
     with its own name and spoiling), only brought about by heat instead of by hand; it is now a state with
     `heat = true`, so any kind can have a heat-made variant without its own field in Core.
 13. **No guard for what the engine always has.** `x.method and x:method()` or a `pcall` around an engine call is for
@@ -495,19 +494,19 @@ grid is on. It came from the Stockfish Pallet, which had a loft of its own.
 Enclosed (step J, 2026-11-12; the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
 wind, but a box of planks with no thermal mass, so it reads the day's temperature as Open does, and the grid doesn't
 warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its World
-entry. Only Fish & Meat's Smokehouse does (user, 2026-11-12); the Yeast, Vinegar and Dairy season reports show no
+entry. Only Fish & Meat's Smokehouse does; the Yeast, Vinegar and Dairy season reports show no
 column for it.
-**One place, one temperature (user, 2026-11-12):** a station or a stored item reads a place's temperature from
+**One place, one temperature:** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
 (its curve, its hours), never the temperature it is given.
-**Exceptions (user, 2026-11-12):** an exception to that rule must rest on **realism**, and must **keep every process's
+**Exceptions:** an exception to that rule must rest on **realism**, and must **keep every process's
 path open** (no process shut out of the year by the place model; stockfish keeps its winter in the open and a longer
 season under a roof). Write each one down here with its reason. The ones there are (Fish & Meat, sweep step I; the
 Smokehouse's day's temperature was one until it became the Enclosed place, step J):
 - **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
   were aged through the summer heat on purpose.
 - **Salt fish's and charque's muggy spoiling reads the ten-day mean**, not the day's temperature, in the open air
-  and in the Smokehouse (`F.TOTALS.saltSpoil` reads the season's `saltSpoil` for both; user, 2026-11-13): mould and rancid fat come of
+  and in the Smokehouse (`F.TOTALS.saltSpoil` reads the season's `saltSpoil` for both): mould and rancid fat come of
   days of damp warmth, not of one hot afternoon. By the day's temperature July's muggy hours would go from 78 to
   about 220 and a stack hung all July would lose near half its keeping, where it loses a sixth.
 - **Unsalted fish's warm rot is weighted by its wetness squared** (a process number, not a temperature: a dried skin
@@ -519,7 +518,7 @@ and Sheltered read the same temperature but for a room's winter lift (`Weather.r
 vanilla); Fish & Meat tells them apart for its drying rates (moving air and shade).
 By a fire and by banked embers are `Weather.FIRE_PLACES` that Stone Hearth registers, indoors at a fixed 28 / 24 C, and
 under an open roof or in the open (`FiresideCovered`, `FiresideOpen`, `EmbersCovered`, `EmbersOpen`) at that place's air
-plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat (realism pass L1, user 2026-11-13). The ledger keeps
+plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat (realism pass L1). The ledger keeps
 no totals for them, so `Fire.catchUp` counts them by the clock until the fuel noted by `Fire.noteFire` runs out, then gives the
 place under the fire its share of the gap by time. A station's World calls `Fire.notePlace`, which catches a run up
 at its old place before writing the new one.
@@ -542,7 +541,7 @@ Three kinds, by what the station holds:
 Vinegar's Fermentation Vessel is the one hybrid: a `CraftLogic` run of a marker item while Lua moves the wort. A
 new station picks its kind by this rule and is read the way its kind is.
 
-**Where a station may stand** (user, 2026-11-14): **no TP station stands in front of a door** (the Stone Hearth's mouth,
+**Where a station may stand**: **no TP station stands in front of a door** (the Stone Hearth's mouth,
 a Smokehouse's door, any `Doors.register`ed one). Its entity script's `SpriteConfig` has an `OnIsValid`:
 `TraditionalPreservationCore.doorFits`, or a mod's own check that also asks `Doors.fits`; a table-top station's is
 `TraditionalPreservationCore.offAppliances` (no stove, fridge or washer under it). Its mod's client file passes its

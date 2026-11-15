@@ -3,7 +3,7 @@
 the mod icon, the Stone Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse chamber (from tile CHAMBER),
 moved from Fish & Meat 2026-11-13 with its art unchanged.
 
-The Stone Hearth: a Stone Hearth with the Forged Cauldron fitted (user's design, 2026-11-13, after Alpine cheese kettles on a
+The Stone Hearth: a Stone Hearth with the Forged Cauldron fitted (design 2026-11-13, after Alpine cheese kettles on a
 crane). The Stone Hearth's knee-high block of split fieldstone, as vanilla's kilns are built, four fifths of a tile
 across, with its iron door on the side it faces, closed on top but for a small round hole in the centre; over it
 what the fitting takes: two Metal Pipes set in the stone along the door's side, a Heavy Chain slung between their
@@ -57,7 +57,7 @@ LIQUID = 6
 # (Fire.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
 # food only, or joined to a flue with nothing for the pot). The stone draws no flue: a connection owns its sprites
 # (the Smokehouse's entry overlay, below). The flue leaves for the building on one side, never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
-# into the wall (user, 2026-11-13: it climbed past the top before, and met the cauldron's pipes), or a trench in the
+# into the wall (it climbed past the top before, and met the cauldron's pipes), or a trench in the
 # ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
 # generator's). Sides by facing, as world steps (+x east, +y south), the same table as FireConnect.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
@@ -73,7 +73,7 @@ BARE_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30,
                  "LitOpen": 46, "BankedOpen": 48, "LitPot": 50, "BankedPot": 52}
 
 # Colours.
-# The stone as vanilla's stone mill (user's style guide, 2026-11-13; WIP/TPCore/art/stone_style_guide.png).
+# The stone as vanilla's stone mill (style guide, 2026-11-13; WIP/TPCore/art/stone_style_guide.png).
 STONE = (124, 116, 108)
 MORTAR = (46, 41, 38)          # the joints
 ARCH = (112, 106, 98)
@@ -95,7 +95,7 @@ WEATHER = 0.2
 FOOT_SHADE = 0.8               # the stone darkens this far towards the ground
 
 # The stone body, the Stone Hearth's, fitted or not: knee high (a cask is 85 px), four fifths of a tile across.
-H = 0.40                       # half the footprint, in tiles (0.32 until 2026-11-13; the user's pick)
+H = 0.40                       # half the footprint, in tiles (0.32 until 2026-11-13)
 TOP = 36                       # stone, px high
 CAP = 4                        # the rendered top
 CAP_OVER = 0.05                # how far the slab overhangs, in tiles
@@ -154,11 +154,11 @@ DAUB = (150, 124, 98)
 SMOKE = (150, 146, 140)
 FIRE_GLOW = (255, 150, 60)
 FLUE_R = 4.5                   # the flue's half width, px
-PIPE_Z = 8                     # the clay pipe's middle where it leaves the stone, px, low down (user, 2026-11-13)
+PIPE_Z = 8                     # the clay pipe's middle where it leaves the stone, px, low down
 PIPE_OUT = 0.49                # how far out from the middle it runs before climbing, in tiles: clear of the slab
 PIPE_TOP = 54                  # px up where it enters the wall: a short climb, over the slab's back edge
 PIPE_SHIFT = 0.2               # how far off the stone's middle it runs, towards the viewer (the front), in tiles
-HOLE_D = 0.09                  # the Stone Hearth's hole, in tiles (the user's pick "D", 2026-11-13)
+HOLE_D = 0.09                  # the Stone Hearth's hole, in tiles (option "D", 2026-11-13)
 POT = (62, 62, 64)             # vanilla's forged pot: dark, mottled cast iron
 LID = (64, 64, 66)
 
@@ -169,10 +169,10 @@ CHAMBER = 32
 CHAMBER_STACKS = 6
 CHAMBER_HALF = 0.46       # half the shed's width, and how far each end wall stands from its tile's middle, in tiles
 CHAMBER_OVERHANG = 0.06   # the roof past the walls
-CHAMBER_EAVE = 132        # px up to the roof: flat (user, 2026-11-13; was one slope along the shed)
+CHAMBER_EAVE = 132        # px up to the roof: flat (was one slope along the shed)
 CHAMBER_SILL = 7          # the stone sill under the planks
 CHAMBER_DOOR = 106        # the door's top
-CHAMBER_DOOR_HALF = 0.3   # wider (user, 2026-11-13; was 0.17)
+CHAMBER_DOOR_HALF = 0.3   # wider (was 0.17)
 CHAMBER_PLANK = 0.15      # a plank's width, in tiles: thick boards, as vanilla's barricades
 CHAMBER_GAP = 0.2         # the share of joins left open a crack (the roof's and the door's)
 CHAMBER_WALL_GAP = 0.45   # the walls': more of them, as boards nailed up on a smokehouse are
@@ -190,7 +190,7 @@ CHAMBER_FOOT_SHADE = 0.5
 # at ground level, in the middle.
 CHAMBER_ENTRY = 36
 FLUE_KINDS = ["Pipe", "Stones"]
-# A ham hung by the door while finished stacks wait in the chamber (user's idea): one overlay per face, on the
+# A ham hung by the door while finished stacks wait in the chamber: one overlay per face, on the
 # door's tile, on the door's end wall beside the door. Named for what it means, not the ham (Core names no product).
 CHAMBER_READY = 44
 HAM_A = -0.44             # across the end wall (was -0.37, moved out for the wider door), on the door's far side from the long wall in view: it overhangs the corner
@@ -742,7 +742,7 @@ POT_LID_DOME = 2.2             # px the forged lid rises above the pot's rim at 
 
 def pot_lid(draw, cx, top, rx, ry):
     """The pot's own lid, forged iron as the pot: it sits just inside the rolled rim and rises in a low dome to a loop
-    handle, so whatever is cooking stays covered (user, 2026-11-13: open, the liquid looked off). Lit from the left."""
+    handle, so whatever is cooking stays covered (open, the liquid looked off). Lit from the left."""
     steps = 12
     for i in range(steps + 1):
         t = i / steps
@@ -795,7 +795,7 @@ def pot(layer):
 def paint_bare(look, face):
     """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot). No flue: the
     Smokehouse's entry overlay draws the whole flue from the stone to its wall, so it shows by a fitted Stone Hearth too and
-    is never drawn twice (user, 2026-11-13)."""
+    is never drawn twice."""
     hole = look
     layer = body(face, False)
     top = pzart.new_layer(SS)
@@ -1178,7 +1178,7 @@ def paint_chamber(face, part):
         latch = CHAMBER_DOOR * 0.55
         draw.polygon([px(d - 0.06, h + 0.01, latch), px(d + 0.02, h + 0.01, latch), px(d + 0.02, h + 0.01, latch + 3),
                       px(d - 0.06, h + 0.01, latch + 3)], fill=shade(CHAMBER_WOOD, door_light * 0.6))
-        # A rope handle under the latch (user, 2026-11-13; not in the recipe): through two holes, hanging in a loop.
+        # A rope handle under the latch (not in the recipe): through two holes, hanging in a loop.
         holes, z0 = (d - 0.2, d - 0.06), latch - 3
         for u in holes:
             x, y = px(u, h + 0.01, z0)

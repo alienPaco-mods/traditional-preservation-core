@@ -131,7 +131,7 @@ function CauldronFluid.addParts(state, fluid, ml)
     state.parts = count > 1 and parts or nil
 end
 
--- Fluids that taint another (user, 2026-11-14): poured in with it, either way round and whatever the share, the
+-- Fluids that taint another: poured in with it, either way round and whatever the share, the
 -- whole lot becomes the tainting fluid. Clean water with tainted water is all tainted, and must be boiled clean
 -- again (pourInto starts the boil over). A fluid taints one other, and is tainted by none.
 local TAINTS, TAINTED = {}, {}   -- clean -> what taints it, and back

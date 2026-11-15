@@ -114,7 +114,7 @@ function Smokehouse.entrySprite(kind, face, part, dx, dy)
     return Tiles.CHAMBER_ENTRY + (kindIndex * FACES + face) * 2 + part
 end
 
--- The overlay hung by the door while finished stacks wait in the shed (a ham, the user's idea): on the door's tile
+-- The overlay hung by the door while finished stacks wait in the shed (a ham): on the door's tile
 -- only, by facing.
 function Smokehouse.readySprite(face, part, finished)
     if part ~= 1 or not finished then return nil end

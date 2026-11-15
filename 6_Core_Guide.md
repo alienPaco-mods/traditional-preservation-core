@@ -139,7 +139,7 @@ The window updates while it's open, and closes when you walk more than 6 squares
 |---|---|
 | 10 L | about 1¾ hours |
 | 20 L | about 2¼ hours |
-| 60 L (full) | about 3¼ hours |
+| 60 L (full) | about 3 hours |
 
 Water steams sooner than milk: nobody holds it back from the boil.
 

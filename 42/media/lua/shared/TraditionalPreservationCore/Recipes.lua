@@ -4,6 +4,7 @@
 -- and its inputs are added, not swapped, and so does `recipe:Load`. So this loads the line's item and fluid again
 -- with the longer list (they go on the end) and puts the new pair where the old one was.
 --
+-- Item lines the same way (addItems): a mod's recipe takes another mod's item only when that mod is on.
 -- Run it from OnInitWorld: the game builds each fluid line's filter after that (WorldDictionary init) and seals it.
 -- A line that already names every fluid is left alone, so a second world in one session changes nothing.
 --     Recipes.addFluids("Base.MakeCakeBatter", { CowMilk = { "SourCowMilk" } }, "TPD")
@@ -89,6 +90,32 @@ function Recipes.addFluids(fullName, extra, tag)
             swapIn(inputs, item, newItem)
             swapIn(lines, item, newItem)
             swapIn(lines, fluid, newFluid)
+            changed = changed + 1
+            log(tag, "%s now takes %s", fullName, wider)
+        end
+    end
+    return changed
+end
+
+-- Widens every plain item line (no fluid hanging off it) of a mod's recipe that names an item in extra, so a recipe can
+-- take another mod's item only when that mod is on: Fish & Meat's Potted Meat takes Dairy's Clarified Butter. A
+-- script naming an item no mod has would break the recipe. Same rules as addFluids: from OnInitWorld, once a line.
+--     Recipes.addItems("TraditionalPreservationFishMeat.PutMeatInLard", { ["Base.Lard"] = { "Mod.Fat" } }, "TPFM")
+function Recipes.addItems(fullName, extra, tag)
+    local recipe = ScriptManager.instance:getCraftRecipe(fullName)
+    if not recipe then
+        print("[" .. tag .. "] Could not find " .. fullName)
+        return 0
+    end
+    local inputs, lines, changed = recipe:getInputs(), recipe:getIoLines(), 0
+    for i = 0, inputs:size() - 1 do
+        local item = inputs:get(i)
+        local wider = not item:hasConsumeFromItem() and Recipes.widenLine(item:getOriginalLine(), extra)
+        if wider then
+            recipe:Load(recipe:getName(), "{ inputs { " .. wider .. ", } }")
+            local newItem = inputs:get(inputs:size() - 1)
+            swapIn(inputs, item, newItem)
+            swapIn(lines, item, newItem)
             changed = changed + 1
             log(tag, "%s now takes %s", fullName, wider)
         end

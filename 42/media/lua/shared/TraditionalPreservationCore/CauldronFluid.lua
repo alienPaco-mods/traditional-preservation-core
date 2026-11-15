@@ -222,6 +222,22 @@ function CauldronFluid.cauldronRoom(cauldron, fluid, ml)
     return math.min(ml, room)
 end
 
+-- Pieces that go in as a fluid (Fish & Meat's raw fat, Dairy's butter): each is pieceMl of fluid, and the lot goes
+-- off when its oldest piece would have (goesOff, offBy). How many fit now: none if the cauldron holds anything else.
+function CauldronFluid.pieceRoom(cauldron, fluid, pieceMl)
+    return math.floor(CauldronFluid.cauldronRoom(cauldron, fluid, CauldronFluid.CAULDRON_ML) / pieceMl)
+end
+
+-- Puts pieces in, as many as fit, at room heat. hoursLeft has, for each piece, the hours until it would have gone
+-- off. Returns how many went in.
+function CauldronFluid.putPieces(cauldron, fluid, pieceMl, hoursLeft, now)
+    local count = math.min(#hoursLeft, CauldronFluid.pieceRoom(cauldron, fluid, pieceMl))
+    if count <= 0 then return 0 end
+    CauldronFluid.pourInto(cauldron, fluid, count * pieceMl, CauldronFluid.ROOM_C, now)
+    for index = 1, count do CauldronFluid.offBy(cauldron, now + math.max(hoursLeft[index], 0)) end
+    return count
+end
+
 -- Pours a fluid (a name, or parts) in; the temperatures mix by volume, and a tainting fluid makes the lot itself.
 -- Returns the ml taken (0 with a reason when refused).
 function CauldronFluid.pourInto(cauldron, fluid, ml, fluidC, now)

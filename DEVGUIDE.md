@@ -138,15 +138,15 @@ every mod's translation files for a literal `%`.
 This folder is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP mod requires. Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
-line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
-hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
+line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
+hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
-`SeasonUI.lua` and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+`SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
 
 ```
@@ -252,6 +252,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `heat = true`, made by `scaldHeat` and `scaldHold`). One state at a time: heat leaves a fluid in a state as it
      is, a treatment by hand replaces the heat state. `FluidAgeing.inState(record, name)` asks.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
+     `Recipes.addItems(recipe, extra, tag)`: more items for a plain item line, so a mod's recipe takes another mod's
+     item only when that mod is on (check the item with `getScriptManager():FindItem` first). A script never names
+     another mod's item: Fish & Meat's Potted Meat takes Dairy's Clarified Butter this way.
      `Recipes.teach(magazineType, recipeName, tag)` and `Recipes.researchable(itemType, recipeName, tag)`: a mod's
      recipe from a vanilla magazine and by research; each says *Could not find* in the console when a name is wrong.
    - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
@@ -279,6 +282,15 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Fire.catchUpRun(modData, ledger, kind, place, rateAt)` and `Fire.updateRun(craftRecipeData, ledger, kind,
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
      default and old-save migration (Yeast, Vinegar, the template).
+   - Pieces into the cauldron as a fluid (Fish & Meat's fat, Dairy's butter): `CauldronFluid.pieceRoom`, `putPieces`,
+     the action `TPCauldronPieces` and the menu row `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, kinds,
+     help, noRoom, refusal })`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
+   - `PlaceKeeping.new(spec)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
+     `spec.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
+     freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`spec.ledgerKey`) and
+     modData clock (`spec.modDataKey`); `spec.enabled` is the sandbox switch, `spec.days` sets fresh and rotten days on
+     an item whose script has none. The mod's World calls `keeper.record(now, temperature)` in its `Weather.record`;
+     `PlaceKeepingUI.watch(keeper, types)` looks at the items (Fish & Meat looks at its crocks in its own look).
    - `Portions`: food eaten from a vessel a portion at a time. `set`, `left`, `text`, `name`, `label` and `used` do
      the sums, the name ("Jar of Yogurt (3 portions)", the core's text), the weight and the empty vessel;
      `Portions.onEat(fullType, before, after)` hangs a mod's handlers on the one wrap of the eat action.
@@ -361,7 +373,7 @@ of all:
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
-| `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
+| `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, core `PlaceKeepingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); kept food moved counts its time where it was (core, Dairy's butter); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
 | `ISWidgetInput.updateValues` | core `ChargeUI` (Fish & Meat's filler) | A charged line (`Charge`) shows its real amount (*n/12 Uses*, *n/12*) with the consumed icon; other lines pass straight through |

@@ -76,6 +76,30 @@ check("lines too", #lines == 4 and lines[1] == bowl and lines[2] == inputs[2] an
 check("a second world changes nothing", Recipes.addFluids("Base.MakeCakeBatter", SOUR, "T") == 0 and #loaded == 1)
 check("a missing recipe is skipped", Recipes.addFluids("Base.Nothing", SOUR, "T") == 0)
 
+-- Item lines: a recipe takes another mod's fat
+local pot = script("item 1 [Base.Pot] mode:destroy")
+local fat = script("item 1 [Base.Lard;Mod.Tallow] flags[ItemCount] mode:destroy")
+local salt = script("item 1 tags[base:salt]")
+local potted = { name = "PutMeatInLard", inputs = jlist({ pot, fat, salt }), lines = jlist({ pot, fat, salt }) }
+function potted:getName() return self.name end
+function potted:getInputs() return self.inputs end
+function potted:getIoLines() return self.lines end
+local itemLoads = {}
+function potted:Load(name, text)
+    itemLoads[#itemLoads + 1] = { name = name, text = text }
+    local newItem = script(text:match("{ inputs { (.-), } }"))
+    self.inputs:add(newItem)
+    self.lines:add(newItem)
+end
+ScriptManager = { instance = { getCraftRecipe = function(_, name) return name == "Mod.PutMeatInLard" and potted or nil end } }
+local BUTTER = { ["Base.Lard"] = { "Dairy.ClarifiedButter" } }
+check("an item line gains the item", Recipes.addItems("Mod.PutMeatInLard", BUTTER, "T") == 1
+    and itemLoads[1].text == "{ inputs { item 1 [Base.Lard;Mod.Tallow;Dairy.ClarifiedButter] flags[ItemCount] mode:destroy, } }")
+local pins, plines = potted.inputs.items, potted.lines.items
+check("in the old line's place, in inputs and lines", #pins == 3 and pins[1] == pot and pins[3] == salt
+    and pins[2].line:find("Dairy.ClarifiedButter", 1, true) and #plines == 3 and plines[2] == pins[2])
+check("a second world changes nothing", Recipes.addItems("Mod.PutMeatInLard", BUTTER, "T") == 0 and #itemLoads == 1)
+
 -- Magazines
 local listed = Recipes.withLearned({ "base:kitchentools", "Forge_Cooking_Pot" }, "TraditionalPreservationCore.Forge_TPCauldron")
 check("a magazine's list keeps what it had and gains the recipe", listed and #listed == 3 and listed[1] == "base:kitchentools"

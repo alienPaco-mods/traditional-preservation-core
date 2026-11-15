@@ -1,6 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
 ## 0.1.0 (in development, not released)
+- **`PlaceKeeping`** (2026-11-15): food that keeps by place, moved out of Fish & Meat's Potted Meat so Dairy's butter shares it. `PlaceKeeping.new(spec)` gives a keeper (its curve, ledger, modData clock, sandbox switch and, for an item whose script never spoils, the days to set on it): `keep`, `rate`, `record`, `age` and `describe` for the consoles. **`PlaceKeepingUI.watch(keeper, types)`** looks at those items hourly on the player, as the inventory windows show a container, and as one is moved. test_place_keeping.
+- **Pieces into the cauldron, shared** (2026-11-15): `CauldronFluid.pieceRoom` and `CauldronFluid.putPieces` (pieces that go in as a fluid and go off by their oldest), the action **`TPCauldronPieces`** and the menu row **`CauldronUI.addPieces(spec)`**, moved out of Fish & Meat's Put Fat in the Cauldron so Dairy's Put Butter in the Cauldron shares them (the row can be refused for a skill). Fat behaves as before.
+- **`Recipes.addItems`** (2026-11-15): widens a recipe's item line at load, as `addFluids` does a fluid line, so a mod's recipe takes another mod's item only when that mod is on (Fish & Meat's Potted Meat and Dairy's Clarified Butter). test_recipes.
 - **Guide** (2026-11-15): 60 L of water boils clean in about 3 hours (was 3¼; the code gives 3 h 10 min). Nothing changes in game.
 - **Guide shortened** (2026-11-15): repeats cut (the Notebook's cost table, four tips, a history margin note); the Stone Trench takes an Entrenching Tool too, as the code does; `TPC.warmth` says the Stone Hearth's heat (guide and console help). Nothing changes in game.
 - **DEVGUIDE and README say what is** (2026-11-15): no dates, version tags, step labels or pointers to private notes; `tp` described with `TP_MODS` / `TP_INSTALLED` instead of one machine's paths; the save-key FAQ no longer names migrations that are gone. Nothing changes in game.

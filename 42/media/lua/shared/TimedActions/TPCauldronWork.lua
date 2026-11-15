@@ -1,15 +1,15 @@
--- Traditional Preservation core: the hand jobs at a Hearth's cauldron. "pourIn" empties a container of one plain
+-- Traditional Preservation core: the hand jobs at a Stone Hearth's cauldron. "pourIn" empties a container of one plain
 -- fluid into the cauldron, as much as fits; "fillFrom" fills an empty container, or one of the same fluid, from it;
 -- "empty" pours whatever the cauldron holds away (rotten milk above all), and takes no item.
--- The cauldron holds one fluid at a time, or fluids that blend (Hearth.blend). Mods follow the fluid with Hearth.hook
+-- The cauldron holds one fluid at a time, or fluids that blend (Fire.blend). Mods follow the fluid with Fire.hook
 -- (heatOf, taken, filled).
 require "TimedActions/ISBaseTimedAction"
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 local Action = require "TraditionalPreservationCore/Action"
 local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 local Weather = require "TraditionalPreservationCore/Weather"
 
-TPHearthCauldron = ISBaseTimedAction:derive("TPHearthCauldron")
+TPCauldronWork = ISBaseTimedAction:derive("TPCauldronWork")
 
 -- Past this many litres a pour takes no longer.
 local MOST_LITRES = 10
@@ -24,16 +24,16 @@ local function roomIn(container)
 end
 
 local function canFillFrom(container, cauldron)
-    if (cauldron.ml or 0) <= 0 or roomIn(container) <= 0 or not Hearth.poursOut(cauldron) then return false end
+    if (cauldron.ml or 0) <= 0 or roomIn(container) <= 0 or not Fire.poursOut(cauldron) then return false end
     if container:isEmpty() then return true end
-    local parts, fluid = Hearth.partsIn(container)
-    return parts ~= nil and Hearth.blends(cauldron.fluid, fluid)
+    local parts, fluid = Fire.partsIn(container)
+    return parts ~= nil and Fire.blends(cauldron.fluid, fluid)
 end
-TPHearthCauldron.canFillFrom = canFillFrom
+TPCauldronWork.canFillFrom = canFillFrom
 
 -- The cauldron's state as saved, not brought up to now (isValid and getDuration run often).
 local function savedCauldron(self)
-    return Hearth.cauldronState(self.hearth:getModData())
+    return Fire.cauldronState(self.hearth:getModData())
 end
 
 -- An empty cauldron keeps no age record: the next fluid starts its own.
@@ -41,7 +41,7 @@ local function forgetAgeIfEmpty(cauldron)
     if (cauldron.ml or 0) <= 0 then cauldron[FluidAgeing.KEY] = nil end
 end
 
-function TPHearthCauldron:isValid()
+function TPCauldronWork:isValid()
     if self.mode == "empty" then
         return self.hearth:getSquare() ~= nil and (savedCauldron(self).ml or 0) > 0
     end
@@ -49,68 +49,68 @@ function TPHearthCauldron:isValid()
     local container = self.item:getFluidContainer()
     local cauldron = savedCauldron(self)
     if self.mode == "pourIn" then
-        local parts = Hearth.partsIn(container)
-        return parts ~= nil and Hearth.cauldronRoom(cauldron, parts, 1) > 0
+        local parts = Fire.partsIn(container)
+        return parts ~= nil and Fire.cauldronRoom(cauldron, parts, 1) > 0
     end
     return canFillFrom(container, cauldron)
 end
 
-function TPHearthCauldron:waitToStart()
+function TPCauldronWork:waitToStart()
     self.character:faceThisObject(self.hearth)
     return self.character:shouldBeTurning()
 end
 
-function TPHearthCauldron:start()
+function TPCauldronWork:start()
     self:setActionAnim("Loot")
 end
 
-function TPHearthCauldron:complete()
+function TPCauldronWork:complete()
     -- Brought up to the minute first, so poured fluid mixes with the cauldron as it is now.
-    local cauldron = Hearth.cauldronOf(self.hearth)
+    local cauldron = Fire.cauldronOf(self.hearth)
     local now = getGameTime():getWorldAgeHours()
     if self.mode == "empty" then
-        Hearth.take(cauldron)
+        Fire.take(cauldron)
         forgetAgeIfEmpty(cauldron)
-        Hearth.redraw(self.hearth)
+        Fire.redraw(self.hearth)
         return true
     end
     local container = self.item:getFluidContainer()
     if self.mode == "pourIn" then
-        local parts = Hearth.partsIn(container)
-        local heat = Hearth.heatOf(self.item, now, self.character)
+        local parts = Fire.partsIn(container)
+        local heat = Fire.heatOf(self.item, now, self.character)
         local age = FluidAgeing.sourceRecord(self.item, now)
         local had = cauldron.ml or 0
-        local taken = parts and Hearth.pourInto(cauldron, parts, mlIn(container), heat, now) or 0
+        local taken = parts and Fire.pourInto(cauldron, parts, mlIn(container), heat, now) or 0
         if taken > 0 then
             container:removeFluid(taken / 1000)
-            Hearth.tookFrom(self.item, taken)
+            Fire.tookFrom(self.item, taken)
             if age then FluidAgeing.receive(cauldron, age, had > 0, Weather.placeOf(self.hearth)) end
         end
     elseif canFillFrom(container, cauldron) then
         local hadMl = mlIn(container)
-        local hadC = hadMl > 0 and Hearth.heatOf(self.item, now, self.character) or 0
-        local hot, held = Hearth.isHot(cauldron), Hearth.heldHours(cauldron)
+        local hadC = hadMl > 0 and Fire.heatOf(self.item, now, self.character) or 0
+        local hot, held = Fire.isHot(cauldron), Fire.heldHours(cauldron)
         local age = FluidAgeing.cauldronRecord(cauldron, now, Weather.placeOf(self.hearth), held)
         if age then FluidAgeing.look(self.item, now) end
-        local ml, fluid, tempC, parts = Hearth.take(cauldron, roomIn(container))
+        local ml, fluid, tempC, parts = Fire.take(cauldron, roomIn(container))
         if ml > 0 then
             for name, part in pairs(parts) do container:addFluid(name, part / 1000) end
-            Hearth.filledFrom(self.item, { ml = ml, fluid = fluid, parts = parts, tempC = tempC, hot = hot, held = held, hadMl = hadMl,
+            Fire.filledFrom(self.item, { ml = ml, fluid = fluid, parts = parts, tempC = tempC, hot = hot, held = held, hadMl = hadMl,
                 hadC = hadC, now = now, character = self.character })
             -- The cauldron's record says whether it has been held long enough to count as scalded.
             if age then FluidAgeing.receive(self.item:getModData(), age, hadMl > 0, FluidAgeing.placeOfItem(self.item)) end
         end
         forgetAgeIfEmpty(cauldron)
     end
-    Hearth.redraw(self.hearth)
+    Fire.redraw(self.hearth)
     return true
 end
 
-function TPHearthCauldron:perform()
+function TPCauldronWork:perform()
     ISBaseTimedAction.perform(self)
 end
 
-function TPHearthCauldron:getDuration()
+function TPCauldronWork:getDuration()
     if self.mode == "empty" then
         return Action.pourDuration(self.character, (savedCauldron(self).ml or 0) / 1000, MOST_LITRES)
     end
@@ -122,7 +122,7 @@ function TPHearthCauldron:getDuration()
 end
 
 -- item is false for "empty".
-function TPHearthCauldron:new(character, hearth, item, mode)
+function TPCauldronWork:new(character, hearth, item, mode)
     local o = ISBaseTimedAction.new(self, character)
     o.hearth = hearth
     o.item = item

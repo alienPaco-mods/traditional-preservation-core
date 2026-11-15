@@ -9,7 +9,7 @@ return {
         },
     },
     FACE_COUNT = 2,
-    HEARTH_LOOKS = {
+    CAULDRON_LOOKS = {
         Cold = 0,
         Steam = 2,
         Lit = 4,
@@ -17,15 +17,15 @@ return {
         Banked = 72,
         BankedSteam = 74,
     },
-    HEARTHS = { "traditionalpreservationcore_01_0", "traditionalpreservationcore_01_1", "traditionalpreservationcore_01_2", "traditionalpreservationcore_01_3", "traditionalpreservationcore_01_4", "traditionalpreservationcore_01_5", "traditionalpreservationcore_01_70", "traditionalpreservationcore_01_71", "traditionalpreservationcore_01_72", "traditionalpreservationcore_01_73", "traditionalpreservationcore_01_74", "traditionalpreservationcore_01_75" },
+    CAULDRON_SPRITES = { "traditionalpreservationcore_01_0", "traditionalpreservationcore_01_1", "traditionalpreservationcore_01_2", "traditionalpreservationcore_01_3", "traditionalpreservationcore_01_4", "traditionalpreservationcore_01_5", "traditionalpreservationcore_01_70", "traditionalpreservationcore_01_71", "traditionalpreservationcore_01_72", "traditionalpreservationcore_01_73", "traditionalpreservationcore_01_74", "traditionalpreservationcore_01_75" },
     LIQUID = 6,
-    FIREBOX_LOOKS = {
+    BARE_LOOKS = {
         Open = 10,
         Lid = 12,
         Pot = 14,
     },
-    FIREBOXES = { "traditionalpreservationcore_01_10", "traditionalpreservationcore_01_11", "traditionalpreservationcore_01_12", "traditionalpreservationcore_01_13", "traditionalpreservationcore_01_14", "traditionalpreservationcore_01_15" },
-    FIREBOX_GLOWS = {
+    BARE_SPRITES = { "traditionalpreservationcore_01_10", "traditionalpreservationcore_01_11", "traditionalpreservationcore_01_12", "traditionalpreservationcore_01_13", "traditionalpreservationcore_01_14", "traditionalpreservationcore_01_15" },
+    BARE_GLOWS = {
         Lit = 24,
         Banked = 26,
         LitFlue = 28,

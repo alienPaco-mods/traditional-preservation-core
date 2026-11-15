@@ -6,7 +6,7 @@
 __MOD__ = __MOD__ or {}
 local M = __MOD__
 local Weather = require "TraditionalPreservationCore/Weather"
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 
 M.PROCESS_HOURS = 72  -- TEMPLATE: hours at the best temperature
 -- Save keys: never rename these once the mod is out (DEVGUIDE, "Rules that keep saves and the game happy").
@@ -22,10 +22,10 @@ M.MIN_RATE = 0.02
 
 -- Places and their temperatures are shared with the other Traditional Preservation mods; these are the
 -- mod's public names for them, used by the Dev console and the tests. A station within reach of a lit fire is by a
--- fire (TP Core's Hearth); PLACES are the weather's, which the ledger keeps totals for.
+-- fire (TP Core's Fire); PLACES are the weather's, which the ledger keeps totals for.
 M.PLACES = Weather.PLACES
 M.placeTemperature = Weather.placeTemperature
-M.placeOf = Hearth.placeOf
+M.placeOf = Fire.placeOf
 
 function M.processRate(celsius)
     return Weather.scaled(Weather.curve(PROCESS_CURVE, celsius), M.SENSITIVITY, M.MIN_RATE)
@@ -58,18 +58,18 @@ end
 -- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the
 -- work done at the station's temperature. It goes by where the station stood when last looked at (M.notePlace).
 function M.onProcessUpdate(craftRecipeData)
-    Hearth.updateRun(craftRecipeData, M.getLedger(), KIND, runPlace(craftRecipeData:getModData()), M.processRate)
+    Fire.updateRun(craftRecipeData, M.getLedger(), KIND, runPlace(craftRecipeData:getModData()), M.processRate)
 end
 
 -- Brings a running batch up to now at the place it was last told.
 local function catchUpRun(modData)
-    Hearth.catchUpRun(modData, M.getLedger(), KIND, runPlace(modData), M.processRate)
+    Fire.catchUpRun(modData, M.getLedger(), KIND, runPlace(modData), M.processRate)
 end
 
 -- Tells a running batch where its station stands (the station's World, at each look): the place, and the fire's
 -- fuel when it is by one. Returns the place.
 function M.notePlace(modData, station, now)
-    return Hearth.notePlace(modData, station, now, catchUpRun)
+    return Fire.notePlace(modData, station, now, catchUpRun)
 end
 
 -- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds.

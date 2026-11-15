@@ -78,7 +78,7 @@ function Placement.notInRooms(sprites)
     placeOnly(sprites, function(square) return not square:isInARoom() end)
 end
 
--- Putting down any station whose door is registered with Doors (the Hearth, the Firebox, a mod's): its own door's
+-- Putting down any station whose door is registered with Doors (the Stone Hearth, a mod's): its own door's
 -- front tile must be free, and it can't stand in front of another one's door. sprites (optional; a set of names or
 -- a list, as a mod's Tiles.STATIONS) adds stations without a door that are kept out of a door's front too: every TP
 -- station is. One rule, for every mod.

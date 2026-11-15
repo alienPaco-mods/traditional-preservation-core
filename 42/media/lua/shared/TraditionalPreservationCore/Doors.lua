@@ -1,5 +1,5 @@
--- Traditional Preservation core: a station's door or fire mouth needs its front tile free. The Hearth's mouth, the
--- Firebox's door and mods' doors (Fish & Meat's Smokehouse) register their tiles with the way they open; none of them
+-- Traditional Preservation core: a station's door or fire mouth needs its front tile free. The Stone Hearth's mouth, the
+-- Stone Hearth's door and mods' doors (Fish & Meat's Smokehouse) register their tiles with the way they open; none of them
 -- is built or put down with something in front of its door, nor on a tile in front of another one's door. The build
 -- menu asks TraditionalPreservationCore.doorFits (an entity's OnIsValid); putting a moveable down asks the same
 -- through UI.keepDoorsFree. Vanilla's own furniture isn't checked.

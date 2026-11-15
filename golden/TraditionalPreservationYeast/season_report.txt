@@ -13,7 +13,7 @@ Days for one culture (120 hours at full speed), started on the first of the mont
 | Oct | 12.79 | 7.71 | 5.00 | 7.13 | 8.88 | 8.75 | 5.00 | 5.63 |
 | Nov | 95.58 | 20.71 | 5.00 | 20.71 | 12.08 | 12.17 | 5.00 | 8.42 |
 | Dec | 91.58 | 106.46 | 5.00 | 106.46 | 16.83 | 17.21 | 8.21 | 20.50 |
-Hearth indoors (28 C), any month: 5.00 days
+Fireside indoors (28 C), any month: 5.00 days
 Embers indoors (24 C), any month: 5.00 days
 
 Popup after one day: progress, hours left, temperature, rate

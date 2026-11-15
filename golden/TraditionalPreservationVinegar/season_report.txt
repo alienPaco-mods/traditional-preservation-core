@@ -43,6 +43,6 @@
 | Nov | 5.0-5.5 | 5.8-13.8 | 10.0-20.5 | 25.7-66.4 | 58.0-87.9 | 125.9-137.8 |
 | Dec | 5.0-6.5 | 7.6-16.6 | 20.7-26.2 | 49.5-65.6 | 74.7-87.2 | 102.7-125.3 |
 
-Hearth indoors (28 C), any month: malting 14.3 days, ferment 11.0, first cask 35.0
+Fireside indoors (28 C), any month: malting 14.3 days, ferment 11.0, first cask 35.0
 Embers indoors (24 C), any month: malting 7.4 days, ferment 10.0, first cask 35.0
 exit=0

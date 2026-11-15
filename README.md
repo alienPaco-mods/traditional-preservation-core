@@ -16,11 +16,11 @@ A knee-high block of grey dressed stone in courses under one overhanging slab, f
 
 **Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 8 Clay Bricks, 2 Clay and a mason's trowel (kept). Two facings. It is the only build recipe: the cauldron is fitted to it afterwards.
 
-**The hole** shows what is cooking (`Hearth.holeLook`, by the stove or oven flag of what is inside, `Hearth.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
+**The hole** shows what is cooking (`Fire.holeLook`, by the stove or oven flag of what is inside, `Fire.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
 
 **Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (fire and fuel, with a note; clicking it opens it too), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** and, with a Smokehouse beside it, **Connect the Stone Hearth**.
 
-**Two slots** (`Hearth.attach`, `Hearth.connect`): one thing fitted over the hole (the Forged Cauldron) and one thing joined to its back or a flank (the Smokehouse's flue), each free of the other. A Stone Hearth can't be picked up while it burns (too hot), while something is fitted or while something is joined; the pick-up cursor says so.
+**Two slots** (`Fire.attach`, `Fire.connect`): one thing fitted over the hole (the Forged Cauldron) and one thing joined to its back or a flank (the Smokehouse's flue), each free of the other. A Stone Hearth can't be picked up while it burns (too hot), while something is fitted or while something is joined; the pick-up cursor says so.
 
 ## The Forged Cauldron
 
@@ -28,7 +28,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 
 **Forge Cauldron** (a vanilla forge; Blacksmith 4; 35 Blacksmithing XP): 2 Steel Sheets, 3 Charcoal, 1 Wire, with a ball-peen hammer, metalworking pliers or tongs and a metalworking chisel kept. Learned from *Everyday Smithing - May 1993* (`SmithingMag2`, added at load by `Recipes.teach`; magazines already in the world teach it too), at Blacksmith 5 with Cooking 2, or by research from the cauldron.
 
-**Fit Cauldron** (the Stone Hearth's menu, fire out; generic `TPHearthFit`): the cauldron, 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook, pliers kept; 5 Blacksmithing XP. It is then the **Stone Hearth (Cauldron)**: two iron pipes in the stone, the chain slung between them, the cauldron on the hook in its middle. **Remove Cauldron** takes half as long and gives every piece back; not while the fire burns or the cauldron holds anything. A joined Smokehouse stays joined.
+**Fit Cauldron** (the Stone Hearth's menu, fire out; generic `TPFireFit`): the cauldron, 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook, pliers kept; 5 Blacksmithing XP. It is then the **Stone Hearth (Cauldron)**: two iron pipes in the stone, the chain slung between them, the cauldron on the hook in its middle. **Remove Cauldron** takes half as long and gives every piece back; not while the fire burns or the cauldron holds anything. A joined Smokehouse stays joined.
 
 **Right-click the Stone Hearth (Cauldron).** Its submenu also has:
 
@@ -42,12 +42,12 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 
 ### The cauldron
 
-- Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Hearth.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
-- **Tainted water taints clean water** (`Hearth.taints`): poured together, either way round and whatever the share, the whole cauldron is tainted water and must be boiled clean again. A bucket that already holds both pours in as tainted water. Pour into the Cauldron's hover says so, unless the sandbox hides tainted water.
+- Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Fire.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
+- **Tainted water taints clean water** (`Fire.taints`): poured together, either way round and whatever the share, the whole cauldron is tainted water and must be boiled clean again. A bucket that already holds both pours in as tainted water. Pour into the Cauldron's hover says so, unless the sandbox hides tainted water.
 - Poured fluid mixes its temperature with what is there, by volume.
 - **Lit fire:** it heats towards 95 C and **steams at 85 C**; milk and every other fluid are kept off the boil.
 - **Water boils.** Water on its own heats towards 110 C and holds at **100 C**. Tainted water kept at the boil for
-  **10 minutes** turns to clean water (`Hearth.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
+  **10 minutes** turns to clean water (`Fire.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
   `boiled` in the cauldron's state and starts over when the fire goes out or more is poured in). Being let boil, water
   also steams sooner than milk.
 - **Fire out:** it cools towards the temperature of the place the Stone Hearth stands in (open air, an open roof, indoors, a loft or a basement), slowly, as the stone holds heat.
@@ -77,12 +77,12 @@ Fluid filled from the cauldron leaves at the cauldron's heat. Vanilla cools a ca
 
 ### By a fire
 
-Two places beyond the six of `Weather.PLACES`, which a mod must ask for (`Hearth.placeOf`; Yeast, Vinegar and Dairy do):
+Two places beyond the six of `Weather.PLACES`, which a mod must ask for (`Fire.placeOf`; Yeast, Vinegar and Dairy do):
 
 - **By a fire, 28 C:** any lit fire within 2 tiles on the same floor. A Stone Hearth, a fireplace, an antique stove, a brazier or a campfire counts; an electric or gas stove never does.
 - **By banked embers, 24 C:** a banked Stone Hearth within 2 tiles, when no full fire is in reach.
 
-Those are a fire indoors (a room, a loft, a basement). Outside the air carries the heat off, so a fire warms the place it stands in by a lift, never past its indoor heat (`Hearth.FIRE_LIFT`, `Hearth.EMBERS_LIFT`; places `HearthCovered`, `HearthOpen`, `EmbersCovered`, `EmbersOpen`, `Hearth.firePlace`):
+Those are a fire indoors (a room, a loft, a basement). Outside the air carries the heat off, so a fire warms the place it stands in by a lift, never past its indoor heat (`Fire.FIRE_LIFT`, `Fire.EMBERS_LIFT`; places `FiresideCovered`, `FiresideOpen`, `EmbersCovered`, `EmbersOpen`, `Fire.firePlace`):
 
 | Fire | Indoors | Under an open roof | In the open |
 |---|---|---|---|
@@ -99,7 +99,7 @@ Moved here from Traditional Preservation (Fish & Meat) on 2026-11-13, so every T
 
 **Connect the Stone Hearth** (the Stone Hearth's menu or the shed's right-click): a **clay pipe** out of the stone's side low down, climbing a little into the wall (2 Clay Pipe Segments + 1 Clay, Mason's Trowel kept), or a **stone trench** from its foot (3 Flat Stones + 2 Clay, a shovel or spade kept); about half a minute, 5 Masonry XP. Not at the door end, not with the Stone Hearth's own door towards the shed, not while it burns; one Stone Hearth a shed, one thing joined to a Stone Hearth. **Disconnect the Stone Hearth** gives the pipe or stones back; the clay is lost. Neither picks up while joined. Joined, the hole is lidded (or shows the pot) and the smoke goes up the flue; cooking and the cauldron carry on. Stone Hearth Info says where its flue goes, and each mod adds what its smoke does.
 
-**For a mod** (`shared/TraditionalPreservationCore/Smokehouse.lua`): its recipes carry the tag `Smokehouse` (`Smokehouse.RECIPES`). A stack's OnStart calls `Smokehouse.startCounters(modData, owner, hotNeed)` (owner: the mod's id); the mod's World tracks the chamber's tiles (`Tiles.CHAMBERS`, `Smokehouse.isChamber`, `Smokehouse.slotTile`) and steps **only its own stacks** (`Smokehouse.owns`), each with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`: `hot` is the stoked session now running, `cold` banked hours and broken sessions' hours (by `coolShare`, the share of cool hours since the last look; a stack with `noHot` takes stoked hours as smoke at once); it returns the stoked and banked hours since the last look for the mod's own use, nil when the stack starts counting from this fire. `Smokehouse.hotDone(modData)` says when the cook is done (the four counters live in `SmokehouseStacks.lua`, reached through `Smokehouse`). Its `UI.slotRules` gives `owns(entity, item)` so that in the shared shed it judges only its own items. Other stacks count against the shed's 6. The chamber's World (`server/.../SmokehouseWorld.lua`) draws the look and sets the tag; its flue is a Hearth connection (`Hearth.connect`, `Smokehouse.ID`, `smoke = true`) that draws its own sprites (`Smokehouse.entrySprite`; the stone has no flue tiles), so Connect / Disconnect and the action `TPHearthConnect` are Core's Hearth ones; `client/.../SmokehouseUI.lua` adds the chamber's right-click and the flue's note. `TPC.kit("smokehouse")`, `TPC.kit("flue")` and `TPC.smokehouse()` in the console.
+**For a mod** (`shared/TraditionalPreservationCore/Smokehouse.lua`): its recipes carry the tag `Smokehouse` (`Smokehouse.RECIPES`). A stack's OnStart calls `Smokehouse.startCounters(modData, owner, hotNeed)` (owner: the mod's id); the mod's World tracks the chamber's tiles (`Tiles.CHAMBERS`, `Smokehouse.isChamber`, `Smokehouse.slotTile`) and steps **only its own stacks** (`Smokehouse.owns`), each with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`: `hot` is the stoked session now running, `cold` banked hours and broken sessions' hours (by `coolShare`, the share of cool hours since the last look; a stack with `noHot` takes stoked hours as smoke at once); it returns the stoked and banked hours since the last look for the mod's own use, nil when the stack starts counting from this fire. `Smokehouse.hotDone(modData)` says when the cook is done (the four counters live in `SmokehouseStacks.lua`, reached through `Smokehouse`). Its `UI.slotRules` gives `owns(entity, item)` so that in the shared shed it judges only its own items. Other stacks count against the shed's 6. The chamber's World (`server/.../SmokehouseWorld.lua`) draws the look and sets the tag; its flue is a Stone Hearth connection (`Fire.connect`, `Smokehouse.ID`, `smoke = true`) that draws its own sprites (`Smokehouse.entrySprite`; the stone has no flue tiles), so Connect / Disconnect and the action `TPFireConnect` are Core's Stone Hearth ones; `client/.../SmokehouseUI.lua` adds the chamber's right-click and the flue's note. `TPC.kit("smokehouse")`, `TPC.kit("flue")` and `TPC.smokehouse()` in the console.
 
 ## Doors keep their front free
 
@@ -121,13 +121,13 @@ Every TP station works by the temperature of the place it stands in, from one we
 | **In a shed** (Enclosed) | Never from a square: a station claims it in its World entry (the Smokehouse chamber, the only one). A closed shed in the outside air: out of the rain and wind, no thermal mass | The day's, as Open; not warmed by the grid |
 | **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Stone Hearth) | 28 C / 24 C indoors, for as long as the fuel lasts; outside the air's plus a lift |
 
-Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Hearth.placeOf`); Fish & Meat dries by its own rates.
+Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Fire.placeOf`); Fish & Meat dries by its own rates.
 
 Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again. `Weather.frozen(celsius, sensitivity, freezeC)` says whether work has stopped for the frost (at or below its freezing point, 0 C unless given): a stop outside the scaling and under any floor, the same on every setting but Off. `Weather.rate(curve, celsius, sensitivity, minRate, freezeC)` puts the two together: a stage's speed, 0 when frozen.
 
 ## Fluids that go off
 
-Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Forged Cauldron ages there and is scalded once the cauldron has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `Hearth.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
+Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Forged Cauldron ages there and is scalded once the cauldron has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `Fire.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
 
 ## Seasoning afterwards
 
@@ -139,9 +139,9 @@ Nothing on its own beyond adding its stations and the cauldron's recipe. It wrap
 
 ## Tuning
 
-The cauldron's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/CauldronFluid.lua` (the cauldron) and `Hearth.lua` (the fire). The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_Firebox.txt` (the Stone Hearth) and `entity_Smokehouse_Chamber.txt`, the cauldron and its forge recipe `42/media/scripts/TraditionalPreservationCore_Cauldron.txt`; the cauldron's fit kit in `Cauldron.lua`, the Smokehouse's flue kits and times at the top of `Smokehouse.lua`.
+The cauldron's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/CauldronFluid.lua` (the cauldron) and `Fire.lua` (the fire). The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_StoneHearth.txt` (the Stone Hearth) and `entity_Smokehouse_Chamber.txt`, the cauldron and its forge recipe `42/media/scripts/TraditionalPreservationCore_Cauldron.txt`; the cauldron's fit kit in `Cauldron.lua`, the Smokehouse's flue kits and times at the top of `Smokehouse.lua`.
 
-`python3 tools/build_tileset.py` (needs Pillow) paints the Stone Hearth (its hole open, lidded or with the pot, and its glows), the fitted cauldron's looks and its liquid overlay, the cauldron's and the menu icons, the Smokehouse chamber with its flue entries (the whole pipe or trench) and the ham, and writes the generated `Tiles.lua`; `tools/build_model.py` the cauldron's ground model. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_hearth.lua` and `test_hearth_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_uses.lua` (Uses, Charge, OnHeat, the cooked OnCreate), `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_smokehouse.lua` and `test_smokehouse_world.lua`, `test_console.lua` and `test_harness.lua`.
+`python3 tools/build_tileset.py` (needs Pillow) paints the Stone Hearth (its hole open, lidded or with the pot, and its glows), the fitted cauldron's looks and its liquid overlay, the cauldron's and the menu icons, the Smokehouse chamber with its flue entries (the whole pipe or trench) and the ham, and writes the generated `Tiles.lua`; `tools/build_model.py` the cauldron's ground model. `tp test Core` runs `tests/test_core.lua` (weather, places, stations), `test_fire.lua` and `test_fire_menu.lua`, `test_fluid_ageing.lua`, `test_doors.lua`, `test_container.lua`, `test_recipes.lua`, `test_portions.lua`, `test_uses.lua` (Uses, Charge, OnHeat, the cooked OnCreate), `test_wraps.lua` (Handcraft, Pour, `Station.near`, the recipe and container helpers), `test_smokehouse.lua` and `test_smokehouse_world.lua`, `test_console.lua` and `test_harness.lua`.
 
 ## Debug commands
 

@@ -1,5 +1,5 @@
 -- Traditional Preservation core: keeps track of every Smokehouse chamber tile and draws its look. The chamber is
--- closed: nothing hangs in sight. Each tile shows where a joined Firebox's flue enters it, master or not (the other
+-- closed: nothing hangs in sight. Each tile shows where a joined Stone Hearth's flue enters it, master or not (the other
 -- tile has no slots), and the door's tile a ham (Smokehouse.readySprite) while finished stacks wait. What hangs inside is stepped by the mod
 -- that owns each stack (Smokehouse.startCounters).
 if isClient() then return end

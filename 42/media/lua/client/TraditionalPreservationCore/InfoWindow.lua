@@ -1,4 +1,4 @@
--- Traditional Preservation core: the base of every station's info window (Hearth Info, Dairy's Incubator and Crock
+-- Traditional Preservation core: the base of every station's info window (Stone Hearth Info, Dairy's Incubator and Crock
 -- Info). Rows of label and value, filled bars and wrapped notes, kept up to date while open. It closes when the player
 -- walks off or the station is gone. One info window at a time, whatever the mod: opening another closes the last.
 -- InfoWindow.clickOpens makes a click on the station open it.

@@ -1,23 +1,23 @@
 -- Traditional Preservation core: Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's
--- Put out Fire, while a Hearth's or Firebox's fire burns. It queues the same action as the Hearth's right-click menu. A banked
--- Hearth's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
+-- Put out Fire, while a Stone Hearth's fire burns. It queues the same action as the Stone Hearth's right-click menu. A banked
+-- Stone Hearth's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
 -- unbanks).
 require "ISUI/LootWindow/ISLootWindowContainerControls"
 require "ISUI/LootWindow/Handlers/LightFuelOption"
 require "ISUI/LootWindow/Handlers/PutOut"
-local Hearth = require "TraditionalPreservationCore/Hearth"
-local HearthUI = require "TraditionalPreservationCore/HearthUI"
+local Fire = require "TraditionalPreservationCore/Fire"
+local FireUI = require "TraditionalPreservationCore/FireUI"
 
-ISLootWindowObjectControlHandler_TPHearthFire = ISLootWindowObjectControlHandler:derive("ISLootWindowObjectControlHandler_TPHearthFire")
-local Handler = ISLootWindowObjectControlHandler_TPHearthFire
+ISLootWindowObjectControlHandler_TPFireTend = ISLootWindowObjectControlHandler:derive("ISLootWindowObjectControlHandler_TPFireTend")
+local Handler = ISLootWindowObjectControlHandler_TPFireTend
 
 local TITLES = { bank = "ContextMenu_TraditionalPreservationCore_BankFire", stoke = "ContextMenu_TraditionalPreservationCore_StokeFire" }
 local HELP = { bank = "IGUI_TraditionalPreservationCore_BankHelp", stoke = "IGUI_TraditionalPreservationCore_StokeHelp" }
 
--- "bank" for a lit Hearth or Firebox, "stoke" for a banked one, nil for anything else.
+-- "bank" for a lit Stone Hearth, "stoke" for a banked one, nil for anything else.
 local function modeOf(object)
-    if not object or not Hearth.isFire(object) or not Hearth.isBurning(object) then return nil end
-    return Hearth.isBanked(object) and "stoke" or "bank"
+    if not object or not Fire.isStoneHearth(object) or not Fire.isBurning(object) then return nil end
+    return Fire.isBanked(object) and "stoke" or "bank"
 end
 
 function Handler:shouldBeVisible()
@@ -35,13 +35,13 @@ function Handler:handleJoypadContextMenu(context)
     local mode = modeOf(self.object)
     if not mode then return end
     local option = self:addJoypadContextMenuOption(context, getText(TITLES[mode]))
-    option.iconTexture = getTexture(HearthUI.fireIcon(self.object, mode))
+    option.iconTexture = getTexture(FireUI.fireIcon(self.object, mode))
 end
 
 function Handler:perform()
     if isGamePaused() then return end
     local mode = modeOf(self.object)
-    if mode then HearthUI.fireAction(self.playerObj, self.object, mode) end
+    if mode then FireUI.fireAction(self.playerObj, self.object, mode) end
 end
 
 function Handler:new()
@@ -51,7 +51,7 @@ function Handler:new()
 end
 
 local function isBanked(object)
-    return object ~= nil and instanceof(object, "IsoFireplace") and Hearth.isBanked(object)
+    return object ~= nil and instanceof(object, "IsoFireplace") and Fire.isBanked(object)
 end
 
 local LightFire = ISLootWindowObjectControlHandler_LightFireOption
@@ -70,7 +70,7 @@ end
 
 function PutOut:perform()
     if isBanked(self.object) then
-        if not isGamePaused() then HearthUI.fireAction(self.playerObj, self.object, "out") end
+        if not isGamePaused() then FireUI.fireAction(self.playerObj, self.object, "out") end
         return
     end
     return putOutPerform(self)

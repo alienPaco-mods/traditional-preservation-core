@@ -1,18 +1,18 @@
--- Traditional Preservation core: the Smokehouse's flue is a Hearth connection, so Connect the Stone Hearth and
--- Disconnect the Stone Hearth are Core's (HearthUI.addConnect / addDisconnect, in the fire's own menu); the chamber's
+-- Traditional Preservation core: the Smokehouse's flue is a Stone Hearth connection, so Connect the Stone Hearth and
+-- Disconnect the Stone Hearth are Core's (FireUI.addConnect / addDisconnect, in the fire's own menu); the chamber's
 -- right-click offers them too. The shed doesn't pick up while joined (the fire is Core's rule), and the fire's Info
 -- says where its flue goes.
 local UI = require "TraditionalPreservationCore/UI"
-local HearthUI = require "TraditionalPreservationCore/HearthUI"
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local FireUI = require "TraditionalPreservationCore/FireUI"
+local Fire = require "TraditionalPreservationCore/Fire"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 
-Hearth.connect({
+Fire.connect({
     id = Smokehouse.ID,
-    connectText = "ContextMenu_TraditionalPreservationCore_ConnectFirebox",
-    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectFirebox",
+    connectText = "ContextMenu_TraditionalPreservationCore_ConnectStoneHearth",
+    disconnectText = "ContextMenu_TraditionalPreservationCore_DisconnectStoneHearth",
     disconnectHelp = "IGUI_TraditionalPreservationCore_DisconnectHelp",
-    icon = "media/textures/Item_TPFirebox.png",
+    icon = "media/textures/Item_TPStoneHearth.png",
     notes = function(_, notes, part)
         local kit = part and Smokehouse.FLUE_KITS[part.kind]
         if kit then table.insert(notes, UI.say("IGUI_TraditionalPreservationCore_FlueJoined", getText(kit.name))) end
@@ -26,11 +26,11 @@ local function onFillChamberMenu(playerNum, context, worldobjects, test)
             if test then return end
             if Smokehouse.World then Smokehouse.World.track(object) end
             local playerObj = getSpecificPlayer(playerNum)
-            local spec = Hearth.connection(Smokehouse.ID)
-            local firebox, joined = Smokehouse.joinedFirebox(object)
-            if firebox then return HearthUI.addDisconnect(context, playerObj, firebox, joined.tile, spec) end
+            local spec = Fire.connection(Smokehouse.ID)
+            local stoneHearth, joined = Smokehouse.joinedStoneHearth(object)
+            if stoneHearth then return FireUI.addDisconnect(context, playerObj, stoneHearth, joined.tile, spec) end
             local found = Smokehouse.connectCandidate(object)
-            if found then HearthUI.addConnect(context, playerObj, found.firebox, found.tile, spec) end
+            if found then FireUI.addConnect(context, playerObj, found.stoneHearth, found.tile, spec) end
             return
         end
     end
@@ -40,7 +40,7 @@ Events.OnFillWorldObjectContextMenu.Add(onFillChamberMenu)
 
 -- The shed doesn't pick up while the flue joins it.
 UI.keepInPlace(function(object)
-    if Smokehouse.isChamber(object) then return Smokehouse.joinedFirebox(object) ~= nil end
+    if Smokehouse.isChamber(object) then return Smokehouse.joinedStoneHearth(object) ~= nil end
 end)
 
 -- The shed stands in the open or under an open roof, never in a room, and keeps its door's front free.

@@ -29,27 +29,27 @@ local function square(x, y, sprites, flags)
 end
 function getCell() return { getGridSquare = function(_, x, y) return grid[x .. "," .. y] end } end
 
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 local Doors = require "TraditionalPreservationCore/Doors"
 
-local hearthS, hearthE = Hearth.sprite("Empty", 0), Hearth.sprite("Empty", 1)
-local fireboxS, fireboxE = Hearth.fireboxSprite(false, nil, 0), Hearth.fireboxSprite(false, nil, 1)
-check("the Hearth's mouth opens its way, every look", Doors.facingOf(hearthS) == "S" and Doors.facingOf(hearthE) == "E"
-    and Doors.facingOf(Hearth.sprite("Hot", 1)) == "E")
-check("so does the Stone Hearth's door, with any flue or hole", Doors.facingOf(fireboxS) == "S" and Doors.facingOf(fireboxE) == "E"
-    and Doors.facingOf(Hearth.fireboxSprite(true, "Pot", 0)) == "S"
-    and Doors.facingOf(Hearth.fireboxSprite(true, "Lid", 1)) == "E")
+local hearthS, hearthE = Fire.cauldronSprite("Empty", 0), Fire.cauldronSprite("Empty", 1)
+local stoneHearthS, stoneHearthE = Fire.bareSprite(false, nil, 0), Fire.bareSprite(false, nil, 1)
+check("the Stone Hearth's mouth opens its way, every look", Doors.facingOf(hearthS) == "S" and Doors.facingOf(hearthE) == "E"
+    and Doors.facingOf(Fire.cauldronSprite("Hot", 1)) == "E")
+check("so does the Stone Hearth's door, with any flue or hole", Doors.facingOf(stoneHearthS) == "S" and Doors.facingOf(stoneHearthE) == "E"
+    and Doors.facingOf(Fire.bareSprite(true, "Pot", 0)) == "S"
+    and Doors.facingOf(Fire.bareSprite(true, "Lid", 1)) == "E")
 check("anything else has no door", Doors.facingOf("vanilla_crate") == nil and Doors.facingOf(nil) == nil)
 
 -- Its own front: facing S the tile south, facing E the tile east.
 local open = square(0, 0)
-check("open ground in front: it fits", Doors.fits(open, fireboxS) and Doors.fits(open, fireboxE))
+check("open ground in front: it fits", Doors.fits(open, stoneHearthS) and Doors.fits(open, stoneHearthE))
 square(0, 1, { { "crate", true } })
-check("a crate south: facing S refused", not Doors.fits(open, fireboxS))
-check("but facing E it's beside, not in front", Doors.fits(open, fireboxE))
+check("a crate south: facing S refused", not Doors.fits(open, stoneHearthS))
+check("but facing E it's beside, not in front", Doors.fits(open, stoneHearthE))
 square(1, 0, { { "rug", false } })
-check("a rug (nothing that blocks placing) doesn't count", Doors.fits(open, fireboxE))
-check("no square there at all is open ground", Doors.fits(square(50, 50), fireboxS))
+check("a rug (nothing that blocks placing) doesn't count", Doors.fits(open, stoneHearthE))
+check("no square there at all is open ground", Doors.fits(square(50, 50), stoneHearthS))
 local walled = square(10, 10)
 square(10, 11, {}, { collideN = true })
 check("a wall between it and its front tile: refused", not Doors.fits(walled, hearthS))
@@ -57,12 +57,12 @@ square(11, 10, {}, { WallN = true })
 check("a wall on the front tile's other edge doesn't count", Doors.fits(walled, hearthE))
 
 -- In front of another one's door.
-square(20, 20, { { fireboxS, true } })
-check("nothing stands in front of a Firebox's door", not Doors.fits(square(20, 21), "vanilla_crate")
+square(20, 20, { { stoneHearthS, true } })
+check("nothing stands in front of a Stone Hearth's door", not Doors.fits(square(20, 21), "vanilla_crate")
     and not Doors.fits(grid["20,21"], hearthE))
-check("its back and flanks are fine", Doors.fits(square(20, 19), "vanilla_crate") and Doors.fits(square(21, 20), fireboxS))
+check("its back and flanks are fine", Doors.fits(square(20, 19), "vanilla_crate") and Doors.fits(square(21, 20), stoneHearthS))
 square(30, 30, { { hearthE, true } })
-check("nor in front of the Hearth's mouth", not Doors.fits(square(31, 30), fireboxS) and Doors.fits(square(30, 31), fireboxE))
+check("nor in front of the Stone Hearth's mouth", not Doors.fits(square(31, 30), stoneHearthS) and Doors.fits(square(30, 31), stoneHearthE))
 check("a mod's door counts once registered", (function()
     square(40, 40, { { "shed_door", true } })
     local before = Doors.fits(square(40, 41), "vanilla_crate")
@@ -72,8 +72,8 @@ end)())
 
 -- The build menu's check: the ghost's tile on its square.
 local function params(sq, name) return { square = sq, tileInfo = { getSpriteName = function() return name end } } end
-check("the build ghost asks the same", not TraditionalPreservationCore.doorFits(params(open, fireboxS))
-    and TraditionalPreservationCore.doorFits(params(open, fireboxE)))
+check("the build ghost asks the same", not TraditionalPreservationCore.doorFits(params(open, stoneHearthS))
+    and TraditionalPreservationCore.doorFits(params(open, stoneHearthE)))
 
 -- A table-top station's build check (Appliances): no appliance under it, and no door's front.
 instanceof = function(object, class) return object.class == class end

@@ -35,11 +35,11 @@ Weather.GRID_ROOM_C = 22
 Weather.ROOM_LIFT = 2
 Weather.ROOM_LIFT_FULL = 10
 Weather.ROOM_LIFT_NONE = 18
--- Places by a fire, which the ledger keeps no totals for: work there counts by the clock (Hearth.catchUp). Hearth
+-- Places by a fire, which the ledger keeps no totals for: work there counts by the clock (Fire.catchUp). Fire
 -- adds them: place -> { celsius, under, lift }. A fire indoors (no under) holds celsius whatever the weather; one
 -- under an open roof or in the open warms that place's air by lift, never past celsius.
 Weather.FIRE_PLACES = {}
--- Where something stands when nothing says: a room. (Hearth.DEFAULT_UNDER and FluidAgeing.DEFAULT_PLACE are this.)
+-- Where something stands when nothing says: a room. (Fire.DEFAULT_UNDER and FluidAgeing.DEFAULT_PLACE are this.)
 Weather.DEFAULT_PLACE = "Sheltered"
 -- Where a station's run or stack counts before its World first says where the station stands (a few seconds): the
 -- open air. Fish & Meat's stacks and tubs, Vinegar's floor and vessel runs.
@@ -328,7 +328,7 @@ function Weather.record(record)
 end
 
 -- Marks are each place's total when a run or cask was last brought up to date, and the ledger's hour then (for
--- time by a fire, Hearth.catchUp). Work since then is the difference, so a station catches up however long it was away.
+-- time by a fire, Fire.catchUp). Work since then is the difference, so a station catches up however long it was away.
 function Weather.mark(marks, ledger, kind)
     for _, place in ipairs(Weather.PLACES) do marks[place] = ledger[kind .. place] end
     marks.hour = ledger.lastHour

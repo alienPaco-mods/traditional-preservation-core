@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """Builds the TP Core art: the shared stations' tileset (42/media/*.tiles and texturepacks/*.pack), their build icons,
-the mod icon, the Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse chamber (from tile CHAMBER),
+the mod icon, the Stone Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse chamber (from tile CHAMBER),
 moved from Fish & Meat 2026-11-13 with its art unchanged.
 
-The Hearth: a Stone Hearth with the Forged Cauldron fitted (user's design, 2026-11-13, after Alpine cheese kettles on a
+The Stone Hearth: a Stone Hearth with the Forged Cauldron fitted (user's design, 2026-11-13, after Alpine cheese kettles on a
 crane). The Stone Hearth's knee-high block of split fieldstone, as vanilla's kilns are built, four fifths of a tile
 across, with its iron door on the side it faces, closed on top but for a small round hole in the centre; over it
 what the fitting takes: two Metal Pipes set in the stone along the door's side, a Heavy Chain slung between their
 tops and a Large Hook in its middle, all sooted; nearly on the hole, a round-bellied kettle of dark forged iron,
 greased and blacked, sooted below its shoulder, hanging by its bail from the hook. The bail runs towards the door. It
 is drawn as a 100-120 L kettle; it holds 60 L (CauldronFluid.lua). The game turns it into a vanilla fireplace when it is
-built. Vanilla draws the fireplace's flames and fuel as attached sprites, so HearthWorld swaps the hearth's own sprite
-among whole-hearth tiles (HEARTH_LOOKS), the fire out, lit or banked and the kettle still or steaming, and every one
+built. Vanilla draws the fireplace's flames and fuel as attached sprites, so FireWorld swaps the hearth's own sprite
+among whole-hearth tiles (CAULDRON_LOOKS), the fire out, lit or banked and the kettle still or steaming, and every one
 of them carries the fireplace's tile properties. The fire's glow is baked into them (the door's vents, the hole and
 flames curling up round the kettle while it burns, a dull red when banked), as vanilla's kilns would have it as their
 overlay: the overlay is the one thing the game tints per object, so it is kept for the liquid (LIQUID), a pale
-surface in the kettle's mouth that HearthWorld colours with the fluid's colour. The Smokehouse's entry overlay draws
+surface in the kettle's mouth that FireWorld colours with the fluid's colour. The Smokehouse's entry overlay draws
 the joined flue (below), so these tiles draw none.
 
 The stone and the kettle have hard edges (pzart.hard_edges); the steam and the glow are soft.
@@ -45,31 +45,31 @@ SS = 4  # supersampling
 
 # Facings, S and E, as the entity scripts' faces. Each look takes len(FACES) tiles from its number.
 FACES = ["S", "E"]
-# The Hearth (the Forged Cauldron fitted): its fire baked in, out, lit or banked (embers under ash, almost no light),
+# The Stone Hearth (the Forged Cauldron fitted): its fire baked in, out, lit or banked (embers under ash, almost no light),
 # each still or steaming. The overlay is left for the liquid, the one thing the game tints per object (ENGINE_NOTES):
-# a pale surface in the kettle's mouth, coloured by the fluid it holds (Hearth.liquidOverlay).
-HEARTH_LOOKS = {"Cold": 0, "Steam": 2, "Lit": 4, "LitSteam": 70, "Banked": 72, "BankedSteam": 74}
-HEARTH = HEARTH_LOOKS["Cold"]
+# a pale surface in the kettle's mouth, coloured by the fluid it holds (Fire.liquidOverlay).
+CAULDRON_LOOKS = {"Cold": 0, "Steam": 2, "Lit": 4, "LitSteam": 70, "Banked": 72, "BankedSteam": 74}
+CAULDRON_PLAIN = CAULDRON_LOOKS["Cold"]
 FIRE_KINDS = ("Lit", "Banked")
 LIQUID = 6
-# The Stone Hearth (the Firebox until 2026-11-13; FIREBOX in the names here): the Hearth's stone, lower, with no cauldron and an
+# The Stone Hearth (the Stone Hearth until 2026-11-13; BARE in the names here): the Stone Hearth's stone, lower, with no cauldron and an
 # iron door on its mouth, and a stone-lined hole in its top (HOLE_D): a cooking source. What shows in the hole is a look
-# (Hearth.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
+# (Fire.holeLook in Lua): Open, the forged pot (Pot: a stove food or a fluid inside) or a sooted steel lid (Lid: oven
 # food only, or joined to a flue with nothing for the pot). The stone draws no flue: a connection owns its sprites
 # (the Smokehouse's entry overlay, below). The flue leaves for the building on one side, never the door's: a clay pipe out of the stone's side low down, a little towards the front, climbing a short way
 # into the wall (user, 2026-11-13: it climbed past the top before, and met the cauldron's pipes), or a trench in the
 # ground roofed with flat stones from its foot (a mod joins it, as Fuel Barrel picks the barrel's sprite by the
-# generator's). Sides by facing, as world steps (+x east, +y south), the same table as HearthConnect.FLUE_SIDES in Lua.
+# generator's). Sides by facing, as world steps (+x east, +y south), the same table as FireConnect.FLUE_SIDES in Lua.
 FLUE_SIDES = {"S": {"Back": (0, -1), "Left": (-1, 0), "Right": (1, 0)},
               "E": {"Back": (-1, 0), "Left": (0, -1), "Right": (0, 1)}}
-# Tile numbers: the Firebox's old 10-15. Joined, the stone shows Lid or Pot: the Smokehouse's entry overlay draws the
+# Tile numbers: the old Firebox's 10-15. Joined, the stone shows Lid or Pot: the Smokehouse's entry overlay draws the
 # whole flue, so the Pipe_ and Stones_ looks that drew the same were dropped (2026-11-14; 16-23 and 54-69 free).
-FIREBOX_LOOKS = {"Open": 10, "Lid": 12, "Pot": 14}
-FIREBOX = FIREBOX_LOOKS["Open"]
+BARE_LOOKS = {"Open": 10, "Lid": 12, "Pot": 14}
+BARE_PLAIN = BARE_LOOKS["Open"]
 # Its glow shows through the door's vents. Under the lid with no flue the smoke leaks round the door (Lit, Banked);
 # joined, it goes up the flue (Flue); open, the fire shows in the hole and the smoke climbs out of it (Open); with the
 # pot in, the smoke curls up round the pot (Pot).
-FIREBOX_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30,
+BARE_GLOWS = {"Lit": 24, "Banked": 26, "LitFlue": 28, "BankedFlue": 30,
                  "LitOpen": 46, "BankedOpen": 48, "LitPot": 50, "BankedPot": 52}
 
 # Colours.
@@ -94,7 +94,7 @@ STEAM = (244, 244, 240)
 WEATHER = 0.2
 FOOT_SHADE = 0.8               # the stone darkens this far towards the ground
 
-# The stone body, the Firebox's and the Hearth's: knee high (a cask is 85 px), four fifths of a tile across.
+# The stone body, the Stone Hearth's, fitted or not: knee high (a cask is 85 px), four fifths of a tile across.
 H = 0.40                       # half the footprint, in tiles (0.32 until 2026-11-13; the user's pick)
 TOP = 36                       # stone, px high
 CAP = 4                        # the rendered top
@@ -107,7 +107,7 @@ FACE_LEN = math.hypot(pzart.DIAMOND_HALF_W, pzart.DIAMOND_HALF_H)   # px along a
 CU_R = 0.27                    # its radius, in tiles
 LIP = 2                        # how far its rolled lip stands above TOP + CAP, px
 
-# The Hearth over the body: the hole, the kettle and the gallows.
+# The Stone Hearth over the body: the hole, the kettle and the gallows.
 HOLE_R = 0.075                 # the hole in the top, in tiles
 KETTLE_R = 0.265               # the belly's radius, in tiles
 KETTLE_GAP = 2                 # px between the stone and the kettle's bottom: nearly on the hole
@@ -134,17 +134,17 @@ def group(look, plain):
     return [("GroupName", "Stone")] if look == plain else []
 
 
-for look, base in HEARTH_LOOKS.items():
+for look, base in CAULDRON_LOOKS.items():
     for offset, facing in enumerate(FACES):
         # IsoType and the woodstove container make the game load it as a fireplace with a firebox to cook in.
         TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "15"), ("ContainerPosition", "Low"),
-                                            ("CustomName", "Hearth"), ("Facing", facing),
+                                            ("CustomName", "HearthCauldron"), ("Facing", facing),
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "100"),
                                             ("container", "woodstove"), ("solidtrans", "")] + group(look, "Cold"))
-for look, base in FIREBOX_LOOKS.items():
+for look, base in BARE_LOOKS.items():
     for offset, facing in enumerate(FACES):
         TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
-                                            ("CustomName", "Firebox"), ("Facing", facing),
+                                            ("CustomName", "Hearth"), ("Facing", facing),
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
                                             ("container", "woodstove"), ("solidtrans", "")] + group(look, "Open"))
 
@@ -185,8 +185,8 @@ CHAMBER_EDGE = (60, 42, 28)
 CHAMBER_IRON = (70, 71, 75)
 CHAMBER_WEATHER = 0.3
 CHAMBER_FOOT_SHADE = 0.5
-# Where a joined Firebox's flue enters the chamber, on the long side the camera sees: one overlay per flue kind, face
-# and part (chamber_entry_index). The Firebox's pipe comes in at PIPE_TOP, PIPE_SHIFT towards the viewer; its trench
+# Where a joined Stone Hearth's flue enters the chamber, on the long side the camera sees: one overlay per flue kind, face
+# and part (chamber_entry_index). The Stone Hearth's pipe comes in at PIPE_TOP, PIPE_SHIFT towards the viewer; its trench
 # at ground level, in the middle.
 CHAMBER_ENTRY = 36
 FLUE_KINDS = ["Pipe", "Stones"]
@@ -403,8 +403,8 @@ def paint_mouth(layer, look, rng):
 
 
 def body(face, hole):
-    """The stone body the Firebox and the Hearth share: dressed stone as vanilla's mill, soot over the mouth, the iron
-    door and the slab on top; with hole, a small round one in the top's centre, ringed with soot, for the Hearth's kettle."""
+    """The stone body every Stone Hearth shares, fitted or not: dressed stone as vanilla's mill, soot over the mouth, the iron
+    door and the slab on top; with hole, a small round one in the top's centre, ringed with soot, for the Stone Hearth's kettle."""
     rng = random.Random(160 + face)
     side = FACES[face]
     light = {"S": 1.0, "E": 0.72}
@@ -583,7 +583,7 @@ def steam():
     return layer.filter(ImageFilter.GaussianBlur(1.2 * SS))
 
 
-def paint_hearth(look, face):
+def paint_cauldron_body(look, face):
     """The body with its hole, the far pipe, the kettle, then the near pipe, the chain, the hook and the bail in front
     of it."""
     light = 1.0 if FACES[face] == "S" else 0.85
@@ -604,12 +604,12 @@ def paint_hearth(look, face):
 # --- The fire's glow ---------------------------------------------------------------------------------------------
 
 def paint_glow(kind, face):
-    """The Hearth's overlay, which the game draws over the whole object, so the kettle's outline is cut out of it:
-    the door's vents (the Firebox's glow, with no leak: the hole is the flue), firelight on the stone round the hole,
+    """The Stone Hearth's overlay, which the game draws over the whole object, so the kettle's outline is cut out of it:
+    the door's vents (the Stone Hearth's glow, with no leak: the hole is the flue), firelight on the stone round the hole,
     flames curling up round the kettle's belly and a warm rim along its bottom edge. Banked: a dull red rim, a faint
     glow, no flame."""
     lit = kind == "Lit"
-    glow = paint_firebox_glow("LitFlue" if lit else "BankedFlue", face)
+    glow = paint_bare_glow("LitFlue" if lit else "BankedFlue", face)
     kettle, _ = paint_kettle("Empty", face)
     mask = kettle.getchannel("A")
     fire = pzart.new_layer(SS)
@@ -642,7 +642,7 @@ def paint_glow(kind, face):
     return glow
 
 
-# --- The Firebox -------------------------------------------------------------------------------------------------
+# --- The Stone Hearth -------------------------------------------------------------------------------------------------
 
 def door_vents(side):
     """The door's vents: three draught holes low down and two slits under the arch, as (u, z, rx, ry) in px."""
@@ -792,9 +792,9 @@ def pot(layer):
         draw.ellipse(box(x + side * 1.4, y + 1.4, 1.5, 1.9), outline=shade(POT, 0.75 if side < 0 else 0.5), width=SS)
 
 
-def paint_firebox(look, face):
+def paint_bare(look, face):
     """A Stone Hearth tile: the stone with its lined hole and what is in it (Open, Lid, Pot). No flue: the
-    Smokehouse's entry overlay draws the whole flue from the stone to its wall, so it shows by a fitted Hearth too and
+    Smokehouse's entry overlay draws the whole flue from the stone to its wall, so it shows by a fitted Stone Hearth too and
     is never drawn twice (user, 2026-11-13)."""
     hole = look
     layer = body(face, False)
@@ -844,7 +844,7 @@ def hole_glow(lit):
     return layer
 
 
-def paint_firebox_glow(kind, face):
+def paint_bare_glow(kind, face):
     """Firelight through the door's vents, a little round its edges and spilt under it; banked, the vents a dull red.
     Under the lid with no flue joined (Lit, Banked), smoke leaks from round the door and climbs the stone; open, the
     fire shows down the hole and the smoke climbs out of it; with the pot in, it curls up round the pot."""
@@ -901,7 +901,7 @@ ICON_IRON_OUTLINE = (16, 16, 18)  # near black, as vanilla's forged pot icon
 
 def kettle_icon(full, metal=ICON_IRON, liquid=MILK, lip=1.0, speck=SPECULAR, scale=1.0, centre=None, rim=1.0,
                 outline=ICON_OUTLINE):
-    """The Hearth's kettle from the side, for its menus: the Alpine belly sooted black below and blending into bright
+    """The Stone Hearth's kettle from the side, for its menus: the Alpine belly sooted black below and blending into bright
     metal at the shoulder, a rolled lip (lip times as thick) catching the light from the left and the iron bail over
     it; full, a skin of liquid in its mouth. Drawn at ICON_SS times the size, shrunk, then given a dark one-pixel
     outline so it reads on the menu's dark strip. scale and centre (x, bottom, in icon px) draw it smaller elsewhere,
@@ -987,15 +987,15 @@ def outlined(icon, colour=ICON_OUTLINE):
     return out
 
 
-def hearth_icon(kind):
-    """The Hearth with its fire lit or banked, for Stoke and Bank."""
+def cauldron_fire_icon(kind):
+    """The Stone Hearth with its fire lit or banked, for Stoke and Bank."""
     return paint_cauldron(kind, 0)
 
 
 def paint_cauldron(look, face):
-    """A Hearth tile (HEARTH_LOOKS): the kettle with nothing in it, its fire's glow baked in, steam over it."""
+    """A Stone Hearth tile (CAULDRON_LOOKS): the kettle with nothing in it, its fire's glow baked in, steam over it."""
     fire = look.replace("Steam", "")
-    tile = paint_hearth("Empty", face)
+    tile = paint_cauldron_body("Empty", face)
     if fire in FIRE_KINDS:
         tile.alpha_composite(paint_glow(fire, face))
     if look.endswith("Steam"):
@@ -1226,7 +1226,7 @@ def paint_chamber_entry(kind, face, part):
     if kind == "Pipe":
         # The whole pipe from the stone's side to the wall (the Stone Hearth's middle is a = 1): bedded in clay where it
         # leaves the stone low down, a short run out, an elbow, a short climb to PIPE_TOP and into the wall. The Stone
-        # Hearth's tiles draw no flue, and the Hearth, drawn after the shed, hides the pipe's foot behind its stone
+        # Stone Hearth's tiles draw no flue, and the Stone Hearth, drawn after the shed, hides the pipe's foot behind its stone
         # wherever the stone is in front.
         s = PIPE_SHIFT
         draw.polygon(wall(s - 0.075, s + 0.075, PIPE_TOP - 8, PIPE_TOP + 9), fill=shade(DAUB, light * 0.95))
@@ -1261,7 +1261,7 @@ def paint_chamber_entry(kind, face, part):
         def ground(a, across, z):
             return px(a, mid + across, z)
 
-        # From the wall right up to the Stone Hearth's foot (its middle is a = 1), so it shows by a fitted Hearth too.
+        # From the wall right up to the Stone Hearth's foot (its middle is a = 1), so it shows by a fitted Stone Hearth too.
         a0, a1 = h, 1 - H + 0.01
         draw.polygon([ground(a0, -w - 0.03, 0), ground(a1, -w - 0.03, 0), ground(a1, w + 0.03, 0), ground(a0, w + 0.03, 0)],
                      fill=shade(DAUB, 0.7))
@@ -1386,12 +1386,12 @@ def lua_tiles():
         "PREFIX": prefix,
         "SHEETS": [{"prefix": prefix, "tiles": COLUMNS * ROWS}],
         "FACE_COUNT": len(FACES),
-        "HEARTH_LOOKS": HEARTH_LOOKS,
-        "HEARTHS": [prefix + str(base + offset) for base in HEARTH_LOOKS.values() for offset in range(len(FACES))],
+        "CAULDRON_LOOKS": CAULDRON_LOOKS,
+        "CAULDRON_SPRITES": [prefix + str(base + offset) for base in CAULDRON_LOOKS.values() for offset in range(len(FACES))],
         "LIQUID": LIQUID,
-        "FIREBOX_LOOKS": FIREBOX_LOOKS,
-        "FIREBOXES": [prefix + str(base + offset) for base in FIREBOX_LOOKS.values() for offset in range(len(FACES))],
-        "FIREBOX_GLOWS": FIREBOX_GLOWS,
+        "BARE_LOOKS": BARE_LOOKS,
+        "BARE_SPRITES": [prefix + str(base + offset) for base in BARE_LOOKS.values() for offset in range(len(FACES))],
+        "BARE_GLOWS": BARE_GLOWS,
         # The Smokehouse chamber: both tiles of each face (back, then the door's), its stacks, the flue's entry
         # overlays (Pipe then Stones, each face, each part) and the ready overlay (a ham) by the door, one a face.
         "CHAMBER": CHAMBER,
@@ -1403,14 +1403,14 @@ def lua_tiles():
 
 
 def contact_sheet(tiles, path):
-    """Every hearth tile in a row, then each face lit and banked, then the Firebox's the same way (each flue, then
+    """Every hearth tile in a row, then each face lit and banked, then the Stone Hearth's the same way (each flue, then
     capped and joined lit and banked), for checking the art by eye; kept out of the mod."""
-    cells = [(index + face, None) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
-    cells += [(index + face, LIQUID + face) for index in HEARTH_LOOKS.values() for face in range(len(FACES))]
-    cells += [(index + face, None) for index in FIREBOX_LOOKS.values() for face in range(len(FACES))]
+    cells = [(index + face, None) for index in CAULDRON_LOOKS.values() for face in range(len(FACES))]
+    cells += [(index + face, LIQUID + face) for index in CAULDRON_LOOKS.values() for face in range(len(FACES))]
+    cells += [(index + face, None) for index in BARE_LOOKS.values() for face in range(len(FACES))]
     glow_looks = {"": "Lid", "Flue": "Lid", "Open": "Open", "Pot": "Pot"}
-    cells += [(FIREBOX_LOOKS[glow_looks[kind.replace("Lit", "").replace("Banked", "")]] + face, FIREBOX_GLOWS[kind] + face)
-              for kind in FIREBOX_GLOWS for face in range(len(FACES))]
+    cells += [(BARE_LOOKS[glow_looks[kind.replace("Lit", "").replace("Banked", "")]] + face, BARE_GLOWS[kind] + face)
+              for kind in BARE_GLOWS for face in range(len(FACES))]
     sheet = Image.new("RGBA", (TILE_W * len(cells), TILE_H), (96, 110, 88, 255))
     for x, (index, glow) in enumerate(cells):
         cell = tiles[index].copy()
@@ -1425,13 +1425,13 @@ def main():
     pzart.write_lua_tiles(media, MOD, lua_tiles(), "tools/build_tileset.py")
     tiles = {}
     for face in range(len(FACES)):
-        for look, index in HEARTH_LOOKS.items():
+        for look, index in CAULDRON_LOOKS.items():
             tiles[index + face] = paint_cauldron(look, face)
         tiles[LIQUID + face] = paint_liquid(face)
-        for look, index in FIREBOX_LOOKS.items():
-            tiles[index + face] = paint_firebox(look, face)
-        for kind, index in FIREBOX_GLOWS.items():
-            tiles[index + face] = paint_firebox_glow(kind, face)
+        for look, index in BARE_LOOKS.items():
+            tiles[index + face] = paint_bare(look, face)
+        for kind, index in BARE_GLOWS.items():
+            tiles[index + face] = paint_bare_glow(kind, face)
         for part in range(2):
             tiles[chamber_index(face, part)] = paint_chamber(FACES[face], part)
             for kind in FLUE_KINDS:
@@ -1441,22 +1441,22 @@ def main():
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
     (media / "textures").mkdir(parents=True, exist_ok=True)
-    pzart.write_build_icon(tiles[HEARTH], media / "textures" / "Item_TPHearth.png")
-    # Menu icons: the Forged Cauldron's, empty and full (the item, the Hearth's status row) and Fit / Remove.
+    pzart.write_build_icon(tiles[CAULDRON_PLAIN], media / "textures" / "Item_TPStoneHearthCauldron.png")
+    # Menu icons: the Forged Cauldron's, empty and full (the item, the Stone Hearth's status row) and Fit / Remove.
     cauldron_icon(False).save(media / "textures" / "Item_TPCauldron.png")
     cauldron_icon(True).save(media / "textures" / "Item_TPCauldronFull.png")
     fit_icon().save(media / "textures" / "Item_TPCauldronFit.png")
-    # The Hearth lit and banked.
+    # The Stone Hearth lit and banked.
     for kind in FIRE_KINDS:
-        pzart.write_build_icon(hearth_icon(kind), media / "textures" / f"Item_TPHearth{kind}.png", MENU_ICON)
-    pzart.write_build_icon(tiles[FIREBOX], media / "textures" / "Item_TPFirebox.png")
+        pzart.write_build_icon(cauldron_fire_icon(kind), media / "textures" / f"Item_TPStoneHearthCauldron{kind}.png", MENU_ICON)
+    pzart.write_build_icon(tiles[BARE_PLAIN], media / "textures" / "Item_TPStoneHearth.png")
     for kind in ("Lit", "Banked"):
-        icon = tiles[FIREBOX].copy()
-        icon.alpha_composite(tiles[FIREBOX_GLOWS[kind]])
-        pzart.write_build_icon(icon, media / "textures" / f"Item_TPFirebox{kind}.png", MENU_ICON)
+        icon = tiles[BARE_PLAIN].copy()
+        icon.alpha_composite(tiles[BARE_GLOWS[kind]])
+        pzart.write_build_icon(icon, media / "textures" / f"Item_TPStoneHearth{kind}.png", MENU_ICON)
     pzart.write_build_icon(chamber_icon(tiles), media / "textures" / "Item_SmokehouseChamber.png")
     # The mod list shows the cauldron steaming.
-    pzart.write_mod_icon(tiles[HEARTH_LOOKS["Steam"]], media.parent / "icon.png")
+    pzart.write_mod_icon(tiles[CAULDRON_LOOKS["Steam"]], media.parent / "icon.png")
     if len(sys.argv) > 1:
         contact_sheet(tiles, sys.argv[1])
     print(f"wrote {NAME}.pack and {NAME}.tiles to {media}")

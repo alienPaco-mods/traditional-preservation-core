@@ -1,21 +1,21 @@
 module TraditionalPreservationCore
 {
-    entity TP_Firebox
+    entity TP_StoneHearth
     {
-        /* The Hearth's fire without the cauldron: a low stone box with an iron door, for heat and cooking. OnCreate
+        /* The Stone Hearth's fire without the cauldron: a low stone box with an iron door, for heat and cooking. OnCreate
            swaps the built tile for a vanilla fireplace (fuel, lighting, the firebox to cook in); a mod may join its
            flue to a building beside it (Fish & Meat's Smokehouse). */
         component UiConfig
         {
             xuiSkin = default,
-            entityStyle = ES_TPFirebox,
+            entityStyle = ES_TPStoneHearth,
             uiEnabled = false,
         }
         component SpriteConfig
         {
             isThumpable = false,
             OnIsValid = TraditionalPreservationCore.doorFits,
-            OnCreate = TraditionalPreservationCore.OnCreateFirebox,
+            OnCreate = TraditionalPreservationCore.OnCreateStoneHearth,
             face S
             {
                 layer
@@ -31,7 +31,7 @@ module TraditionalPreservationCore
                 }
             }
         }
-        /* Fired bricks laid in clay, as the Hearth, smaller and with no cauldron; the door is beaten from scrap iron
+        /* Fired bricks laid in clay, as the Stone Hearth, smaller and with no cauldron; the door is beaten from scrap iron
            in the game's abstraction (none asked). */
         component CraftRecipe
         {
@@ -40,7 +40,7 @@ module TraditionalPreservationCore
             SkillRequired = Masonry:2,
             xpAward = Masonry:8,
             category = Masonry,
-            Tooltip = Tooltip_craft_TPFireboxDesc,
+            Tooltip = Tooltip_craft_TPStoneHearthDesc,
             inputs
             {
                 item 1 tags[base:masonstrowel] mode:keep flags[Prop1;MayDegradeLight],

@@ -6,7 +6,7 @@ H.installClock(100)
 H.installModData()
 H.installEvents()
 
--- No Hearth is built near the player.
+-- No Stone Hearth is built near the player.
 function getCell() return { getGridSquare = function() return nil end } end
 local player = H.player()
 function getPlayer() return player end
@@ -26,9 +26,9 @@ given = #player.given
 run("kit", "forge")
 check("kit(\"forge\") gives the forging and the magazine", #player.given == given + 10)
 local before = #player.given
-run("kit", "firebox")
-check("kit(\"firebox\") gives what a Firebox is built from", #player.given == before + 11)
-check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"firebox\")", 1, true) ~= nil
+run("kit", "stone")
+check("kit(\"stone\") gives what a Stone Hearth is built from", #player.given == before + 11)
+check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"stone\")", 1, true) ~= nil
     and #player.given == before + 11)
 before = #player.given
 run("kit", "smokehouse")

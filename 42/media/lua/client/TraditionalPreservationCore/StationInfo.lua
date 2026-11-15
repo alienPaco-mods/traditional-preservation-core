@@ -164,7 +164,7 @@ function StationInfo.contents(entity)
 end
 
 -- A block for a plain station, in the series' order. options:
---   place: Weather's or the Hearth's place word; temperature and rate (0 to 1), when the station works by the
+--   place: Weather's or the Stone Hearth's place word; temperature and rate (0 to 1), when the station works by the
 --     weather (the rate in the slow colour under UI.SLOW_RATE); rows: the mod's own { labelKey, value } after them;
 --   batches: { name, progress, hoursLeft }, a bar each (hoursLeft nil: paused, frozen), numbered when numbered is true;
 --   waiting, finished: counts for the notes (0 or nil for none); notes: the mod's own, last.

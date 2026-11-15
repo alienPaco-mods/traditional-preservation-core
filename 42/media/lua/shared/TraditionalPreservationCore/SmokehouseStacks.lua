@@ -1,9 +1,9 @@
 -- Traditional Preservation core: a Smokehouse stack's fire counters (moved out of Smokehouse.lua 2026-11-14, refactor
 -- b3). What hangs inside is each mod's: a stack records its owner when it starts (startCounters), and a mod steps
 -- only its own stacks. The core counts the joined fire for them: hot, the hours of the stoked session now running
--- (Hearth.logFire), and cold, banked hours and the hours of stoked sessions that broke off (fireStep). Plain modData
+-- (Fire.logFire), and cold, banked hours and the hours of stoked sessions that broke off (fireStep). Plain modData
 -- in, plain modData out; Smokehouse passes every function on, so callers name Smokehouse only.
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 
 local SmokehouseStacks = {}
 
@@ -26,8 +26,8 @@ local function hotToCold(modData)
     modData.hot, modData.hotCool = 0, 0
 end
 
--- Brings a stack's counters up to the fire's record (a Firebox's Hearth state), or none (not joined). A new or
--- rebuilt Firebox starts from what it has now; whatever hot the stack had becomes cold, as it does when the session
+-- Brings a stack's counters up to the fire's record (a Stone Hearth's fire state), or none (not joined). A new or
+-- rebuilt Stone Hearth starts from what it has now; whatever hot the stack had becomes cold, as it does when the session
 -- it counted in ends. Of the stoked hours since the last look, those in a session that has since begun are hot.
 -- coolShare (default 1) is the share of the hours since the last look that were cool enough for cold smoke: fire
 -- hours count as cold only then, stoked or banked, so hot keeps its cool part (hotCool) for when its session breaks
@@ -53,7 +53,7 @@ function SmokehouseStacks.fireStep(modData, fire, coolShare)
     -- No session running now: whatever was stoked since belonged to one that has ended (even one that began and
     -- ended between two looks, while away).
     if not fire.session or fire.session ~= modData.smokeSession then
-        local inNew = math.min(stoked, Hearth.sessionHours(fire))
+        local inNew = math.min(stoked, Fire.sessionHours(fire))
         hotToCold(modData)
         modData.cold = modData.cold + (stoked - inNew) * coolShare
         modData.hot, modData.hotCool = inNew, inNew * coolShare

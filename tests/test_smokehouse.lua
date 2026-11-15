@@ -1,4 +1,4 @@
--- Checks the Smokehouse outside the game: the chamber's tiles, joining a Firebox to it, and the fire's two counters
+-- Checks the Smokehouse outside the game: the chamber's tiles, joining a Stone Hearth to it, and the fire's two counters
 -- on a stack. Run from TraditionalPreservationCore: luajit tests/test_smokehouse.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
@@ -7,7 +7,7 @@ H.installClock(100)
 H.installModData()
 H.installEvents()
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 
@@ -33,7 +33,7 @@ check("facing S the door tile is one south of the back tile", dx == 0 and dy == 
 dx, dy = Smokehouse.otherStep(1, 1)
 check("facing E the back tile is one west of the door tile", dx == -1 and dy == 0)
 
--- Where a Firebox may stand.
+-- Where a Stone Hearth may stand.
 check("facing S the back tile's long sides", Smokehouse.sideAllowed(0, 0, 1, 0) and Smokehouse.sideAllowed(0, 0, -1, 0))
 check("facing S the back gable", Smokehouse.sideAllowed(0, 0, 0, -1))
 check("never on the shed's other tile", not Smokehouse.sideAllowed(0, 0, 0, 1))
@@ -55,12 +55,12 @@ check("the ham hangs on the door's tile while stacks wait", Smokehouse.readySpri
 check("never on the back tile, nor with nothing finished", Smokehouse.readySprite(0, 0, true) == nil and Smokehouse.readySprite(0, 1, false) == nil)
 check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_READY) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_READY)
 
--- The shed's own refusals (Hearth.connectRefusal asks them after "already joined").
+-- The shed's own refusals (Fire.connectRefusal asks them after "already joined").
 check("a long side of a free shed joins", Smokehouse.chamberRefusal({ allowed = true }) == nil)
 check("door end refused", Smokehouse.chamberRefusal({ allowed = false }) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
-check("one Firebox a shed", Smokehouse.chamberRefusal({ allowed = true, chamberJoined = true }) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
-local flue = Hearth.connection(Smokehouse.ID)
-check("the flue is a Hearth connection by its kits, blocking only its own slot", flue ~= nil and flue.kits == Smokehouse.FLUE_KITS
+check("one Stone Hearth a shed", Smokehouse.chamberRefusal({ allowed = true, chamberJoined = true }) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
+local flue = Fire.connection(Smokehouse.ID)
+check("the flue is a Stone Hearth connection by its kits, blocking only its own slot", flue ~= nil and flue.kits == Smokehouse.FLUE_KITS
     and flue.kinds == Smokehouse.FLUE_KINDS and flue.blocks == "connection" and flue.finds ~= nil and flue.joined ~= nil)
 check("Connect takes 400 ticks, Disconnect 200, 5 Masonry", flue.kits.Pipe.ticks == 400 and flue.kits.Stones.removeTicks == 200
     and flue.kits.Pipe.xp[1] == "Masonry" and flue.kits.Pipe.xp[2] == 5 and flue.kits.Stones.anim == "DigShovel")
@@ -88,31 +88,31 @@ check("a shed may be built in the open", TraditionalPreservationCore.notInRoom({
 check("never in a room", not TraditionalPreservationCore.notInRoom({ square = room }))
 Doors.fits = oldFits
 
--- The stack's counters against the Firebox's record (Hearth.logFire), and its owner.
+-- The stack's counters against the Stone Hearth's record (Fire.logFire), and its owner.
 local stack = {}
 Smokehouse.startCounters(stack, "SomeMod", 8)
 check("a new stack starts at nought, with its owner and need", stack.hot == 0 and stack.cold == 0 and stack.hotNeed == 8
     and Smokehouse.owns(stack, "SomeMod") and not Smokehouse.owns(stack, "OtherMod"))
 local fire = {}
-Hearth.logFire(fire, 100, nil, nil)
+Fire.logFire(fire, 100, nil, nil)
 check("joining takes the fire's record as it stands", Smokehouse.fireStep(stack, fire) == nil
     and stack.smokeFrom == fire.fireId and stack.lastStoked == 0)
-Hearth.logFire(fire, 101, Hearth.STOKED, 120)
-Hearth.logFire(fire, 104, Hearth.STOKED, 120)
+Fire.logFire(fire, 101, Fire.STOKED, 120)
+Fire.logFire(fire, 104, Fire.STOKED, 120)
 local stoked, banked = Smokehouse.fireStep(stack, fire)
 check("stoked hours in the session are hot, and handed back", near(stack.hot, 3) and not Smokehouse.hotDone(stack)
     and near(stoked, 3) and banked == 0)
-Hearth.logFire(fire, 104.5, nil, nil)
-Hearth.logFire(fire, 105, Hearth.STOKED, 120)
-Hearth.logFire(fire, 110, Hearth.STOKED, 120)
+Fire.logFire(fire, 104.5, nil, nil)
+Fire.logFire(fire, 105, Fire.STOKED, 120)
+Fire.logFire(fire, 110, Fire.STOKED, 120)
 Smokehouse.fireStep(stack, fire)
 check("a short gap keeps the cook going", near(stack.hot, 8.5) and Smokehouse.hotDone(stack))
 
 local cool = {}
 Smokehouse.startCounters(cool, "SomeMod", 4)
 Smokehouse.fireStep(cool, fire)
-Hearth.logFire(fire, 111, Hearth.BANKED, 160)
-Hearth.logFire(fire, 115, Hearth.BANKED, 160)
+Fire.logFire(fire, 111, Fire.BANKED, 160)
+Fire.logFire(fire, 115, Fire.BANKED, 160)
 stoked, banked = Smokehouse.fireStep(cool, fire, 0.5)
 -- The stoked hour before banking ended its session: smoke too, at the same share.
 check("banked hours are smoke by the share of cool hours", near(banked, 4) and near(stoked, 1) and near(cool.cold, 2.5) and cool.hot == 0)
@@ -120,8 +120,8 @@ check("banked hours are smoke by the share of cool hours", near(banked, 4) and n
 local noCook = { noHot = true }
 Smokehouse.startCounters(noCook, "SomeMod", 4)
 Smokehouse.fireStep(noCook, fire)
-Hearth.logFire(fire, 116, Hearth.STOKED, 160)
-Hearth.logFire(fire, 119, Hearth.STOKED, 160)
+Fire.logFire(fire, 116, Fire.STOKED, 160)
+Fire.logFire(fire, 119, Fire.STOKED, 160)
 Smokehouse.fireStep(noCook, fire)
 -- An hour banked before the stoking, then three stoked.
 check("a stack that never cooks takes stoked hours as smoke at once", noCook.hot == 0 and near(noCook.cold, 4)

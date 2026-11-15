@@ -30,7 +30,7 @@ local function square(x, y)
 end
 
 local Tiles = require "TraditionalPreservationCore/Tiles"
-local Hearth = require "TraditionalPreservationCore/Hearth"
+local Fire = require "TraditionalPreservationCore/Fire"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 dofile("42/media/lua/server/TraditionalPreservationCore/SmokehouseWorld.lua")
 local World = Smokehouse.World
@@ -74,32 +74,32 @@ check("finished stacks waiting hang a ham by the door", table.concat(fullDoor.sp
 World.refresh(full)
 check("never on the back tile", #full.sprites == 0)
 
--- A Firebox on the visible long side (east, facing S) of the back tile, its flue a clay pipe into it.
-local firebox = { square = square(11, 10), modData = {} }
-table.insert(firebox.square.objects, firebox)
-function firebox:getModData() return self.modData end
-function firebox:getSquare() return self.square end
-function firebox:getX() return 11 end
-function firebox:getY() return 10 end
-local isFire, flueSquare = Hearth.isFire, Hearth.flueSquare
-Hearth.isFire = function(object) return object == firebox end
-Hearth.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
-Hearth.join(Hearth.stateOf(firebox.modData), Smokehouse.ID, "Pipe", "Left")
+-- A Stone Hearth on the visible long side (east, facing S) of the back tile, its flue a clay pipe into it.
+local stoneHearth = { square = square(11, 10), modData = {} }
+table.insert(stoneHearth.square.objects, stoneHearth)
+function stoneHearth:getModData() return self.modData end
+function stoneHearth:getSquare() return self.square end
+function stoneHearth:getX() return 11 end
+function stoneHearth:getY() return 10 end
+local isStoneHearth, flueSquare = Fire.isStoneHearth, Fire.flueSquare
+Fire.isStoneHearth = function(object) return object == stoneHearth end
+Fire.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
+Fire.join(Fire.stateOf(stoneHearth.modData), Smokehouse.ID, "Pipe", "Left")
 World.refresh(back)
-check("the joined Firebox's pipe shows where it enters", table.concat(back.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_ENTRY)
-check("the shed knows its fire", Smokehouse.joinedFirebox(door) == firebox and Smokehouse.fireOf(back) ~= nil)
+check("the joined Stone Hearth's pipe shows where it enters", table.concat(back.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_ENTRY)
+check("the shed knows its fire", Smokehouse.joinedStoneHearth(door) == stoneHearth and Smokehouse.fireOf(back) ~= nil)
 local redraws = back.clears
 World.refresh(back)
 check("and doesn't redraw while nothing changes", back.clears == redraws)
 
--- The connection's lookups find the tile from the Firebox's own squares, and refuse a tile it isn't beside.
-local flue = Hearth.connection(Smokehouse.ID)
-check("finds: the chamber tile on the flue's side", flue.finds(firebox) == back and flue.joined(firebox) == back)
-check("a shed already joined refuses another", flue.refusal(firebox, back) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
-check("a tile the Firebox isn't beside counts as not allowed", flue.refusal(firebox, full) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
+-- The connection's lookups find the tile from the Stone Hearth's own squares, and refuse a tile it isn't beside.
+local flue = Fire.connection(Smokehouse.ID)
+check("finds: the chamber tile on the flue's side", flue.finds(stoneHearth) == back and flue.joined(stoneHearth) == back)
+check("a shed already joined refuses another", flue.refusal(stoneHearth, back) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
+check("a tile the Stone Hearth isn't beside counts as not allowed", flue.refusal(stoneHearth, full) == "IGUI_TraditionalPreservationCore_FlueDoorEnd")
 
--- Connect on a shed with two Fireboxes beside it offers the one that may join, whichever is found first (rule 9).
-local function fireboxAt(x, y)
+-- Connect on a shed with two Stone Hearths beside it offers the one that may join, whichever is found first (rule 9).
+local function stoneHearthAt(x, y)
     local fire = { square = square(x, y), modData = {} }
     table.insert(fire.square.objects, fire)
     function fire:getModData() return self.modData end
@@ -108,18 +108,18 @@ local function fireboxAt(x, y)
 end
 local shed = chamber(30, 30, Tiles.CHAMBER, true, 0)
 chamber(30, 31, Tiles.CHAMBER + 1, false)
-local west, east = fireboxAt(29, 30), fireboxAt(31, 30)
-local refusal = Hearth.connectRefusal
-Hearth.isFire = function(object) return object == west or object == east end
+local west, east = stoneHearthAt(29, 30), stoneHearthAt(31, 30)
+local refusal = Fire.connectRefusal
+Fire.isStoneHearth = function(object) return object == west or object == east end
 for _, refused in ipairs({ west, east }) do
-    Hearth.connectRefusal = function(fire) return fire == refused and "refused" or nil end
+    Fire.connectRefusal = function(fire) return fire == refused and "refused" or nil end
     local found = Smokehouse.connectCandidate(shed)
-    check("two Fireboxes, " .. (refused == west and "west" or "east") .. " refused: the other is offered",
-        found ~= nil and found.firebox ~= refused)
+    check("two Stone Hearths, " .. (refused == west and "west" or "east") .. " refused: the other is offered",
+        found ~= nil and found.stoneHearth ~= refused)
 end
-Hearth.connectRefusal = function() return "refused" end
-check("both refused: the first found, for its refusal", Smokehouse.connectCandidate(shed).firebox == Smokehouse.fireboxesBy(shed)[1].firebox)
-Hearth.connectRefusal = refusal
-Hearth.isFire, Hearth.flueSquare = isFire, flueSquare
+Fire.connectRefusal = function() return "refused" end
+check("both refused: the first found, for its refusal", Smokehouse.connectCandidate(shed).stoneHearth == Smokehouse.stoneHearthsBy(shed)[1].stoneHearth)
+Fire.connectRefusal = refusal
+Fire.isStoneHearth, Fire.flueSquare = isStoneHearth, flueSquare
 
 H.done()

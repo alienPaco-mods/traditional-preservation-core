@@ -79,18 +79,18 @@ Dec Basement  0.065098 346.700100 8.089718 0.323589 Basement
 Dec Moved     0.044910 354.186715 8.089718 0.323589 Basement
 
 Ledger at the end
-Basement           6104.559220476
-BasementRate       0.613867470
-Covered            7267.364099429
-CoveredRate        0.760157614
-Enclosed           7206.686475815
-EnclosedRate       0.512840314
-Loft               8113.113263157
-LoftRate           0.928165495
-Open               7206.686475815
-OpenRate           0.512840314
-Sheltered          7845.616771033
-ShelteredRate      0.820118211
+cultureBasement    6104.559220476
+cultureBasementRate 0.613867470
+cultureCovered     7267.364099429
+cultureCoveredRate 0.760157614
+cultureEnclosed    7206.686475815
+cultureEnclosedRate 0.512840314
+cultureLoft        8113.113263157
+cultureLoftRate    0.928165495
+cultureOpen        7206.686475815
+cultureOpenRate    0.512840314
+cultureSheltered   7845.616771033
+cultureShelteredRate 0.820118211
 groundTemperature  17.128915669
 lastHour           15119.999999981
 seasonTemperature  14.802101524

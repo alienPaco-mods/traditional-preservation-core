@@ -1,7 +1,7 @@
 -- Traditional Preservation core: a craft recipe's bar and clock. Weather-timed runs (startRun, showProgress) count the
 -- work the ledger says was done; clock-timed ones (startClock, showClock) the hours since they began; batchStatus is
--- a running batch's popup numbers; setRecipeHours sets a recipe's time from the sandbox. Weather passes every function
--- here on (Weather.startRun, ...), so callers name Weather only.
+-- a running batch's popup numbers; setRecipeHours sets a recipe's time from the sandbox, recipeHours reads it back.
+-- Weather passes every function here on (Weather.startRun, ...), so callers name Weather only.
 local Weather = require "TraditionalPreservationCore/Weather"
 
 local CraftClock = {}
@@ -37,6 +37,11 @@ function CraftClock.setRecipeHours(fullName, hours, tag)
         return
     end
     recipe:Load(fullName, "{ time = " .. tostring(math.floor(hours * SECONDS_PER_HOUR)) .. ", }")
+end
+
+-- A running batch's recipe time in hours (setRecipeHours's), for batchStatus.
+function CraftClock.recipeHours(craftRecipeData)
+    return craftRecipeData:getRecipe():getTime() / SECONDS_PER_HOUR
 end
 
 -- Work that goes by the clock alone (Fish's press, Salt's leaching) needs no ledger, only the hour it began.

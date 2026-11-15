@@ -6,8 +6,8 @@
 -- The weather itself is kept once for the whole series (Weather.shared): the last reading and the season's means.
 -- Each mod's ledger copies them at every record, so a mod added to a running save agrees with the others about the
 -- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
--- A craft recipe's bar and clock (startRun, showProgress, setRecipeHours, startClock, showClock, batchStatus) are
--- CraftClock's; Weather passes them on, so callers name Weather only.
+-- A craft recipe's bar and clock (startRun, showProgress, setRecipeHours, recipeHours, startClock, showClock,
+-- batchStatus) are CraftClock's; Weather passes them on, so callers name Weather only.
 local Weather = {}
 
 -- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
@@ -346,7 +346,7 @@ end
 -- Moved to CraftClock, still reached here (DEVGUIDE refactoring rule 5). CraftClock requires Weather, so it is
 -- required the first time one of its functions is called.
 local craftClock
-for _, name in ipairs({ "startRun", "showProgress", "setRecipeHours", "startClock", "showClock", "batchStatus" }) do
+for _, name in ipairs({ "startRun", "showProgress", "setRecipeHours", "recipeHours", "startClock", "showClock", "batchStatus" }) do
     Weather[name] = function(...)
         craftClock = craftClock or require("TraditionalPreservationCore/CraftClock")
         return craftClock[name](...)

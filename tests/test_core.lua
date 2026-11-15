@@ -24,6 +24,8 @@ check("an unknown place goes by the day; every place has a rule", Weather.placeT
     and Weather.DEFAULT_PLACE == "Sheltered")
 check("a batch paused there has no time left", Weather.batchStatus(5, 10, { temperature = -5, seasonTemperature = -5 }, "Open",
     function() return 0 end).hoursLeft == nil)
+check("a running batch's recipe hours are its script time", Weather.recipeHours({ getRecipe = function()
+    return { getTime = function() return 5 * 3600 end } end }) == 5)
 local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
 check("place: a room by the season, a little warmer in a cool one", near(Weather.placeTemperature(ledger, "Sheltered"), 13.5))

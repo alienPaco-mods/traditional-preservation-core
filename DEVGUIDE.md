@@ -1,24 +1,25 @@
 # Traditional Preservation: development guide
 
-How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. What the mods are and
-how they fit together: `~/MODS/WIP/TPCore/SERIES.md`. The plan for the shared core is in `~/MODS/WIP/TPCore/ROADMAP.md`
-(local notes, not in git). Verified engine facts are in `~/MODS/_pzdev/ENGINE_NOTES.md`.
+How to work on the TP mods (Salt, Fish, Yeast, Vinegar, and every new one) and on FuelBarrel. What each mod does is
+in its own README. For the engine's side, read the Umbrella stubs (the classes' signatures) and a decompile of the
+game's jar (their bodies); a fact the code relies on is noted where it is used.
 
-Tip: `alias tp=~/MODS/TraditionalPreservationCore/tp` (the examples below use it).
+The examples run `tp`, the script at the top of this folder (`TraditionalPreservationCore/tp`, Python 3; tests need
+`luajit`). It expects the mod repos side by side in one folder: `TP_MODS` names it (default `~/MODS`), and
+`TP_INSTALLED` the game's mod folder (default `~/Zomboid/mods`).
 
 ## Where things live
 
 | Path | What it is |
 |---|---|
-| `~/MODS/<Mod>` | The source. Each mod is its own git repo. Edit here. |
+| `<TP_MODS>/<Mod>` | The source. Each mod is its own git repo. Edit here. |
 | `~/Zomboid/mods/<Mod>` | The installed copy the game loads. Only `tp install` writes here. |
-| `~/MODS/TraditionalPreservationCore` | TP Core, the mod itself (`42/`, `README.md`, `DEVHELP.md`, `WORKSHOP.txt`, its player guide `6_Core_Guide.md`), and the shared tooling: `tp`, the test harness, the golden results, this guide. |
-| `~/MODS/guides` | The player guides. The copy inside each mod is made from these by `tp guides`. |
-| `~/MODS/_pzdev` | Engine notes and `jdis.py` for reading the game's classes. |
+| `<TP_MODS>/TraditionalPreservationCore` | TP Core, the mod itself (`42/`, `README.md`, `DEVHELP.md`, `WORKSHOP.txt`, its player guide `6_Core_Guide.md`), and the shared tooling: `tp`, the test harness, the golden results, this guide. |
+| `<TP_MODS>/guides` | The player guides' source (not in any mod's repo). The copy inside each mod is made from these by `tp guides`. |
 
 ## The everyday loop
 
-1. Edit in `~/MODS/<Mod>`.
+1. Edit in `<TP_MODS>/<Mod>`.
 2. `tp test <Mod>`: the mod's tests, then its golden checks. Before the tests it lints the shipped files: Lua calling
    what Kahlua lacks, and translation JSON the game would refuse (not valid, or a key given twice).
 3. `tp install <Mod>`: runs the same checks again and copies the mod only if they all pass.
@@ -57,7 +58,7 @@ in sorted order (`pairs` order changes between runs).
 
 `tp install` keeps each file's time when it copies. If you edit a file in the **installed** copy, that file is newer
 than the source, and the next install stops and lists it. It also stops for files that exist only in the installed
-copy. Bring the edit into `~/MODS/<Mod>` first, or pass `--force` to overwrite. Mods must be real copies, never
+copy. Bring the edit into `<TP_MODS>/<Mod>` first, or pass `--force` to overwrite. Mods must be real copies, never
 symlinks: the game doesn't follow them reliably.
 
 ## Tests
@@ -92,7 +93,7 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installMenus()` | What a right-click menu file touches: vanilla's classes, the inventory in reach, the action queue, the pick-up check. Returns the record (`.carried` to set; `.queued`, `.moved`, `.probes`, `.walks` to read). |
 | `H.menu()`, `H.vessel(name, fluid, litres, capacity)`, `H.class(name)` | A context menu that keeps its options and submenus, an item with a fluid container, a vanilla class to derive from. |
 
-**How things are named** (2026-11-12; display text only, ids and save keys never follow):
+**How things are named** (display text only, ids and save keys never follow):
 
 - A state the same piece passes through goes in brackets after its name, as vanilla's do (`Basil (Dried)`, `Clay Jar
   (Unfired)`), several joined by commas: `Walleye (Salt Cured)`, `Steak (Corned)`, `Beef (Hot Smoked)`, `Lard
@@ -106,7 +107,7 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
   description (Salt's item on the heat is a `Bucket of Boiling Brine`; "a bucket of brine" is a bucket holding Brine).
 - A recipe is named for what it gives: `Soak Fish` gives `(Soaked)`.
 
-**The console convention** (2026-11-12; every TP mod, and the template):
+**The console convention** (every TP mod, and the template):
 
 | Command | Means |
 |---|---|
@@ -121,7 +122,7 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 A noun looks and a verb changes (`cask()`, `setCask()`); singular is the nearest station, plural every loaded one
 (`pallet()`, `pots()`). Hours for stations, days for stored food, and the help line says which. A renamed or
 removed command is changed in four places: the Dev file, `tests/test_console.lua`, `DEVHELP.md` and the guide's
-Tester's Toolkit (edit `~/MODS/guides`, then `tp guides`).
+Tester's Toolkit (edit the guides' source, then `tp guides`).
 
 Every mod has a `tests/test_console.lua`: it calls each console command its stand-ins can carry, so a command can't
 break unseen (Yeast's `TPY.here()` did). Add a line there with each new command. A file with a right-click menu
@@ -134,13 +135,12 @@ every mod's translation files for a literal `%`.
 
 ## The shared core
 
-`~/MODS/TraditionalPreservationCore` is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP
-mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
+This folder is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP mod requires. Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
 line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
-Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13; the one name callers use, passing on
+Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
@@ -159,10 +159,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
 ```
 
 1. Edit the core only here, and run `tp test Core` (or `luajit tests/test_core.lua` from this folder).
-2. `tp install Core` ships only its `42/` folder; the rest of this folder is tooling and private notes.
-3. **Every TP mod requires TP Core** (Dairy first; Yeast, Fish, Vinegar and Salt moved over 2026-11-10). None
-   carries a copy under `<Mod>/Core/` any more. `tp sync` is left for a mod that would want a copy again, and refuses
-   a mod whose mod.info requires TP Core. FuelBarrel isn't TP and doesn't require it (its tests and builder only
+2. `tp install Core` ships only its `42/` folder; the rest of this folder is tooling.
+3. **Every TP mod requires TP Core**, and none carries a copy of it. `tp sync` copies the core under `<Mod>/Core/` for
+   a mod that wants its own copy, and refuses a mod whose mod.info requires TP Core. FuelBarrel isn't TP and doesn't require it (its tests and builder only
    borrow the core's harness and `pzart`). A test with its own `require` stub (e.g. `name:find("^TraditionalPreservation<Mod>/")`)
    must also let `^TraditionalPreservationCore/` through, or use `H.useModPaths()`.
 4. **Modules only the required mod has:** `Fire` (the Stone Hearth and its cauldron, save key `tpFire`, the opt-in "by
@@ -204,8 +203,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
      that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
      put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`info.part` is the
      cauldron's state; `FireUI.notes(info)` builds every Info note, so a test can read them).
-   - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, sprite, overlay, heats, onFire, display, status, menu, rows, notes }`, the
-     Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
+   - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, sprite, overlay, heats, onFire, display, status, menu, rows, notes }`):
+     what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
      its simmer in `FireWorld`) is the first, written against the registry alone. Calling `attach` again with the
      same id adds fields, so rules go in shared Lua and the menu in client Lua. Its state is its own table under its
      id in `tpFire` (`Fire.partState(modData, id)`; the cauldron's is `Cauldron.state(modData)`, and
@@ -215,7 +214,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses a spec without an
      id and a field given again as something else. Fit / Remove are Core's (`TPFireFit`, by the attachment's `fit`).
    - **Connections** (`Fire.connect{ id, kinds, kits, blocks, finds, joined, refusal, onChange, connectText,
-     disconnectText, disconnectHelp, icon, notes, smoke }`, the hub's step iii, 2026-11-14): what is built onto a fire in
+     disconnectText, disconnectHelp, icon, notes, smoke }`): what is built onto a fire in
      its second slot, one at a time; the Smokehouse's flue is the first (`Smokehouse.ID`, in `Smokehouse.lua`, its notes
      in `SmokehouseUI`). Its state is `connected` (the id) and `{ kind, side }` under the id in `tpFire`
      (`Fire.join(state, id, kind, side)`, `Fire.unjoin(state)`, `Fire.connectedTo(state)`, `Fire.joinOf(state)`,
@@ -341,7 +340,7 @@ the code does now; history goes in the CHANGELOG, except for an old-save migrati
 
 **Vanilla wraps.** A wrap saves the vanilla function in a local (`vanilla...`), replaces it, and calls the saved
 one for anything that isn't the mod's. Its comment says why vanilla's isn't enough. After every B42 patch, check
-each one below against the new vanilla Lua (`_pzdev`, ENGINE_NOTES); the copied add loop in `UI.slotRules` most
+each one below against the new vanilla Lua; the copied add loop in `UI.slotRules` most
 of all:
 
 | Wrapped vanilla function | Where | Why |
@@ -380,8 +379,7 @@ The handler order differs: Transfer runs its handlers in the order added, Pour a
 (the last added's before first). Each module's header says which; a handler that depends on another's must not
 assume the other order.
 A wrap `require`s the vanilla file plainly before it wraps (`require "Fluids/ISFluidTransferAction"`), never through
-`pcall`: the engine's `require` of a missing file only warns, and vanilla's file is loaded first anyway (ENGINE_NOTES
-"require"). The test harness stands in for the file (`H.preloadVanilla`).
+`pcall`: the engine's `require` of a missing file only warns, and vanilla's file is loaded first anyway. The test harness stands in for the file (`H.preloadVanilla`).
 
 ## Tile numbers: the generated Tiles.lua
 
@@ -409,17 +407,16 @@ overlays, stages, styles, hangers.
   formatter throws on both. Write "percent", or pass plain tokens and swap the values in with `gsub` (the `say`
   pattern).
 - **Unique `tiledef` numbers.** mod.info is the record: `tp new` takes the next number above every mod.info in
-  `~/MODS` and the installed mods, and `tp status` warns on a duplicate. A tileset holds at most 512 tiles.
+  `TP_MODS` and the installed mods, and `tp status` warns on a duplicate. A tileset holds at most 512 tiles.
 - **Every workstation needs its own sprite**, or the world won't load. Style names can't contain `_`.
 - **A station tracked from Lua must check it is really loaded.** `getSquare()` and `getObjectIndex()` aren't enough:
   an unloaded object passes both until its chunk has been saved. Compare `getCell():getGridSquare(x, y, z)` with its
-  square (see ENGINE_NOTES, "Chunk unload and generators").
+  square (the FAQ below says why).
 - `mod.info`: `author=alienPaco`.
 
 ## Refactoring rules
 
-What a refactor (and new code) aims for. FluidAgeing was the worked example (2026-11-14); its ROADMAP_HISTORY entry
-lists every finding.
+What a refactor (and new code) aims for. `FluidAgeing.lua` follows every rule and is the one to read first.
 
 1. **Rules on plain tables, engine calls apart.** A module's rules (ages, stages, merges, rates) take and return plain
    tables and numbers and get luajit tests; the parts that call the engine (`getFluidContainer`, `getModData`,
@@ -455,9 +452,9 @@ lists every finding.
 12. **Core is mod-agnostic.** Core names mechanisms, not one mod's product: no milk, blood or fish words in its
     fields, functions or save keys, and no special case that only one mod's fluid or station can use. What a mod
     brings is data it registers (names, numbers, curves, rules as functions). When a Core feature was built for one
-    mod, fold it into the general mechanism once that mechanism can carry it. Example: FluidAgeing's `scalded` (Dairy's milk) was the same idea as its `states` (a variant of the fresh fluid
-    with its own name and spoiling), only brought about by heat instead of by hand; it is now a state with
-    `heat = true`, so any kind can have a heat-made variant without its own field in Core.
+    mod, fold it into the general mechanism once that mechanism can carry it. Example: Dairy's scalded milk is not a
+    field of its own in FluidAgeing but one of its `states` (a variant of the fresh fluid with its own name and
+    spoiling) with `heat = true`, brought about by heat instead of by hand, so any kind can have a heat-made variant.
 13. **No guard for what the engine always has.** `x.method and x:method()` or a `pcall` around an engine call is for
     a real second kind only (a server or a test with no inventory menu, a non-food item that has no spices); say
     which in a comment. A guard that only covers a test stand-in missing the method is wrong: give the stand-in the
@@ -485,13 +482,13 @@ copies `gridOn` from the series' weather). A basement swings two fifths as far a
 (`basementTemperature`); the ground is the season mean's own 30-day mean (`GROUND_HOURS`, `groundTemperature` in the
 series' weather and copied into each ledger by `Weather.seasonTemperature`), so a cellar is coldest in March and warmest in August.
 Season tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. Ten days is long enough that one warm afternoon in January does
-nothing, and short enough that spring arrives within a fortnight. Until 2026-11 a room was the mean + 10 C (capped at
-28) and a basement 15 C flat: a heated house, which most players don't keep (consistency sweep, step C).
-A loft (sweep step H, 2026-11-12) is the basement's mirror: the top storey, a room at z >= 1 whose square above is in
+nothing, and short enough that spring arrives within a fortnight. A room is not a heated house: most players don't
+keep one heated.
+A loft is the basement's mirror: the top storey, a room at z >= 1 whose square above is in
 no room (so a middle storey of a tall building and a bungalow's ground floor stay Sheltered). It reads the season's
 mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the sun on the roof, and 22 C while the
-grid is on. It came from the Stockfish Pallet, which had a loft of its own.
-Enclosed (step J, 2026-11-12; the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
+grid is on.
+Enclosed (the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
 wind, but a box of planks with no thermal mass, so it reads the day's temperature as Open does, and the grid doesn't
 warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its World
 entry. Only Fish & Meat's Smokehouse does; the Yeast, Vinegar and Dairy season reports show no
@@ -501,8 +498,7 @@ column for it.
 (its curve, its hours), never the temperature it is given.
 **Exceptions:** an exception to that rule must rest on **realism**, and must **keep every process's
 path open** (no process shut out of the year by the place model; stockfish keeps its winter in the open and a longer
-season under a roof). Write each one down here with its reason. The ones there are (Fish & Meat, sweep step I; the
-Smokehouse's day's temperature was one until it became the Enclosed place, step J):
+season under a roof). Write each one down here with its reason. The ones there are (all Fish & Meat's):
 - **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
   were aged through the summer heat on purpose.
 - **Salt fish's and charque's muggy spoiling reads the ten-day mean**, not the day's temperature, in the open air
@@ -514,16 +510,16 @@ Smokehouse's day's temperature was one until it became the Enclosed place, step 
   temperature as the open air must.
 More places (north wall, near the stove) would ask the player to learn rules the game can't show them. Covered
 and Sheltered read the same temperature but for a room's winter lift (`Weather.roomTemperature`: +2 C at a season of
-10 C or below, none from 18; realism pass 1b) off the grid (a room is 22 C on it; a generator does not count, as in
+10 C or below, none from 18) off the grid (a room is 22 C on it; a generator does not count, as in
 vanilla); Fish & Meat tells them apart for its drying rates (moving air and shade).
 By a fire and by banked embers are `Weather.FIRE_PLACES` that Stone Hearth registers, indoors at a fixed 28 / 24 C, and
 under an open roof or in the open (`FiresideCovered`, `FiresideOpen`, `EmbersCovered`, `EmbersOpen`) at that place's air
-plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat (realism pass L1). The ledger keeps
+plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat. The ledger keeps
 no totals for them, so `Fire.catchUp` counts them by the clock until the fuel noted by `Fire.noteFire` runs out, then gives the
 place under the fire its share of the gap by time. A station's World calls `Fire.notePlace`, which catches a run up
 at its old place before writing the new one.
 
-**Which kind of station? (the station rule, consistency sweep step F)**
+**Which kind of station? (the station rule)**
 Three kinds, by what the station holds:
 - **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Yeast's Shelf, Vinegar's
   Floor, Salt's Vat, Fish & Meat's Tub; `DryingCraftLogic` for a frame of stacks: the Frame, Beams, Gantry and
@@ -532,7 +528,7 @@ Three kinds, by what the station holds:
   (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a hover popup on each running batch.
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
   timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
-  trusted with fluid amounts in a station (ENGINE_NOTES "Fluids"), a cask is one pool with no batch, and the
+  trusted with fluid amounts in a station, a cask is one pool with no batch, and the
   incubator's milk cools from what it was. It is read by **an Info window on click** (`InfoWindow.clickOpens`) and
   its right-click line.
 - **Storage that only changes how a finished item keeps or ripens: a container or the item's own clock**, no run at
@@ -575,9 +571,8 @@ alone would start the recipe on the inputs its OnTest passes and leave the rest 
 Fish & Meat's tub uses it: Corn Salted Meat refuses a Leg of Pork.
 
 **Why is the core one required mod instead of a copy in each mod?**
-It began as a copy in each mod, so a player could subscribe to one with no dependency (PZ loads only one file per Lua
-path, so each copy lived under its mod's own path). That changed on 2026-11-10: the series now shares *stations*,
-not only code (the Stone Hearth with its cauldron is wanted by Dairy and later by cheese and others), and a station
+A copy in each mod would let a player subscribe to one with no dependency (PZ loads only one file per Lua path, so
+each copy would live under its mod's own path). But the series shares *stations*, not only code (the Stone Hearth with its cauldron is wanted by Dairy and later by cheese and others), and a station
 needs one tileset, one save key and one set of timed actions. Two mods can't both ship it. One required mod also
 means one copy of each fix, and one place for multiplayer's network code later. Its modules still return a local
 table; the only globals are what the engine needs by name: `TraditionalPreservationCore.OnCreateStoneHearth`
@@ -588,7 +583,7 @@ table; the only globals are what the engine needs by name: `TraditionalPreservat
 An unloaded object keeps its square and its index until its chunk has been saved and reused, so `getSquare()` and
 `getObjectIndex()` both say it's fine. Writing to it then is lost, or worse, writes into a stale chunk. The cell stops
 returning that square the moment the chunk unloads, so `getCell():getGridSquare(x, y, z) == square` is the real test.
-FuelBarrel found this first; every tracker uses it through `Station.isLoaded`.
+Every tracker uses it through `Station.isLoaded`.
 
 **Why no literal `%` in translations?**
 The game's translator reads a finished line again as a format pattern. "40% soured" makes it throw, and so does a
@@ -596,19 +591,19 @@ line with `%1` given no values. So translations take plain tokens (`@1@`) throug
 in afterwards with `gsub`. `test_harness.lua` checks every mod's translations for a stray `%`.
 
 **Why do saves never lose a key?**
-Players keep saves for months. A renamed ledger field or modData key silently resets every running batch, so names
-are fixed once and old-save migrations (Vinegar's `lastOpen/lastSheltered`, `vinegarMl`, Yeast's
-`fermentStartHour`) stay in the code with a test each.
+Players keep saves for months. A renamed ledger field or modData key silently resets every running batch, so from
+the first release names are fixed, and a migration an old save needs stays in the code with a test (until then,
+rule 11 of the refactoring rules).
 
 ## Starting a new mod
 
-Settle the design questions in `~/MODS/WIP/TPCore/SERIES.md` first, then:
+Settle the design first (what the station holds, which place it reads, what it shares with the other mods), then:
 
 ```
 tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name
 ```
 
-It renders `TraditionalPreservationCore/template/` into `~/MODS/TraditionalPreservationDairy`: one floor station (S and E faces, a
+It renders `TraditionalPreservationCore/template/` into `<TP_MODS>/TraditionalPreservationDairy`: one floor station (S and E faces, a
 placeholder crate painted by `tools/build_tileset.py`), a placeholder item in and out, a weather-weighted timer on the
 core, the popup, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
 `test_process.lua`, `test_console.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
@@ -622,14 +617,14 @@ When a pattern in the mods changes, change the template too (it is not tested on
 
 ## Guides and Workshop pages
 
-- `tp package <Mod>` writes the folder to upload, `~/MODS/_package/<Mod>/Contents/mods/<Mod>` (`--out DIR` for
+- `tp package <Mod>` writes the folder to upload, `<TP_MODS>/_package/<Mod>/Contents/mods/<Mod>` (`--out DIR` for
   another place): `42/`, `common/`, README, guide and CHANGELOG, and nothing a player has no use for (tests, tools,
   DEVHELP, WORKSHOP.txt). It runs the tests first, replaces only the mod's own folder (a `workshop.txt` and
   `preview.png` beside `Contents` stay), warns if the repo isn't a clean commit and names the mods to list as
   required items. Don't point `--out` at `~/Zomboid/Workshop` while the mod is also in `~/Zomboid/mods`: the game
   loads both.
 
-- Edit player guides in `~/MODS/guides`, then run `tp guides`. It copies each guide into its mod and rebuilds the
+- Edit player guides in `<TP_MODS>/guides`, then run `tp guides`. It copies each guide into its mod and rebuilds the
   collection zip. It refuses if a copy inside a mod was edited more recently than the guide in `guides/`.
 - Guides read like an old-school game manual: stat tables, margin notes, real-world notes, and a Tester's Toolkit
   appendix copied from the mod's `DEVHELP.md`. Change both together.

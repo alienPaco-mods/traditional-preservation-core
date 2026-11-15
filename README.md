@@ -93,7 +93,7 @@ A station seen by a fire notes how long the fuel will last. While its area is un
 
 ## The Smokehouse
 
-Moved here from Traditional Preservation (Fish & Meat) on 2026-11-13, so every TP mod can smoke in it (Dairy's smoked cheese next). A plank shed two tiles long under a flat roof of boards, thick planks with cracks of light between some, a wide door with a rope handle on one end; inside it is always **In a shed** (Enclosed): the day's temperature, out of rain and wind. It shows nothing hanging; a joined flue is drawn by the shed's own overlay, the whole pipe or trench from the stone into its long side in view, and a ham hangs by the door while finished stacks wait inside.
+Core's, so every TP mod can smoke in it (Fish & Meat's fish and meat, and later Dairy's smoked cheese). A plank shed two tiles long under a flat roof of boards, thick planks with cracks of light between some, a wide door with a rope handle on one end; inside it is always **In a shed** (Enclosed): the day's temperature, out of rain and wind. It shows nothing hanging; a joined flue is drawn by the shed's own overlay, the whole pipe or trench from the stone into its long side in view, and a ham hangs by the door while finished stacks wait inside.
 
 **Build** (Build menu, Furniture; Woodwork 3; 15 Carpentry XP): 14 Planks, 20 Nails and a hammer (kept). Open air or under an open roof, never in a room; the tile in front of its door stays clear. 6 stacks.
 

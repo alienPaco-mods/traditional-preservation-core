@@ -139,7 +139,7 @@ mod requires (decided 2026-11-10, before the first Workshop release). Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
 line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
-hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (the Stone Hearth: the fire, banking, its attachments and tiles; the one name callers use, passing on the next three), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../Cauldron.lua` (the Forged Cauldron as the first attachment: its id `Fire.CAULDRON`, the item `Fire.CAULDRON_ITEM`), `.../Smokehouse.lua` (the
+hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in, moved from Fish & Meat 2026-11-13; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
@@ -193,23 +193,23 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
-   - `Fire.taints(fluid, other)`: `fluid` taints `other`; poured in together, either way round, the lot becomes
-     `fluid` (Core names vanilla's `TaintedWater` and `Water`). `Fire.taintedBy(cauldron, fluid)` says what a pour
-     would make; `Fire.partsIn` reads a container holding both as all `fluid`. Each fluid in one taint only.
-   - `Fire.blend("A", "B")`: fluids that may share the cauldron. `Fire.partsIn(fluidContainer)` is then what a
+   - `CauldronFluid.taints(fluid, other)`: `fluid` taints `other`; poured in together, either way round, the lot becomes
+     `fluid` (Core names vanilla's `TaintedWater` and `Water`). `CauldronFluid.taintedBy(cauldron, fluid)` says what a pour
+     would make; `CauldronFluid.partsIn` reads a container holding both as all `fluid`. Each fluid in one taint only.
+   - `CauldronFluid.blend("A", "B")`: fluids that may share the cauldron. `CauldronFluid.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
-     (the largest share) plus `parts`, kept with `Fire.addParts` and read with `Fire.partsOf`.
-   - `Fire.turnsHot(from, to, hours)`, `Fire.goesOff(from, to)` + `Fire.offBy(cauldron, hour)` and
-     `Fire.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
+     (the largest share) plus `parts`, kept with `CauldronFluid.addParts` and read with `CauldronFluid.partsOf`.
+   - `CauldronFluid.turnsHot(from, to, hours)`, `CauldronFluid.goesOff(from, to)` + `CauldronFluid.offBy(cauldron, hour)` and
+     `CauldronFluid.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
      put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`info.part` is the
      cauldron's state; `FireUI.notes(info)` builds every Info note, so a test can read them).
-   - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, heats, onFire, status, menu, rows, notes }`, the
+   - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, sprite, overlay, heats, onFire, display, status, menu, rows, notes }`, the
      Stone Hearth hub, 2026-11-13): what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
      its simmer in `FireWorld`) is the first, written against the registry alone. Calling `attach` again with the
      same id adds fields, so rules go in shared Lua and the menu in client Lua. Its state is its own table under its
-     id in `tpFire` (`Fire.partState(modData, id)`; the cauldron's is `Fire.cauldronState(modData)`, and
-     `Fire.cauldronOf(fire)` brings it up to now). `Fire.attachmentOf(fire)` gives the spec and state;
+     id in `tpFire` (`Fire.partState(modData, id)`; the cauldron's is `Cauldron.state(modData)`, and
+     `Cauldron.of(fire)` brings it up to now). `Fire.attachmentOf(fire)` gives the spec and state;
      `Fire.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
      `Fire.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
      `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses a spec without an
@@ -229,11 +229,23 @@ local Weather = require "TraditionalPreservationCore/Weather"
      object (the Smokehouse's entry overlay draws the whole flue, `Smokehouse.entrySprite`; `onChange` redraws it),
      never on the stone, which has no flue tiles. `smoke = true` (the Smokehouse's) says it takes the fire's smoke: the
      bare Stone Hearth's hole is lidded and its glow goes up the flue.
-   - The bare Stone Hearth (`Fire.isBare`, "bare" in the code; `Fire.isFitted(fire, id)` is one with
-     that attachment fitted, any with no id; `Fire.fittedNear(square, id)` those near; `Fire.isStoneHearth` either). A fitted
-     one shows as its attachment's `display` says (icon, title, Info row, Bank / Stoke icons; the cauldron's if left out): the same fire with nothing fitted, in the same state table (`tpFire`). `Fire.flueSideTo(firebox, square)` is the side a square is on (nil for the
-     door's side or not beside it), `Fire.flueSquare(firebox, side)` the square on a side; `FireConnect.FLUE_SIDES`
-     matches the tile builder's. `FireUI.addStoneHearthMenu(fn)` and `FireUI.addStoneHearthNotes(fn)` as for the fitted one; their rows show on a fitted Stone Hearth too.
+   - **Kinds of fire** (`Fire.kind{ id, is, face, sprites, showing, fittedByTile, display, refusals }`): a vanilla fireplace by
+     its tiles that Fire banks, stokes and keeps attachments and connections on; the Stone Hearth (`StoneHearth.lua`)
+     is the first, and Fire names no stone. `Fire.isFire(object)` is any kind, `Fire.kindOf(object)` which,
+     `Fire.faceOf(fire)` its facing, `Fire.sprites()` every kind's tiles (FireWorld's tracker; it requires
+     `StoneHearth` first). A kind's `display` is how it shows bare (icon, title, Info row, Bank / Stoke icons) with
+     `help = { out, lit, banked }`, its Info's first note; `refusals = { joined, door }` are Connect's refusals in its
+     words. `Fire.kind` refuses a kind missing any of these but `fittedByTile` before keeping it. FireUI is the
+     kind-free menu and Info window (`FireWindow`), with `FireUI.addMenu(fn)` and `FireUI.addNotes(fn)` for rows and
+     notes on any fire.
+     `StoneHearth.isStoneHearth` is the stone alone (the Smokehouse's chamber looks for it).
+   - A bare fire (`Fire.isBare`, "bare" in the code; `Fire.isFitted(fire, id)` is one with that attachment fitted,
+     any with no id; `Fire.fittedNear(square, id)` those near). A fitted one shows as its attachment's `display` says
+     (icon, title, Info row, Bank / Stoke icons; its kind's if left out), a bare one as its kind's: the same fire with
+     nothing fitted, in the same state table (`tpFire`). An attachment draws itself on the fire with its `sprite`
+     and optional `overlay` (the cauldron's: `StoneHearth.cauldronSprite`, `StoneHearth.liquidOverlay`). `Fire.flueSideTo(fire, square)` is the side a square is on (nil for the
+     door's side or not beside it), `Fire.flueSquare(fire, side)` the square on a side; `FireConnect.FLUE_SIDES`
+     matches the tile builder's.
    - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a
      kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the cauldron. `states` are

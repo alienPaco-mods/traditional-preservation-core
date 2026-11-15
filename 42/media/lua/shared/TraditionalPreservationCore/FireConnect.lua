@@ -1,4 +1,4 @@
--- Traditional Preservation core: connections, what is built onto a Stone Hearth in its second slot (the Smokehouse's
+-- Traditional Preservation core: connections, what is built onto a fire in its second slot (the Smokehouse's
 -- flue is the first), one at a time, on its back or either flank, never the door's side. The fire's state names it
 -- (connected), and its own state is kept under its id there: kind (the kit it was built with) and side (Back, Left or
 -- Right). Connect and Disconnect are Core's (connectRefusal, join, unjoin; TPFireConnect), by the connection's
@@ -106,11 +106,11 @@ end
 
 -- Why Connect can't be done, the first that applies, as a text key, or nil. c = { joined (something is), own (the
 -- connection's refusal), side (the target's side of the fire: nil on the door's), burning, fitted (something is fitted
--- and the connection blocks both slots) }.
+-- and the connection blocks both slots), refusals (the fire's kind's words for joined and door) }.
 function FireConnect.connectRefusalOf(c)
-    if c.joined then return "IGUI_TraditionalPreservationCore_FlueStoneHearthJoined" end
+    if c.joined then return c.refusals.joined end
     if c.own then return c.own end
-    if not c.side then return "IGUI_TraditionalPreservationCore_FlueStoneHearthDoor" end
+    if not c.side then return c.refusals.door end
     if c.burning then return "IGUI_TraditionalPreservationCore_FireBurning" end
     if c.fitted then return "IGUI_TraditionalPreservationCore_ConnectFitted" end
     return nil
@@ -123,6 +123,7 @@ function FireConnect.connectRefusal(fire, spec, target)
         side = Fire.flueSideTo(fire, target:getSquare()),
         burning = Fire.isBurning(fire),
         fitted = spec.blocks == "both" and Fire.attachedTo(fire) ~= nil,
+        refusals = Fire.kindOf(fire).refusals,
     })
 end
 
@@ -145,16 +146,16 @@ function FireConnect.kitBack(kit)
     return back
 end
 
--- A Stone Hearth's facing and square, or nil.
+-- A fire's facing and square, or nil.
 local function standing(fire)
-    local face = Fire.stoneHearthFace(fire:getSprite():getName())
+    local face = Fire.faceOf(fire)
     return face, face and fire:getSquare()
 end
 
--- The side of a Stone Hearth that square is on (Back, Left or Right): nil for its door's side, a square not beside it,
--- or anything but a Stone Hearth.
-function FireConnect.flueSideTo(stoneHearth, square)
-    local face, here = standing(stoneHearth)
+-- The side of a fire that square is on (Back, Left or Right): nil for its door's side, a square not beside it, or
+-- anything but a fire.
+function FireConnect.flueSideTo(fire, square)
+    local face, here = standing(fire)
     if not here or not square or square:getZ() ~= here:getZ() then return nil end
     local dx, dy = square:getX() - here:getX(), square:getY() - here:getY()
     for side, step in pairs(FireConnect.FLUE_SIDES[face]) do
@@ -162,9 +163,9 @@ function FireConnect.flueSideTo(stoneHearth, square)
     end
 end
 
--- The square on that side of a Stone Hearth, or nil.
-function FireConnect.flueSquare(stoneHearth, side)
-    local face, here = standing(stoneHearth)
+-- The square on that side of a fire, or nil.
+function FireConnect.flueSquare(fire, side)
+    local face, here = standing(fire)
     local step = here and FireConnect.FLUE_SIDES[face][side]
     if not step then return nil end
     return getCell():getGridSquare(here:getX() + step[1], here:getY() + step[2], here:getZ())

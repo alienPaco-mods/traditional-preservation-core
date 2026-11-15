@@ -7,6 +7,7 @@
 -- Cauldron fits while it is joined. Each chamber tile is checked on its own, so a bigger shed can reuse the rules.
 -- What hangs inside is each mod's, counted by SmokehouseStacks (startCounters, fireStep, ...), passed on here.
 local Fire = require "TraditionalPreservationCore/Fire"
+local StoneHearth = require "TraditionalPreservationCore/StoneHearth"
 local FireConnect = require "TraditionalPreservationCore/FireConnect"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
@@ -152,7 +153,7 @@ function Smokehouse.chamberOn(square)
 end
 
 local function stoneHearthOn(square)
-    return (firstOn(square, Fire.isStoneHearth))
+    return (firstOn(square, StoneHearth.isStoneHearth))
 end
 
 -- A Stone Hearth's flue kind (Pipe or Stones) and side if it's joined to a Smokehouse, else nil.

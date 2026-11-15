@@ -29,16 +29,16 @@ local function square(x, y, sprites, flags)
 end
 function getCell() return { getGridSquare = function(_, x, y) return grid[x .. "," .. y] end } end
 
-local Fire = require "TraditionalPreservationCore/Fire"
+local StoneHearth = require "TraditionalPreservationCore/StoneHearth"
 local Doors = require "TraditionalPreservationCore/Doors"
 
-local hearthS, hearthE = Fire.cauldronSprite("Empty", 0), Fire.cauldronSprite("Empty", 1)
-local stoneHearthS, stoneHearthE = Fire.bareSprite(false, nil, 0), Fire.bareSprite(false, nil, 1)
+local hearthS, hearthE = StoneHearth.cauldronSprite("Empty", 0), StoneHearth.cauldronSprite("Empty", 1)
+local stoneHearthS, stoneHearthE = StoneHearth.bareSprite(false, nil, 0), StoneHearth.bareSprite(false, nil, 1)
 check("the Stone Hearth's mouth opens its way, every look", Doors.facingOf(hearthS) == "S" and Doors.facingOf(hearthE) == "E"
-    and Doors.facingOf(Fire.cauldronSprite("Hot", 1)) == "E")
+    and Doors.facingOf(StoneHearth.cauldronSprite("Hot", 1)) == "E")
 check("so does the Stone Hearth's door, with any flue or hole", Doors.facingOf(stoneHearthS) == "S" and Doors.facingOf(stoneHearthE) == "E"
-    and Doors.facingOf(Fire.bareSprite(true, "Pot", 0)) == "S"
-    and Doors.facingOf(Fire.bareSprite(true, "Lid", 1)) == "E")
+    and Doors.facingOf(StoneHearth.bareSprite(true, "Pot", 0)) == "S"
+    and Doors.facingOf(StoneHearth.bareSprite(true, "Lid", 1)) == "E")
 check("anything else has no door", Doors.facingOf("vanilla_crate") == nil and Doors.facingOf(nil) == nil)
 
 -- Its own front: facing S the tile south, facing E the tile east.

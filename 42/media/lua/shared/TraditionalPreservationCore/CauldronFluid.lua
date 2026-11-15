@@ -1,9 +1,10 @@
 -- Traditional Preservation core: the rules for what the cauldron holds (Cauldron.lua, the Stone Hearth's first attachment).
 -- One fluid at a time, or a blend of fluids a mod has said may share it (blend: Dairy's milks). It heats towards
 -- MAX_C (water boils, and boils clean) while the fire burns and cools to the room when it is out. Its state is a plain
--- table (the fire's modData under Fire.KEY, then Fire.CAULDRON); every rule here works on it without the engine.
+-- table (the fire's modData under Fire.KEY, then Cauldron.ID); every rule here works on it without the engine.
 -- The few that touch the engine (a container's fluids, an item's heat, a fluid's colour) are at the bottom.
--- Fire passes every function and constant here on, so mods keep calling Fire.pourInto, Fire.advance and so on.
+-- Mods call these by this name (CauldronFluid.pourInto, CauldronFluid.advance, ...); the cauldron as an attachment
+-- (its id, state, fit) is Cauldron's.
 local CauldronFluid = {}
 
 CauldronFluid.CAULDRON_ML = 60000     -- a farmhouse cauldron's size (real ones 40 to 100 L)
@@ -35,7 +36,7 @@ CauldronFluid.COLD_C = 4                  -- what that reads as; below room heat
 CauldronFluid.ML_PER_L = 1000
 CauldronFluid.AMOUNT_TOLERANCE_L = 0.001
 
--- What an empty cauldron's state keeps of its fluid: nothing (Fire.take clears them).
+-- What an empty cauldron's state keeps of its fluid: nothing (CauldronFluid.take clears them).
 local FLUID_FIELDS = { "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "held", "offAt" }
 
 -- Newton's law: tempC after hours at placeC, for a time constant tau.
@@ -89,7 +90,7 @@ local BLENDS = {}
 function CauldronFluid.blend(...)
     local group = {}
     for _, name in ipairs({ ... }) do
-        assert(BLENDS[name] == nil, "Fire.blend: fluid " .. tostring(name) .. " is already in a blend")
+        assert(BLENDS[name] == nil, "CauldronFluid.blend: fluid " .. tostring(name) .. " is already in a blend")
         group[name] = true
         BLENDS[name] = group
     end
@@ -137,7 +138,7 @@ local TAINTS, TAINTED = {}, {}   -- clean -> what taints it, and back
 
 function CauldronFluid.taints(fluid, other)
     for _, name in ipairs({ fluid, other }) do
-        assert(TAINTS[name] == nil and TAINTED[name] == nil, "Fire.taints: " .. tostring(name) .. " is already named")
+        assert(TAINTS[name] == nil and TAINTED[name] == nil, "CauldronFluid.taints: " .. tostring(name) .. " is already named")
     end
     TAINTS[other], TAINTED[fluid] = fluid, other
 end
@@ -178,12 +179,12 @@ CauldronFluid.taints("TaintedWater", "Water")
 local TURNS, OFF, STAYS = {}, {}, {}
 
 function CauldronFluid.turnsHot(from, to, hours)
-    assert(TURNS[from] == nil, "Fire.turnsHot: fluid " .. tostring(from) .. " already turns")
+    assert(TURNS[from] == nil, "CauldronFluid.turnsHot: fluid " .. tostring(from) .. " already turns")
     TURNS[from] = { to = to, hours = hours }
 end
 
 function CauldronFluid.goesOff(from, to)
-    assert(OFF[from] == nil, "Fire.goesOff: fluid " .. tostring(from) .. " already goes off")
+    assert(OFF[from] == nil, "CauldronFluid.goesOff: fluid " .. tostring(from) .. " already goes off")
     OFF[from] = to
 end
 
@@ -360,8 +361,8 @@ end
 local HOOKS = { heatOf = {}, taken = {}, filled = {} }
 
 function CauldronFluid.hook(name, fn)
-    assert(HOOKS[name], "Fire.hook: no hook named " .. tostring(name))
-    assert(type(fn) == "function", "Fire.hook: " .. name .. " needs a function")
+    assert(HOOKS[name], "CauldronFluid.hook: no hook named " .. tostring(name))
+    assert(type(fn) == "function", "CauldronFluid.hook: " .. name .. " needs a function")
     table.insert(HOOKS[name], fn)
 end
 

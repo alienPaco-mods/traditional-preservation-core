@@ -1,4 +1,4 @@
--- Traditional Preservation core: Fit an attachment on a Stone Hearth (id given) or Remove what is fitted (id nil),
+-- Traditional Preservation core: Fit an attachment on a fire (id given) or Remove what is fitted (id nil),
 -- by the attachment's fit (Fire.attach): its items go into the fit and come back on Remove, all but lost ones. The
 -- tool stays. Neither while the fire burns; Remove only when the attachment says it may come off (Fire.canRemove).
 require "TimedActions/ISBaseTimedAction"

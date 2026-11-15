@@ -1,4 +1,4 @@
--- Traditional Preservation core: banking a Stone Hearth's fire down under its ash ("bank"), stoking it up again ("stoke"),
+-- Traditional Preservation core: banking a fire down under its ash ("bank"), stoking it up again ("stoke"),
 -- or putting a banked fire out ("out", vanilla's Put out Fire). A banked fire burns a third of the wood, keeps the
 -- cauldron about 50 C, warms only beside it and cooks a third as fast.
 require "TimedActions/ISBaseTimedAction"
@@ -10,12 +10,12 @@ TPFireTend = ISBaseTimedAction:derive("TPFireTend")
 local DURATION = 100
 
 function TPFireTend:isValid()
-    if not self.hearth:getSquare() or not Fire.isBurning(self.hearth) then return false end
-    return Fire.isBanked(self.hearth) == (self.mode ~= "bank")
+    if not self.fire:getSquare() or not Fire.isBurning(self.fire) then return false end
+    return Fire.isBanked(self.fire) == (self.mode ~= "bank")
 end
 
 function TPFireTend:waitToStart()
-    self.character:faceThisObject(self.hearth)
+    self.character:faceThisObject(self.fire)
     return self.character:shouldBeTurning()
 end
 
@@ -24,7 +24,7 @@ function TPFireTend:start()
 end
 
 function TPFireTend:complete()
-    if Fire.World then Fire.World.setFire(self.hearth, self.mode, getGameTime():getWorldAgeHours()) end
+    if Fire.World then Fire.World.setFire(self.fire, self.mode, getGameTime():getWorldAgeHours()) end
     return true
 end
 
@@ -36,9 +36,9 @@ function TPFireTend:getDuration()
     return Action.duration(self.character, DURATION)
 end
 
-function TPFireTend:new(character, hearth, mode)
+function TPFireTend:new(character, fire, mode)
     local o = ISBaseTimedAction.new(self, character)
-    o.hearth = hearth
+    o.fire = fire
     o.mode = mode
     o.maxTime = o:getDuration()
     return o

@@ -1,22 +1,25 @@
--- Traditional Preservation core: keeps track of every Stone Hearth and brings what is fitted (the cauldron) up to the hour: heated while
+-- Traditional Preservation core: keeps track of every fire (Fire.kind: the Stone Hearth) and brings what is fitted (the
+-- cauldron) up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
--- the hearth tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
--- weather (Weather.shared), so the Stone Hearth works whichever TP mods are on. A banked Stone Hearth's vanilla fire is out: its
+-- the fire tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
+-- weather (Weather.shared), so a fire works whichever TP mods are on. A banked fire's vanilla fire is out: its
 -- fuel is set each refresh to the mod's count, it gets a small heat source and a faint light of its own, and its
 -- firebox is kept hot (a custom container temperature) with the food's cooking set back to a third. None of these
 -- three is saved by the game, so each refresh puts them back.
 if isClient() then return end
 
 local Fire = require "TraditionalPreservationCore/Fire"
+require "TraditionalPreservationCore/StoneHearth"   -- registers its kind before the tracker reads Fire.sprites
+local Cauldron = require "TraditionalPreservationCore/Cauldron"
+local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local log = require "TraditionalPreservationCore/Log"
-require "TraditionalPreservationCore/Cauldron"
 
 local World = {}
 Fire.World = World
 
--- The weather a Stone Hearth's room goes by.
+-- The weather a fire's room goes by.
 World.getLedger = Weather.shared
 
 -- The cooking time each food in a banked firebox had at the last look, by fire and item id. Cooking only runs in
@@ -64,7 +67,7 @@ local function removeEmbers(entry)
     entry.heat, entry.light = nil, nil
 end
 
--- A banked Stone Hearth's own heat, light and hot firebox, or none of them.
+-- A banked fire's own heat, light and hot firebox, or none of them.
 local function showEmbers(fire, banked)
     local entry = World.track(fire)
     if entry and banked and not entry.heat then addEmbers(fire, entry) end
@@ -78,8 +81,8 @@ local function showEmbers(fire, banked)
     end
 end
 
--- The cauldron's simmer: a looping TPSimmering on the Stone Hearth's square while what it holds is at HOT_C or more, one per
--- Stone Hearth. A free world emitter (the world ticks it); stopped when the cauldron cools, empties, or the Stone Hearth unloads.
+-- The cauldron's simmer: a looping TPSimmering on the fire's square while what it holds is at HOT_C or more, one per
+-- fire. A free world emitter (the world ticks it); stopped when the cauldron cools, empties, or the fire unloads.
 World.SIMMER_SOUND = "TPSimmering"
 local simmers = {}
 
@@ -95,9 +98,9 @@ local function simmer(fire, on)
     if emitter then simmers[fire] = { emitter = emitter, id = emitter:playSoundLooped(World.SIMMER_SOUND) } end
 end
 
-Fire.attach({ id = Fire.CAULDRON, onFire = function(cauldron, fire) simmer(fire, Fire.isHot(cauldron)) end })
+Fire.attach({ id = Cauldron.ID, onFire = function(cauldron, fire) simmer(fire, CauldronFluid.isHot(cauldron)) end })
 
--- The overlay (a Stone Hearth's glow, or what the cauldron holds) and its tint. The tint isn't saved, so it is set
+-- The overlay (a bare Stone Hearth's glow, or what the cauldron holds) and its tint. The tint isn't saved, so it is set
 -- again the first time a fire is seen after a load (tints starts empty), and whenever it changes. Dropped with the fire.
 local tints = {}
 
@@ -140,7 +143,7 @@ function World.update(fire, now)
     showOverlay(fire, overlay, colour)
     if spec and spec.onFire then spec.onFire(part, fire, now, state) end
     local look = spec and spec.look and spec.look(part, fire)
-    if look ~= before then log("TP", "hearth %s %s -> %s", spec.id, tostring(before), tostring(look)) end
+    if look ~= before then log("TP", "fire %s %s -> %s", spec.id, tostring(before), tostring(look)) end
     return state
 end
 
@@ -149,8 +152,8 @@ local function refresh(fire)
 end
 
 local tracker = Station.tracker({
-    sprites = Fire.FIRE_SPRITES,
-    entry = function(object) return Fire.isStoneHearth(object) and {} or nil end,
+    sprites = Fire.sprites(),
+    entry = function(object) return Fire.isFire(object) and {} or nil end,
     refresh = refresh,
     dropped = function(fire, entry)
         removeEmbers(entry)
@@ -158,7 +161,7 @@ local tracker = Station.tracker({
         cookSeen[fire] = nil
         tints[fire] = nil
     end,
-    -- A hearth just built or put down shows its cauldron (a Stone Hearth its flue and hole) at once.
+    -- A fire just built or put down shows its cauldron (a Stone Hearth its flue and hole) at once.
     scan = true,
 })
 
@@ -179,7 +182,7 @@ function World.setFire(fire, mode, now)
     World.refresh(fire)
 end
 
--- Redraws a tracked hearth now, without waiting for the next tick, e.g. after a pour.
+-- Redraws a tracked fire now, without waiting for the next tick, e.g. after a pour.
 function World.refresh(fire)
     if tracker.track(fire) then refresh(fire) end
 end

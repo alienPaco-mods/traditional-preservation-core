@@ -1,5 +1,5 @@
 -- Traditional Preservation core: "by a fire", a place of its own (Fire.PLACE, at Fire.FIRE_C): any lit fire within
--- Fire.FIRE_RADIUS tiles on the same floor, the Stone Hearth or not. Indoors it holds FIRE_C whatever the weather; under an
+-- Fire.FIRE_RADIUS tiles on the same floor, one of ours or not. Indoors it holds FIRE_C whatever the weather; under an
 -- open roof or in the open the air takes the heat away, so there it is that place's air plus Fire.FIRE_LIFT, never
 -- past FIRE_C (places PLACE .. "Covered", .. "Open"; a campfire in a January field is cold at the back). Beside banked
 -- embers it is Fire.EMBERS. It is opt-in: Weather.placeOf never returns it, placeOf here does, so only a mod that
@@ -43,7 +43,7 @@ function Fireside.near(square, test)
 end
 
 -- The warmest lit fire within FIRE_RADIUS tiles on the same floor, the nearest of those, with its place (PLACE, or
--- EMBERS for a banked Stone Hearth); nil if there is none.
+-- EMBERS for a banked fire); nil if there is none.
 local function warmestFire(square)
     local fires = Fireside.near(square, isLitFire)
     for _, fire in ipairs(fires) do
@@ -52,7 +52,7 @@ local function warmestFire(square)
     if fires[1] then return fires[1], Fire.EMBERS end
 end
 
--- Stone Hearths with the attachment id fitted within FIRE_RADIUS tiles, nearest first.
+-- Fires with the attachment id fitted within FIRE_RADIUS tiles, nearest first.
 function Fireside.fittedNear(square, id)
     return Fireside.near(square, function(object) return Fire.isFitted(object, id) end)
 end

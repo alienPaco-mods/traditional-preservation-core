@@ -1,11 +1,11 @@
--- Traditional Preservation core: the Stone Hearth is worked from its right-click menu. Vanilla's own menu lights and
--- feeds the fire; ours, inside vanilla's submenu, banks a lit fire or stokes it up again. One menu serves it fitted or
--- not: Info (Stone Hearth Info, fitted or not) and Bank / Stoke, then what is fitted adds its own rows
+-- Traditional Preservation core: a fire (any Fire.kind: the Stone Hearth) is worked from its right-click menu.
+-- Vanilla's own menu lights and feeds the fire; ours, inside vanilla's submenu, banks a lit fire or stokes it up again.
+-- One menu serves it fitted or not: Info (its kind's or attachment's, Stone Hearth Info) and Bank / Stoke, then what is fitted adds its own rows
 -- and Remove (Fire.attach's status and menu: the cauldron's are CauldronUI's), or a bare one has Fit for each
 -- attachment that has a fit (Fit Cauldron). Both have Connect for each connection with something beside the fire to
 -- join (Fire.connect: the Smokehouse's flue), or Disconnect for the one joined (FireUI.addConnect,
 -- FireUI.addDisconnect: the joined thing's own menu may offer them too). The fire's own rows
--- (FireUI.addStoneHearthMenu) and notes (FireUI.addStoneHearthNotes) show on both. A Stone Hearth can't be picked up while
+-- (FireUI.addMenu) and notes (FireUI.addNotes) show on both. A fire can't be picked up while
 -- it burns or while something is fitted or joined. Clicking one opens its Info too.
 require "TimedActions/TPFireTend"
 require "TimedActions/TPFireFit"
@@ -23,50 +23,45 @@ local FUEL_COLOUR = { 0.75, 0.42, 0.18 }
 local FIT_ICON = "media/textures/Item_TPCauldron.png"
 local TOOL_NAMES = { PLIERS = "IGUI_TraditionalPreservationCore_ToolPliers" }
 
--- How a bare Stone Hearth (bare) shows: its icon, title, Info row and the icons for its fire banked or burning
--- up again. A fitted one shows as its attachment's display says (the same fields, given with Fire.attach), or as the
--- cauldron's when it gives none.
-local BARE_DISPLAY = { icon = "media/textures/Item_TPStoneHearth.png", title = "IGUI_CraftingWindow_TPStoneHearth",
-    info = "ContextMenu_TraditionalPreservationCore_StoneHearthInfo",
-    fire = { bank = "media/textures/Item_TPStoneHearthBanked.png", stoke = "media/textures/Item_TPStoneHearthLit.png" } }
-
+-- How a fire shows: its icon, title, Info row and the icons for its fire banked or burning up again. A fitted one
+-- shows as its attachment's display says (Fire.attach), a bare one, or one whose attachment gives none, as its
+-- kind's (Fire.kind).
 local function lookOf(fire)
-    if Fire.isBare(fire) then return BARE_DISPLAY end
     local spec = Fire.attachmentOf(fire)
-    return spec and spec.display or Fire.attachment(Fire.CAULDRON).display
+    return spec and spec.display or Fire.kindOf(fire).display
 end
 
 -- Menu
 
-local function onFireAction(playerObj, hearth, mode)
-    if not luautils.walkAdj(playerObj, hearth:getSquare(), true) then return end
-    ISTimedActionQueue.add(TPFireTend:new(playerObj, hearth, mode))
+local function onFireAction(playerObj, fire, mode)
+    if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
+    ISTimedActionQueue.add(TPFireTend:new(playerObj, fire, mode))
 end
 
 FireUI.fireAction = onFireAction
 
--- The Stone Hearth as its fire will be, banked or burning up again.
+-- The fire as it will be, banked or burning up again.
 function FireUI.fireIcon(fire, mode)
     return lookOf(fire).fire[mode]
 end
 
-local function addFireOption(menu, playerObj, hearth)
-    if not Fire.isBurning(hearth) then return end
-    local banked = Fire.isBanked(hearth)
+local function addFireOption(menu, playerObj, fire)
+    if not Fire.isBurning(fire) then return end
+    local banked = Fire.isBanked(fire)
     local mode = banked and "stoke" or "bank"
     local option = menu:addOption(getText(banked and "ContextMenu_TraditionalPreservationCore_StokeFire"
-        or "ContextMenu_TraditionalPreservationCore_BankFire"), playerObj, onFireAction, hearth, mode)
-    option.iconTexture = getTexture(FireUI.fireIcon(hearth, mode))
+        or "ContextMenu_TraditionalPreservationCore_BankFire"), playerObj, onFireAction, fire, mode)
+    option.iconTexture = getTexture(FireUI.fireIcon(fire, mode))
     tooltipFor(option, getText(banked and "IGUI_TraditionalPreservationCore_StokeHelp" or "IGUI_TraditionalPreservationCore_BankHelp"))
 end
 
 -- Vanilla gives every fire its own submenu, named after the tile (ISBBQMenu): ours go in there too, so there is one
 -- menu, not two.
-local function fireSubMenu(context, hearth)
-    local vanilla = context:getOptionFromName(hearth:getTileName())
+local function fireSubMenu(context, fire)
+    local vanilla = context:getOptionFromName(fire:getTileName())
     local menu = vanilla and vanilla.subOption and context:getSubMenu(vanilla.subOption)
     if menu then return menu end
-    local look = lookOf(hearth)
+    local look = lookOf(fire)
     local option = context:addOption(getText(look.title))
     option.iconTexture = getTexture(look.icon)
     menu = context:getNew(context)
@@ -74,20 +69,20 @@ local function fireSubMenu(context, hearth)
     return menu
 end
 
--- A banked Stone Hearth's vanilla fire is out, so vanilla's fuel line says Unlit: it says Banked, with the time the embers
+-- A banked fire's vanilla fire is out, so vanilla's fuel line says Unlit: it says Banked, with the time the embers
 -- burn on.
-local function fixFuelLine(menu, hearth)
-    if not Fire.isBanked(hearth) then return end
+local function fixFuelLine(menu, fire)
+    if not Fire.isBanked(fire) then return end
     local unlit = " (" .. getText("IGUI_Fireplace_Unlit") .. ")"
     for _, option in ipairs(menu.options or {}) do
         if type(option.name) == "string" and option.name:sub(-#unlit) == unlit then
-            option.name = getText("IGUI_BBQ_FuelAmount", ISCampingMenu.timeString(math.floor(Fire.fuelHours(hearth) * 60 + 0.5)))
+            option.name = getText("IGUI_BBQ_FuelAmount", ISCampingMenu.timeString(math.floor(Fire.fuelHours(fire) * 60 + 0.5)))
                 .. " (" .. getText("IGUI_TraditionalPreservationCore_InfoFireBanked") .. ")"
         end
     end
 end
 
--- Vanilla offers to light a fire that is out: a banked Stone Hearth's is, so Put out Fire takes its place there (in the
+-- Vanilla offers to light a fire that is out: a banked one's is, so Put out Fire takes its place there (in the
 -- right-click menu and the loot window's controller menu), and it unbanks.
 local doLightFireOption = ISCampingMenu.doLightFireOption
 function ISCampingMenu.doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
@@ -97,7 +92,7 @@ function ISCampingMenu.doLightFireOption(playerObj, context, worldobjects, hasFu
     return doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
 end
 
-local StoneHearthWindow -- below
+local FireWindow -- below
 
 -- Kits: an attachment's fit and a connection's kits are both { items = { {full type, count} }, tool (an ItemTag's
 -- name, kept), toolText (its text key, else TOOL_NAMES) }.
@@ -251,15 +246,15 @@ local function addConnectionRows(menu, playerObj, fire)
     end
 end
 
-local STONE_HEARTH_MENUS = {}
+local MENUS = {}
 
 -- fn(menu, playerObj, fire, state) adds rows for the fire itself, fitted or not (a connection's: the Smokehouse's
 -- flue), last in its menu. state is the fire's.
-function FireUI.addStoneHearthMenu(fn)
-    table.insert(STONE_HEARTH_MENUS, fn)
+function FireUI.addMenu(fn)
+    table.insert(MENUS, fn)
 end
 
--- A Stone Hearth's menu: what is fitted says what it holds first, then Info and Bank / Stoke; then what is fitted
+-- A fire's menu: what is fitted says what it holds first, then Info and Bank / Stoke; then what is fitted
 -- adds its own rows and Remove, or a bare one has Fit for each attachment; then the connection's rows and the fire's.
 local function addFireMenu(context, playerObj, fire)
     local look = lookOf(fire)
@@ -273,7 +268,7 @@ local function addFireMenu(context, playerObj, fire)
         status.isDisabled = true
         status.iconTexture = getTexture(icon)
     end
-    local info = menu:addOption(getText(look.info), playerObj, StoneHearthWindow.open, fire)
+    local info = menu:addOption(getText(look.info), playerObj, FireWindow.open, fire)
     info.iconTexture = getTexture(look.icon)
     addFireOption(menu, playerObj, fire)
     if Fire.isBare(fire) then
@@ -286,15 +281,15 @@ local function addFireMenu(context, playerObj, fire)
     end
     addConnectionRows(menu, playerObj, fire)
     local state = Fire.fireStateOf(fire)
-    for _, fn in ipairs(STONE_HEARTH_MENUS) do fn(menu, playerObj, fire, state) end
+    for _, fn in ipairs(MENUS) do fn(menu, playerObj, fire, state) end
 end
 
 local function onFillContextMenu(playerNum, context, worldobjects, test)
     for _, object in ipairs(worldobjects) do
-        if Fire.isStoneHearth(object) then
+        if Fire.isFire(object) then
             -- Vanilla's probe for a controller's prompt: say there is a menu, do no work.
             if test then return ISWorldObjectContextMenu.setTest() end
-            -- A hearth built this session isn't tracked until its area reloads, so its menu starts it.
+            -- A fire built this session isn't tracked until its area reloads, so its menu starts it.
             if Fire.World then Fire.World.track(object) end
             return addFireMenu(context, getSpecificPlayer(playerNum), object)
         end
@@ -305,61 +300,60 @@ Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
 
 UI.keepDoorsFree()
 
--- Picking a Stone Hearth up while the fire burns (lit or banked) would lose it, and with something fitted or joined
--- that comes off first (Remove, Disconnect): the stone alone is carried. The cursor says Too hot for the fire, Has
+-- Picking a fire up while it burns (lit or banked) would lose it, and with something fitted or joined that comes off
+-- first (Remove, Disconnect): the fireplace alone is carried. The cursor says Too hot for the fire, Has
 -- items for the rest.
 UI.keepInPlace(function(object)
-    if not Fire.isStoneHearth(object) then return nil end
+    if not Fire.isFire(object) then return nil end
     if Fire.isBurning(object) then return "tooHot" end
     return (Fire.attachedTo(object) ~= nil or Fire.connectedTo(object:getModData()[Fire.KEY]) ~= nil) or nil
 end)
 
--- Stone Hearth Info: the fire, its fuel and the attachment's rows and notes.
+-- A fire's Info (Stone Hearth Info): the fire, its fuel and the attachment's rows and notes.
 
-local STONE_HEARTH_NOTES = {}
+local NOTES = {}
 
 -- Notes on the fire itself, fitted or not, last in its Info (after the connection's own notes). info is FireUI.notes'.
-function FireUI.addStoneHearthNotes(fn)
-    table.insert(STONE_HEARTH_NOTES, fn)
+function FireUI.addNotes(fn)
+    table.insert(NOTES, fn)
 end
 
 -- What Info says of a fire, from info = { part (the attachment's state, nil with nothing fitted), spec (its
 -- attachment), state (the fire's), joinedSpec and joined (the connection and its state, if any), lit, banked, fuelMin,
--- burnHours, firebox }: a bare one's help, the attachment's notes, the connection's, then the fire's.
+-- burnHours, firebox, help (a bare one's: its kind's display.help) }: a bare one's help, the attachment's notes, the
+-- connection's, then the fire's.
 function FireUI.notes(info)
     local notes = {}
-    if info.bare then
-        table.insert(notes, getText(info.banked and "IGUI_TraditionalPreservationCore_StoneHearthHelpBanked"
-            or info.lit and "IGUI_TraditionalPreservationCore_StoneHearthHelpLit" or "IGUI_TraditionalPreservationCore_StoneHearthHelpOut"))
-    end
+    local help = info.help
+    if help then table.insert(notes, getText(info.banked and help.banked or info.lit and help.lit or help.out)) end
     if info.spec and info.spec.notes then info.spec.notes(info, notes) end
     if info.joinedSpec and info.joinedSpec.notes then info.joinedSpec.notes(info, notes, info.joined) end
-    for _, fn in ipairs(STONE_HEARTH_NOTES) do fn(info, notes) end
+    for _, fn in ipairs(NOTES) do fn(info, notes) end
     return notes
 end
 
-StoneHearthWindow = InfoWindow:derive("TraditionalPreservationCoreStoneHearthWindow")
+FireWindow = InfoWindow:derive("TraditionalPreservationCoreFireWindow")
 
-function StoneHearthWindow:new(playerObj, hearth)
-    local o = InfoWindow.new(self, playerObj, hearth)
-    o.title = getText(lookOf(hearth).title)
+function FireWindow:new(playerObj, fire)
+    local o = InfoWindow.new(self, playerObj, fire)
+    o.title = getText(lookOf(fire).title)
     return o
 end
 
-function StoneHearthWindow.open(playerObj, hearth)
-    InfoWindow.open(StoneHearthWindow, playerObj, hearth)
+function FireWindow.open(playerObj, fire)
+    InfoWindow.open(FireWindow, playerObj, fire)
 end
 
-function StoneHearthWindow:refresh()
-    local hearth = self.station
-    local spec, part = Fire.attachmentOf(hearth)
-    local joinedSpec, joined = Fire.connectionOf(hearth)
-    self.info = { part = part, spec = spec, state = Fire.fireStateOf(hearth), joinedSpec = joinedSpec, joined = joined,
-        lit = Fire.isBurning(hearth), banked = Fire.isBanked(hearth), fuelMin = hearth:getFuelAmount(),
-        burnHours = Fire.fuelHours(hearth), bare = Fire.isBare(hearth) }
+function FireWindow:refresh()
+    local fire = self.station
+    local spec, part = Fire.attachmentOf(fire)
+    local joinedSpec, joined = Fire.connectionOf(fire)
+    self.info = { part = part, spec = spec, state = Fire.fireStateOf(fire), joinedSpec = joinedSpec, joined = joined,
+        lit = Fire.isBurning(fire), banked = Fire.isBanked(fire), fuelMin = fire:getFuelAmount(),
+        burnHours = Fire.fuelHours(fire), help = Fire.isBare(fire) and Fire.kindOf(fire).display.help or nil }
 end
 
-function StoneHearthWindow:render()
+function FireWindow:render()
     ISCollapsableWindow.render(self)
     if self.isCollapsed or not self.info then return end
     local info = self.info
@@ -376,11 +370,11 @@ function StoneHearthWindow:render()
     self:drawNotes(y, FireUI.notes(info))
 end
 
--- Clicking a Stone Hearth opens its Info, as clicking a TP station opens its window (its firebox is still in the loot
--- window beside it).
-InfoWindow.clickOpens(Fire.isStoneHearth, function(playerObj, hearth)
-    if Fire.World then Fire.World.track(hearth) end
-    StoneHearthWindow.open(playerObj, hearth)
+-- Clicking a fire opens its Info, as clicking a TP station opens its window (its firebox is still in the loot window
+-- beside it).
+InfoWindow.clickOpens(Fire.isFire, function(playerObj, fire)
+    if Fire.World then Fire.World.track(fire) end
+    FireWindow.open(playerObj, fire)
 end)
 
 return FireUI

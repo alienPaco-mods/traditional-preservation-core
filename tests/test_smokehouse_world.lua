@@ -31,6 +31,7 @@ end
 
 local Tiles = require "TraditionalPreservationCore/Tiles"
 local Fire = require "TraditionalPreservationCore/Fire"
+local StoneHearth = require "TraditionalPreservationCore/StoneHearth"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 dofile("42/media/lua/server/TraditionalPreservationCore/SmokehouseWorld.lua")
 local World = Smokehouse.World
@@ -81,8 +82,8 @@ function stoneHearth:getModData() return self.modData end
 function stoneHearth:getSquare() return self.square end
 function stoneHearth:getX() return 11 end
 function stoneHearth:getY() return 10 end
-local isStoneHearth, flueSquare = Fire.isStoneHearth, Fire.flueSquare
-Fire.isStoneHearth = function(object) return object == stoneHearth end
+local isStoneHearth, flueSquare = StoneHearth.isStoneHearth, Fire.flueSquare
+StoneHearth.isStoneHearth = function(object) return object == stoneHearth end
 Fire.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
 Fire.join(Fire.stateOf(stoneHearth.modData), Smokehouse.ID, "Pipe", "Left")
 World.refresh(back)
@@ -110,7 +111,7 @@ local shed = chamber(30, 30, Tiles.CHAMBER, true, 0)
 chamber(30, 31, Tiles.CHAMBER + 1, false)
 local west, east = stoneHearthAt(29, 30), stoneHearthAt(31, 30)
 local refusal = Fire.connectRefusal
-Fire.isStoneHearth = function(object) return object == west or object == east end
+StoneHearth.isStoneHearth = function(object) return object == west or object == east end
 for _, refused in ipairs({ west, east }) do
     Fire.connectRefusal = function(fire) return fire == refused and "refused" or nil end
     local found = Smokehouse.connectCandidate(shed)
@@ -120,6 +121,6 @@ end
 Fire.connectRefusal = function() return "refused" end
 check("both refused: the first found, for its refusal", Smokehouse.connectCandidate(shed).stoneHearth == Smokehouse.stoneHearthsBy(shed)[1].stoneHearth)
 Fire.connectRefusal = refusal
-Fire.isStoneHearth, Fire.flueSquare = isStoneHearth, flueSquare
+StoneHearth.isStoneHearth, Fire.flueSquare = isStoneHearth, flueSquare
 
 H.done()

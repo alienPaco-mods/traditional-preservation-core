@@ -5,7 +5,7 @@
 -- Meat: Blood Sausage (Boiled) fried becomes Blood Sausage (Boiled, Fried)). Counted under KEY in the item's modData.
 -- The look is Station's minute look at the heat near players (Station.onHeatNear, Station.HEAT_NEAR).
 local Station = require "TraditionalPreservationCore/Station"
-local Fire = require "TraditionalPreservationCore/Fire"
+local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 
 local OnHeat = {}
 
@@ -14,7 +14,7 @@ OnHeat.KEY = "tpOnHeat"
 OnHeat.HEAT_C = 100
 OnHeat.MAX_GAP_MINUTES = 2
 -- HEAT_C as vanilla's item heat, worked out once (it is also the container heat looked for).
-OnHeat.HEAT = Fire.itemHeat(OnHeat.HEAT_C)
+OnHeat.HEAT = CauldronFluid.itemHeat(OnHeat.HEAT_C)
 
 local watched = {}
 local looking = false

@@ -16,7 +16,7 @@ A knee-high block of grey dressed stone in courses under one overhanging slab, f
 
 **Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 8 Clay Bricks, 2 Clay and a mason's trowel (kept). Two facings. It is the only build recipe: the cauldron is fitted to it afterwards.
 
-**The hole** shows what is cooking (`Fire.holeLook`, by the stove or oven flag of what is inside, `Fire.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
+**The hole** shows what is cooking (`StoneHearth.holeLook`, by the stove or oven flag of what is inside, `StoneHearth.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
 
 **Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (fire and fuel, with a note; clicking it opens it too), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** and, with a Smokehouse beside it, **Connect the Stone Hearth**.
 
@@ -42,12 +42,12 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 
 ### The cauldron
 
-- Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`Fire.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
-- **Tainted water taints clean water** (`Fire.taints`): poured together, either way round and whatever the share, the whole cauldron is tainted water and must be boiled clean again. A bucket that already holds both pours in as tainted water. Pour into the Cauldron's hover says so, unless the sandbox hides tainted water.
+- Holds **60 L** of **one fluid at a time**, any fluid. A mod can name fluids that may share it (`CauldronFluid.blend`; Dairy's milks), and such a blend keeps its shares going in and out.
+- **Tainted water taints clean water** (`CauldronFluid.taints`): poured together, either way round and whatever the share, the whole cauldron is tainted water and must be boiled clean again. A bucket that already holds both pours in as tainted water. Pour into the Cauldron's hover says so, unless the sandbox hides tainted water.
 - Poured fluid mixes its temperature with what is there, by volume.
 - **Lit fire:** it heats towards 95 C and **steams at 85 C**; milk and every other fluid are kept off the boil.
 - **Water boils.** Water on its own heats towards 110 C and holds at **100 C**. Tainted water kept at the boil for
-  **10 minutes** turns to clean water (`Fire.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
+  **10 minutes** turns to clean water (`CauldronFluid.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
   `boiled` in the cauldron's state and starts over when the fire goes out or more is poured in). Being let boil, water
   also steams sooner than milk.
 - **Fire out:** it cools towards the temperature of the place the Stone Hearth stands in (open air, an open roof, indoors, a loft or a basement), slowly, as the stone holds heat.
@@ -127,7 +127,7 @@ Each mod keeps its own rate curve, and its sandbox option **Temperature sensitiv
 
 ## Fluids that go off
 
-Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Forged Cauldron ages there and is scalded once the cauldron has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `Fire.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
+Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAgeing.register`; Dairy's milk). The core then keeps an age on whatever holds it, by the place it was last seen in: a powered fridge counts as 4 C, a powered freezer stops it. Pouring hands the age on (the older wins), and fluid in the Forged Cauldron ages there and is scalded once the cauldron has steamed for the kind's hold (`scaldHold`; Dairy's milk: 20 minutes in all, counted by `CauldronFluid.heldHours`), as is fluid in a pot held that long on a stove or fire. With no such mod on, nothing ages.
 
 ## Seasoning afterwards
 

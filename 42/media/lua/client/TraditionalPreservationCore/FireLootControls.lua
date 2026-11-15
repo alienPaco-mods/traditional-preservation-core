@@ -1,6 +1,6 @@
 -- Traditional Preservation core: Bank the Fire / Stoke the Fire as a button in the loot window, beside vanilla's
--- Put out Fire, while a Stone Hearth's fire burns. It queues the same action as the Stone Hearth's right-click menu. A banked
--- Stone Hearth's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
+-- Put out Fire, while a fire (Fire.isFire: the Stone Hearth) burns. It queues the same action as its right-click menu. A
+-- banked fire's vanilla fire is out, so vanilla's Light Fire button is hidden there and its Put out Fire shown (it
 -- unbanks).
 require "ISUI/LootWindow/ISLootWindowContainerControls"
 require "ISUI/LootWindow/Handlers/LightFuelOption"
@@ -14,9 +14,9 @@ local Handler = ISLootWindowObjectControlHandler_TPFireTend
 local TITLES = { bank = "ContextMenu_TraditionalPreservationCore_BankFire", stoke = "ContextMenu_TraditionalPreservationCore_StokeFire" }
 local HELP = { bank = "IGUI_TraditionalPreservationCore_BankHelp", stoke = "IGUI_TraditionalPreservationCore_StokeHelp" }
 
--- "bank" for a lit Stone Hearth, "stoke" for a banked one, nil for anything else.
+-- "bank" for a lit fire, "stoke" for a banked one, nil for anything else.
 local function modeOf(object)
-    if not object or not Fire.isStoneHearth(object) or not Fire.isBurning(object) then return nil end
+    if not object or not Fire.isFire(object) or not Fire.isBurning(object) then return nil end
     return Fire.isBanked(object) and "stoke" or "bank"
 end
 

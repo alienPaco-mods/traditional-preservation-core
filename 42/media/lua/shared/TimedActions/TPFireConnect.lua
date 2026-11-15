@@ -1,4 +1,4 @@
--- Traditional Preservation core: Connect something to a Stone Hearth (Fire.connect: the Smokehouse's flue) by one of
+-- Traditional Preservation core: Connect something to a fire (Fire.connect: the Smokehouse's flue) by one of
 -- its kits, or Disconnect it (kind nil): the kit's back items come back, the rest is lost. The tool stays. Neither
 -- while the fire burns (Fire.connectRefusal).
 require "TimedActions/ISBaseTimedAction"

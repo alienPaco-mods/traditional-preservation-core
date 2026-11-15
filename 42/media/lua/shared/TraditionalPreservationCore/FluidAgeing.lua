@@ -17,7 +17,7 @@
 -- would sour milk): a kind may name a scalding heat (scaldHeat, vanilla item heat), and fluid seen in an item that
 -- hot, on a stove or a fire, takes the heat state from then on, as vanilla's boiling makes tainted water clean. With a
 -- hold (scaldHold, hours) only once it has been that hot for so long in all: an item counts its hours under HELD_KEY,
--- a cauldron by Fire.heldHours. The hold is counted even with the kind's ageing off, for mods that keep their own
+-- a cauldron by CauldronFluid.heldHours. The hold is counted even with the kind's ageing off, for mods that keep their own
 -- scalded flag. A fluid is in one state at a time: heat leaves a fluid already in a state as it is, and a treatment
 -- by hand replaces the heat state.
 --
@@ -487,7 +487,7 @@ end
 
 -- Brings what a cauldron's state ({ ml, fluid, parts }, Stone Hearth's) holds up to now at the Stone Hearth's place and renames
 -- its fluids for their stage, as a container's are swapped, so turned milk in the cauldron is no longer milk to
--- anything that reads it. Milk that has steamed in the cauldron for the kind's hold (heldHours, Fire.heldHours) is
+-- anything that reads it. Milk that has steamed in the cauldron for the kind's hold (heldHours, CauldronFluid.heldHours) is
 -- in the heat state from then on, and renamed so; raw milk poured onto it makes it plain again. An empty cauldron forgets; one holding a kind's fluid with no record (filled before
 -- the kind aged, or by a debug command) starts one.
 function FluidAgeing.updateCauldron(cauldron, now, place, heldHours)

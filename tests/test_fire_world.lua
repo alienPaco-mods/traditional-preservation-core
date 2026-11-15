@@ -35,6 +35,9 @@ local function count(set)
 end
 
 local Fire = require "TraditionalPreservationCore/Fire"
+local StoneHearth = require "TraditionalPreservationCore/StoneHearth"
+local Cauldron = require "TraditionalPreservationCore/Cauldron"
+local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local World = require "TraditionalPreservationCore/FireWorld"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 getSprite = function(name) return { getName = function() return name end } end
@@ -47,7 +50,7 @@ function container:getCustomTemperature() return self.custom end
 function container:setCustomTemperature(value) self.custom = value end
 function container:addItemsToProcessItems() self.processed = self.processed + 1 end
 local modData = {}
-local fire = { class = "IsoFireplace", lit = true, fuel = 120, sprite = getSprite(Fire.cauldronSprite("Empty", 0)) }
+local fire = { class = "IsoFireplace", lit = true, fuel = 120, sprite = getSprite(StoneHearth.cauldronSprite("Empty", 0)) }
 function fire:isLit() return self.lit end
 function fire:setLit(lit) self.lit = lit end
 function fire:turnOn() self.lit = true end
@@ -79,7 +82,7 @@ check("its own heat: two tiles at 25 C, on the Stone Hearth", count(cell.heat) =
     and heat.celsius == Fire.BANKED_HEAT_C and heat.x == 5 and heat.y == 6)
 check("and a faint light", count(cell.lights) == 1 and light.radius == Fire.BANKED_LIGHT_RADIUS)
 check("its firebox kept hot enough to cook", container.custom == Fire.BANKED_FIREBOX and container.processed == 1)
-check("banked, its tile glows dimly; empty, no overlay", fire.sprite:getName() == Fire.cauldronSprite("Empty", 0, true, true)
+check("banked, its tile glows dimly; empty, no overlay", fire.sprite:getName() == StoneHearth.cauldronSprite("Empty", 0, true, true)
     and fire.overlay == nil)
 check("its fuel burns three times as long", near(modData[Fire.KEY].fireUntil, 106))
 
@@ -111,12 +114,12 @@ check("the firebox's heat is put back after a reload", container.custom == Fire.
 World.setFire(fire, "stoke", 101)
 check("stoked, vanilla's fire burns again, the embers' heat, light and firebox gone", fire:isLit() and not Fire.isBanked(fire)
     and count(cell.heat) == 0 and count(cell.lights) == 0 and container.custom == 0)
-check("lit, its tile glows lit", fire.sprite:getName() == Fire.cauldronSprite("Empty", 0, true, false))
+check("lit, its tile glows lit", fire.sprite:getName() == StoneHearth.cauldronSprite("Empty", 0, true, false))
 
 World.setFire(fire, "bank", 101)
 World.setFire(fire, "out", 101.5)
 check("put out while banked, it is out with its fuel, nothing of the embers left", not fire:isLit() and not Fire.isBurning(fire)
-    and fire.fuel == 90 and count(cell.heat) == 0 and container.custom == 0 and fire.sprite:getName() == Fire.cauldronSprite("Empty", 0))
+    and fire.fuel == 90 and count(cell.heat) == 0 and container.custom == 0 and fire.sprite:getName() == StoneHearth.cauldronSprite("Empty", 0))
 
 fire:turnOn()
 World.setFire(fire, "bank", 102)
@@ -136,7 +139,7 @@ cell.squares["5,6,0"] = square
 local boxData = {}
 local boxItems = {}
 local boxContainer = setmetatable({ getItems = function() return H.list(boxItems) end }, { __index = container })
-local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(Fire.bareSprite(false, nil, 0)) }, { __index = fire })
+local box = setmetatable({ lit = true, fuel = 120, sprite = getSprite(StoneHearth.bareSprite(false, nil, 0)) }, { __index = fire })
 function box:getModData() return boxData end
 function box:getContainer() return boxContainer end
 local function food(fullType)
@@ -144,29 +147,29 @@ local function food(fullType)
 end
 World.track(box)
 World.update(box, 110)
-check("a lit Stone Hearth is tracked, open, its smoke out of the hole", box.sprite:getName() == Fire.bareSprite(false, "Open", 0)
-    and box.overlay:getName() == Fire.bareGlow(true, false, false, "Open", 0) and boxData[Fire.KEY].cauldron == nil
-    and Fire.isBare(box) and not Fire.isFitted(box, Fire.CAULDRON))
+check("a lit Stone Hearth is tracked, open, its smoke out of the hole", box.sprite:getName() == StoneHearth.bareSprite(false, "Open", 0)
+    and box.overlay:getName() == StoneHearth.bareGlow(true, false, false, "Open", 0) and boxData[Fire.KEY].cauldron == nil
+    and Fire.isBare(box) and not Fire.isFitted(box, Cauldron.ID))
 boxItems[1] = food("Base.PieWholeRaw")
 World.update(box, 110)
-check("oven food in it: the lid, the smoke round the door", box.sprite:getName() == Fire.bareSprite(false, "Lid", 0)
-    and box.overlay:getName() == Fire.bareGlow(true, false, false, "Lid", 0))
+check("oven food in it: the lid, the smoke round the door", box.sprite:getName() == StoneHearth.bareSprite(false, "Lid", 0)
+    and box.overlay:getName() == StoneHearth.bareGlow(true, false, false, "Lid", 0))
 boxItems[2] = food("Base.PotOfStew")
 World.update(box, 110)
-check("a stew too: the pot", box.sprite:getName() == Fire.bareSprite(false, "Pot", 0)
-    and box.overlay:getName() == Fire.bareGlow(true, false, false, "Pot", 0))
+check("a stew too: the pot", box.sprite:getName() == StoneHearth.bareSprite(false, "Pot", 0)
+    and box.overlay:getName() == StoneHearth.bareGlow(true, false, false, "Pot", 0))
 World.setFire(box, "bank", 110)
 check("it banks as the Stone Hearth does", not box:isLit() and Fire.isBanked(box) and count(cell.heat) >= 1
-    and box.overlay:getName() == Fire.bareGlow(true, true, false, "Pot", 0))
+    and box.overlay:getName() == StoneHearth.bareGlow(true, true, false, "Pot", 0))
 boxItems[2] = nil
 Fire.join(boxData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")
 World.update(box, 111)
 check("its flue joined, the lid goes on and the smoke goes up it (the shed draws the pipe)",
-    box.sprite:getName() == Fire.bareSprite(true, "Lid", 0)
-    and box.overlay:getName() == Fire.bareGlow(true, true, true, "Lid", 0))
+    box.sprite:getName() == StoneHearth.bareSprite(true, "Lid", 0)
+    and box.overlay:getName() == StoneHearth.bareGlow(true, true, true, "Lid", 0))
 boxItems[1] = nil
 World.update(box, 111)
-check("joined and empty, the lid stays on", box.sprite:getName() == Fire.bareSprite(true, "Lid", 0))
+check("joined and empty, the lid stays on", box.sprite:getName() == StoneHearth.bareSprite(true, "Lid", 0))
 check("and it never grows a cauldron", boxData[Fire.KEY].cauldron == nil and boxData[Fire.KEY].ml == nil
     and boxData[Fire.KEY].attached == nil and Fire.attachmentOf(box) == nil and Fire.canRemove(box) == false)
 World.setFire(box, "stoke", 111)
@@ -176,20 +179,20 @@ fire.fuel, fire.lit = 600, true
 H.setHours(120)
 World.setFire(fire, "stoke", 120)
 local spec, cauldron = Fire.attachmentOf(fire)
-check("a Stone Hearth's attachment is the cauldron, its state under its id", spec == Fire.attachment(Fire.CAULDRON)
+check("a Stone Hearth's attachment is the cauldron, its state under its id", spec == Fire.attachment(Cauldron.ID)
     and cauldron == modData[Fire.KEY].cauldron and spec.heats ~= nil and spec.onFire ~= nil)
-check("known by its cauldron tile, it is noted as fitted", modData[Fire.KEY].attached == Fire.CAULDRON and Fire.isFitted(fire, Fire.CAULDRON)
+check("known by its cauldron tile, it is noted as fitted", modData[Fire.KEY].attached == Cauldron.ID and Fire.isFitted(fire, Cauldron.ID)
     and not Fire.isBare(fire))
 check("the fire's own state stays outside the cauldron's", modData[Fire.KEY].fireUntil ~= nil and cauldron.ml == nil)
-Fire.pourInto(cauldron, "Water", 10000, 20, 120)
+CauldronFluid.pourInto(cauldron, "Water", 10000, 20, 120)
 H.setHours(120.5)
 World.update(fire, 120.5)
 check("the cauldron heats by the fire through its heats, as the fire was until now, the fire's fields kept the fire's",
     cauldron.tempC > 40 and cauldron.last == 120.5 and cauldron.fireUntil == nil and cauldron.banked == nil)
-check("what it holds shows as the overlay, tinted", fire.overlay:getName() == Fire.liquidOverlay(cauldron, 0)
+check("what it holds shows as the overlay, tinted", fire.overlay:getName() == StoneHearth.liquidOverlay(cauldron, 0)
     and fire.tint ~= nil and fire.tint[1] == 1)
 fire.tint = nil
-fire.overlay = getSprite(Fire.liquidOverlay(cauldron, 0))
+fire.overlay = getSprite(StoneHearth.liquidOverlay(cauldron, 0))
 World.update(fire, 120.5)
 check("an overlay already shown is not tinted again", fire.tint == nil)
 local Weather = require "TraditionalPreservationCore/Weather"
@@ -209,20 +212,20 @@ check("lit, nothing may come off", Fire.canRemove(fire) == false and select(2, F
 World.setFire(fire, "out", 120.5)
 fire.lit = false
 check("out, a cauldron holding fluid may not come off", Fire.canRemove(fire) == false and select(2, Fire.canRemove(fire)) == "Full")
-Fire.take(cauldron)
+CauldronFluid.take(cauldron)
 check("out and empty, it may", Fire.canRemove(fire) == true)
 
 -- Two slots: the Cauldron and the Smokehouse's flue go together; Remove leaves the bare Stone Hearth.
-local cauldronSpec = Fire.attachment(Fire.CAULDRON)
+local cauldronSpec = Fire.attachment(Cauldron.ID)
 check("fitted, a second fit is refused", Fire.fitRefusal(fire, cauldronSpec) == "Fitted")
 Fire.join(modData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")
-check("a fitted Stone Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Fire.isFitted(fire, Fire.CAULDRON))
+check("a fitted Stone Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Fire.isFitted(fire, Cauldron.ID))
 check("Remove gives the whole kit back", #Fire.fitBack(cauldronSpec) == 4)
-check("taken off, the cauldron's state goes and nothing is fitted", Fire.unfit(fire) == Fire.CAULDRON
+check("taken off, the cauldron's state goes and nothing is fitted", Fire.unfit(fire) == Cauldron.ID
     and modData[Fire.KEY].cauldron == nil and modData[Fire.KEY].attached == false and Fire.attachmentOf(fire) == nil)
 World.update(fire, 121)
 check("its cauldron tile turns to the bare Stone Hearth's, the flue still joined", Fire.isBare(fire)
-    and fire.sprite:getName() == Fire.bareSprite(true, "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
+    and fire.sprite:getName() == StoneHearth.bareSprite(true, "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
 check("the joined flue never blocks the fit", Fire.fitRefusal(fire, cauldronSpec) == nil)
 fire.lit = true
 check("but a burning fire does", Fire.fitRefusal(fire, cauldronSpec) == "Burning")
@@ -231,12 +234,12 @@ Fire.connect({ id = "testWall", kinds = { "Pipe" }, kits = { Pipe = Smokehouse.F
 Fire.join(modData[Fire.KEY], "testWall", "Pipe", "Back")
 check("a connection that blocks both slots refuses the fit", Fire.fitRefusal(fire, cauldronSpec) == "Blocked")
 World.update(fire, 121)
-check("a connection that doesn't take the smoke leaves the hole open", fire.sprite:getName() == Fire.bareSprite(false, "Open", 0))
+check("a connection that doesn't take the smoke leaves the hole open", fire.sprite:getName() == StoneHearth.bareSprite(false, "Open", 0))
 Fire.join(modData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")
 check("joined again to the Smokehouse, the other is gone", modData[Fire.KEY].testWall == nil and Smokehouse.flueOf(fire) == "Pipe")
-Fire.fit(fire, Fire.CAULDRON)
+Fire.fit(fire, Cauldron.ID)
 World.update(fire, 121)
-check("fitted again, the cauldron's tile, its state empty", Fire.isFitted(fire, Fire.CAULDRON) and Fire.cauldronFace(fire.sprite:getName()) == 0
+check("fitted again, the cauldron's tile, its state empty", Fire.isFitted(fire, Cauldron.ID) and StoneHearth.cauldronFace(fire.sprite:getName()) == 0
     and next(modData[Fire.KEY].cauldron) == nil)
 
 H.done()

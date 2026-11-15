@@ -2,7 +2,7 @@
 
 **Status: experimental, not released.** Back up your save before enabling.
 
-TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, and the series' shared stations, the **Stone Hearth**, the **Forged Cauldron** fitted over it and the **Smokehouse**. On its own it adds only those, and the cauldron's forge recipe.
+TP Core is the mod every Traditional Preservation mod requires (Salt, Fish, Yeast, Vinegar, Dairy). It holds what they share: the weather record and the places a station can stand in, station tracking, popups and info windows, fluids that go off, seasoning a food after it is made, and the series' shared stations, the **Stone Hearth**, the **Forged Cauldron** fitted over it and the **Smokehouse**. On its own it adds only those, and the cauldron's forge recipe.
 
 This file describes the mod as a player meets it. How to work on the code, the tests and the `tp` tool: `DEVGUIDE.md`.
 

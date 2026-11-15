@@ -41,6 +41,9 @@ Weather.ROOM_LIFT_NONE = 18
 Weather.FIRE_PLACES = {}
 -- Where something stands when nothing says: a room. (Hearth.DEFAULT_UNDER and FluidAgeing.DEFAULT_PLACE are this.)
 Weather.DEFAULT_PLACE = "Sheltered"
+-- Where a station's run or stack counts before its World first says where the station stands (a few seconds): the
+-- open air. Fish & Meat's stacks and tubs, Vinegar's floor and vessel runs.
+Weather.NEW_RUN_PLACE = "Open"
 
 local NO_SQUARE_PLACE = "Open"   -- placeOf for an object on no square
 local UPSTAIRS_Z = 1             -- the first floor above the ground, where a loft can be

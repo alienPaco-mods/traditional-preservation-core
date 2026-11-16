@@ -35,6 +35,8 @@ from pathlib import Path
 MODS = Path(os.environ.get("TP_MODS", Path.home() / "MODS"))  # tests point it elsewhere
 CORE = Path(__file__).resolve().parent
 INSTALLED = Path(os.environ.get("TP_INSTALLED", Path.home() / "Zomboid" / "mods"))  # tests point it elsewhere
+GAME_TEXT = Path(os.environ.get("TP_GAME", Path.home() / ".local/share/Steam/steamapps/common/ProjectZomboid/projectzomboid")) \
+    / "media" / "lua" / "shared" / "Translate" / "EN"
 GUIDES = MODS / "guides"
 COLLECTION = GUIDES / "TraditionalPreservationCollectionGuides"
 GOLDEN = CORE / "golden"
@@ -334,8 +336,40 @@ def translation_lint(root):
     return found
 
 
+# A translation key written whole in Lua; one followed by `..` or ending in `_` is a prefix the code finishes.
+TEXT_KEY = re.compile(r'"((?:IGUI|Tooltip|ContextMenu|Fluid|Sandbox|Moodles|UI|ItemName|Recipe)_\w+)"(\s*\.\.)?')
+
+
+def text_keys(folder):
+    """Every key in a folder's translation JSON files."""
+    keys = set()
+    for path in folder.glob("*.json"):
+        try:
+            keys |= set(json.loads(path.read_text(encoding="utf-8", errors="replace")))
+        except ValueError:
+            pass  # translation_lint reports it
+    return keys
+
+
+def key_lint(root):
+    """Translation keys the mod's Lua names that no EN file has (its own, TP Core's or the game's), as 'path:line:
+    reason' lines. getText of a missing key shows the key itself in game. Skipped without the game's files."""
+    if not GAME_TEXT.is_dir():
+        print(f"  --   {root.name}: game translations not found ({GAME_TEXT}), keys not checked")
+        return []
+    known = text_keys(GAME_TEXT) | text_keys(CORE_LUA / "shared" / "Translate" / "EN")
+    known |= text_keys(root / "42" / "media" / "lua" / "shared" / "Translate" / "EN")
+    found = []
+    for path in sorted(root.glob("*/media/lua/**/*.lua")):
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            for key, joined in TEXT_KEY.findall(line.split("--", 1)[0]):
+                if not joined and not key.endswith("_") and key not in known:
+                    found.append(f"{path.relative_to(root)}:{number}: no EN text has the key {key}")
+    return found
+
+
 def lint_failed(root):
-    found = kahlua_lint(root) + translation_lint(root)
+    found = kahlua_lint(root) + translation_lint(root) + key_lint(root)
     for entry in found:
         print(f"  FAIL {root.name}/{entry}")
     return bool(found)

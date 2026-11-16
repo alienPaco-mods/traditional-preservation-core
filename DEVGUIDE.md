@@ -21,7 +21,9 @@ The examples run `tp`, the script at the top of this folder (`TraditionalPreserv
 
 1. Edit in `<TP_MODS>/<Mod>`.
 2. `tp test <Mod>`: the mod's tests, then its golden checks. Before the tests it lints the shipped files: Lua calling
-   what Kahlua lacks, and translation JSON the game would refuse (not valid, or a key given twice).
+   what Kahlua lacks, translation JSON the game would refuse (not valid, or a key given twice), and translation keys
+   written whole in Lua that no EN file has (the mod's, TP Core's or the game's; a key finished with `..` isn't
+   checked). The game's files are found under `TP_GAME` (default the Steam install); without them keys are skipped.
 3. `tp install <Mod>`: runs the same checks again and copies the mod only if they all pass.
 4. Restart the game (Lua or scripts changed) or reload to the main menu (translations only), then follow the in-game test steps.
 5. Commit in the mod's repo.
@@ -362,6 +364,12 @@ global.
 it does, and why when that isn't plain, unless its name and a one-line body say it all (`V.litres`). Exempt:
 timed-action lifecycle methods (`isValid`, `start`, `perform`, ...) and Dev console commands. A comment says what
 the code does now; history goes in the CHANGELOG, except for an old-save migration, which says what it migrates.
+
+**Translation keys.** A key shown where it is written stays a literal (`getText("IGUI_...")`). A key a shared
+function returns (a refusal, a status word) goes in a table on its module, as the full literal, and the code uses
+the table: `FluidTreat.REFUSALS`, `Season.REFUSALS`, `FireConnect.REFUSALS`, `Smokehouse.REFUSALS`, Fish & Meat's
+`F.REFUSALS` and `F.WORDS`, Vinegar's `V.PUMP_REFUSALS`. So does a key written more than once in a module. Tests
+compare the full key, so they check the one the translation file holds.
 
 **Vanilla wraps.** A wrap saves the vanilla function in a local (`vanilla...`), replaces it, and calls the saved
 one for anything that isn't the mod's. Its comment says why vanilla's isn't enough. After every B42 patch, check

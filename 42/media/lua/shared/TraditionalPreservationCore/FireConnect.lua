@@ -104,6 +104,12 @@ function FireConnect.unjoin(state)
     return id, part
 end
 
+-- Why Connect can't be done, as translation keys, besides the kind's own (FireConnect.connectRefusalOf).
+FireConnect.REFUSALS = {
+    fireBurning = "IGUI_TraditionalPreservationCore_FireBurning",
+    connectFitted = "IGUI_TraditionalPreservationCore_ConnectFitted",
+}
+
 -- Why Connect can't be done, the first that applies, as a text key, or nil. c = { joined (something is), own (the
 -- connection's refusal), side (the target's side of the fire: nil on the door's), burning, fitted (something is fitted
 -- and the connection blocks both slots), refusals (the fire's kind's words for joined and door) }.
@@ -111,8 +117,8 @@ function FireConnect.connectRefusalOf(c)
     if c.joined then return c.refusals.joined end
     if c.own then return c.own end
     if not c.side then return c.refusals.door end
-    if c.burning then return "IGUI_TraditionalPreservationCore_FireBurning" end
-    if c.fitted then return "IGUI_TraditionalPreservationCore_ConnectFitted" end
+    if c.burning then return FireConnect.REFUSALS.fireBurning end
+    if c.fitted then return FireConnect.REFUSALS.connectFitted end
     return nil
 end
 

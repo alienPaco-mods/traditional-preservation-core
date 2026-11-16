@@ -28,17 +28,25 @@ function FluidTreat.treatableSpec(owner)
     return spec and spec.treatments and spec or nil
 end
 
+-- Why a fluid can't be treated now, as translation keys (FluidTreat.treatRefusal).
+FluidTreat.REFUSALS = {
+    treatSpoiled = "IGUI_TraditionalPreservationCore_TreatSpoiled",
+    treatNoFluid = "IGUI_TraditionalPreservationCore_TreatNoFluid",
+    treatDone = "IGUI_TraditionalPreservationCore_TreatDone",
+    treatShort = "IGUI_TraditionalPreservationCore_TreatShort",
+}
+
 -- treatRefusal's work, also giving the usable litres it read.
 local function refusal(owner, spec, treatment, character, now)
     local usable, spoiled = FluidTreat.litresIn(owner:getFluidContainer(), spec)
     if usable <= 0 then
-        return spoiled > 0 and "IGUI_TraditionalPreservationCore_TreatSpoiled" or "IGUI_TraditionalPreservationCore_TreatNoFluid", usable
+        return spoiled > 0 and FluidTreat.REFUSALS.treatSpoiled or FluidTreat.REFUSALS.treatNoFluid, usable
     end
     local record = FluidAgeing.look(owner, now or getGameTime():getWorldAgeHours())
-    if record and FluidAgeing.stage(record, spec) ~= "Fresh" then return "IGUI_TraditionalPreservationCore_TreatSpoiled", usable end
-    if record and record.treated and record.treated[treatment.name] then return "IGUI_TraditionalPreservationCore_TreatDone", usable end
+    if record and FluidAgeing.stage(record, spec) ~= "Fresh" then return FluidTreat.REFUSALS.treatSpoiled, usable end
+    if record and record.treated and record.treated[treatment.name] then return FluidTreat.REFUSALS.treatDone, usable end
     if character and Uses.count(character, treatment.tag()) < FluidTreat.treatUses(spec, usable) then
-        return "IGUI_TraditionalPreservationCore_TreatShort", usable
+        return FluidTreat.REFUSALS.treatShort, usable
     end
     return nil, usable
 end

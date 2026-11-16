@@ -141,13 +141,20 @@ function Season.available(character, item)
     return list
 end
 
+-- Why a seasoning can't go in, as translation keys (Season.refusal).
+Season.REFUSALS = {
+    seasonNot = "IGUI_TraditionalPreservationCore_SeasonNot",
+    seasonAlready = "IGUI_TraditionalPreservationCore_SeasonAlready",
+    seasonNone = "IGUI_TraditionalPreservationCore_SeasonNone",
+}
+
 -- Why fullType can't go into item now (a translation key), or nil.
 function Season.refusal(item, fullType, character)
     local spec = Season.specFor(item)
     local kind = spec and Season.kindOf(spec, fullType)
-    if not kind then return "IGUI_TraditionalPreservationCore_SeasonNot" end
-    if Season.added(item)[kind.name] then return "IGUI_TraditionalPreservationCore_SeasonAlready" end
-    if character and Uses.count(character, fullType, true) < Season.usesOf(kind) then return "IGUI_TraditionalPreservationCore_SeasonNone" end
+    if not kind then return Season.REFUSALS.seasonNot end
+    if Season.added(item)[kind.name] then return Season.REFUSALS.seasonAlready end
+    if character and Uses.count(character, fullType, true) < Season.usesOf(kind) then return Season.REFUSALS.seasonNone end
     return nil
 end
 

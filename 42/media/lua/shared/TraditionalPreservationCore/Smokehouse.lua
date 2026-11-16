@@ -121,11 +121,17 @@ function Smokehouse.readySprite(face, part, finished)
     return Tiles.CHAMBER_READY + face
 end
 
+-- Why the shed refuses a flue, as translation keys (Smokehouse.chamberRefusal).
+Smokehouse.REFUSALS = {
+    flueChamberJoined = "IGUI_TraditionalPreservationCore_FlueChamberJoined",
+    flueDoorEnd = "IGUI_TraditionalPreservationCore_FlueDoorEnd",
+}
+
 -- The shed's own refusal, as a translation key, or nil (Fire.connectRefusal asks it after "already joined").
 -- c = { chamberJoined, allowed (the side of the chamber the Stone Hearth is on may take a flue) }.
 function Smokehouse.chamberRefusal(c)
-    if c.chamberJoined then return "IGUI_TraditionalPreservationCore_FlueChamberJoined" end
-    if not c.allowed then return "IGUI_TraditionalPreservationCore_FlueDoorEnd" end
+    if c.chamberJoined then return Smokehouse.REFUSALS.flueChamberJoined end
+    if not c.allowed then return Smokehouse.REFUSALS.flueDoorEnd end
     return nil
 end
 

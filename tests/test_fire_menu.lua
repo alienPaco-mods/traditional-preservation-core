@@ -280,7 +280,7 @@ check("a mod's row goes in the Stone Hearth's menu, with the fire and its cauldr
 
 -- Emptying the cauldron
 check("an empty cauldron has nothing to empty", named(open(withCauldron()), "ContextMenu_TraditionalPreservationCore_EmptyCauldron") == nil)
-local rotten = withCauldron({ ml = 6000, fluid = "RottenCowMilk", tempC = 20, tpFluidAge = { kind = "milk", age = 80 } })
+local rotten = withCauldron({ ml = 6000, fluid = "RottenCowMilk", tempC = 20, tpFluidAge = { process = "milk", age = 80 } })
 local emptyIt = named(open(rotten), "ContextMenu_TraditionalPreservationCore_EmptyCauldron")
 check("a cauldron holding anything can be emptied, the hover saying how much of what", emptyIt ~= nil and emptyIt.isDisabled == nil
     and emptyIt.toolTip.description:find("6.0", 1, true) ~= nil)
@@ -320,7 +320,7 @@ check("with the kit in reach it can be chosen", fit.isDisabled ~= true and fit.t
 fit.onSelect(character, unpack(fit.args))
 local fitting = ui.queued[#ui.queued]
 check("choosing it brings the kit to hand and queues the fit", fitting.Type == "TPFireFit" and fitting.fitting == true
-    and fitting.fire == spare and fitting.spec.id == Cauldron.ID and #ui.moved >= #kit)
+    and fitting.fire == spare and fitting.attachment.id == Cauldron.ID and #ui.moved >= #kit)
 sub = open(bare(true))
 check("not while the fire burns", fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit").isDisabled == true)
 
@@ -352,13 +352,13 @@ local action = TPFireFit:new(smith, onto, Cauldron.ID)
 check("Fit takes an hour's work and is valid with the kit", action.maxTime == 600 and action:isValid())
 action:complete()
 check("done, the kit is used, only the pliers are left, the cauldron is on and empty", #pack == 1
-    and Fire.attachedTo(onto) == Cauldron.ID and next(Cauldron.state(onto:getModData())) == nil and xp == 5)
+    and Fire.attachedTo(onto) == Cauldron.ID and next(Cauldron.cauldronModData(onto:getModData())) == nil and xp == 5)
 check("a second fit is refused", not TPFireFit:new(smith, onto, Cauldron.ID):isValid())
 local off = TPFireFit:new(smith, onto)
 check("Remove is shorter, and valid while the cauldron is empty", off.maxTime == 300 and off:isValid())
-Cauldron.state(onto:getModData()).ml = 1000
+Cauldron.cauldronModData(onto:getModData()).ml = 1000
 check("not while it holds anything", not off:isValid())
-Cauldron.state(onto:getModData()).ml = nil
+Cauldron.cauldronModData(onto:getModData()).ml = nil
 off:complete()
 table.sort(given)
 check("done, every part is back and nothing is fitted", table.concat(given, " ") == "Base.HeavyChain Base.LargeHook Base.MetalPipe "
@@ -397,7 +397,7 @@ check("vanilla's own refusal still stands", ISMoveableSpriteProps.canPickUpMovea
 ui.vanillaPickUp = true
 Perks.Masonry = "Masonry"
 local changed
-local duct = Fire.connect({ id = "testDuct", kinds = { "Pipe" }, blocks = "connection",
+local duct = Fire.connect({ id = "testDuct", kitNames = { "Pipe" }, blocks = "connection",
     kits = { Pipe = { tool = "PLIERS", toolText = "IGUI_TraditionalPreservationCore_ToolPliers", items = { { "Base.MetalPipe", 2 }, { "Base.Clay", 1 } },
         back = "Base.MetalPipe", ticks = 400, removeTicks = 200, xp = { "Masonry", 5 },
         text = "ContextMenu_TraditionalPreservationCore_ConnectPipe", help = "IGUI_TraditionalPreservationCore_FluePipeHelp",
@@ -431,17 +431,17 @@ byPipe = named(named(open(joinable), "ContextMenu_TraditionalPreservationCore_Co
 check("with the kit in reach it can be chosen", byPipe.isDisabled ~= true)
 byPipe.onSelect(character, unpack(byPipe.args))
 local joining = ui.queued[#ui.queued]
-check("choosing it brings the kit to hand and queues the connection", joining.Type == "TPFireConnect" and joining.kind == "Pipe"
-    and joining.fire == joinable and joining.target == joinable.beside and joining.spec == duct)
+check("choosing it brings the kit to hand and queues the connection", joining.Type == "TPFireConnect" and joining.kitName == "Pipe"
+    and joining.fire == joinable and joining.target == joinable.beside and joining.connection == duct)
 
 pack, given, xp = {}, {}, 0
 for _, item in ipairs(ductKit) do table.insert(pack, item) end
 local action = TPFireConnect:new(smith, joinable, joinable.beside, "testDuct", "Pipe")
 check("Connect takes the kit's time and is valid with the kit", action.maxTime == 400 and action:isValid())
 action:complete()
-local joinState = joinable:getModData()[Fire.KEY]
-check("done, the kit is used, the tool kept, it is joined on the back", #pack == 1 and Fire.connectedTo(joinState) == "testDuct"
-    and joinState.testDuct.kind == "Pipe" and joinState.testDuct.side == "Back" and xp == 5 and changed == joinable.beside)
+local fireModData = joinable:getModData()[Fire.KEY]
+check("done, the kit is used, the tool kept, it is joined on the back", #pack == 1 and Fire.connectedTo(fireModData) == "testDuct"
+    and fireModData.testDuct.kitName == "Pipe" and fireModData.testDuct.side == "Back" and xp == 5 and changed == joinable.beside)
 check("a second Connect is refused", not TPFireConnect:new(smith, joinable, joinable.beside, "testDuct", "Pipe"):isValid()
     and Fire.connectRefusal(joinable, duct, joinable.beside) == "IGUI_TraditionalPreservationCore_FlueStoneHearthJoined")
 check("it never blocks the fit", Fire.fitRefusal(joinable, Fire.attachment(Cauldron.ID)) == nil)
@@ -463,12 +463,12 @@ check("Disconnect takes the kit's shorter time", off.maxTime == 200 and off:isVa
 changed = nil
 off:complete()
 check("done, the pipes come back, the clay is lost, nothing is joined", table.concat(given, " ") == "Base.MetalPipe Base.MetalPipe"
-    and Fire.connectedTo(joinState) == nil and joinState.testDuct == nil and changed == joinable.beside)
+    and Fire.connectedTo(fireModData) == nil and fireModData.testDuct == nil and changed == joinable.beside)
 check("and it can be picked up again", ISMoveableSpriteProps.canPickUpMoveable(props, character, nil, joinable) == true)
 
 -- Which is fitted (Fire.isFitted), and an attachment that shows as its own display says
 local pan = Fire.attach({ id = "testPan", name = "IGUI_TraditionalPreservationCore_InfoCauldron",
-    display = { icon = "media/textures/Pan.png", title = "A Pan Hearth", info = "Pan Info",
+    display = { icon = "media/textures/Pan.png", title = "A Pan Hearth", infoText = "Pan Info",
         fire = { bank = "media/textures/PanBanked.png", stoke = "media/textures/PanLit.png" } } })
 local panFire = withCauldron(nil, true)
 panFire:getModData()[Fire.KEY] = { attached = "testPan", testPan = {} }
@@ -490,11 +490,11 @@ check("without one it shows as its kind's, the Stone Hearth's", named(context, "
 local FireUI = require "TraditionalPreservationCore/FireUI"
 CauldronUI.addNotes(function(info, notes) table.insert(notes, "A mod's note on " .. tostring(info.part.fluid)) end)
 FireUI.addNotes(function(_, notes) table.insert(notes, "The fire's note") end)
-local cauldronSpec = Fire.attachment(Cauldron.ID)
-local notes = FireUI.notes({ spec = cauldronSpec, part = { ml = 1000, fluid = "Water" }, lit = false, banked = false })
+local cauldronAttachment = Fire.attachment(Cauldron.ID)
+local notes = FireUI.notes({ attachment = cauldronAttachment, part = { ml = 1000, fluid = "Water" }, lit = false, banked = false })
 check("a fitted one: the cauldron's notes, then a mod's, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_CauldronHelpOut")
     and notes[2] == "A mod's note on Water" and notes[3] == "The fire's note" and #notes == 3)
-notes = FireUI.notes({ help = StoneHearth.kind.display.help, lit = true, banked = false, joinedSpec = duct, joined = { kind = "Pipe" } })
+notes = FireUI.notes({ help = StoneHearth.kind.display.help, lit = true, banked = false, connection = duct, joined = { kitName = "Pipe" } })
 check("a bare one: its help first, no cauldron notes, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_StoneHearthHelpLit")
     and notes[2] == "The fire's note" and #notes == 2)
 

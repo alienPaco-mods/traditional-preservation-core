@@ -7,7 +7,7 @@ local ItemFluid = require "TraditionalPreservationCore/ItemFluid"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 
-Weather.record(function(now)
+Weather.onReading(function(now)
     Station.eachPlayer(function(player) ItemFluid.lookIn(player:getInventory(), now) end)
 end)
 

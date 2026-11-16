@@ -76,8 +76,8 @@ end
 
 function StoneHearth.bareGlow(lit, banked, smoke, hole, face)
     if not lit then return nil end
-    local kind = smoke and "Flue" or (hole == StoneHearth.OPEN or hole == StoneHearth.POT) and hole or ""
-    local base = StoneHearth.BARE_GLOWS[(banked and "Banked" or "Lit") .. kind]
+    local glowFrom = smoke and "Flue" or (hole == StoneHearth.OPEN or hole == StoneHearth.POT) and hole or ""
+    local base = StoneHearth.BARE_GLOWS[(banked and "Banked" or "Lit") .. glowFrom]
     return base and Tiles.PREFIX .. (base + face) or nil
 end
 
@@ -92,9 +92,9 @@ for _, list in ipairs({ StoneHearth.CAULDRON_SPRITES, StoneHearth.BARE_SPRITES }
 end
 
 -- Any Stone Hearth, fitted or not.
-function StoneHearth.isStoneHearth(object)
-    local sprite = object and object:getSprite()
-    return sprite ~= nil and STONE_TILES[sprite:getName()] == true and instanceof(object, "IsoFireplace")
+function StoneHearth.isStoneHearth(isoObject)
+    local sprite = isoObject and isoObject:getSprite()
+    return sprite ~= nil and STONE_TILES[sprite:getName()] == true and instanceof(isoObject, "IsoFireplace")
 end
 
 -- The Stone Hearth's door need their front tile free (Doors), every look of each.
@@ -146,19 +146,19 @@ local NO_LOOK = "Empty"
 
 -- The sprite and glow a Stone Hearth shows now: its attachment's look (drawn by the attachment's sprite and overlay),
 -- or its hole (StoneHearth.holeLook; lidded under a connection that takes the smoke), and its fire.
-local function showing(fire, state, burning, banked)
+local function showing(fire, fireModData, burning, banked)
     local face = StoneHearth.face(fire:getSprite():getName())
     if not face then return nil end
-    local spec, part = Fire.attachmentOf(fire)
-    if spec then
-        local look = spec.look and spec.look(part, fire) or NO_LOOK
+    local attachment, part = Fire.attachmentOf(fire)
+    if attachment then
+        local look = attachment.look and attachment.look(part, fire) or NO_LOOK
         local overlay, colour
-        if spec.overlay then overlay, colour = spec.overlay(part, face, burning, banked) end
-        return spec.sprite(look, face, burning, banked), overlay, colour
+        if attachment.overlay then overlay, colour = attachment.overlay(part, face, burning, banked) end
+        return attachment.sprite(look, face, burning, banked), overlay, colour
     end
     local container = fire:getContainer()
     local hole = StoneHearth.holeLook(container and container:getItems())
-    local smoke = Fire.takesSmoke(state)
+    local smoke = Fire.takesSmoke(fireModData)
     return StoneHearth.bareSprite(smoke, hole, face),
         StoneHearth.bareGlow(burning, banked, smoke, smoke and StoneHearth.LID or hole, face)
 end
@@ -178,7 +178,7 @@ StoneHearth.kind = Fire.kind({
     showing = showing,
     -- How a bare Stone Hearth shows in its menu and Info window, its fire banked or burning up again, and its help.
     display = { icon = "media/textures/Item_TPStoneHearth.png", title = "IGUI_CraftingWindow_TPStoneHearth",
-        info = "ContextMenu_TraditionalPreservationCore_StoneHearthInfo",
+        infoText = "ContextMenu_TraditionalPreservationCore_StoneHearthInfo",
         fire = { bank = "media/textures/Item_TPStoneHearthBanked.png", stoke = "media/textures/Item_TPStoneHearthLit.png" },
         help = { out = "IGUI_TraditionalPreservationCore_StoneHearthHelpOut",
             lit = "IGUI_TraditionalPreservationCore_StoneHearthHelpLit",

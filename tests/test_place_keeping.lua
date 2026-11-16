@@ -27,7 +27,7 @@ end
 
 local on = true
 local keeper = PlaceKeeping.new({
-    kind = "test", curve = { { -2, 0 }, { 4, 0.4 }, { 15, 1 }, { 25, 2 } }, ledgerKey = "TestKeeping",
+    process = "test", curve = { { -2, 0 }, { 4, 0.4 }, { 15, 1 }, { 25, 2 } }, ledgerKey = "TestKeeping",
     modDataKey = "tpKeep", enabled = function() return on end,
     days = { ["Base.Butter"] = { 30, 45 } },
 })
@@ -49,12 +49,12 @@ check("an item not in days keeps its own", other.offAge == 1e9)
 
 local fridge = food("Base.Butter", 30, 45)
 keeper.keep(fridge, 0, "Fridge", ledger)
-for hour = 1, 240 do keeper.record(hour, 15) end
+for hour = 1, 240 do keeper.recordWeather(hour, 15) end
 keeper.keep(butter, 240, nil, ledger)
 keeper.keep(fridge, 240, nil, ledger)
 check("ten days in a basement age it by the basement's warmth", near(butter.age, 2 + 10 * keeper.rate("Basement", ledger), 1e-6))
 check("ten days in a fridge age it four", near(fridge.age, 4, 1e-6))
-check("an unseen item keeps counting where it was last seen", butter.modData.tpKeep.record.place == "Basement")
+check("an unseen item keeps counting where it was last seen", butter.modData.tpKeep.fluidAge.place == "Basement")
 
 keeper.age(fridge, 5)
 check("the console's age moves it on at its place", near(fridge.age, 6, 1e-6))

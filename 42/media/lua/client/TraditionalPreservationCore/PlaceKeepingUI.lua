@@ -12,8 +12,8 @@ local watched = {}
 
 local function keeperOf(item)
     local fullType = item:getFullType()
-    for _, entry in ipairs(watched) do
-        if entry.types[fullType] then return entry.keeper end
+    for _, watch in ipairs(watched) do
+        if watch.types[fullType] then return watch.keeper end
     end
 end
 
@@ -67,10 +67,10 @@ function PlaceKeepingUI.near(types, reach)
     for dx = -reach, reach do
         for dy = -reach, reach do
             local square = cell:getGridSquare(x + dx, y + dy, z)
-            local objects = square and square:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do
-                local object = objects:get(i)
-                for c = 0, object:getContainerCount() - 1 do add(object:getContainerByIndex(c)) end
+            local isoObjects = square and square:getObjects()
+            for i = 0, isoObjects and isoObjects:size() - 1 or -1 do
+                local isoObject = isoObjects:get(i)
+                for c = 0, isoObject:getContainerCount() - 1 do add(isoObject:getContainerByIndex(c)) end
             end
         end
     end

@@ -34,8 +34,8 @@ Uses.remove = remove
 -- Every item with the tag (or, byType, of the full type) in reach.
 local function inReach(character, tag, byType)
     local all = {}
-    for _, entry in ipairs(reach(character)) do
-        local container, recurse = entry[1], entry[2]
+    for _, reachable in ipairs(reach(character)) do
+        local container, recurse = reachable[1], reachable[2]
         local found
         if byType then
             found = recurse and container:getAllTypeRecurse(tag) or container:getAllType(tag)

@@ -13,23 +13,23 @@ local Recipes = require "TraditionalPreservationCore/Recipes"
 
 local Cauldron = {}
 
--- Its attachment id: the cauldron's state is under it in the fire's (Fire.partState). Inside: ml, fluid, parts, tempC,
+-- Its attachment id: the cauldron's state is under it in the fire's (Fire.partModData). Inside: ml, fluid, parts, tempC,
 -- last, boiled, hot, held, offAt (CauldronFluid's).
 Cauldron.ID = StoneHearth.CAULDRON
 Cauldron.ITEM = "TraditionalPreservationCore.ForgedCauldron"
 Cauldron.RECIPE = "TraditionalPreservationCore.Forge_TPCauldron"
 
-function Cauldron.state(modData)
-    return Fire.partState(modData, Cauldron.ID)
+function Cauldron.cauldronModData(modData)
+    return Fire.partModData(modData, Cauldron.ID)
 end
 
--- The cauldron's state, brought up to now where the World runs (Fire.fireStateOf).
+-- The cauldron's state, brought up to now where the World runs (Fire.fireModDataNow).
 function Cauldron.of(fire)
-    Fire.fireStateOf(fire)
-    return Cauldron.state(fire:getModData())
+    Fire.fireModDataNow(fire)
+    return Cauldron.cauldronModData(fire:getModData())
 end
 
-Cauldron.spec = Fire.attach({
+Cauldron.attachment = Fire.attach({
     id = Cauldron.ID,
     name = "IGUI_TraditionalPreservationCore_InfoCauldron",
     fitHelp = "IGUI_TraditionalPreservationCore_FitCauldronHelp",
@@ -50,8 +50,8 @@ Cauldron.spec = Fire.attach({
     sprite = StoneHearth.cauldronSprite,
     overlay = StoneHearth.liquidOverlay,
     -- Heated as the fire was until now, cooled to the air after; its fluid aged where the Stone Hearth stands.
-    heats = function(cauldron, fire, now, fireState, airC, place)
-        CauldronFluid.advance(cauldron, now, airC, fireState)
+    heats = function(cauldron, fire, now, fireModData, airC, place)
+        CauldronFluid.advance(cauldron, now, airC, fireModData)
         FluidAgeing.updateCauldron(cauldron, now, place, CauldronFluid.heldHours(cauldron))
     end,
 })
@@ -59,12 +59,12 @@ Cauldron.spec = Fire.attach({
 -- Where TPPutPieces puts pieces (fat, butter) into a fire's cauldron, as many as fit, as a fluid.
 function Cauldron.piecesInto(fire)
     return {
-        object = fire,
+        station = fire,
         here = function() return fire:getSquare() ~= nil end,
-        room = function(spec) return CauldronFluid.pieceRoom(Cauldron.state(fire:getModData()), spec.fluid, spec.pieceMl) end,
+        room = function(asFluid) return CauldronFluid.pieceRoom(Cauldron.cauldronModData(fire:getModData()), asFluid.fluid, asFluid.pieceMl) end,
         -- Brought up to the minute first, so the pieces mix with the cauldron as it is now.
-        put = function(spec, hoursLeft, now)
-            return CauldronFluid.putPieces(Cauldron.of(fire), spec.fluid, spec.pieceMl, hoursLeft, now)
+        put = function(asFluid, hoursLeft, now)
+            return CauldronFluid.putPieces(Cauldron.of(fire), asFluid.fluid, asFluid.pieceMl, hoursLeft, now)
         end,
         after = function() Fire.redraw(fire) end,
     }

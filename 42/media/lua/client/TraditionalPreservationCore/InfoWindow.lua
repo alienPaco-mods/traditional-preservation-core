@@ -2,7 +2,8 @@
 -- Info). Rows of label and value, filled bars and wrapped notes, kept up to date while open. It closes when the player
 -- walks off or the station is gone. One info window at a time, whatever the mod: opening another closes the last.
 -- InfoWindow.clickOpens makes a click on the station open it.
--- A window derives this, sets its title in new, fills self.info in refresh and draws it in render:
+-- A window derives this, sets its title in new, keeps what it shows in refresh (a view named for its station:
+-- fireView, potView, caskView) and draws it in render:
 --     local MyWindow = InfoWindow:derive("MyModWindow")
 --     function MyWindow.open(playerObj, station) InfoWindow.open(MyWindow, playerObj, station) end
 -- The drawing (drawRow, drawBar, noteLines, drawNoteLines) is shared with StationInfo's block in vanilla's crafting
@@ -61,7 +62,7 @@ function InfoWindow:close()
     if current == self then current = nil end
 end
 
--- Fills self.info; a window's own refresh replaces this. Run twice a second, not every frame.
+-- Fills the window's view; a window's own refresh replaces this. Run twice a second, not every frame.
 function InfoWindow:refresh()
 end
 
@@ -94,17 +95,17 @@ end
 -- For a panel that wraps its own notes (StationInfo).
 InfoWindow.wrapped = wrapped
 
--- A row's value wrapped to width, at least one line. Kept in owner until the width changes; a value changes as its
+-- A row's text wrapped to width, at least one line. Kept in owner until the width changes; a text changes as its
 -- time counts down, so the cache starts over once it holds 32 texts.
-function InfoWindow.valueLines(owner, value, width)
+function InfoWindow.valueLines(owner, text, width)
     if owner.valueWidth ~= width or owner.valueCount > InfoWindow.VALUE_CACHE then
         owner.valueWidth, owner.valueCache, owner.valueCount = width, {}, 0
     end
-    local lines = owner.valueCache[value]
+    local lines = owner.valueCache[text]
     if not lines then
-        lines = wrapped(value, width)
-        if #lines == 0 then lines = { value } end
-        owner.valueCache[value], owner.valueCount = lines, owner.valueCount + 1
+        lines = wrapped(text, width)
+        if #lines == 0 then lines = { text } end
+        owner.valueCache[text], owner.valueCount = lines, owner.valueCount + 1
     end
     return lines
 end
@@ -122,24 +123,24 @@ local function drawText(ui, text, x, y, colour)
     ui:drawText(text, x, y, colour[1], colour[2], colour[3], 1, UIFont.Small)
 end
 
--- A row's value lines when ui is width wide (the space right of the label), kept on ui.
-function InfoWindow.rowLines(ui, layout, value, width)
-    return InfoWindow.valueLines(ui, value, width - layout.padding * 2 - layout.labelWidth)
+-- A row's text lines when ui is width wide (the space right of the label), kept on ui.
+function InfoWindow.rowLines(ui, layout, text, width)
+    return InfoWindow.valueLines(ui, text, width - layout.padding * 2 - layout.labelWidth)
 end
 
--- Draws label (text) and the value's lines at y on ui; returns the next row's y.
-function InfoWindow.drawRow(ui, layout, y, label, value)
+-- Draws label (text) and the text's lines at y on ui; returns the next row's y.
+function InfoWindow.drawRow(ui, layout, y, label, text)
     local lineHeight = InfoWindow.lineHeight()
     drawText(ui, label, layout.padding, y, InfoWindow.LABEL_COLOUR)
-    for _, line in ipairs(InfoWindow.rowLines(ui, layout, value, ui.width)) do
+    for _, line in ipairs(InfoWindow.rowLines(ui, layout, text, ui.width)) do
         drawText(ui, line, layout.padding + layout.labelWidth, y, InfoWindow.VALUE_COLOUR)
         y = y + lineHeight
     end
     return y + InfoWindow.ROW_GAP
 end
 
--- Draws label (text) and a bar filled to share (0 to 1) in colour { r, g, b }, value in its middle; returns the next y.
-function InfoWindow.drawBar(ui, layout, y, label, share, colour, value)
+-- Draws label (text) and a bar filled to share (0 to 1) in colour { r, g, b }, text in its middle; returns the next y.
+function InfoWindow.drawBar(ui, layout, y, label, share, colour, text)
     local lineHeight = InfoWindow.lineHeight()
     local x = layout.padding + layout.labelWidth
     local width = ui.width - x - layout.padding
@@ -149,7 +150,7 @@ function InfoWindow.drawBar(ui, layout, y, label, share, colour, value)
     ui:drawRect(x, top, width, layout.barHeight, 0.6, back[1], back[2], back[3])
     ui:drawRect(x, top, width * math.max(0, math.min(share, 1)), layout.barHeight, 0.9, colour[1], colour[2], colour[3])
     ui:drawRectBorder(x, top, width, layout.barHeight, 0.8, border[1], border[2], border[3])
-    ui:drawTextCentre(value, x + width / 2, y, 1, 1, 1, 1, UIFont.Small)
+    ui:drawTextCentre(text, x + width / 2, y, 1, 1, 1, 1, UIFont.Small)
     return y + lineHeight + InfoWindow.BAR_GAP
 end
 
@@ -181,12 +182,12 @@ function InfoWindow.drawNoteLines(ui, layout, y, notes)
 end
 
 -- A window's row: label is a translation key. Returns the next line's y. bar does the same with a filled bar.
-function InfoWindow:row(y, label, value)
-    return InfoWindow.drawRow(self, LAYOUT, y, getText(label), value)
+function InfoWindow:row(y, label, text)
+    return InfoWindow.drawRow(self, LAYOUT, y, getText(label), text)
 end
 
-function InfoWindow:bar(y, label, share, colour, value)
-    return InfoWindow.drawBar(self, LAYOUT, y, getText(label), share, colour, value)
+function InfoWindow:bar(y, label, share, colour, text)
+    return InfoWindow.drawBar(self, LAYOUT, y, getText(label), share, colour, text)
 end
 
 -- The notes, after which the window fits its height to them.
@@ -195,30 +196,30 @@ function InfoWindow:drawNotes(y, notes)
     if self.height ~= height then self:setHeight(height) end
 end
 
--- Clicking a station opens its info window, as clicking a door opens it. test(object) says whether the object is
--- the mod's station, and open(playerObj, object) opens the window. Not while paused, aiming or out of reach:
+-- Clicking a station opens its info window, as clicking a door opens it. test(isoObject) says whether the object is
+-- the mod's station, and open(playerObj, isoObject) opens the window. Not while paused, aiming or out of reach:
 -- vanilla's own checks for a click. Wraps ISObjectClickHandler.doClickSpecificObject once for every mod, through
 -- Wrap (late, guarded: it is in vanilla's server folder, which loads after this one).
 local clicks = {}
 
-local function canClick(object, playerObj)
+local function canClick(isoObject, playerObj)
     return playerObj and not playerObj:isAiming()
         and not (UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0)
-        and InfoWindow.inReach(playerObj, object)
+        and InfoWindow.inReach(playerObj, isoObject)
 end
 
 local function wrapClickHandler()
-    Wrap.method("ISObjectClickHandler", "doClickSpecificObject", function(vanillaClickObject, object, playerNum, playerObj)
-        if object then
+    Wrap.method("ISObjectClickHandler", "doClickSpecificObject", function(vanillaClickObject, isoObject, playerNum, playerObj)
+        if isoObject then
             for _, click in ipairs(clicks) do
-                if click.test(object) then
-                    if not canClick(object, playerObj) then break end
-                    click.open(playerObj, object)
+                if click.test(isoObject) then
+                    if not canClick(isoObject, playerObj) then break end
+                    click.open(playerObj, isoObject)
                     return true
                 end
             end
         end
-        return vanillaClickObject(object, playerNum, playerObj)
+        return vanillaClickObject(isoObject, playerNum, playerObj)
     end)
 end
 

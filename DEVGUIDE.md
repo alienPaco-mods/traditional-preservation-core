@@ -112,6 +112,30 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
   description (Salt's item on the heat is a `Bucket of Boiling Brine`; "a bucket of brine" is a bucket holding Brine).
 - A recipe is named for what it gives: `Soak Fish` gives `(Soaked)`.
 
+**How code is named** (variables, parameters, functions, table fields, modData and ledger keys, console commands):
+
+1. A name says what the thing is in game: `station`, `fire`, `cauldron`, `jar`, `fish`. Words that need a comment
+   to decode are out: `object`, `entry`, `data`, `record`, `info`, `spec`, `thing`, `value`, `t`, `result`.
+2. The most specific name every caller shares: a Core function that takes any mod's station says `station`, a
+   Yeast-only one `shelf`.
+3. One word, one meaning across the series. The words below mean that and nothing else.
+4. A name tells saved from not saved: what goes in modData or a ledger says it is kept; what lives only while the
+   game runs says so too (`sessionState`).
+5. Vanilla's names stay as vanilla spells them: `modData`, `craftData`, `uiLogic` (a `CraftLogicUILogic`),
+   `playerObj`, the Java getters.
+6. Short names only where Lua expects them: `i`, `j` for indexes, `_` for a value not used.
+7. A rename is a refactor (see Refactoring rules): same tests and golden results, a version bump, renamed by
+   meaning and never by search-and-replace.
+
+The example: `Station.uiLogic(station, sessionState, logic)` gives the station's `CraftLogicUILogic` (the name
+says what comes back, in vanilla's word), kept in the station's session state.
+
+| Word | Means |
+|---|---|
+| `station` | Any mod's placed object the series tracks: a vessel, a shelf, a tub, a fire. |
+| `sessionState` | The table a station tracker keeps for one station while it is loaded: sprites drawn, hanger, heat and light, the cached `uiLogic`. Never saved. |
+| `logic` | The station's `CraftLogic` component. |
+
 **The console convention** (every TP mod, and the template):
 
 | Command | Means |
@@ -190,40 +214,41 @@ local Weather = require "TraditionalPreservationCore/Weather"
      (never cut the name apart), and the tracker's `scan = true` finds one built or put down this session at once.
    - Weather: `Weather.sensitivity(option)` for the sandbox's Temperature Sensitivity, and `Weather.rate(curve,
      celsius, sensitivity, minRate, freezeC)` for a stage's speed (0 frozen, else the curve after the sensitivity,
-     never under minRate). The reading and the season's means are kept once for the series (`Weather.shared`, in the
-     core's ModData); every mod's ledger copies them at each `Weather.record`, so never grow a season mean of your
-     own (`Weather.seasonTemperature`, `Weather.seasonHumidity`). A ledger kind that `Weather.advance` can total
+     never under minRate). The reading and the season's means are kept once for the series (`Weather.weatherModData()`, in the
+     core's ModData); every mod's ledger copies them at each `Weather.onReading`, so never grow a season mean of your
+     own (`Weather.seasonTemperature`, `Weather.seasonHumidity`). A ledger process that `Weather.advance` can total
      (one rate a place) goes through it, never a copy of its loop. `Weather.DEFAULT_PLACE` is where something
      stands when nothing says (a room).
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
-   - `CauldronFluid.taints(fluid, other)`: `fluid` taints `other`; poured in together, either way round, the lot becomes
-     `fluid` (Core names vanilla's `TaintedWater` and `Water`). `CauldronFluid.taintedBy(cauldron, fluid)` says what a pour
-     would make; `CauldronFluid.partsIn` reads a container holding both as all `fluid`. Each fluid in one taint only.
+   - `CauldronFluid.taints(tainting, tainted)`: `tainting` taints `tainted`; poured in together, either way round, the lot
+     becomes `tainting` (Core names vanilla's `TaintedWater` and `Water`). `CauldronFluid.taintedBy(cauldron, fluid)` says what a pour
+     would make; `CauldronFluid.partsIn` reads a container holding both as all `tainting`. Each fluid in one taint only.
    - `CauldronFluid.blend("A", "B")`: fluids that may share the cauldron. `CauldronFluid.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `CauldronFluid.addParts` and read with `CauldronFluid.partsOf`.
    - `CauldronFluid.turnsHot(from, to, hours)`, `CauldronFluid.goesOff(from, to)` + `CauldronFluid.offBy(cauldron, hour)` and
      `CauldronFluid.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
-     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`info.part` is the
-     cauldron's state; `FireUI.notes(info)` builds every Info note, so a test can read them).
+     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`fireView.part` is the
+     cauldron's modData; `FireUI.notes(fireView)` builds every Info note, so a test can read them).
    - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, sprite, overlay, heats, onFire, display, status, menu, rows, notes }`):
      what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,
      its simmer in `FireWorld`) is the first, written against the registry alone. Calling `attach` again with the
-     same id adds fields, so rules go in shared Lua and the menu in client Lua. Its state is its own table under its
-     id in `tpFire` (`Fire.partState(modData, id)`; the cauldron's is `Cauldron.state(modData)`, and
-     `Cauldron.of(fire)` brings it up to now). `Fire.attachmentOf(fire)` gives the spec and state;
+     same id adds fields, so rules go in shared Lua and the menu in client Lua. Its modData is its own table under its
+     id in `tpFire` (`Fire.partModData(modData, id)`; the cauldron's is `Cauldron.cauldronModData(modData)`, and
+     `Cauldron.of(fire)` brings it up to now). `Fire.attachmentOf(fire)` gives the attachment and its modData;
      `Fire.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
-     `Fire.fireStateOf(fire)` is the fire's own state brought up to now. Each field's arguments are in
-     `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses a spec without an
+     `Fire.fireModDataNow(fire)` is the fire's own modData brought up to now. Each field's arguments are in
+     `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses one without an
      id and a field given again as something else. Fit / Remove are Core's (`TPFireFit`, by the attachment's `fit`).
-   - **Connections** (`Fire.connect{ id, kinds, kits, blocks, finds, joined, refusal, onChange, connectText,
+   - **Connections** (`Fire.connect{ id, kitNames, kits, blocks, finds, joined, refusal, onChange, connectText,
      disconnectText, disconnectHelp, icon, notes, smoke }`): what is built onto a fire in
      its second slot, one at a time; the Smokehouse's flue is the first (`Smokehouse.ID`, in `Smokehouse.lua`, its notes
-     in `SmokehouseUI`). Its state is `connected` (the id) and `{ kind, side }` under the id in `tpFire`
-     (`Fire.join(state, id, kind, side)`, `Fire.unjoin(state)`, `Fire.connectedTo(state)`, `Fire.joinOf(state)`,
+     in `SmokehouseUI`). Its modData is `connected` (the id) and `{ kitName, side }` under the id in `tpFire`
+     (`Fire.join(fireModData, id, kitName, side)`, `Fire.unjoin(fireModData)`, `Fire.connectedTo(fireModData)`,
+     `Fire.joinOf(fireModData)`,
      `Fire.connectionOf(fire)`). `blocks` is `"connection"` (the default) or `"both"`: then Fit is refused while it
      is joined and Connect while something is fitted. Each kit is `{ tool, items, back, ticks, removeTicks, xp, anim,
      text, help, name, toolText }`: Connect uses its items, Disconnect gives back the `back` items, the tool is kept.
@@ -251,12 +276,12 @@ local Weather = require "TraditionalPreservationCore/Weather"
      and optional `overlay` (the cauldron's: `StoneHearth.cauldronSprite`, `StoneHearth.liquidOverlay`). `Fire.flueSideTo(fire, square)` is the side a square is on (nil for the
      door's side or not beside it), `Fire.flueSquare(fire, side)` the square on a side; `FireConnect.FLUE_SIDES`
      matches the tile builder's.
-   - `FluidAgeing.register{ kind, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a
-     kind of fluid that goes off (Dairy's milk). The core keeps the age record (`tpFluidAge`) on whatever holds
+   - `FluidAgeing.register{ process, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a
+     kind of fluid that goes off (Dairy's milk). The core keeps the fluid's age (`fluidAge`, saved as `tpFluidAge`) on whatever holds
      it, swaps the fluid when it turns and spoils, and hands the age on through pours and the cauldron. `states` are
      variants of the fresh fluid that never turn (Fish & Meat's Cured blood, done by hand; Dairy's Scalded milk,
      `heat = true`, made by `scaldHeat` and `scaldHold`). One state at a time: heat leaves a fluid in a state as it
-     is, a treatment by hand replaces the heat state. `FluidAgeing.inState(record, name)` asks.
+     is, a treatment by hand replaces the heat state. `FluidAgeing.inState(fluidAge, name)` asks.
    - `Recipes.addFluids(recipe, extra, tag)`: more fluids for a vanilla recipe's fluid line.
      `Recipes.addItems(recipe, extra, tag)`: more items for a plain item line, so a mod's recipe takes another mod's
      item only when that mod is on (check the item with `getScriptManager():FindItem` first). A script never names
@@ -264,7 +289,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Recipes.teach(magazineType, recipeName, tag)` and `Recipes.researchable(itemType, recipeName, tag)`: a mod's
      recipe from a vanilla magazine and by research; each says *Could not find* in the console when a name is wrong.
    - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
-     `Smokehouse.startCounters(modData, owner, hotNeed)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
+     `Smokehouse.startCounters(modData, owner, hotSmokeHoursNeeded)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
      the stacks it owns (`Smokehouse.owns`) with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`.
      Its `UI.slotRules` passes `owns(entity, item)`, so in the shared shed it judges only its own items. Core's README
      ("The Smokehouse") has the details; Fish & Meat is the worked example.
@@ -289,16 +314,16 @@ local Weather = require "TraditionalPreservationCore/Weather"
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
      default and old-save migration (Yeast, Vinegar, the template).
    - Pieces into something as a fluid (Fish & Meat's fat, Dairy's butter): one action, **`TPPutPieces`**, takes a
-     destination (`Cauldron.piecesInto(fire)`, `ItemFluid.piecesInto(item)`: here, room, put, object, after), and one
+     destination (`Cauldron.piecesInto(fire)`, `ItemFluid.piecesInto(item)`: here, room, put, station, after; what goes in is `asFluid` = { fluid, pieceMl, hoursLeft }), and one
      row, **`PiecesUI.row`**: with more than one fitting it opens One (the piece nearest to going off,
      `PiecesUI.oldestFirst`) and All (n). The cauldron's rules are `CauldronFluid.pieceRoom`, `putPieces`, its menu
-     `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, kinds, help, noRoom, refusal })`; a pot's are
+     `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, fluidRows, help, noRoom, refusal })`; a pot's are
      `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
-   - `PlaceKeeping.new(spec)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
-     `spec.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
-     freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`spec.ledgerKey`) and
-     modData clock (`spec.modDataKey`); `spec.enabled` is the sandbox switch, `spec.days` sets fresh and rotten days on
-     an item whose script has none. The mod's World calls `keeper.record(now, temperature)` in its `Weather.record`;
+   - `PlaceKeeping.new(keepingRules)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
+     `keepingRules.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
+     freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`keepingRules.ledgerKey`) and
+     modData clock (`keepingRules.modDataKey`); `keepingRules.enabled` is the sandbox switch, `keepingRules.days` sets fresh and rotten days on
+     an item whose script has none. The mod's World calls `keeper.recordWeather(now, temperature)` in its `Weather.onReading`;
      `PlaceKeepingUI.watch(keeper, types)` looks at the items (Fish & Meat looks at its crocks in its own look);
      `PlaceKeepingUI.near(types, reach)` lists such items carried and in containers within `REACH` (4) tiles, for the
      consoles (`TPD.butter`, `TPFM.crocks`).
@@ -320,7 +345,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      by the use from what a character carries, part-used first. `Uses.onEmptied(tag, fn)`: fn(character, emptied)
      for items of the tag a take used up (Salt gives back its empty shakers and bags). Charge what a recipe line
      can't (Fish & Meat's salt by weight, a cure by the litre) here, not in a copy.
-   - `FluidAgeing` treatments: a kind registered with `treatments`, `litresPerUse` and `treatMenu` gets a submenu on
+   - `FluidAgeing` treatments: a fluid kind registered with `treatments`, `litresPerUse` and `treatMenu` gets a submenu on
      its containers (Fish & Meat's *Cure Blood > -n Salt / -n Vinegar*), greyed with the reason; the timed action is
      `TPFluidTreat`. `FluidTreat.treatRefusal` / `treatBy` / `litresIn` / `treatUses` for a mod's own code (also
      reached as `FluidAgeing.<name>`).
@@ -328,12 +353,12 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `Charge.line(amounts)`: one recipe line that takes a different amount of each item (uses or a count); the
      craft window shows it (`ChargeUI`). `OnHeat.watch(fullType, minutes, fn)`: food kept at frying heat after it
      was made (vanilla's OnCooked fires once).
-   - `Season.register(fullTypes, { kinds = { { name, types, uses }, ... }, unhappy, boredom })` (checked: a seasoning
-     item in one kind only; adds `spec.kindByType`): a food seasoned afterwards,
+   - `Season.register(fullTypes, { groups = { { name, types, uses }, ... }, unhappy, boredom })` (checked: a seasoning
+     item in one group only; adds `seasoning.groupByType`): a food seasoned afterwards,
      as a stew is (Fish & Meat's sausage links). A **Season** submenu on it (`SeasonUI`, timed action `TPSeason`)
-     offers each kind in reach not yet in it; a kind goes in once, no cap, taking `uses` (default 1, what vanilla
+     offers each group in reach not yet in it; a group goes in once, no cap, taking `uses` (default 1, what vanilla
      takes for a stew), each `unhappy` (and `boredom`) nicer. Never hand `Food.setSpices` the food's own list: it clears it first. What went in is the food's own spice list; `Season.carry(from, to,
-     share)` hands it on (smoked, sliced), `Season.record` / `Season.apply` keep it through a pot.
+     share)` hands it on (smoked, sliced), `Season.carried` / `Season.carryOver` keep it through a pot.
    - Sounds: `TPBoiling` for anything of ours that boils (`CookingSound = TPBoiling`), `TPSimmering` (the cauldron, at 85 C or more).
    - `Container.ml(container)` and `Container.isEmptyVessel(item)`; `Recipes.created(craftRecipeData, wanted)` and
      `Recipes.consumed(...)`: an OnCreate's own items as a Lua list, by full type or a set of them.
@@ -473,7 +498,7 @@ What a refactor (and new code) aims for. `FluidAgeing.lua` follows every rule an
    change, apply) gets one helper that takes the middle step as a function.
 4. **Work out once what changes once.** What depends only on what was registered (sets of names, the lowest heat,
    engine objects such as `Fluid.Get`) is worked out at register time, or the first time it is asked for if the
-   engine may not be ready then, and kept on the spec. What a call needs more than once (a record's state, the fluids
+   engine may not be ready then, and kept on the registered table. What a call needs more than once (a fluid age's state, the fluids
    found in a container) is worked out once in that call and passed down. Code on a timer (every minute, every ten,
    each loot refresh) matters most.
 5. **One file, one job.** Split a module when it holds parts with different dependencies or different users (a
@@ -481,7 +506,7 @@ What a refactor (and new code) aims for. `FluidAgeing.lua` follows every rule an
    passes the moved functions on, so no other mod changes.
 6. **Check what register is given.** A `register` function `assert`s the fields it needs and that nothing another
    registration owns is claimed twice, naming the kind and the field, instead of failing later on a `nil` key. Its
-   header says which fields it adds to the spec.
+   header says which fields it adds to the registered table.
 7. **Client files don't add to shared tables.** A client function lives in a local or on the client module's own table.
 8. **Name the magic values.** A fallback place, a tolerance, a radius: a named constant, one per meaning.
 9. **Order never decides.** A result built while going through `pairs` must not depend on the order (Kahlua's
@@ -536,8 +561,8 @@ mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), th
 grid is on.
 Enclosed (the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
 wind, but a box of planks with no thermal mass, so it reads the day's temperature as Open does, and the grid doesn't
-warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its World
-entry. Only Fish & Meat's Smokehouse does; the Yeast, Vinegar and Dairy season reports show no
+warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its session
+state (`sessionState.place`). Only Fish & Meat's Smokehouse does; the Yeast, Vinegar and Dairy season reports show no
 column for it.
 **One place, one temperature:** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers

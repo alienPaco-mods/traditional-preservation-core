@@ -38,21 +38,21 @@ function Panel:new(widget, provider)
     o.widget, o.provider = widget, provider
     o.background = false
     o.ticks = 0
-    o.info = provider(widget.entity)
+    o.stationView = provider(widget.entity)
     return o
 end
 
 -- The block's height at this width; 0 with nothing to show.
 function Panel:measure(width)
-    local info = self.info
-    if not info then return 0 end
+    local stationView = self.stationView
+    if not stationView then return 0 end
     local line = InfoWindow.lineHeight()
-    local height = StationInfo.PADDING + #info.bars * (line + InfoWindow.BAR_GAP)
-    for _, row in ipairs(info.rows) do
+    local height = StationInfo.PADDING + #stationView.bars * (line + InfoWindow.BAR_GAP)
+    for _, row in ipairs(stationView.rows) do
         height = height + #InfoWindow.rowLines(self, LAYOUT, row[2], width) * line + InfoWindow.ROW_GAP
     end
-    local lines = InfoWindow.noteLines(self, LAYOUT, info.notes, width)
-    for index = 1, #info.notes do height = height + InfoWindow.NOTE_GAP + #lines[index] * line end
+    local lines = InfoWindow.noteLines(self, LAYOUT, stationView.notes, width)
+    for index = 1, #stationView.notes do height = height + InfoWindow.NOTE_GAP + #lines[index] * line end
     return height + StationInfo.PADDING
 end
 
@@ -62,7 +62,7 @@ function Panel:update()
     self.ticks = self.ticks + 1
     if self.ticks < StationInfo.REFRESH_TICKS then return end
     self.ticks = 0
-    self.info = self.provider(self.widget.entity)
+    self.stationView = self.provider(self.widget.entity)
     local change = self:measure(self.width) - self.height
     if change ~= 0 and self.widget.xuiRecalculateLayout then
         self.widget:xuiRecalculateLayout(nil, change < 0 and change or nil)
@@ -71,14 +71,14 @@ end
 
 function Panel:render()
     ISPanel.render(self)
-    local info = self.info
-    if not info then return end
+    local stationView = self.stationView
+    if not stationView then return end
     local padding = StationInfo.PADDING
     local y = padding
     self:drawRect(padding, 0, self.width - padding * 2, 1, 0.4, 0.5, 0.5, 0.5)
-    for _, row in ipairs(info.rows) do y = InfoWindow.drawRow(self, LAYOUT, y, getText(row[1]), row[2]) end
-    for _, bar in ipairs(info.bars) do y = InfoWindow.drawBar(self, LAYOUT, y, bar.text, bar.share, bar.colour, bar.value) end
-    InfoWindow.drawNoteLines(self, LAYOUT, y, info.notes)
+    for _, row in ipairs(stationView.rows) do y = InfoWindow.drawRow(self, LAYOUT, y, getText(row[1]), row[2]) end
+    for _, bar in ipairs(stationView.bars) do y = InfoWindow.drawBar(self, LAYOUT, y, bar.text, bar.share, bar.colour, bar.progressText) end
+    InfoWindow.drawNoteLines(self, LAYOUT, y, stationView.notes)
 end
 
 local hooked = false
@@ -117,7 +117,7 @@ local function hook()
 end
 
 -- The last station asked about and its window logic: one window is open at a time, and the logic is costly to make.
-local cached = { entity = nil, entry = {} }
+local cached = { entity = nil, sessionState = {} }
 
 -- The order of running batches: furthest along first; at the same progress (put in together) by recipe name, then
 -- by item count, so the bars keep their rows whatever order the engine lists them in (rule 9).
@@ -138,21 +138,21 @@ local function storedItems(resources, group, io)
 end
 
 -- What a CraftLogic station holds now: the items in its input slots (waiting) and its output slots (finished), and
--- its running batches furthest along first, each { data = its recipe data, progress = 0 to 1, count = items in it }. Nil for anything
+-- its running batches furthest along first, each { craftRecipeData = its recipe data, progress = 0 to 1, count = items in it }. Nil for anything
 -- without a CraftLogic, or before there is a player.
 function StationInfo.contents(entity)
     local resources = entity:getComponent(ComponentType.Resources)
     local logic = entity:getComponent(ComponentType.CraftLogic)
     if not (resources and logic) then return nil end
-    if cached.entity ~= entity then cached.entity, cached.entry = entity, {} end
-    local uiLogic = Station.uiLogic(entity, cached.entry, logic)
+    if cached.entity ~= entity then cached.entity, cached.sessionState = entity, {} end
+    local uiLogic = Station.uiLogic(entity, cached.sessionState, logic)
     if not uiLogic then return nil end
     local batches = {}
     for craftData, items in pairs(uiLogic:getItemsInProgress()) do
         local count = 0
         for _, amount in pairs(items) do count = count + tonumber(tostring(amount)) end
         local recipe = craftData:getRecipe()
-        table.insert(batches, { data = craftData, progress = logic:getProgress(craftData), count = count,
+        table.insert(batches, { craftRecipeData = craftData, progress = logic:getProgress(craftData), count = count,
             name = recipe and recipe:getName() or "" })
     end
     table.sort(batches, StationInfo.batchBefore)
@@ -183,7 +183,7 @@ function StationInfo.block(options)
         table.insert(bars, {
             text = options.numbered and UI.say(KEY .. "InfoBatch", tostring(index), batch.name) or batch.name,
             share = batch.progress,
-            value = days and UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), days, hours)
+            progressText = days and UI.say(KEY .. "InfoLeft", UI.percent(batch.progress), days, hours)
                 or UI.say(KEY .. "InfoPaused", UI.percent(batch.progress)),
             colour = slow and StationInfo.SLOW_COLOUR or StationInfo.GOOD_COLOUR,
         })

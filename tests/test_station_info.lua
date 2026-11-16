@@ -51,7 +51,7 @@ local function widget(entity)
 end
 
 local StationInfo = require "TraditionalPreservationCore/StationInfo"
-local info = { rows = { { "T_Place", "Open air" } }, bars = { { text = "1. Salt fish", share = 0.5, value = "50%", colour = { 0, 1, 0 } } },
+local info = { rows = { { "T_Place", "Open air" } }, bars = { { text = "1. Salt fish", share = 0.5, progressText = "50%", colour = { 0, 1, 0 } } },
     notes = { "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen" } }
 local asked = 0
 StationInfo.add(function(entity)
@@ -89,7 +89,7 @@ for _ = 1, StationInfo.REFRESH_TICKS - 1 do panel:update() end
 check("it doesn't ask every tick", asked == before and frame.relaid == nil)
 panel:update()
 check("it asks again, and an unchanged block lays nothing out", asked == before + 1 and frame.relaid == nil)
-table.insert(info.bars, { text = "2. Charque", share = 0.1, value = "10%", colour = { 0, 1, 0 } })
+table.insert(info.bars, { text = "2. Charque", share = 0.1, progressText = "10%", colour = { 0, 1, 0 } })
 for _ = 1, StationInfo.REFRESH_TICKS do panel:update() end
 check("a block that grew has the window laid out again", frame.relaid ~= nil and frame.relaid[2] == nil)
 frame.relaid = nil
@@ -115,7 +115,7 @@ check("a numbered bar, slow below half speed", shown.bars[1].share == 0.5
     and shown.bars[1].colour == StationInfo.SLOW_COLOUR and #shown.notes == 3)
 local frozen = StationInfo.block({ place = "Open", temperature = -8, rate = 0,
     batches = { { name = "Malt", progress = 0.5 } } })
-check("a frozen batch has no time left: its bar says paused", frozen.bars[1].value:find("InfoPaused") ~= nil
+check("a frozen batch has no time left: its bar says paused", frozen.bars[1].progressText:find("InfoPaused") ~= nil
     and frozen.bars[1].colour == StationInfo.SLOW_COLOUR)
 local bare = StationInfo.block({ place = "Open" })
 check("by the clock: one row, and nothing in it", #bare.rows == 1 and #bare.bars == 0 and #bare.notes == 1)

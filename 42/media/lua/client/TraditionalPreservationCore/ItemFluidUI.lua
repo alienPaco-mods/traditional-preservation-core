@@ -38,15 +38,15 @@ Transfer.before(function(_, item)
 end)
 
 -- The vessels in reach that are empty or hold only the fluid.
-local function vesselsFor(playerObj, spec)
+local function vesselsFor(playerObj, piecesMenu)
     return UI.findItems(playerObj, function(item)
-        if not spec.vessels[item:getFullType()] then return false end
+        if not piecesMenu.vessels[item:getFullType()] then return false end
         local container = item:getFluidContainer()
-        return container ~= nil and (container:isEmpty() or ItemFluid.oneFluid(container) == spec.fluid)
+        return container ~= nil and (container:isEmpty() or ItemFluid.oneFluid(container) == piecesMenu.fluid)
     end)
 end
 
--- spec = {
+-- piecesMenu = {
 --   title      the menu option's text          icon     its texture
 --   items      { full type = true }: the pieces (any of them goes in as the same fluid)
 --   fluid      what a piece becomes            pieceMl  the ml of one piece
@@ -58,27 +58,27 @@ end
 --   refusal    optional function(playerObj): why the player can't, or nil
 -- }
 -- Every text is finished text.
-function ItemFluidUI.addPieces(spec)
+function ItemFluidUI.addPieces(piecesMenu)
     Events.OnFillInventoryObjectContextMenu.Add(function(playerNum, context, items)
-        if not UI.firstSelected(items, function(item) return spec.items[item:getFullType()] end) then return end
+        if not UI.firstSelected(items, function(item) return piecesMenu.items[item:getFullType()] end) then return end
         local playerObj = getSpecificPlayer(playerNum)
-        local pieces = UI.findItems(playerObj, function(item) return spec.items[item:getFullType()] and not item:isRotten() end)
+        local pieces = UI.findItems(playerObj, function(item) return piecesMenu.items[item:getFullType()] and not item:isRotten() end)
         if #pieces == 0 then return end
-        local option = context:addOption(spec.title)
-        option.iconTexture = getTexture(spec.icon)
-        local vessels = vesselsFor(playerObj, spec)
-        if #vessels == 0 then return UI.disable(option, spec.noVessel) end
+        local option = context:addOption(piecesMenu.title)
+        option.iconTexture = getTexture(piecesMenu.icon)
+        local vessels = vesselsFor(playerObj, piecesMenu)
+        if #vessels == 0 then return UI.disable(option, piecesMenu.noVessel) end
         local sub = context:getNew(context)
         context:addSubMenu(option, sub)
-        local refusal = spec.refusal and spec.refusal(playerObj)
-        local put = { fluid = spec.fluid, pieceMl = spec.pieceMl, hoursLeft = spec.hoursLeft }
-        PiecesUI.oldestFirst(pieces, spec.hoursLeft)
+        local refusal = piecesMenu.refusal and piecesMenu.refusal(playerObj)
+        local asFluid = { fluid = piecesMenu.fluid, pieceMl = piecesMenu.pieceMl, hoursLeft = piecesMenu.hoursLeft }
+        PiecesUI.oldestFirst(pieces, piecesMenu.hoursLeft)
         for _, pot in ipairs(vessels) do
-            local room = ItemFluid.roomFor(pot, spec.fluid, spec.pieceMl)
-            local row = PiecesUI.row(sub, { label = spec.label(pot, math.min(room, #pieces)), room = room, pieces = pieces,
-                refusal = refusal, help = spec.help, noRoom = spec.noRoom }, function(chosen)
+            local room = ItemFluid.roomFor(pot, piecesMenu.fluid, piecesMenu.pieceMl)
+            local row = PiecesUI.row(sub, { label = piecesMenu.label(pot, math.min(room, #pieces)), room = room, pieces = pieces,
+                refusal = refusal, help = piecesMenu.help, noRoom = piecesMenu.noRoom }, function(chosen)
                 ISInventoryPaneContextMenu.transferIfNeeded(playerObj, pot)
-                PiecesUI.queue(playerObj, ItemFluid.piecesInto(pot), put, chosen)
+                PiecesUI.queue(playerObj, ItemFluid.piecesInto(pot), asFluid, chosen)
             end)
             row.itemForTexture = pot
         end

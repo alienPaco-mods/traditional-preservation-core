@@ -2,7 +2,7 @@
 -- cauldron) up to the hour: heated while
 -- vanilla's fire burnt (as far as its fuel went), cooled to the room since. Its look is its own sprite swapped among
 -- the fire tiles (vanilla's flames are attached sprites: never clear them). The room's temperature is the series'
--- weather (Weather.shared), so a fire works whichever TP mods are on. A banked fire's vanilla fire is out: its
+-- weather (Weather.weatherModData), so a fire works whichever TP mods are on. A banked fire's vanilla fire is out: its
 -- fuel is set each refresh to the mod's count, it gets a small heat source and a faint light of its own, and its
 -- firebox is kept hot (a custom container temperature) with the food's cooking set back to a third. None of these
 -- three is saved by the game, so each refresh puts them back.
@@ -20,12 +20,12 @@ local World = {}
 Fire.World = World
 
 -- The weather a fire's room goes by.
-World.getLedger = Weather.shared
+World.getLedger = Weather.weatherModData
 
 -- The cooking time each food in a banked firebox had at the last look, by fire and item id. Cooking only runs in
 -- loaded areas, as the refresh does, so this needn't be saved. Vanilla adds cooking time every tick, so a banked
 -- firebox is set back every tick too (slowAll): once a refresh made the cooking bar climb and snap back. Kahlua has
--- no weak tables (ENGINE_NOTES), so a fire's entry goes when the tracker drops it.
+-- no weak tables (ENGINE_NOTES), so a fire's sessionState goes when the tracker drops it.
 local cookSeen = {}
 
 local function slowCooking(fire)
@@ -48,30 +48,30 @@ local function slowCooking(fire)
     cookSeen[fire] = now
 end
 
--- Kahlua's pairs goes over the keys as they were when it started, so slowCooking may set a fire's entry meanwhile.
+-- Kahlua's pairs goes over the keys as they were when it started, so slowCooking may set a fire's sessionState meanwhile.
 local function slowAll()
     for fire in pairs(cookSeen) do slowCooking(fire) end
 end
 
-local function addEmbers(fire, entry)
+local function addEmbers(fire, sessionState)
     local x, y, z = fire:getX(), fire:getY(), fire:getZ()
-    entry.heat = IsoHeatSource.new(x, y, z, Fire.BANKED_HEAT_RADIUS, Fire.BANKED_HEAT_C)
-    getCell():addHeatSource(entry.heat)
+    sessionState.heat = IsoHeatSource.new(x, y, z, Fire.BANKED_HEAT_RADIUS, Fire.BANKED_HEAT_C)
+    getCell():addHeatSource(sessionState.heat)
     local r, g, b = unpack(Fire.BANKED_LIGHT)
-    entry.light = getCell():addLamppost(x, y, z, r, g, b, Fire.BANKED_LIGHT_RADIUS)
+    sessionState.light = getCell():addLamppost(x, y, z, r, g, b, Fire.BANKED_LIGHT_RADIUS)
 end
 
-local function removeEmbers(entry)
-    if entry.heat then getCell():removeHeatSource(entry.heat) end
-    if entry.light then getCell():removeLamppost(entry.light) end
-    entry.heat, entry.light = nil, nil
+local function removeEmbers(sessionState)
+    if sessionState.heat then getCell():removeHeatSource(sessionState.heat) end
+    if sessionState.light then getCell():removeLamppost(sessionState.light) end
+    sessionState.heat, sessionState.light = nil, nil
 end
 
 -- A banked fire's own heat, light and hot firebox, or none of them.
 local function showEmbers(fire, banked)
-    local entry = World.track(fire)
-    if entry and banked and not entry.heat then addEmbers(fire, entry) end
-    if entry and not banked then removeEmbers(entry) end
+    local sessionState = World.track(fire)
+    if sessionState and banked and not sessionState.heat then addEmbers(fire, sessionState) end
+    if sessionState and not banked then removeEmbers(sessionState) end
     local container = fire:getContainer()
     if not container then return end
     local want = banked and Fire.BANKED_FIREBOX or 0
@@ -120,31 +120,31 @@ end
 -- heat and light, notes how long the fire will burn on and adds to its record (Fire.logFire), and shows the
 -- attachment's look (a Stone Hearth: its flue and what is in the hole) and the fire mouth's glow, lit or banked. Returns the fire's state.
 function World.update(fire, now)
-    local state = Fire.stateOf(fire:getModData())
-    local spec, part = Fire.attachmentOf(fire)
+    local fireModData = Fire.fireModData(fire:getModData())
+    local attachment, part = Fire.attachmentOf(fire)
     -- Known by its tile only (put down after a pick-up): noted, so the hole's tiles never take its place.
-    if spec then state.attached = spec.id end
-    local before = spec and spec.look and spec.look(part, fire)
-    if spec and spec.heats then
+    if attachment then fireModData.attached = attachment.id end
+    local before = attachment and attachment.look and attachment.look(part, fire)
+    if attachment and attachment.heats then
         local place = Weather.placeOf(fire)
-        spec.heats(part, fire, now, state, Weather.placeTemperature(World.getLedger(), place), place)
+        attachment.heats(part, fire, now, fireModData, Weather.placeTemperature(World.getLedger(), place), place)
     end
-    local fuel = Fire.reckonFuel(state, fire:getFuelAmount(), fire:isLit(), now)
+    local fuel = Fire.reckonFuel(fireModData, fire:getFuelAmount(), fire:isLit(), now)
     if fuel then fire:setFuelAmount(fuel) end
     local banked = Fire.isBanked(fire)
     showEmbers(fire, banked)
     if banked then slowCooking(fire) else cookSeen[fire] = nil end
     local burning = Fire.isBurning(fire)
-    state.fireUntil = burning and now + Fire.fuelHours(fire) or nil
+    fireModData.fireUntil = burning and now + Fire.fuelHours(fire) or nil
     local mode = banked and Fire.BANKED or fire:isLit() and Fire.STOKED or nil
-    Fire.logFire(state, now, mode, state.fireUntil)
-    local name, overlay, colour = Fire.showing(fire, state, burning, banked)
+    Fire.logFire(fireModData, now, mode, fireModData.fireUntil)
+    local name, overlay, colour = Fire.showing(fire, fireModData, burning, banked)
     if name and fire:getSprite():getName() ~= name then fire:setSprite(getSprite(name)) end
     showOverlay(fire, overlay, colour)
-    if spec and spec.onFire then spec.onFire(part, fire, now, state) end
-    local look = spec and spec.look and spec.look(part, fire)
-    if look ~= before then log("TP", "fire %s %s -> %s", spec.id, tostring(before), tostring(look)) end
-    return state
+    if attachment and attachment.onFire then attachment.onFire(part, fire, now, fireModData) end
+    local look = attachment and attachment.look and attachment.look(part, fire)
+    if look ~= before then log("TP", "fire %s %s -> %s", attachment.id, tostring(before), tostring(look)) end
+    return fireModData
 end
 
 local function refresh(fire)
@@ -153,10 +153,10 @@ end
 
 local tracker = Station.tracker({
     sprites = Fire.sprites(),
-    entry = function(object) return Fire.isFire(object) and {} or nil end,
+    newSessionState = function(isoObject) return Fire.isFire(isoObject) and {} or nil end,
     refresh = refresh,
-    dropped = function(fire, entry)
-        removeEmbers(entry)
+    dropped = function(fire, sessionState)
+        removeEmbers(sessionState)
         simmer(fire, false)
         cookSeen[fire] = nil
         tints[fire] = nil
@@ -170,13 +170,13 @@ World.track = tracker.track
 -- Banks a lit fire (vanilla's fire put out), stokes a banked one up again (lit), or puts a banked one out. The cauldron
 -- is brought up to now first, so it heated as the fire was until now.
 function World.setFire(fire, mode, now)
-    local state = World.update(fire, now)
+    local fireModData = World.update(fire, now)
     if mode == "bank" then
-        Fire.setBanked(state, true, fire:getFuelAmount(), now)
+        Fire.setBanked(fireModData, true, fire:getFuelAmount(), now)
         -- setLit, not extinguish: extinguish lets it smoulder, burning fuel, for ten minutes.
         fire:setLit(false)
     else
-        Fire.setBanked(state, false)
+        Fire.setBanked(fireModData, false)
         if mode == "stoke" and fire:hasFuel() then fire:turnOn() end
     end
     World.refresh(fire)

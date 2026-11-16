@@ -37,7 +37,7 @@ CauldronFluid.ML_PER_L = 1000
 CauldronFluid.AMOUNT_TOLERANCE_L = 0.001
 
 -- What an empty cauldron's state keeps of its fluid: nothing (CauldronFluid.take clears them).
-local FLUID_FIELDS = { "ml", "fluid", "parts", "tempC", "last", "boiled", "hot", "held", "offAt" }
+local FLUID_FIELDS = { "ml", "fluid", "parts", "tempC", "lastHour", "boiled", "steamedHours", "held", "offAt" }
 
 -- Newton's law: tempC after hours at placeC, for a time constant tau.
 function CauldronFluid.cool(tempC, placeC, hours, tau)
@@ -111,15 +111,15 @@ end
 
 -- What ml of a store (the cauldron, or a mod's own: anything with ml, fluid and parts) is, by fluid: { name = ml }.
 -- parts is kept only for a blend, and only its shares count; fluid is then the largest of them.
-function CauldronFluid.partsOf(state, ml)
-    ml = ml or state.ml or 0
-    if state.parts then return share(state.parts, ml) end
-    return state.fluid and ml > 0 and { [state.fluid] = ml } or {}
+function CauldronFluid.partsOf(cauldron, ml)
+    ml = ml or cauldron.ml or 0
+    if cauldron.parts then return share(cauldron.parts, ml) end
+    return cauldron.fluid and ml > 0 and { [cauldron.fluid] = ml } or {}
 end
 
 -- Notes ml of a fluid (a name, or parts for a blend) going into a store. Call it before the store's ml grows.
-function CauldronFluid.addParts(state, fluid, ml)
-    local parts = CauldronFluid.partsOf(state)
+function CauldronFluid.addParts(cauldron, fluid, ml)
+    local parts = CauldronFluid.partsOf(cauldron)
     local added = type(fluid) == "table" and share(fluid, ml) or { [fluid] = ml }
     for name, part in pairs(added) do parts[name] = (parts[name] or 0) + part end
     local count, most = 0, nil
@@ -127,20 +127,20 @@ function CauldronFluid.addParts(state, fluid, ml)
         count = count + 1
         if not most or part > parts[most] or (part == parts[most] and name < most) then most = name end
     end
-    state.fluid = most
-    state.parts = count > 1 and parts or nil
+    cauldron.fluid = most
+    cauldron.parts = count > 1 and parts or nil
 end
 
 -- Fluids that taint another: poured in with it, either way round and whatever the share, the
 -- whole lot becomes the tainting fluid. Clean water with tainted water is all tainted, and must be boiled clean
--- again (pourInto starts the boil over). A fluid taints one other, and is tainted by none.
-local TAINTS, TAINTED = {}, {}   -- clean -> what taints it, and back
+-- again (pourInto starts the boil over). A tainting fluid taints one other, and is tainted by none.
+local TAINTING_FLUID_OF, TAINTED_FLUID_OF = {}, {}   -- tainted -> what taints it; tainting -> what it taints
 
-function CauldronFluid.taints(fluid, other)
-    for _, name in ipairs({ fluid, other }) do
-        assert(TAINTS[name] == nil and TAINTED[name] == nil, "CauldronFluid.taints: " .. tostring(name) .. " is already named")
+function CauldronFluid.taints(tainting, tainted)
+    for _, name in ipairs({ tainting, tainted }) do
+        assert(TAINTING_FLUID_OF[name] == nil and TAINTED_FLUID_OF[name] == nil, "CauldronFluid.taints: " .. tostring(name) .. " is already named")
     end
-    TAINTS[other], TAINTED[fluid] = fluid, other
+    TAINTING_FLUID_OF[tainted], TAINTED_FLUID_OF[tainting] = tainting, tainted
 end
 
 -- The one fluid's name of fluid (a name, or parts), or nil for parts of more than one.
@@ -157,8 +157,8 @@ end
 -- The fluid one of a and b makes of both when it taints the other, or nil.
 local function tainting(a, b)
     if a == nil or b == nil or a == b then return nil end
-    if TAINTS[a] == b then return b end
-    if TAINTS[b] == a then return a end
+    if TAINTING_FLUID_OF[a] == b then return b end
+    if TAINTING_FLUID_OF[b] == a then return a end
 end
 
 -- What the cauldron's fluid becomes with fluid (a name, or parts) poured in, when one taints the other; nil if
@@ -206,7 +206,7 @@ end
 function CauldronFluid.hoursToTurn(cauldron)
     local turn = (cauldron.ml or 0) > 0 and not cauldron.parts and TURNS[cauldron.fluid]
     if not turn then return nil end
-    return math.max(turn.hours - (cauldron.hot or 0), 0)
+    return math.max(turn.hours - (cauldron.steamedHours or 0), 0)
 end
 
 -- How much of ml of a fluid (a name, or parts) fits, or 0 with the reason: one fluid at a time, unless they blend
@@ -248,11 +248,11 @@ function CauldronFluid.pourInto(cauldron, fluid, ml, fluidC, now)
     local had = cauldron.ml or 0
     cauldron.tempC = had > 0 and (cauldron.tempC * had + fluidC * taken) / (had + taken) or fluidC
     cauldron.boiled = nil
-    cauldron.hot = nil
+    cauldron.steamedHours = nil
     cauldron.held = nil
     CauldronFluid.addParts(cauldron, fluid, taken)
     cauldron.ml = had + taken
-    cauldron.last = cauldron.last or now
+    cauldron.lastHour = cauldron.lastHour or now
     return taken
 end
 
@@ -287,9 +287,9 @@ local function countHot(cauldron, target, hours, tau)
     cauldron.held = (cauldron.held or 0) + hot
     local turn = not cauldron.parts and TURNS[cauldron.fluid]
     if not turn then return end
-    cauldron.hot = (cauldron.hot or 0) + hot
-    if cauldron.hot >= turn.hours then
-        cauldron.fluid, cauldron.hot, cauldron.offAt = turn.to, nil, nil
+    cauldron.steamedHours = (cauldron.steamedHours or 0) + hot
+    if cauldron.steamedHours >= turn.hours then
+        cauldron.fluid, cauldron.steamedHours, cauldron.offAt = turn.to, nil, nil
     end
 end
 
@@ -297,7 +297,7 @@ end
 local function goOff(cauldron, now)
     if not cauldron.offAt or cauldron.offAt > now then return end
     if OFF[cauldron.fluid] and not cauldron.parts then cauldron.fluid = OFF[cauldron.fluid] end
-    cauldron.hot, cauldron.offAt = nil, nil
+    cauldron.steamedHours, cauldron.offAt = nil, nil
 end
 
 -- Hours of a fire under the cauldron, lit or banked: water stops at BOIL_C, and the time it spends there counts
@@ -321,27 +321,27 @@ local function heat(cauldron, hours, banked)
     end
 end
 
--- Brings the cauldron up to now by the fire's state (Fire.stateOf: fireUntil, banked; nil for no fire): heating
+-- Brings the cauldron up to now by the fire's state (Fire.fireModData: fireUntil, banked; nil for no fire): heating
 -- while the fire burns (to fireUntil), cooling to roomC after. Over banked embers it settles at BANKED_C, as slowly
 -- as it cools: the fire is low and the stone holds the heat.
 function CauldronFluid.advance(cauldron, now, roomC, fire)
     if (cauldron.ml or 0) <= 0 then return end
-    local t = cauldron.last or now
+    local hour = cauldron.lastHour or now
     local fireUntil = fire and fire.fireUntil
-    goOff(cauldron, t)
-    if fireUntil and fireUntil > t then
+    goOff(cauldron, hour)
+    if fireUntil and fireUntil > hour then
         local stop = math.min(fireUntil, now)
-        heat(cauldron, stop - t, fire.banked)
-        t = stop
+        heat(cauldron, stop - hour, fire.banked)
+        hour = stop
     end
-    if now > t then
+    if now > hour then
         local tau = CauldronFluid.cauldronTau(cauldron.ml, false)
-        countHot(cauldron, roomC, now - t, tau)
-        cauldron.tempC = CauldronFluid.cool(cauldron.tempC, roomC, now - t, tau)
+        countHot(cauldron, roomC, now - hour, tau)
+        cauldron.tempC = CauldronFluid.cool(cauldron.tempC, roomC, now - hour, tau)
         cauldron.boiled = nil
     end
     goOff(cauldron, now)
-    cauldron.last = now
+    cauldron.lastHour = now
 end
 
 -- What the cauldron shows: Empty, Full or Hot (steaming, whatever the fluid).
@@ -416,7 +416,7 @@ function CauldronFluid.partsIn(container)
     end
     local total = container:getAmount()
     if found >= total - CauldronFluid.AMOUNT_TOLERANCE_L then return parts, name end
-    local partner = TAINTS[name] or TAINTED[name]
+    local partner = TAINTING_FLUID_OF[name] or TAINTED_FLUID_OF[name]
     local fluid = partner and fluidObject(partner)
     local amount = fluid and container:getSpecificFluidAmount(fluid) or 0
     if amount <= 0 or found + amount < total - CauldronFluid.AMOUNT_TOLERANCE_L then return nil end
@@ -456,9 +456,9 @@ local function fluidColour(name)
     return fluidColours[name] or nil
 end
 
-function CauldronFluid.liquidColour(state)
+function CauldronFluid.liquidColour(cauldron)
     local total, mix = 0, { 0, 0, 0 }
-    for name, ml in pairs(CauldronFluid.partsOf(state)) do
+    for name, ml in pairs(CauldronFluid.partsOf(cauldron)) do
         local c = fluidColour(name) or { 1, 1, 1 }
         for i = 1, 3 do mix[i] = mix[i] + c[i] * ml end
         total = total + ml

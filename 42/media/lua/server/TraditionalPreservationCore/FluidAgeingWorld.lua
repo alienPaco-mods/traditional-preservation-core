@@ -12,7 +12,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 local Pour = require "TraditionalPreservationCore/Pour"
 local Wrap = require "TraditionalPreservationCore/Wrap"
 
-Weather.record(function(now)
+Weather.onReading(function(now)
     Station.eachPlayer(function(player) FluidAgeing.lookIn(player:getInventory(), now) end)
 end)
 
@@ -47,7 +47,7 @@ end)
 require "TimedActions/Animals/ISGatherBloodFromAnimal"
 Wrap.method("ISGatherBloodFromAnimal", "updateBucket", function(vanillaUpdateBucket, self)
     FluidAgeing.clearIfEmpty(self.bucket)
-    local result = vanillaUpdateBucket(self)
+    local vanillaReturn = vanillaUpdateBucket(self)
     if self.bucket then FluidAgeing.untreat(self.bucket, getGameTime():getWorldAgeHours()) end
-    return result
+    return vanillaReturn
 end)

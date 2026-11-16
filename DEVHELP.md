@@ -18,7 +18,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.hot(minutes)` | Brings its cauldron to the steam (90 C) now, counted as having steamed that long (an hour if left out, past Dairy's 20-minute scald). `TPC.hot(0)` lets you watch a hold count up. |
 | `TPC.warmth()` | Air C and light 1-6 tiles east of the nearest Stone Hearth (Cauldron) and on your square, your core heat, the firebox's heat (and its custom heat while banked), and each cookable food's heat and cooking minutes. |
 | `TPC.stone()` | The nearest Stone Hearth within 2 tiles, fitted or not: position, fire, fuel in minutes, sprite, what is fitted, what is joined (its kit and side), the hole's look, and the square on its back and each flank. |
-| `TPC.flue(kind, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
+| `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (its front tile free, or what blocks it: a wall edge or a sprite with `BlocksPlacement`, `solid` or `solidtrans`), and whether a registered door (Stone Hearth, Smokehouse) opens onto it. For a station the build ghost refuses beside another. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
 

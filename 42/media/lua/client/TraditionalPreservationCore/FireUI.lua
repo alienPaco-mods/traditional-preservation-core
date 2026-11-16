@@ -28,8 +28,8 @@ local TOOL_NAMES = { PLIERS = "IGUI_TraditionalPreservationCore_ToolPliers" }
 -- shows as its attachment's display says (Fire.attach), a bare one, or one whose attachment gives none, as its
 -- kind's (Fire.kind).
 local function lookOf(fire)
-    local spec = Fire.attachmentOf(fire)
-    return spec and spec.display or Fire.kindOf(fire).display
+    local attachment = Fire.attachmentOf(fire)
+    return attachment and attachment.display or Fire.kindOf(fire).display
 end
 
 -- Menu
@@ -157,75 +157,75 @@ end
 
 -- Fit and Remove
 
-local function onFit(playerObj, fire, spec, fitting)
-    bringKit(playerObj, spec.fit, fitting)
+local function onFit(playerObj, fire, attachment, fitting)
+    bringKit(playerObj, attachment.fit, fitting)
     if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-    ISTimedActionQueue.add(TPFireFit:new(playerObj, fire, fitting and spec.id or nil))
+    ISTimedActionQueue.add(TPFireFit:new(playerObj, fire, fitting and attachment.id or nil))
 end
 
 -- Fit <attachment>: its items and tool, what is missing, or why not now.
-local function addFitOption(menu, playerObj, fire, spec)
-    local option = menu:addOption(say("ContextMenu_TraditionalPreservationCore_Fit", getText(spec.name)), playerObj, onFit, fire, spec, true)
-    option.iconTexture = getTexture(spec.fitIcon or FIT_ICON)
-    local lines, short = kitLines(playerObj, spec.fit, spec.fitHelp)
-    local refusal = Fire.fitRefusal(fire, spec)
+local function addFitOption(menu, playerObj, fire, attachment)
+    local option = menu:addOption(say("ContextMenu_TraditionalPreservationCore_Fit", getText(attachment.name)), playerObj, onFit, fire, attachment, true)
+    option.iconTexture = getTexture(attachment.fitIcon or FIT_ICON)
+    local lines, short = kitLines(playerObj, attachment.fit, attachment.fitHelp)
+    local refusal = Fire.fitRefusal(fire, attachment)
     if Fire.isBurning(fire) then table.insert(lines, getText("IGUI_TraditionalPreservationCore_FireBurning")) end
     if refusal == "Blocked" then table.insert(lines, getText("IGUI_TraditionalPreservationCore_FitBlocked")) end
     hover(option, lines, short or refusal)
 end
 
 -- Remove <attachment>: what comes back, or why not now (burning, or it holds something).
-local function addRemoveOption(menu, playerObj, fire, spec)
-    local option = menu:addOption(say("ContextMenu_TraditionalPreservationCore_Remove", getText(spec.name)), playerObj, onFit, fire, spec, false)
-    option.iconTexture = getTexture(spec.fitIcon or FIT_ICON)
-    local lines = { say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Fire.fitBack(spec)), kitToolName(spec.fit)) }
+local function addRemoveOption(menu, playerObj, fire, attachment)
+    local option = menu:addOption(say("ContextMenu_TraditionalPreservationCore_Remove", getText(attachment.name)), playerObj, onFit, fire, attachment, false)
+    option.iconTexture = getTexture(attachment.fitIcon or FIT_ICON)
+    local lines = { say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Fire.fitBack(attachment)), kitToolName(attachment.fit)) }
     local ok, why = Fire.canRemove(fire)
     if not ok then
         table.insert(lines, getText(why == "Burning" and "IGUI_TraditionalPreservationCore_FireBurning" or "IGUI_TraditionalPreservationCore_RemoveFull"))
-    elseif not select(2, kitInReach(playerObj, spec.fit)) then
-        table.insert(lines, say("IGUI_TraditionalPreservationCore_KitMissing", kitToolName(spec.fit)))
+    elseif not select(2, kitInReach(playerObj, attachment.fit)) then
+        table.insert(lines, say("IGUI_TraditionalPreservationCore_KitMissing", kitToolName(attachment.fit)))
     end
     hover(option, lines, #lines > 1)
 end
 
 -- Connect and Disconnect
 
-local function onConnect(playerObj, fire, target, spec, kind)
-    bringKit(playerObj, spec.kits[kind], true)
+local function onConnect(playerObj, fire, target, connection, kitName)
+    bringKit(playerObj, connection.kits[kitName], true)
     if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-    ISTimedActionQueue.add(TPFireConnect:new(playerObj, fire, target, spec.id, kind))
+    ISTimedActionQueue.add(TPFireConnect:new(playerObj, fire, target, connection.id, kitName))
 end
 
-local function onDisconnect(playerObj, fire, target, spec, kit)
+local function onDisconnect(playerObj, fire, target, connection, kit)
     bringKit(playerObj, kit, false)
     if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-    ISTimedActionQueue.add(TPFireConnect:new(playerObj, fire, target, spec.id, nil))
+    ISTimedActionQueue.add(TPFireConnect:new(playerObj, fire, target, connection.id, nil))
 end
 
--- Connect <fire> to target by spec: a row per kit, each with its items and tool, what is missing; greyed with the
+-- Connect <fire> to target by connection: a row per kit, each with its items and tool, what is missing; greyed with the
 -- reason when it can't be done now.
-function FireUI.addConnect(menu, playerObj, fire, target, spec)
-    local option = menu:addOption(getText(spec.connectText))
-    if spec.icon then option.iconTexture = getTexture(spec.icon) end
-    local refusal = Fire.connectRefusal(fire, spec, target)
+function FireUI.addConnect(menu, playerObj, fire, target, connection)
+    local option = menu:addOption(getText(connection.connectText))
+    if connection.icon then option.iconTexture = getTexture(connection.icon) end
+    local refusal = Fire.connectRefusal(fire, connection, target)
     if refusal then return UI.disable(option, getText(refusal)) end
     local sub = menu:getNew(menu)
     menu:addSubMenu(option, sub)
-    for _, kind in ipairs(spec.kinds) do
-        local kit = spec.kits[kind]
-        local choice = sub:addOption(getText(kit.text), playerObj, onConnect, fire, target, spec, kind)
+    for _, kitName in ipairs(connection.kitNames) do
+        local kit = connection.kits[kitName]
+        local choice = sub:addOption(getText(kit.text), playerObj, onConnect, fire, target, connection, kitName)
         hover(choice, kitLines(playerObj, kit, kit.help))
     end
 end
 
 -- Disconnect what is joined to fire (target: what it goes into, nil when that is gone): what comes back, or why not
 -- now (burning, or no tool).
-function FireUI.addDisconnect(menu, playerObj, fire, target, spec)
-    local kit = spec.kits[Fire.joinOf(fire:getModData()[Fire.KEY])]
+function FireUI.addDisconnect(menu, playerObj, fire, target, connection)
+    local kit = connection.kits[Fire.joinOf(fire:getModData()[Fire.KEY])]
     if not kit then return end
-    local option = menu:addOption(getText(spec.disconnectText), playerObj, onDisconnect, fire, target, spec, kit)
-    if spec.icon then option.iconTexture = getTexture(spec.icon) end
-    local lines = { say(spec.disconnectHelp, itemList(Fire.kitBack(kit)), kitToolName(kit)) }
+    local option = menu:addOption(getText(connection.disconnectText), playerObj, onDisconnect, fire, target, connection, kit)
+    if connection.icon then option.iconTexture = getTexture(connection.icon) end
+    local lines = { say(connection.disconnectHelp, itemList(Fire.kitBack(kit)), kitToolName(kit)) }
     if Fire.isBurning(fire) then
         table.insert(lines, getText("IGUI_TraditionalPreservationCore_FireBurning"))
     elseif not select(2, kitInReach(playerObj, kit)) then
@@ -240,9 +240,9 @@ local function addConnectionRows(menu, playerObj, fire)
     if joined then
         return FireUI.addDisconnect(menu, playerObj, fire, joined.joined and joined.joined(fire, part), joined)
     end
-    for _, spec in ipairs(Fire.connections()) do
-        local target = spec.finds and spec.finds(fire)
-        if target then FireUI.addConnect(menu, playerObj, fire, target, spec) end
+    for _, connection in ipairs(Fire.connections()) do
+        local target = connection.finds and connection.finds(fire)
+        if target then FireUI.addConnect(menu, playerObj, fire, target, connection) end
     end
 end
 
@@ -258,40 +258,40 @@ end
 -- adds its own rows and Remove, or a bare one has Fit for each attachment; then the connection's rows and the fire's.
 local function addFireMenu(context, playerObj, fire)
     local look = lookOf(fire)
-    local spec, part = Fire.attachmentOf(fire)
+    local attachment, part = Fire.attachmentOf(fire)
     local menu = fireSubMenu(context, fire)
     fixFuelLine(menu, fire)
 
-    if spec and spec.status then
-        local text, icon = spec.status(part)
+    if attachment and attachment.status then
+        local text, icon = attachment.status(part)
         local status = menu:addOption(text)
         status.isDisabled = true
         status.iconTexture = getTexture(icon)
     end
-    local info = menu:addOption(getText(look.info), playerObj, FireWindow.open, fire)
-    info.iconTexture = getTexture(look.icon)
+    local infoOption = menu:addOption(getText(look.infoText), playerObj, FireWindow.open, fire)
+    infoOption.iconTexture = getTexture(look.icon)
     addFireOption(menu, playerObj, fire)
     if Fire.isBare(fire) then
         for _, each in ipairs(Fire.attachments()) do
             if each.fit and each.name then addFitOption(menu, playerObj, fire, each) end
         end
     else
-        if spec and spec.menu then spec.menu(menu, playerObj, fire, part) end
-        if spec and spec.fit then addRemoveOption(menu, playerObj, fire, spec) end
+        if attachment and attachment.menu then attachment.menu(menu, playerObj, fire, part) end
+        if attachment and attachment.fit then addRemoveOption(menu, playerObj, fire, attachment) end
     end
     addConnectionRows(menu, playerObj, fire)
-    local state = Fire.fireStateOf(fire)
-    for _, fn in ipairs(MENUS) do fn(menu, playerObj, fire, state) end
+    local fireModData = Fire.fireModDataNow(fire)
+    for _, fn in ipairs(MENUS) do fn(menu, playerObj, fire, fireModData) end
 end
 
 local function onFillContextMenu(playerNum, context, worldobjects, test)
-    for _, object in ipairs(worldobjects) do
-        if Fire.isFire(object) then
+    for _, isoObject in ipairs(worldobjects) do
+        if Fire.isFire(isoObject) then
             -- Vanilla's probe for a controller's prompt: say there is a menu, do no work.
             if test then return ISWorldObjectContextMenu.setTest() end
             -- A fire built this session isn't tracked until its area reloads, so its menu starts it.
-            if Fire.World then Fire.World.track(object) end
-            return addFireMenu(context, getSpecificPlayer(playerNum), object)
+            if Fire.World then Fire.World.track(isoObject) end
+            return addFireMenu(context, getSpecificPlayer(playerNum), isoObject)
         end
     end
 end
@@ -303,32 +303,32 @@ UI.keepDoorsFree()
 -- Picking a fire up while it burns (lit or banked) would lose it, and with something fitted or joined that comes off
 -- first (Remove, Disconnect): the fireplace alone is carried. The cursor says Too hot for the fire, Has
 -- items for the rest.
-UI.keepInPlace(function(object)
-    if not Fire.isFire(object) then return nil end
-    if Fire.isBurning(object) then return "tooHot" end
-    return (Fire.attachedTo(object) ~= nil or Fire.connectedTo(object:getModData()[Fire.KEY]) ~= nil) or nil
+UI.keepInPlace(function(isoObject)
+    if not Fire.isFire(isoObject) then return nil end
+    if Fire.isBurning(isoObject) then return "tooHot" end
+    return (Fire.attachedTo(isoObject) ~= nil or Fire.connectedTo(isoObject:getModData()[Fire.KEY]) ~= nil) or nil
 end)
 
 -- A fire's Info (Stone Hearth Info): the fire, its fuel and the attachment's rows and notes.
 
 local NOTES = {}
 
--- Notes on the fire itself, fitted or not, last in its Info (after the connection's own notes). info is FireUI.notes'.
+-- Notes on the fire itself, fitted or not, last in its Info (after the connection's own notes). fireView is FireUI.notes'.
 function FireUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
 
--- What Info says of a fire, from info = { part (the attachment's state, nil with nothing fitted), spec (its
--- attachment), state (the fire's), joinedSpec and joined (the connection and its state, if any), lit, banked, fuelMin,
+-- What Info says of a fire, from fireView = { part (the attachment's state, nil with nothing fitted), attachment (what is
+-- fitted), state (the fire's), connection and joined (the connection and its state, if any), lit, banked, fuelMin,
 -- burnHours, firebox, help (a bare one's: its kind's display.help) }: a bare one's help, the attachment's notes, the
 -- connection's, then the fire's.
-function FireUI.notes(info)
+function FireUI.notes(fireView)
     local notes = {}
-    local help = info.help
-    if help then table.insert(notes, getText(info.banked and help.banked or info.lit and help.lit or help.out)) end
-    if info.spec and info.spec.notes then info.spec.notes(info, notes) end
-    if info.joinedSpec and info.joinedSpec.notes then info.joinedSpec.notes(info, notes, info.joined) end
-    for _, fn in ipairs(NOTES) do fn(info, notes) end
+    local help = fireView.help
+    if help then table.insert(notes, getText(fireView.banked and help.banked or fireView.lit and help.lit or help.out)) end
+    if fireView.attachment and fireView.attachment.notes then fireView.attachment.notes(fireView, notes) end
+    if fireView.connection and fireView.connection.notes then fireView.connection.notes(fireView, notes, fireView.joined) end
+    for _, fn in ipairs(NOTES) do fn(fireView, notes) end
     return notes
 end
 
@@ -346,28 +346,28 @@ end
 
 function FireWindow:refresh()
     local fire = self.station
-    local spec, part = Fire.attachmentOf(fire)
-    local joinedSpec, joined = Fire.connectionOf(fire)
-    self.info = { part = part, spec = spec, state = Fire.fireStateOf(fire), joinedSpec = joinedSpec, joined = joined,
+    local attachment, part = Fire.attachmentOf(fire)
+    local connection, joined = Fire.connectionOf(fire)
+    self.fireView = { part = part, attachment = attachment, fireModData = Fire.fireModDataNow(fire), connection = connection, joined = joined,
         lit = Fire.isBurning(fire), banked = Fire.isBanked(fire), fuelMin = fire:getFuelAmount(),
         burnHours = Fire.fuelHours(fire), help = Fire.isBare(fire) and Fire.kindOf(fire).display.help or nil }
 end
 
 function FireWindow:render()
     ISCollapsableWindow.render(self)
-    if self.isCollapsed or not self.info then return end
-    local info = self.info
+    if self.isCollapsed or not self.fireView then return end
+    local fireView = self.fireView
     local y = self:top()
 
-    local fire = info.banked and "IGUI_TraditionalPreservationCore_InfoFireBanked"
-        or info.lit and "IGUI_TraditionalPreservationCore_InfoFireLit" or "IGUI_TraditionalPreservationCore_InfoFireOut"
+    local fire = fireView.banked and "IGUI_TraditionalPreservationCore_InfoFireBanked"
+        or fireView.lit and "IGUI_TraditionalPreservationCore_InfoFireLit" or "IGUI_TraditionalPreservationCore_InfoFireOut"
     y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFire", getText(fire))
     -- The bar is the wood; the time is how long it burns, three times as long banked.
-    local burnMin = math.floor(info.burnHours * 60)
-    y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", info.fuelMin / FUEL_SCALE_MIN, FUEL_COLOUR,
+    local burnMin = math.floor(fireView.burnHours * 60)
+    y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", fireView.fuelMin / FUEL_SCALE_MIN, FUEL_COLOUR,
         say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)))
-    if info.spec and info.spec.rows then y = info.spec.rows(self, y, info) end
-    self:drawNotes(y, FireUI.notes(info))
+    if fireView.attachment and fireView.attachment.rows then y = fireView.attachment.rows(self, y, fireView) end
+    self:drawNotes(y, FireUI.notes(fireView))
 end
 
 -- Clicking a fire opens its Info, as clicking a TP station opens its window (its firebox is still in the loot window

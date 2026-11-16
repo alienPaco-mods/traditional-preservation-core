@@ -58,15 +58,15 @@ function getClimateManager()
         getTemperature = function() return 18 end, getHumidity = function() return 0.5 end }
 end
 local Weather = require("TraditionalPreservationCore/Weather")
-local state = Weather.shared()
-state.groundTemperature = 9
+local weatherModData = Weather.weatherModData()
+weatherModData.groundTemperature = 9
 run("setWeather", 4)
 check("setWeather sets the engine's override and the season's mean", override.on == true and override.value == 4
-    and state.seasonTemperature == 4 and state.groundTemperature == 9)
+    and weatherModData.seasonTemperature == 4 and weatherModData.groundTemperature == 9)
 run("setWeather", 12, 6, 5)
-check("and takes a season and a ground of their own", override.value == 12 and state.seasonTemperature == 6 and state.groundTemperature == 5)
+check("and takes a season and a ground of their own", override.value == 12 and weatherModData.seasonTemperature == 6 and weatherModData.groundTemperature == 5)
 run("setWeather")
-check("setWeather() ends the override and leaves the means to drift", override.on == false and state.seasonTemperature == 6)
+check("setWeather() ends the override and leaves the means to drift", override.on == false and weatherModData.seasonTemperature == 6)
 
 for _, command in ipairs({ "cauldronInfo", "cauldron", "fuel", "hot" }) do
     check(command .. " says so when no Stone Hearth is near", run(command):find("No Stone Hearth", 1, true) ~= nil)

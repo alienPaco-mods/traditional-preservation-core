@@ -1,9 +1,9 @@
 -- Traditional Preservation core: connections, what is built onto a fire in its second slot (the Smokehouse's
 -- flue is the first), one at a time, on its back or either flank, never the door's side. The fire's state names it
--- (connected), and its own state is kept under its id there: kind (the kit it was built with) and side (Back, Left or
+-- (connected), and its own state is kept under its id there: kitName (the kit it was built with) and side (Back, Left or
 -- Right). Connect and Disconnect are Core's (connectRefusal, join, unjoin; TPFireConnect), by the connection's
 -- kits, never while the fire burns. A connection draws itself on its own object (the Smokehouse's entry overlay draws
--- the flue, Smokehouse.entrySprite); the stone only puts its lid on when the connection takes the smoke (spec.smoke).
+-- the flue, Smokehouse.entrySprite); the stone only puts its lid on when the connection takes the smoke (connection.smoke).
 -- Fire passes every function here on (Fire.connect, Fire.join, ...), so callers name Fire only.
 local Fire = require "TraditionalPreservationCore/Fire"
 
@@ -18,11 +18,11 @@ FireConnect.FLUE_SIDES = {
 -- FLUE_SIDES' sides in the order a search goes through them.
 FireConnect.SIDES = { "Back", "Left", "Right" }
 
--- connect(spec) registers one by spec.id, or adds the fields given to one already registered (Fire.registry), so
--- its rules can be given in shared Lua and its notes in client Lua. kinds and kits come together, a kit for every
--- kind. A spec (fields after id are optional unless said):
+-- connect(connection) registers one by connection.id, or adds the fields given to one already registered (Fire.registry), so
+-- its rules can be given in shared Lua and its notes in client Lua. kitNames and kits come together, a kit for every
+-- kit name. A connection (fields after id are optional unless said):
 --   id                                    its save key under tpFire: never rename it once out
---   kinds, kits                           the ways to build it, in menu order (both needed), each kit { tool (an
+--   kitNames, kits                        the ways to build it, in menu order (both needed), each kit { tool (an
 --                                         ItemTag's name, kept), items = { {full type, count} }, back (the full type
 --                                         Disconnect gives back, as many as went in; the rest is lost), ticks,
 --                                         removeTicks, xp = { perk, amount }, anim (a CharacterActionAnims name),
@@ -36,17 +36,17 @@ FireConnect.SIDES = { "Back", "Left", "Right" }
 --   onChange(fire, target)                after it is built or taken up, the fire redrawn (target may be nil)
 --   connectText, disconnectText, disconnectHelp, icon   client: its menu rows, Disconnect's hover (%1 what comes
 --                                         back, %2 the tool), their icon path
---   notes(info, notes, part)              client: its Info notes
+--   notes(fireView, notes, part)          client: its Info notes
 --   smoke                                 true when it takes the fire's smoke: the hole is lidded, the glow goes up
 --                                         it (the Smokehouse's flue)
 local CONNECTIONS = Fire.registry("Fire.connect")
 
-function FireConnect.connect(spec)
-    local known = CONNECTIONS.add(spec)
-    if spec.kinds or spec.kits then
-        assert(known.kinds and known.kits, "Fire.connect " .. known.id .. ": kinds and kits come together")
-        for _, kind in ipairs(known.kinds) do
-            assert(known.kits[kind], "Fire.connect " .. known.id .. ": no kit for kind " .. tostring(kind))
+function FireConnect.connect(connection)
+    local known = CONNECTIONS.add(connection)
+    if connection.kitNames or connection.kits then
+        assert(known.kitNames and known.kits, "Fire.connect " .. known.id .. ": kitNames and kits come together")
+        for _, kitName in ipairs(known.kitNames) do
+            assert(known.kits[kitName], "Fire.connect " .. known.id .. ": no kit for " .. tostring(kitName))
         end
     end
     return known
@@ -58,49 +58,49 @@ FireConnect.connection = CONNECTIONS.get
 FireConnect.connections = CONNECTIONS.list
 
 -- The id of what is joined to a fire's state, or nil.
-function FireConnect.connectedTo(state)
-    return state and state.connected or nil
+function FireConnect.connectedTo(fireModData)
+    return fireModData and fireModData.connected or nil
 end
 
--- The kind and side of what is joined (Pipe, Back), or nil.
-function FireConnect.joinOf(state)
-    local id = FireConnect.connectedTo(state)
-    local part = id and state[id]
+-- The kit name and side of what is joined (Pipe, Back), or nil.
+function FireConnect.joinOf(fireModData)
+    local id = FireConnect.connectedTo(fireModData)
+    local part = id and fireModData[id]
     if not part then return nil end
-    return part.kind, part.side
+    return part.kitName, part.side
 end
 
--- Whether what is joined takes the fire's smoke (spec.smoke).
-function FireConnect.takesSmoke(state)
-    local spec = CONNECTIONS.get(FireConnect.connectedTo(state))
-    return spec and spec.smoke and FireConnect.joinOf(state) ~= nil or false
+-- Whether what is joined takes the fire's smoke (connection.smoke).
+function FireConnect.takesSmoke(fireModData)
+    local connection = CONNECTIONS.get(FireConnect.connectedTo(fireModData))
+    return connection and connection.smoke and FireConnect.joinOf(fireModData) ~= nil or false
 end
 
--- What is joined to a fire: its spec and state, or nil.
+-- What is joined to a fire: its connection and state, or nil.
 function FireConnect.connectionOf(fire)
     local id = FireConnect.connectedTo(fire:getModData()[Fire.KEY])
-    local spec = CONNECTIONS.get(id)
-    if not spec then return nil end
-    return spec, Fire.partState(fire:getModData(), id)
+    local connection = CONNECTIONS.get(id)
+    if not connection then return nil end
+    return connection, Fire.partModData(fire:getModData(), id)
 end
 
--- Joins connection id to a fire's state by a kit's kind on a side (Back, Left or Right). Anything else (an unknown
--- id or kind, the door's side) leaves nothing joined.
-function FireConnect.join(state, id, kind, side)
-    FireConnect.unjoin(state)
-    local spec = CONNECTIONS.get(id)
-    if spec and spec.kits[kind] and FireConnect.FLUE_SIDES[0][side] then
-        state.connected = id
-        state[id] = { kind = kind, side = side }
+-- Joins connection id to a fire's state by a kit name on a side (Back, Left or Right). Anything else (an unknown
+-- id or kit name, the door's side) leaves nothing joined.
+function FireConnect.join(fireModData, id, kitName, side)
+    FireConnect.unjoin(fireModData)
+    local connection = CONNECTIONS.get(id)
+    if connection and connection.kits[kitName] and FireConnect.FLUE_SIDES[0][side] then
+        fireModData.connected = id
+        fireModData[id] = { kitName = kitName, side = side }
     end
 end
 
 -- Takes what is joined off a fire's state. Returns its id and state.
-function FireConnect.unjoin(state)
-    local id = FireConnect.connectedTo(state)
-    local part = id and state[id]
-    if id then state[id] = nil end
-    state.connected = nil
+function FireConnect.unjoin(fireModData)
+    local id = FireConnect.connectedTo(fireModData)
+    local part = id and fireModData[id]
+    if id then fireModData[id] = nil end
+    fireModData.connected = nil
     return id, part
 end
 
@@ -122,13 +122,13 @@ function FireConnect.connectRefusalOf(c)
     return nil
 end
 
-function FireConnect.connectRefusal(fire, spec, target)
+function FireConnect.connectRefusal(fire, connection, target)
     return FireConnect.connectRefusalOf({
         joined = FireConnect.connectedTo(fire:getModData()[Fire.KEY]) ~= nil,
-        own = spec.refusal and spec.refusal(fire, target),
+        own = connection.refusal and connection.refusal(fire, target),
         side = Fire.flueSideTo(fire, target:getSquare()),
         burning = Fire.isBurning(fire),
-        fitted = spec.blocks == "both" and Fire.attachedTo(fire) ~= nil,
+        fitted = connection.blocks == "both" and Fire.attachedTo(fire) ~= nil,
         refusals = Fire.kindOf(fire).refusals,
     })
 end

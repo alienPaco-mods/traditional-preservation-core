@@ -8,10 +8,10 @@ local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Tiles = require "__MOD__/Tiles"
 
-local function refresh(station, entry)
+local function refresh(station, sessionState)
     local logic = station:getComponent(ComponentType.CraftLogic)
     if not logic then return end
-    local uiLogic = Station.uiLogic(station, entry, logic)
+    local uiLogic = Station.uiLogic(station, sessionState, logic)
     if not uiLogic then return end
     local now = getGameTime():getWorldAgeHours()
     for craftData in pairs(uiLogic:getItemsInProgress()) do
@@ -23,7 +23,7 @@ local tracker = Station.tracker({ sprites = Tiles.STATIONS, refresh = refresh })
 
 __MOD__World.track = tracker.track
 
-Weather.record(function(now, climate)
+Weather.onReading(function(now, climate)
     local M = __MOD__
     M.advance(M.getLedger(), now, climate:getTemperature())
 end)

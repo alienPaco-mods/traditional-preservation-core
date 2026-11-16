@@ -10,13 +10,13 @@ local Fire = require "TraditionalPreservationCore/Fire"
 
 local function stillFits(self)
     if not self.fire:getSquare() then return false end
-    if self.fitting then return Fire.fitRefusal(self.fire, self.spec) == nil end
-    return Fire.attachedTo(self.fire) == self.spec.id and Fire.canRemove(self.fire)
+    if self.fitting then return Fire.fitRefusal(self.fire, self.attachment) == nil end
+    return Fire.attachedTo(self.fire) == self.attachment.id and Fire.canRemove(self.fire)
 end
 
 function TPFireFit:isValid()
-    return Action.hasTool(self.character, self.spec.fit.tool) and stillFits(self)
-        and (not self.fitting or Action.kitItems(self.character, self.spec.fit.items) ~= nil)
+    return Action.hasTool(self.character, self.attachment.fit.tool) and stillFits(self)
+        and (not self.fitting or Action.kitItems(self.character, self.attachment.fit.items) ~= nil)
 end
 
 function TPFireFit:waitToStart()
@@ -31,15 +31,15 @@ end
 function TPFireFit:complete()
     if not stillFits(self) then return false end
     if self.fitting then
-        local items = Action.kitItems(self.character, self.spec.fit.items)
+        local items = Action.kitItems(self.character, self.attachment.fit.items)
         if not items then return false end
         Action.takeItems(self.character, items)
-        Fire.fit(self.fire, self.spec.id)
+        Fire.fit(self.fire, self.attachment.id)
     else
-        Action.giveItems(self.character, Fire.fitBack(self.spec))
+        Action.giveItems(self.character, Fire.fitBack(self.attachment))
         Fire.unfit(self.fire)
     end
-    Action.addXp(self.character, self.spec.fit.xp)
+    Action.addXp(self.character, self.attachment.fit.xp)
     Fire.redraw(self.fire)
     return true
 end
@@ -49,7 +49,7 @@ function TPFireFit:perform()
 end
 
 function TPFireFit:getDuration()
-    local fit = self.spec.fit
+    local fit = self.attachment.fit
     return Action.duration(self.character, self.fitting and fit.ticks or fit.removeTicks or fit.ticks)
 end
 
@@ -58,7 +58,7 @@ function TPFireFit:new(character, fire, id)
     local o = ISBaseTimedAction.new(self, character)
     o.fire = fire
     o.fitting = id ~= nil
-    o.spec = Fire.attachment(id or Fire.attachedTo(fire))
+    o.attachment = Fire.attachment(id or Fire.attachedTo(fire))
     o.maxTime = o:getDuration()
     return o
 end

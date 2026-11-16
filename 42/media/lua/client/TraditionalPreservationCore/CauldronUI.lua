@@ -47,18 +47,18 @@ local function cauldronStatus(cauldron)
         holds(cauldron), degrees(cauldron.tempC))
 end
 
--- The option's submenu: one entry per item, labelled by label(item), drawn as the inventory draws it (a bucket shows
--- the colour of what is in it), queuing mode on the fire. Returns each entry with its item.
+-- The option's submenu: one option per item, labelled by label(item), drawn as the inventory draws it (a bucket shows
+-- the colour of what is in it), queuing mode on the fire. Returns each option with its item.
 local function itemSubMenu(menu, option, playerObj, fire, items, label, mode)
     local sub = menu:getNew(menu)
     menu:addSubMenu(option, sub)
-    local entries = {}
+    local rows = {}
     for _, item in ipairs(items) do
-        local entry = sub:addOption(label(item), playerObj, onCauldronAction, fire, item, mode)
-        entry.itemForTexture = item
-        table.insert(entries, { entry = entry, item = item })
+        local itemOption = sub:addOption(label(item), playerObj, onCauldronAction, fire, item, mode)
+        itemOption.itemForTexture = item
+        table.insert(rows, { option = itemOption, item = item })
     end
-    return entries
+    return rows
 end
 
 -- Every container with a fluid in it. A mix, or a fluid that doesn't go with the cauldron's, shows in red with the
@@ -73,13 +73,13 @@ local function addPourInMenu(menu, playerObj, fire, cauldron)
         return container ~= nil and not container:isEmpty()
     end)
     if #items == 0 then return disableWith(option, getText("IGUI_TraditionalPreservationCore_NoFluidItem")) end
-    local entries = itemSubMenu(menu, option, playerObj, fire, items, function(item)
+    local rows = itemSubMenu(menu, option, playerObj, fire, items, function(item)
         return say("ContextMenu_TraditionalPreservationCore_FluidItem", UI.itemName(item),
             litresText(item:getFluidContainer():getAmount() * 1000))
     end, "pourIn")
-    for _, made in ipairs(entries) do
-        local entry = made.entry
-        local parts = CauldronFluid.partsIn(made.item:getFluidContainer())
+    for _, row in ipairs(rows) do
+        local option = row.option
+        local parts = CauldronFluid.partsIn(row.item:getFluidContainer())
         local refusal
         if not parts then
             refusal = getText("IGUI_TraditionalPreservationCore_NotOneFluid")
@@ -88,12 +88,12 @@ local function addPourInMenu(menu, playerObj, fire, cauldron)
         end
         local tainted = not refusal and CauldronFluid.taintedBy(cauldron, parts)
         if refusal then
-            entry.notAvailable = true
-            tooltipFor(entry, refusal)
+            option.notAvailable = true
+            tooltipFor(option, refusal)
         elseif tainted and not UI.hidesTaint(tainted) then
             local lines = { say("IGUI_TraditionalPreservationCore_CauldronTaints", fluidName(tainted)) }
             if CauldronFluid.BOILED[tainted] then table.insert(lines, getText("IGUI_TraditionalPreservationCore_CauldronBoilAgain")) end
-            tooltipFor(entry, table.concat(lines, " <LINE> "))
+            tooltipFor(option, table.concat(lines, " <LINE> "))
         end
     end
 end
@@ -123,24 +123,24 @@ local function addEmptyOption(menu, playerObj, fire, cauldron)
 end
 
 -- Steaming already, or when it will be while the fire burns on.
-local function steamText(info)
-    local cauldron = info.part
+local function steamText(fireView)
+    local cauldron = fireView.part
     if CauldronFluid.isHot(cauldron) then return getText("IGUI_TraditionalPreservationCore_InfoHotYes") end
-    if info.banked then return getText("IGUI_TraditionalPreservationCore_InfoHotBanked") end
-    local hotIn = info.lit and CauldronFluid.hoursToHot(cauldron)
-    if hotIn and hotIn <= info.burnHours then return say("IGUI_TraditionalPreservationCore_InfoHotIn", hoursText(hotIn)) end
+    if fireView.banked then return getText("IGUI_TraditionalPreservationCore_InfoHotBanked") end
+    local hotIn = fireView.lit and CauldronFluid.hoursToHot(cauldron)
+    if hotIn and hotIn <= fireView.burnHours then return say("IGUI_TraditionalPreservationCore_InfoHotIn", hoursText(hotIn)) end
     return getText("IGUI_TraditionalPreservationCore_InfoHotNo")
 end
 
-local function cauldronRows(window, y, info)
-    local cauldron, ml = info.part, mlOf(info.part)
+local function cauldronRows(window, y, fireView)
+    local cauldron, ml = fireView.part, mlOf(fireView.part)
     y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCauldron", ml / CauldronFluid.CAULDRON_ML, CauldronFluid.liquidColour(cauldron) or IRON_COLOUR,
         say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(CauldronFluid.CAULDRON_ML)))
     y = window:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
         ml > 0 and holds(cauldron) or getText("IGUI_TraditionalPreservationCore_InfoNothing"))
     y = window:row(y, "IGUI_TraditionalPreservationCore_InfoTemp",
         ml > 0 and say("IGUI_TraditionalPreservationCore_InfoDegrees", degrees(cauldron.tempC)) or "-")
-    if ml > 0 then y = window:row(y, "IGUI_TraditionalPreservationCore_InfoHot", steamText(info)) end
+    if ml > 0 then y = window:row(y, "IGUI_TraditionalPreservationCore_InfoHot", steamText(fireView)) end
     return y
 end
 
@@ -151,58 +151,58 @@ function CauldronUI.addMenu(fn)
     table.insert(MENUS, fn)
 end
 
--- fn(info, notes) adds lines to the fire's Info notes, after the cauldron's own; info.part is the cauldron's state
--- (FireUI.notes has the rest of info).
+-- fn(fireView, notes) adds lines to the fire's Info notes, after the cauldron's own; fireView.part is the cauldron's modData
+-- (FireUI.notes has the rest of fireView).
 function CauldronUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
 
--- A menu row putting pieces in the cauldron as a fluid (PiecesUI, TPPutPieces), with a sub-row for each kind carried,
--- the pieces counted and rotten ones left out, One or All; only someone carrying some sees it. spec: { title, icon (a texture name),
--- pieceMl, hoursLeft = function(item), kinds = { { fluid, items = { [fullType] = true }, label = function(count) } },
+-- A menu row putting pieces in the cauldron as a fluid (PiecesUI, TPPutPieces), with a sub-row for each fluid carried,
+-- the pieces counted and rotten ones left out, One or All; only someone carrying some sees it. piecesMenu: { title,
+-- icon (a texture name), pieceMl, hoursLeft = function(item), fluidRows = { { fluid, items = { [fullType] = true }, label = function(count) } },
 -- help, noRoom (finished text), refusal = optional function(playerObj) giving finished text when the player can't }.
-function CauldronUI.addPieces(spec)
+function CauldronUI.addPieces(piecesMenu)
     CauldronUI.addMenu(function(menu, playerObj, fire, cauldron)
         local carried = {}
-        for _, kind in ipairs(spec.kinds) do
-            local pieces = findItems(playerObj, function(item) return kind.items[item:getFullType()] and not item:isRotten() end)
-            if #pieces > 0 then table.insert(carried, { kind = kind, pieces = pieces }) end
+        for _, fluidRow in ipairs(piecesMenu.fluidRows) do
+            local pieces = findItems(playerObj, function(item) return fluidRow.items[item:getFullType()] and not item:isRotten() end)
+            if #pieces > 0 then table.insert(carried, { fluidRow = fluidRow, pieces = pieces }) end
         end
         if #carried == 0 then return end
-        local option = menu:addOption(spec.title)
-        option.iconTexture = getTexture(spec.icon)
+        local option = menu:addOption(piecesMenu.title)
+        option.iconTexture = getTexture(piecesMenu.icon)
         local sub = menu:getNew(menu)
         menu:addSubMenu(option, sub)
-        local refusal = spec.refusal and spec.refusal(playerObj)
-        for _, entry in ipairs(carried) do
-            local pieces = { fluid = entry.kind.fluid, pieceMl = spec.pieceMl, hoursLeft = spec.hoursLeft }
-            local row = PiecesUI.row(sub, { label = entry.kind.label(#entry.pieces),
-                room = CauldronFluid.pieceRoom(cauldron, entry.kind.fluid, spec.pieceMl),
-                pieces = PiecesUI.oldestFirst(entry.pieces, spec.hoursLeft),
-                refusal = refusal, help = spec.help, noRoom = spec.noRoom }, function(chosen)
+        local refusal = piecesMenu.refusal and piecesMenu.refusal(playerObj)
+        for _, carriedRow in ipairs(carried) do
+            local asFluid = { fluid = carriedRow.fluidRow.fluid, pieceMl = piecesMenu.pieceMl, hoursLeft = piecesMenu.hoursLeft }
+            local row = PiecesUI.row(sub, { label = carriedRow.fluidRow.label(#carriedRow.pieces),
+                room = CauldronFluid.pieceRoom(cauldron, carriedRow.fluidRow.fluid, piecesMenu.pieceMl),
+                pieces = PiecesUI.oldestFirst(carriedRow.pieces, piecesMenu.hoursLeft),
+                refusal = refusal, help = piecesMenu.help, noRoom = piecesMenu.noRoom }, function(chosen)
                 if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-                PiecesUI.queue(playerObj, Cauldron.piecesInto(fire), pieces, chosen)
+                PiecesUI.queue(playerObj, Cauldron.piecesInto(fire), asFluid, chosen)
             end)
-            row.itemForTexture = entry.pieces[1]
+            row.itemForTexture = carriedRow.pieces[1]
         end
     end)
 end
 
-local function cauldronNotes(info, notes)
-    if mlOf(info.part) <= 0 then
+local function cauldronNotes(fireView, notes)
+    if mlOf(fireView.part) <= 0 then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpEmpty"))
-    elseif not info.lit then
+    elseif not fireView.lit then
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpOut"))
     end
-    if info.banked then table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpBanked")) end
-    for _, fn in ipairs(NOTES) do fn(info, notes) end
+    if fireView.banked then table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpBanked")) end
+    for _, fn in ipairs(NOTES) do fn(fireView, notes) end
 end
 
 Fire.attach({
     id = Cauldron.ID,
     fitIcon = "media/textures/Item_TPCauldronFit.png",
     display = { icon = "media/textures/Item_TPStoneHearthCauldron.png", title = "IGUI_CraftingWindow_TPStoneHearthCauldron",
-        info = "ContextMenu_TraditionalPreservationCore_StoneHearthCauldronInfo",
+        infoText = "ContextMenu_TraditionalPreservationCore_StoneHearthCauldronInfo",
         fire = { bank = "media/textures/Item_TPStoneHearthCauldronBanked.png", stoke = "media/textures/Item_TPStoneHearthCauldronLit.png" } },
     status = function(cauldron) return cauldronStatus(cauldron), mlOf(cauldron) > 0 and CAULDRON_FULL_ICON or CAULDRON_ICON end,
     menu = function(menu, playerObj, fire, cauldron)

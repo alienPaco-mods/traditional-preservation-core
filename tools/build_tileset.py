@@ -189,7 +189,7 @@ CHAMBER_FOOT_SHADE = 0.5
 # and part (chamber_entry_index). The Stone Hearth's pipe comes in at PIPE_TOP, PIPE_SHIFT towards the viewer; its trench
 # at ground level, in the middle.
 CHAMBER_ENTRY = 36
-FLUE_KINDS = ["Pipe", "Stones"]
+FLUE_KIT_NAMES = ["Pipe", "Stones"]
 # A ham hung by the door while finished stacks wait in the chamber: one overlay per face, on the
 # door's tile, on the door's end wall beside the door. Named for what it means, not the ham (Core names no product).
 CHAMBER_READY = 44
@@ -1034,9 +1034,9 @@ def chamber_index(face_index, part):
     return CHAMBER + face_index * 2 + part
 
 
-def chamber_entry_index(kind, face_index, part):
+def chamber_entry_index(kit_name, face_index, part):
     """Smokehouse.entrySprite numbers them the same way."""
-    return CHAMBER_ENTRY + (FLUE_KINDS.index(kind) * len(FACES) + face_index) * 2 + part
+    return CHAMBER_ENTRY + (FLUE_KIT_NAMES.index(kit_name) * len(FACES) + face_index) * 2 + part
 
 
 # A two-tile station names each tile's place in the grid ("x,y", as vanilla's Drying Rack and Loom): facing S the
@@ -1047,8 +1047,8 @@ for face_index, face in enumerate(FACES):
         TILE_PROPS[chamber_index(face_index, part)] = [("BlocksPlacement", ""), ("CustomName", "Chamber"), ("Facing", face),
                                                        ("GroupName", "Smokehouse"), ("IsMoveAble", ""), ("PickUpWeight", "200"),
                                                        ("solidtrans", ""), ("ForceSingleItem", ""), ("SpriteGridPos", grid)]
-        for kind in FLUE_KINDS:
-            TILE_PROPS[chamber_entry_index(kind, face_index, part)] = [("Facing", face)]
+        for kit_name in FLUE_KIT_NAMES:
+            TILE_PROPS[chamber_entry_index(kit_name, face_index, part)] = [("Facing", face)]
     TILE_PROPS[CHAMBER_READY + face_index] = [("Facing", face)]
 
 
@@ -1434,8 +1434,8 @@ def main():
             tiles[index + face] = paint_bare_glow(kind, face)
         for part in range(2):
             tiles[chamber_index(face, part)] = paint_chamber(FACES[face], part)
-            for kind in FLUE_KINDS:
-                tiles[chamber_entry_index(kind, face, part)] = paint_chamber_entry(kind, FACES[face], part)
+            for kit_name in FLUE_KIT_NAMES:
+                tiles[chamber_entry_index(kit_name, face, part)] = paint_chamber_entry(kit_name, FACES[face], part)
         tiles[CHAMBER_READY + face] = paint_chamber_ham(FACES[face])
     (media / "texturepacks").mkdir(parents=True, exist_ok=True)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)

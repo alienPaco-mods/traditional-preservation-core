@@ -1,11 +1,11 @@
 -- Traditional Preservation core: putting pieces from the inventory into something as a fluid, as many as fit, the
 -- oldest first (Fish & Meat's Put Fat in the Cauldron, Dairy's Put Butter in the Cauldron and in a Pot; PiecesUI makes
 -- the rows). Where they go is the destination's say, so one action serves every one:
---   into = { here(character): it is still there to put into, room(spec): how many fit now,
---            put(spec, hoursLeft, now): puts that many (hoursLeft per piece), returns how many went in,
---            object: a world object to face, or nil; item: the vessel, for a carried one; after(): optional }
+--   into = { here(character): it is still there to put into, room(asFluid): how many fit now,
+--            put(asFluid, hoursLeft, now): puts that many (hoursLeft per piece), returns how many went in,
+--            station: the station or fire to face, or nil; item: the vessel, for a carried one; after(): optional }
 -- Cauldron.piecesInto(fire) and ItemFluid.piecesInto(item) make them.
--- spec: { fluid, pieceMl, hoursLeft = function(item) the hours until it would go off }.
+-- asFluid: { fluid, pieceMl, hoursLeft = function(item) the hours until it would go off }.
 require "TimedActions/ISBaseTimedAction"
 
 TPPutPieces = ISBaseTimedAction:derive("TPPutPieces")
@@ -24,12 +24,12 @@ local function piecesHere(self)
 end
 
 function TPPutPieces:isValid()
-    return self.into.here(self.character) and #piecesHere(self) > 0 and self.into.room(self.spec) > 0
+    return self.into.here(self.character) and #piecesHere(self) > 0 and self.into.room(self.asFluid) > 0
 end
 
 function TPPutPieces:waitToStart()
-    if not self.into.object then return false end
-    self.character:faceThisObject(self.into.object)
+    if not self.into.station then return false end
+    self.character:faceThisObject(self.into.station)
     return self.character:shouldBeTurning()
 end
 
@@ -39,8 +39,8 @@ end
 
 function TPPutPieces:complete()
     local pieces, hoursLeft = piecesHere(self), {}
-    for index, item in ipairs(pieces) do hoursLeft[index] = self.spec.hoursLeft(item) end
-    local count = self.into.put(self.spec, hoursLeft, getGameTime():getWorldAgeHours())
+    for index, item in ipairs(pieces) do hoursLeft[index] = self.asFluid.hoursLeft(item) end
+    local count = self.into.put(self.asFluid, hoursLeft, getGameTime():getWorldAgeHours())
     for index = 1, count do Action.removeItem(pieces[index]) end
     if self.into.after then self.into.after() end
     return count > 0
@@ -54,10 +54,10 @@ function TPPutPieces:getDuration()
     return Action.duration(self.character, TICKS_A_PIECE * #self.pieces)
 end
 
-function TPPutPieces:new(character, into, spec, pieces)
+function TPPutPieces:new(character, into, asFluid, pieces)
     local o = ISBaseTimedAction.new(self, character)
     o.into = into
-    o.spec = spec
+    o.asFluid = asFluid
     o.pieces = pieces
     o.maxTime = o:getDuration()
     return o

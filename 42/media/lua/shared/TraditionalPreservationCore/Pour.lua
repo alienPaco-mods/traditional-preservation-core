@@ -20,9 +20,9 @@ local function wrap(name)
     Wrap.method("ISFluidTransferAction", name, function(vanilla, self, ...)
         local first = befores[name]
         for index = #first, 1, -1 do first[index](self) end
-        local result = vanilla(self, ...)
+        local vanillaReturn = vanilla(self, ...)
         for _, fn in ipairs(afters[name]) do fn(self) end
-        return result
+        return vanillaReturn
     end)
 end
 

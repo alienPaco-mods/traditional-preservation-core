@@ -1,7 +1,7 @@
 -- Traditional Preservation core: seasoning a food after it is made, as vanilla adds a spice to a stew (Fish & Meat's
--- sausage links). A mod registers its item types with the kinds of seasoning they take; each kind
--- goes in once, taking the kind's uses (kind.uses, default USES: what vanilla takes for a stew) of whatever item of
--- the kind is in reach, with no cap on how many kinds. Each kind makes
+-- sausage links). A mod registers its item types with the groups of seasoning they take; each group
+-- goes in once, taking the group's uses (group.uses, default USES: what vanilla takes for a stew) of whatever item of
+-- the group is in reach, with no cap on how many groups. Each group makes
 -- the whole item `unhappy` and `boredom` nicer to eat (a part-eaten one, its share): vanilla's spice in a stew is -2
 -- of each at most cooking levels (EvolvedRecipe.useSpice: a use, times 200). What went in is the food's own spice list
 -- (Food.spices, saved by the game; full types), and the total bonus is kept in ModData so what the item becomes
@@ -15,61 +15,61 @@ Season.KEY = "tpSeasoning"
 Season.BOREDOM_KEY = "tpSeasoningBoredom"
 Season.USES = 1
 
--- fullType -> spec
-local specs = {}
+-- fullType -> seasoning
+local seasonings = {}
 
--- Seasoning for the foods in fullTypes. spec:
---   kinds    { { name = key, types = { fullType, ... }, uses = n (optional) }, ... }: an item type in one kind only
---   unhappy  what each kind adds to the whole item's unhappiness; boredom (optional) the same for boredom
--- Adds spec.kindByType (a seasoning's full type -> its kind). Registering a food again replaces its spec.
-function Season.register(fullTypes, spec)
+-- Seasoning for the foods in fullTypes. seasoning:
+--   groups    { { name = key, types = { fullType, ... }, uses = n (optional) }, ... }: an item type in one group only
+--   unhappy  what each group adds to the whole item's unhappiness; boredom (optional) the same for boredom
+-- Adds seasoning.groupByType (a seasoning's full type -> its group). Registering a food again replaces its seasoning.
+function Season.register(fullTypes, seasoning)
     assert(type(fullTypes) == "table" and #fullTypes > 0, "Season.register: fullTypes must be a list of full types")
     local what = "Season.register " .. tostring(fullTypes[1])
-    assert(type(spec) == "table" and type(spec.kinds) == "table" and #spec.kinds > 0, what .. ": spec needs kinds")
-    assert(type(spec.unhappy) == "number", what .. ": spec needs unhappy")
-    assert(spec.boredom == nil or type(spec.boredom) == "number", what .. ": boredom must be a number")
-    if not spec.kindByType then
-        local kindByType = {}
-        for _, kind in ipairs(spec.kinds) do
-            assert(type(kind.name) == "string", what .. ": a kind needs a name")
-            assert(type(kind.types) == "table" and #kind.types > 0, what .. ": kind " .. kind.name .. " needs types")
-            assert(kind.uses == nil or (type(kind.uses) == "number" and kind.uses > 0),
-                what .. ": kind " .. kind.name .. "'s uses must be above 0")
-            for _, fullType in ipairs(kind.types) do
-                if kindByType[fullType] then
-                    error(what .. ": " .. fullType .. " is in kinds " .. kindByType[fullType].name .. " and " .. kind.name)
+    assert(type(seasoning) == "table" and type(seasoning.groups) == "table" and #seasoning.groups > 0, what .. ": seasoning needs groups")
+    assert(type(seasoning.unhappy) == "number", what .. ": seasoning needs unhappy")
+    assert(seasoning.boredom == nil or type(seasoning.boredom) == "number", what .. ": boredom must be a number")
+    if not seasoning.groupByType then
+        local groupByType = {}
+        for _, group in ipairs(seasoning.groups) do
+            assert(type(group.name) == "string", what .. ": a group needs a name")
+            assert(type(group.types) == "table" and #group.types > 0, what .. ": group " .. group.name .. " needs types")
+            assert(group.uses == nil or (type(group.uses) == "number" and group.uses > 0),
+                what .. ": group " .. group.name .. "'s uses must be above 0")
+            for _, fullType in ipairs(group.types) do
+                if groupByType[fullType] then
+                    error(what .. ": " .. fullType .. " is in groups " .. groupByType[fullType].name .. " and " .. group.name)
                 end
-                kindByType[fullType] = kind
+                groupByType[fullType] = group
             end
         end
-        spec.kindByType = kindByType
+        seasoning.groupByType = groupByType
     end
-    for _, fullType in ipairs(fullTypes) do specs[fullType] = spec end
+    for _, fullType in ipairs(fullTypes) do seasonings[fullType] = seasoning end
 end
 
-function Season.specFor(item)
-    return item and specs[item:getFullType()]
+function Season.seasoningFor(item)
+    return item and seasonings[item:getFullType()]
 end
 
--- The kind (its entry in spec.kinds) a seasoning item's full type belongs to, or nil.
-function Season.kindOf(spec, fullType)
-    return spec.kindByType[fullType]
+-- The group (its entry in seasoning.groups) a seasoning item's full type belongs to, or nil.
+function Season.groupOf(seasoning, fullType)
+    return seasoning.groupByType[fullType]
 end
 
--- The uses one seasoning of a kind takes.
-function Season.usesOf(kind)
-    return kind.uses or Season.USES
+-- The uses one seasoning of a group takes.
+function Season.usesOf(group)
+    return group.uses or Season.USES
 end
 
--- The kinds already in an item, by name.
+-- The groups already in an item, by name.
 function Season.added(item)
-    local found, spec = {}, Season.specFor(item)
-    if not spec then return found end
+    local found, seasoning = {}, Season.seasoningFor(item)
+    if not seasoning then return found end
     local spices = item:getSpices()
     if not spices then return found end
     for i = 0, spices:size() - 1 do
-        local kind = Season.kindOf(spec, spices:get(i))
-        if kind then found[kind.name] = true end
+        local group = Season.groupOf(seasoning, spices:get(i))
+        if group then found[group.name] = true end
     end
     return found
 end
@@ -121,18 +121,18 @@ local function setBonus(item, bonus, boredom, spices, share)
     if spices and spices:size() > 0 then item:setSpices(copyOf(spices)) end
 end
 
--- What the character can put in an item now: for each kind not yet in it, the first kind's item type in reach with a
--- use to spare, and how many uses of it there are. A list of { kind, fullType, uses }.
+-- What the character can put in an item now: for each group not yet in it, the first group's item type in reach with a
+-- use to spare, and how many uses of it there are. A list of { group, fullType, uses }.
 function Season.available(character, item)
-    local spec, list = Season.specFor(item), {}
-    if not spec then return list end
+    local seasoning, list = Season.seasoningFor(item), {}
+    if not seasoning then return list end
     local added = Season.added(item)
-    for _, kind in ipairs(spec.kinds) do
-        if not added[kind.name] then
-            for _, fullType in ipairs(kind.types) do
+    for _, group in ipairs(seasoning.groups) do
+        if not added[group.name] then
+            for _, fullType in ipairs(group.types) do
                 local uses = Uses.count(character, fullType, true)
-                if uses >= Season.usesOf(kind) then
-                    table.insert(list, { kind = kind, fullType = fullType, uses = uses })
+                if uses >= Season.usesOf(group) then
+                    table.insert(list, { group = group, fullType = fullType, uses = uses })
                     break
                 end
             end
@@ -150,28 +150,28 @@ Season.REFUSALS = {
 
 -- Why fullType can't go into item now (a translation key), or nil.
 function Season.refusal(item, fullType, character)
-    local spec = Season.specFor(item)
-    local kind = spec and Season.kindOf(spec, fullType)
-    if not kind then return Season.REFUSALS.seasonNot end
-    if Season.added(item)[kind.name] then return Season.REFUSALS.seasonAlready end
-    if character and Uses.count(character, fullType, true) < Season.usesOf(kind) then return Season.REFUSALS.seasonNone end
+    local seasoning = Season.seasoningFor(item)
+    local group = seasoning and Season.groupOf(seasoning, fullType)
+    if not group then return Season.REFUSALS.seasonNot end
+    if Season.added(item)[group.name] then return Season.REFUSALS.seasonAlready end
+    if character and Uses.count(character, fullType, true) < Season.usesOf(group) then return Season.REFUSALS.seasonNone end
     return nil
 end
 
 -- Puts a seasoning into an item (no use taken: Season.season does both).
 function Season.add(item, fullType)
-    local spec = Season.specFor(item)
-    if not spec or not Season.kindOf(spec, fullType) then return false end
+    local seasoning = Season.seasoningFor(item)
+    if not seasoning or not Season.groupOf(seasoning, fullType) then return false end
     local spices = copyOf(item:getSpices())
     spices:add(fullType)
-    setBonus(item, (Season.bonus(item) or 0) + spec.unhappy, (Season.boredom(item) or 0) + (spec.boredom or 0), spices)
+    setBonus(item, (Season.bonus(item) or 0) + seasoning.unhappy, (Season.boredom(item) or 0) + (seasoning.boredom or 0), spices)
     return true
 end
 
--- Takes the kind's uses of fullType from what is in reach and puts it into item.
+-- Takes the group's uses of fullType from what is in reach and puts it into item.
 function Season.season(character, item, fullType)
     if Season.refusal(item, fullType, character) then return false end
-    Uses.take(character, fullType, Season.usesOf(Season.kindOf(Season.specFor(item), fullType)), true)
+    Uses.take(character, fullType, Season.usesOf(Season.groupOf(Season.seasoningFor(item), fullType)), true)
     return Season.add(item, fullType)
 end
 
@@ -187,15 +187,15 @@ end
 
 -- What a seasoned item carries, to hand it on later (a pot holding six links): { bonus, spices = { fullType, ... } }
 -- or nil.
-function Season.record(item)
+function Season.carried(item)
     local bonus = Season.bonus(item)
     if not bonus then return nil end
     return { bonus = bonus, boredom = Season.boredom(item), spices = luaList(item:getSpices()) }
 end
 
-function Season.apply(item, record)
-    if not record then return end
-    setBonus(item, record.bonus, record.boredom, javaList(record.spices or {}))
+function Season.carryOver(item, carried)
+    if not carried then return end
+    setBonus(item, carried.bonus, carried.boredom, javaList(carried.spices or {}))
 end
 
 return Season

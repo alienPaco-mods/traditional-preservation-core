@@ -9,22 +9,22 @@ local CraftClock = {}
 local SECONDS_PER_HOUR = 3600
 
 -- The engine pools recipe data without clearing its ModData, so a mod's start hook clears its own fields too.
-function CraftClock.startRun(modData, ledger, kind)
-    modData.done = 0
-    modData.last = Weather.mark({}, ledger, kind)
-    modData.place, modData.fireUntil, modData.under = nil, nil, nil
+function CraftClock.startRun(modData, ledger, process)
+    modData.workHours = 0
+    modData.marks = Weather.mark({}, ledger, process)
+    modData.place, modData.fireUntil, modData.placeWithoutFire = nil, nil, nil
 end
 
 -- Craft timers tick at a fixed speed whatever Day Length says, so this replaces their count with the work
 -- done. Weather is only recorded every ten minutes, so the bar carries on at the last rate between
 -- records. That part is only shown, and the next record replaces it. rateAt gives the rate by a fire
 -- (Weather.FIRE_PLACES), which the ledger keeps none for.
-function CraftClock.showProgress(craftRecipeData, ledger, kind, place, speed, now, rateAt)
+function CraftClock.showProgress(craftRecipeData, ledger, process, place, speed, now, rateAt)
     local modData = craftRecipeData:getModData()
     local byFire = Weather.FIRE_PLACES[place] and rateAt
-    local rate = byFire and rateAt(Weather.placeTemperature(ledger, place)) or ledger[kind .. place .. "Rate"] or 0
+    local rate = byFire and rateAt(Weather.placeTemperature(ledger, place)) or ledger[process .. place .. "Rate"] or 0
     local sinceRecord = math.max(now - ledger.lastHour, 0)
-    local elapsed = (modData.done + sinceRecord * rate) * speed * SECONDS_PER_HOUR
+    local elapsed = (modData.workHours + sinceRecord * rate) * speed * SECONDS_PER_HOUR
     craftRecipeData:setElapsedTime(math.min(elapsed, craftRecipeData:getRecipe():getTime()))
 end
 
@@ -62,12 +62,12 @@ end
 
 -- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds; nil when the batch is
 -- paused there (frozen).
-function CraftClock.batchStatus(done, recipeHours, ledger, place, rateAt)
+function CraftClock.batchStatus(workHours, recipeHours, ledger, place, rateAt)
     local temperature = Weather.placeTemperature(ledger, place)
     local rate = rateAt(temperature)
     return {
-        progress = math.min(done / recipeHours, 1),
-        hoursLeft = rate > 0 and math.max(recipeHours - done, 0) / rate or nil,
+        progress = math.min(workHours / recipeHours, 1),
+        hoursLeft = rate > 0 and math.max(recipeHours - workHours, 0) / rate or nil,
         temperature = temperature,
         place = place,
         rate = rate,

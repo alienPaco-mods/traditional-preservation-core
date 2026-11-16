@@ -21,16 +21,16 @@ Fire.connect({
 
 -- The chamber's right-click: the joined Stone Hearth's Disconnect, or Connect for the first Stone Hearth beside it.
 local function onFillChamberMenu(playerNum, context, worldobjects, test)
-    for _, object in ipairs(worldobjects) do
-        if Smokehouse.isChamber(object) then
+    for _, isoObject in ipairs(worldobjects) do
+        if Smokehouse.isChamber(isoObject) then
             if test then return end
-            if Smokehouse.World then Smokehouse.World.track(object) end
+            if Smokehouse.World then Smokehouse.World.track(isoObject) end
             local playerObj = getSpecificPlayer(playerNum)
-            local spec = Fire.connection(Smokehouse.ID)
-            local stoneHearth, joined = Smokehouse.joinedStoneHearth(object)
-            if stoneHearth then return FireUI.addDisconnect(context, playerObj, stoneHearth, joined.tile, spec) end
-            local found = Smokehouse.connectCandidate(object)
-            if found then FireUI.addConnect(context, playerObj, found.stoneHearth, found.tile, spec) end
+            local connection = Fire.connection(Smokehouse.ID)
+            local stoneHearth, joined = Smokehouse.joinedStoneHearth(isoObject)
+            if stoneHearth then return FireUI.addDisconnect(context, playerObj, stoneHearth, joined.tile, connection) end
+            local found = Smokehouse.connectCandidate(isoObject)
+            if found then FireUI.addConnect(context, playerObj, found.stoneHearth, found.tile, connection) end
             return
         end
     end
@@ -39,8 +39,8 @@ end
 Events.OnFillWorldObjectContextMenu.Add(onFillChamberMenu)
 
 -- The shed doesn't pick up while the flue joins it.
-UI.keepInPlace(function(object)
-    if Smokehouse.isChamber(object) then return Smokehouse.joinedStoneHearth(object) ~= nil end
+UI.keepInPlace(function(isoObject)
+    if Smokehouse.isChamber(isoObject) then return Smokehouse.joinedStoneHearth(isoObject) ~= nil end
 end)
 
 -- The shed stands in the open or under an open roof, never in a room, and keeps its door's front free.

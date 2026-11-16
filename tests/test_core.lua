@@ -136,22 +136,22 @@ check("getLedger: a new ledger starts on the weather there is", Weather.placeTem
 
 -- One weather for the series: every mod's ledger copies its season means at each record.
 H.installEvents()
-local series = Weather.shared()
+local series = Weather.weatherModData()
 check("shared: the core's own ModData, read once at the start", H.modData[Weather.SHARED_KEY].ledger == series
     and series.temperature == 12 and series.seasonTemperature == 12 and series.seasonHumidity == 60)
 local old = Weather.getLedger("OldMod", newLedger)
 local recorded = 0
-Weather.record(function(now, climate)
+Weather.onReading(function(now, climate)
     recorded = recorded + 1
     Weather.advance(old, now, climate:getTemperature(), kinds)
 end)
-Weather.record(function() recorded = recorded + 1 end)
+Weather.onReading(function() recorded = recorded + 1 end)
 for hour = 51, 50 + Weather.SEASON_HOURS do
     H.setHours(hour)
     outside = 30
     H.fire("EveryTenMinutes")
 end
-check("record: every recorder runs at each reading", recorded == 2 * Weather.SEASON_HOURS)
+check("onReading: every recorder runs at each reading", recorded == 2 * Weather.SEASON_HOURS)
 check("shared: the season mean follows the weather", series.temperature == 30 and series.seasonTemperature > 22
     and series.seasonTemperature < 30)
 check("a ledger's season mean is the series' own", old.seasonTemperature == series.seasonTemperature)
@@ -167,7 +167,7 @@ check("season: a ledger learns the grid is on from the series", own.gridOn == tr
 Weather.observe(series, series.lastHour + 1, 5, 50, false)
 Weather.seasonTemperature(own, 5, 1)
 check("and that it went off", own.gridOn == nil)
-Weather.share(nil)
+Weather.useWeatherModData(nil)
 Weather.seasonHumidity(own, 40, Weather.SEASON_HOURS)
 check("season: with no series' weather a ledger grows its own mean", own.seasonHumidity == 40)
 getClimateManager = nil
@@ -203,28 +203,28 @@ cellSquares["3,3,0"] = other.square
 local tracker
 tracker = Station.tracker({
     sprites = { "a_0", "a_1" },
-    entry = function() return { made = true } end,
+    newSessionState = function() return { made = true } end,
     ticks = 2,
-    refresh = function(obj, entry)
-        table.insert(refreshed, obj)
-        if obj == loaded then tracker.track(other) end
+    refresh = function(station, sessionState)
+        table.insert(refreshed, station)
+        if station == loaded then tracker.track(other) end
     end,
 })
 tracker.start()
 check("start: registers every sprite with the map loader", loadHandlers.a_0 and loadHandlers.a_1[2] == Station.MAP_PRIORITY)
 check("start: hands the loader track", loadHandlers.a_0[1] == tracker.track)
-local entry = tracker.track(loaded)
-check("track: makes the entry once", entry.made and tracker.track(loaded) == entry and tracker.entry(loaded) == entry)
+local sessionState = tracker.track(loaded)
+check("track: makes the session state once", sessionState.made and tracker.track(loaded) == sessionState and tracker.sessionStateOf(loaded) == sessionState)
 tracker.track(unloaded)
 H.fire("OnTick")
 check("onTick: waits its ticks", #refreshed == 0)
 H.fire("OnTick")
 check("onTick: refreshes the loaded station", #refreshed == 1 and refreshed[1] == loaded)
-check("onTick: drops the unloaded one", tracker.entry(unloaded) == nil)
-check("onTick: a refresh can track another station", tracker.entry(other) ~= nil)
-local refusing = Station.tracker({ sprites = {}, entry = function() return nil end, refresh = function() end })
-check("track: an entry of nil leaves the object alone", refusing.track(loaded) == nil and refusing.entry(loaded) == nil)
-check("track: the default entry is a table", Station.tracker({ sprites = {}, refresh = function() end }).track(loaded) ~= nil)
+check("onTick: drops the unloaded one", tracker.sessionStateOf(unloaded) == nil)
+check("onTick: a refresh can track another station", tracker.sessionStateOf(other) ~= nil)
+local refusing = Station.tracker({ sprites = {}, newSessionState = function() return nil end, refresh = function() end })
+check("track: a session state of nil leaves the object alone", refusing.track(loaded) == nil and refusing.sessionStateOf(loaded) == nil)
+check("track: the default session state is a table", Station.tracker({ sprites = {}, refresh = function() end }).track(loaded) ~= nil)
 
 local shown = { names = {}, clears = 0 }
 local drawn = {

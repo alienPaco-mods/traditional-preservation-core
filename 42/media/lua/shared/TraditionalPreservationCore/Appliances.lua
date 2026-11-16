@@ -8,12 +8,12 @@ local CLASSES = { "IsoStove", "IsoClothingWasher", "IsoClothingDryer", "IsoCombi
 local COLD_CONTAINERS = { fridge = true, freezer = true }
 
 -- A stove, a fridge or freezer, or a washer or dryer: something that heats, chills or shakes what stands on it.
-function Appliances.is(object)
+function Appliances.is(isoObject)
     for _, class in ipairs(CLASSES) do
-        if instanceof(object, class) then return true end
+        if instanceof(isoObject, class) then return true end
     end
-    for index = 0, object:getContainerCount() - 1 do
-        local container = object:getContainerByIndex(index)
+    for index = 0, isoObject:getContainerCount() - 1 do
+        local container = isoObject:getContainerByIndex(index)
         if container and COLD_CONTAINERS[container:getType()] then return true end
     end
     return false
@@ -21,9 +21,9 @@ end
 
 -- Whether anything on the square is an appliance.
 function Appliances.onSquare(square)
-    local objects = square:getObjects()
-    for index = 0, objects:size() - 1 do
-        if Appliances.is(objects:get(index)) then return true end
+    local isoObjects = square:getObjects()
+    for index = 0, isoObjects:size() - 1 do
+        if Appliances.is(isoObjects:get(index)) then return true end
     end
     return false
 end

@@ -13,20 +13,20 @@ local function now()
 end
 
 local function timers(player, create)
-    local data = player:getModData()
-    if create then data[Cooldown.KEY] = data[Cooldown.KEY] or {} end
-    return data[Cooldown.KEY]
+    local playerModData = player:getModData()
+    if create then playerModData[Cooldown.KEY] = playerModData[Cooldown.KEY] or {} end
+    return playerModData[Cooldown.KEY]
 end
 
 -- Hours left on a cooldown table's key at hour `at` (0 once run out or never started).
-function Cooldown.leftIn(tbl, key, at)
-    local endsAt = tbl and tbl[key]
+function Cooldown.leftIn(cooldowns, key, at)
+    local endsAt = cooldowns and cooldowns[key]
     return endsAt and math.max(endsAt - at, 0) or 0
 end
 
 -- Starts (or restarts) the key in a cooldown table: it runs out `hours` after `at`.
-function Cooldown.startIn(tbl, key, hours, at)
-    tbl[key] = at + hours
+function Cooldown.startIn(cooldowns, key, hours, at)
+    cooldowns[key] = at + hours
 end
 
 -- Whether the player's cooldown `key` has run out (true if it was never started).

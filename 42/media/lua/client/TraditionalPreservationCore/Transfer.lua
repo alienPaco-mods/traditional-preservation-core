@@ -19,11 +19,11 @@ local function install()
         if item then
             for _, fn in ipairs(befores) do fn(self, item) end
         end
-        local result = vanillaTransferItem(self, item)
+        local vanillaReturn = vanillaTransferItem(self, item)
         if item then
             for _, fn in ipairs(afters) do fn(self, item) end
         end
-        return result
+        return vanillaReturn
     end)
 end
 

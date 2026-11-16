@@ -73,7 +73,7 @@ check("3 minutes hot: not yet", fired == 0 and math.abs(link.md.tpOnHeat.minutes
 OnHeat.note(link, watch, 30 / 60, true)
 check("back on the heat after a long gap: the gap doesn't count", fired == 0 and math.abs(link.md.tpOnHeat.minutes - 3) < 1e-6)
 for minute = 31, 32 do OnHeat.note(link, watch, minute / 60, true) end
-check("5 minutes in all: fn runs", fired == 1 and link.md.tpOnHeat.done)
+check("5 minutes in all: fn runs", fired == 1 and link.md.tpOnHeat.finished)
 OnHeat.note(link, watch, 33 / 60, true)
 check("and only once", fired == 1)
 local cooled = { md = {} }
@@ -177,7 +177,7 @@ for minute = 1, 4 do
     H.setHours(10 + minute / 60)
     H.fire("EveryOneMinute")
 end
-check("a link kept hot near the player is done", hotLink.fried and hotLink.md.tpOnHeat.done)
+check("a link kept hot near the player is done", hotLink.fried and hotLink.md.tpOnHeat.finished)
 check("watch checks what it is given", not pcall(OnHeat.watch, "T.Other", 0, function() end))
 
 -- Recipes.researchable: says so when the item isn't there.
@@ -193,16 +193,16 @@ print = realPrint
 check("researchable: a found item takes the recipe", found and doParams[1] == "ResearchableRecipes = T.MakePot")
 check("a missing one is reported", missing == false and printed[1] == "[T] Could not find T.None")
 
--- Season.register: checks what it is given, and finds a seasoning's kind by one lookup.
+-- Season.register: checks what it is given, and finds a seasoning's group by one lookup.
 local Season = require "TraditionalPreservationCore/Season"
 local herbs = { name = "herbs", types = { "T.Thyme", "T.Sage" } }
-local spec = { kinds = { herbs, { name = "pepper", types = { "T.Pepper" }, uses = 2 } }, unhappy = -2 }
-Season.register({ "T.Link" }, spec)
-check("Season: a seasoning's kind", Season.kindOf(spec, "T.Sage") == herbs and Season.kindOf(spec, "T.Salt") == nil)
-check("a food registered again keeps working", pcall(Season.register, { "T.Link" }, spec))
-local ok, err = pcall(Season.register, { "T.Other" }, { kinds = { herbs, { name = "more", types = { "T.Sage" } } }, unhappy = -2 })
-check("a seasoning in two kinds is refused, by name", not ok and err:find("T.Sage is in kinds herbs and more", 1, true))
-check("no unhappy, or no kinds: refused", not pcall(Season.register, { "T.Other" }, { kinds = { herbs } })
-    and not pcall(Season.register, { "T.Other" }, { kinds = {}, unhappy = -2 }))
+local seasoning = { groups = { herbs, { name = "pepper", types = { "T.Pepper" }, uses = 2 } }, unhappy = -2 }
+Season.register({ "T.Link" }, seasoning)
+check("Season: a seasoning's group", Season.groupOf(seasoning, "T.Sage") == herbs and Season.groupOf(seasoning, "T.Salt") == nil)
+check("a food registered again keeps working", pcall(Season.register, { "T.Link" }, seasoning))
+local ok, err = pcall(Season.register, { "T.Other" }, { groups = { herbs, { name = "more", types = { "T.Sage" } } }, unhappy = -2 })
+check("a seasoning in two groups is refused, by name", not ok and err:find("T.Sage is in groups herbs and more", 1, true))
+check("no unhappy, or no groups: refused", not pcall(Season.register, { "T.Other" }, { groups = { herbs } })
+    and not pcall(Season.register, { "T.Other" }, { groups = {}, unhappy = -2 }))
 
 H.done()

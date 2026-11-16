@@ -12,12 +12,12 @@ dofile("42/media/lua/shared/__MOD__.lua")
 local M = __MOD__
 
 local function recipeData(time)
-    local data = { modData = {}, elapsed = 0 }
-    function data:getModData() return self.modData end
-    function data:getElapsedTime() return self.elapsed end
-    function data:setElapsedTime(value) self.elapsed = value end
-    function data:getRecipe() return { getTime = function() return time end } end
-    return data
+    local craftRecipeData = { modData = {}, elapsed = 0 }
+    function craftRecipeData:getModData() return self.modData end
+    function craftRecipeData:getElapsedTime() return self.elapsed end
+    function craftRecipeData:setElapsedTime(seconds) self.elapsed = seconds end
+    function craftRecipeData:getRecipe() return { getTime = function() return time end } end
+    return craftRecipeData
 end
 
 local function weather(count, temperature)
@@ -37,23 +37,23 @@ check("a basement swings two fifths as far as the ground", M.placeTemperature({ 
 
 -- Timer
 local TIME = M.PROCESS_HOURS * 3600
-local data = recipeData(TIME)
-M.onProcessStart(data)
-data.modData.place = "Open"
+local craftRecipeData = recipeData(TIME)
+M.onProcessStart(craftRecipeData)
+craftRecipeData.modData.place = "Open"
 weather(24, 10)
-M.onProcessUpdate(data)
+M.onProcessUpdate(craftRecipeData)
 local rate = M.processRate(10)
-check("a batch counts the work at its place's temperature", near(data.modData.done, 24 * rate))
-check("the bar shows it in game seconds", near(data.elapsed, 24 * rate * 3600))
-local status = M.batchStatus(data.modData, M.PROCESS_HOURS, M.getLedger())
+check("a batch counts the work at its place's temperature", near(craftRecipeData.modData.workHours, 24 * rate))
+check("the bar shows it in game seconds", near(craftRecipeData.elapsed, 24 * rate * 3600))
+local status = M.batchStatus(craftRecipeData.modData, M.PROCESS_HOURS, M.getLedger())
 check("the popup's time left assumes the rate holds", near(status.hoursLeft, (M.PROCESS_HOURS - 24 * rate) / rate))
 weather(M.PROCESS_HOURS * 2, 22)
-M.onProcessUpdate(data)
-check("the bar stops at the recipe's time", data.elapsed == TIME)
+M.onProcessUpdate(craftRecipeData)
+check("the bar stops at the recipe's time", craftRecipeData.elapsed == TIME)
 
--- A pooled recipe data starts clean
-M.onProcessStart(data)
-check("a new run starts from nothing", data.modData.done == 0 and data.modData.place == nil)
+-- A pooled recipe craftRecipeData starts clean
+M.onProcessStart(craftRecipeData)
+check("a new run starts from nothing", craftRecipeData.modData.workHours == 0 and craftRecipeData.modData.place == nil)
 
 -- Sandbox
 SandboxVars = { __MOD__ = { ProcessDays = 2, TemperatureSensitivity = 1 } }

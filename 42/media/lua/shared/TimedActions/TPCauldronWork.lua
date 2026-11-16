@@ -35,7 +35,7 @@ TPCauldronWork.canFillFrom = canFillFrom
 
 -- The cauldron's state as saved, not brought up to now (isValid and getDuration run often).
 local function savedCauldron(self)
-    return Cauldron.state(self.fire:getModData())
+    return Cauldron.cauldronModData(self.fire:getModData())
 end
 
 -- An empty cauldron keeps no age record: the next fluid starts its own.
@@ -80,7 +80,7 @@ function TPCauldronWork:complete()
     if self.mode == "pourIn" then
         local parts = CauldronFluid.partsIn(container)
         local heat = CauldronFluid.heatOf(self.item, now, self.character)
-        local age = FluidAgeing.sourceRecord(self.item, now)
+        local age = FluidAgeing.sourceFluidAge(self.item, now)
         local had = cauldron.ml or 0
         local taken = parts and CauldronFluid.pourInto(cauldron, parts, mlIn(container), heat, now) or 0
         if taken > 0 then
@@ -92,7 +92,7 @@ function TPCauldronWork:complete()
         local hadMl = mlIn(container)
         local hadC = hadMl > 0 and CauldronFluid.heatOf(self.item, now, self.character) or 0
         local hot, held = CauldronFluid.isHot(cauldron), CauldronFluid.heldHours(cauldron)
-        local age = FluidAgeing.cauldronRecord(cauldron, now, Weather.placeOf(self.fire), held)
+        local age = FluidAgeing.cauldronFluidAge(cauldron, now, Weather.placeOf(self.fire), held)
         if age then FluidAgeing.look(self.item, now) end
         local ml, fluid, tempC, parts = CauldronFluid.take(cauldron, roomIn(container))
         if ml > 0 then

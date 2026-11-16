@@ -29,7 +29,7 @@ function TPC.help()
     say("TPC.warmth()         air C and light 1-6 tiles east of the Stone Hearth (Cauldron) and on your square, the Stone Hearth's heat, each food's cooking")
     say(string.format("TPC.stone()          the nearest Stone Hearth within %d tiles, fitted or not: fire, fuel, what is fitted, what is joined (its kit and side), hole look and the squares on its back and flanks", Fire.FIRE_RADIUS))
     say("TPC.fit()            fit the Cauldron on the nearest Stone Hearth now, no items (TPC.fit(false) takes off what is fitted, nothing back)")
-    say("TPC.flue(kind, side) show its flue: kind Pipe or Stones, side Back, Left or Right; no kind caps it (art check only)")
+    say("TPC.flue(kitName, side) show its flue: kitName Pipe or Stones, side Back, Left or Right; no kitName caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Stone Hearths beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
 end
@@ -86,18 +86,18 @@ end
 
 -- The series' weather, as every TP mod reads it: the temperature now, the season's mean, and each place's.
 function TPC.weather()
-    local state = Weather.shared()
+    local weatherModData = Weather.weatherModData()
     say(string.format("Temperature now %.1f C, season (10-day average) %.1f C, ground (the season a month behind) %.1f C, season humidity %.0f%%.",
-        state.temperature or 0, state.seasonTemperature or 0, state.groundTemperature or state.seasonTemperature or 0,
-        (state.seasonHumidity or 0) * 100))
+        weatherModData.temperature or 0, weatherModData.seasonTemperature or 0, weatherModData.groundTemperature or weatherModData.seasonTemperature or 0,
+        (weatherModData.seasonHumidity or 0) * 100))
     for _, place in ipairs(Weather.PLACES) do
-        say(string.format("%-9s %.1f C", place, Weather.placeTemperature(state, place)))
+        say(string.format("%-9s %.1f C", place, Weather.placeTemperature(weatherModData, place)))
     end
     say(string.format("By a fire indoors %d C, by banked embers %d C (within %d tiles; the mods that ask for it).",
         Fire.FIRE_C, Fire.EMBERS_C, Fire.FIRE_RADIUS))
-    for _, under in ipairs({ "Covered", "Open" }) do
-        say(string.format("By a fire, %s: %.1f C, by banked embers %.1f C.", under,
-            Weather.placeTemperature(state, Fire.PLACE .. under), Weather.placeTemperature(state, Fire.EMBERS .. under)))
+    for _, placeWithoutFire in ipairs({ "Covered", "Open" }) do
+        say(string.format("By a fire, %s: %.1f C, by banked embers %.1f C.", placeWithoutFire,
+            Weather.placeTemperature(weatherModData, Fire.PLACE .. placeWithoutFire), Weather.placeTemperature(weatherModData, Fire.EMBERS .. placeWithoutFire)))
     end
 end
 
@@ -106,7 +106,7 @@ function TPC.here()
     local player = getPlayer()
     local place = Fire.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
-        Weather.placeTemperature(Weather.shared(), place), tostring(Weather.placeOf(player))))
+        Weather.placeTemperature(Weather.weatherModData(), place), tostring(Weather.placeOf(player))))
 end
 
 -- Pretends the weather for a test that wants a cold month or a warm day. The day's temperature goes through the
@@ -121,11 +121,11 @@ function TPC.setWeather(celsius, season, ground)
     end
     temperature:setEnableAdmin(true)
     temperature:setAdminValue(celsius)
-    local state = Weather.shared()
-    state.seasonTemperature = season or celsius
-    if ground then state.groundTemperature = ground end
+    local weatherModData = Weather.weatherModData()
+    weatherModData.seasonTemperature = season or celsius
+    if ground then weatherModData.groundTemperature = ground end
     say(string.format("Weather set: %.1f C now, season %.1f C, ground %.1f C. The mods read it at the next ten game minutes (run the clock); TPC.weather() shows it then.",
-        celsius, state.seasonTemperature, state.groundTemperature or state.seasonTemperature))
+        celsius, weatherModData.seasonTemperature, weatherModData.groundTemperature or weatherModData.seasonTemperature))
 end
 
 -- Game speed, past vanilla's 40 at the fastest button: getGameTime():setMultiplier(x). Clicking a speed button
@@ -157,14 +157,14 @@ function TPC.cauldronInfo()
     local fire = nearestCauldron()
     if not fire then return end
     local cauldron = Cauldron.of(fire)
-    local state = Fire.stateOf(fire:getModData())
-    local hotIn = CauldronFluid.hoursToHot(cauldron, state.banked)
+    local fireModData = Fire.fireModData(fire:getModData())
+    local hotIn = CauldronFluid.hoursToHot(cauldron, fireModData.banked)
     say(string.format("%d,%d,%d %s, fuel %d min, sprite %s; cauldron %.1f L %s at %.1f C (%s), steaming %s, fire until %s, at the boil %.0f min",
         fire:getX(), fire:getY(), fire:getZ(),
-        Fire.isBanked(fire) and string.format("banked (%.1f min reckoned)", state.fuel or 0)
+        Fire.isBanked(fire) and string.format("banked (%.1f min reckoned)", fireModData.fuel or 0)
             or fire:isLit() and "lit" or "out", fire:getFuelAmount(),
         fire:getSprite():getName(), (cauldron.ml or 0) / 1000, tostring(cauldron.fluid), cauldron.tempC or 0, CauldronFluid.look(cauldron),
-        hotIn and string.format("in %.1f h", hotIn) or "never", state.fireUntil and string.format("%.2f", state.fireUntil) or "-",
+        hotIn and string.format("in %.1f h", hotIn) or "never", fireModData.fireUntil and string.format("%.2f", fireModData.fireUntil) or "-",
         (cauldron.boiled or 0) * 60))
 end
 
@@ -185,8 +185,8 @@ function TPC.fuel(minutes)
     if not fire then return end
     minutes = minutes or 600
     fire:setFuelAmount(minutes)
-    local state = Fire.fireStateOf(fire)
-    if state.banked then Fire.setBanked(state, true, minutes, getGameTime():getWorldAgeHours()) end
+    local fireModData = Fire.fireModDataNow(fire)
+    if fireModData.banked then Fire.setBanked(fireModData, true, minutes, getGameTime():getWorldAgeHours()) end
     if Fire.isBare(fire) then TPC.stone() else TPC.cauldronInfo() end
 end
 
@@ -242,7 +242,7 @@ end
 function TPC.stone()
     local stoneHearth = nearestFire()
     if not stoneHearth then return end
-    local state = Fire.fireStateOf(stoneHearth)
+    local fireModData = Fire.fireModDataNow(stoneHearth)
     local sides = {}
     for _, side in ipairs(FireConnect.SIDES) do
         local square = Fire.flueSquare(stoneHearth, side)
@@ -251,8 +251,8 @@ function TPC.stone()
     local container = stoneHearth:getContainer()
     say(string.format("%d,%d,%d %s, fuel %d min, sprite %s, fitted %s, joined %s %s, hole %s; sides: %s", stoneHearth:getX(), stoneHearth:getY(),
         stoneHearth:getZ(), Fire.isBanked(stoneHearth) and "banked" or stoneHearth:isLit() and "lit" or "out", stoneHearth:getFuelAmount(),
-        stoneHearth:getSprite():getName(), tostring(Fire.attachedTo(stoneHearth)), tostring(Fire.connectedTo(state)),
-        table.concat({ Fire.joinOf(state) }, " "),
+        stoneHearth:getSprite():getName(), tostring(Fire.attachedTo(stoneHearth)), tostring(Fire.connectedTo(fireModData)),
+        table.concat({ Fire.joinOf(fireModData) }, " "),
         StoneHearth.holeLook(container and container:getItems()), table.concat(sides, ", ")))
 end
 
@@ -265,11 +265,11 @@ function TPC.fit(on)
     TPC.stone()
 end
 
-function TPC.flue(kind, side)
+function TPC.flue(kitName, side)
     local stoneHearth = nearestFire()
     if not stoneHearth then return end
-    local state = Fire.fireStateOf(stoneHearth)
-    if kind then Fire.join(state, Smokehouse.ID, kind, side or "Back") else Fire.unjoin(state) end
+    local fireModData = Fire.fireModDataNow(stoneHearth)
+    if kitName then Fire.join(fireModData, Smokehouse.ID, kitName, side or "Back") else Fire.unjoin(fireModData) end
     Fire.World.refresh(stoneHearth)
     TPC.stone()
 end

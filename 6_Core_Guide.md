@@ -352,7 +352,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.stone()` | The nearest Stone Hearth within 2 tiles, fitted or not: position, fire, fuel in minutes, sprite, what is fitted, what is joined (its kit and side), the hole's look, and the square on its back and each flank. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Stone Hearth's or Smokehouse's door opens onto it. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
-| `TPC.flue(kind, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kind` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
+| `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 
 **Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Stone Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 

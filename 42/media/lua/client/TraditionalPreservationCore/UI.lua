@@ -24,22 +24,22 @@ function UI.selectedItems(items, wanted)
     local function consider(item)
         if not wanted or wanted(item) then table.insert(found, item) end
     end
-    for _, entry in ipairs(items) do
-        if instanceof(entry, "InventoryItem") then
-            consider(entry)
+    for _, itemOrStack in ipairs(items) do
+        if instanceof(itemOrStack, "InventoryItem") then
+            consider(itemOrStack)
         else
-            for i = 2, #entry.items do consider(entry.items[i]) end
+            for i = 2, #itemOrStack.items do consider(itemOrStack.items[i]) end
         end
     end
     return found
 end
 
--- The first selected entry's item that passes wanted, a stack by its first item, and what wanted gave for it.
+-- The first selected itemOrStack's item that passes wanted, a stack by its first item, and what wanted gave for it.
 function UI.firstSelected(items, wanted)
-    for _, entry in ipairs(items) do
-        local item = instanceof(entry, "InventoryItem") and entry or (entry.items and entry.items[1])
-        local result = item and wanted(item)
-        if result then return item, result end
+    for _, itemOrStack in ipairs(items) do
+        local item = instanceof(itemOrStack, "InventoryItem") and itemOrStack or (itemOrStack.items and itemOrStack.items[1])
+        local match = item and wanted(item)
+        if match then return item, match end
     end
 end
 
@@ -211,13 +211,13 @@ function UI.refuse(option, text)
 end
 
 -- colour is { r, g, b }, white if left out.
-function UI.addLine(layout, label, value, colour)
+function UI.addLine(layout, label, text, colour)
     local item = layout:addItem()
     local lr, lg, lb = unpack(UI.LABEL_COLOUR)
     item:setLabel(getText(label) .. ":", lr, lg, lb, 1)
     local r, g, b = 1, 1, 1
     if colour then r, g, b = colour[1], colour[2], colour[3] end
-    item:setValue(value, r, g, b, 1)
+    item:setValue(text, r, g, b, 1)
 end
 
 -- A rate line, in the slow colour below SLOW_RATE.
@@ -290,9 +290,9 @@ function UI.progressTooltips(draws)
         if slot.tpDraw == draw and slot.tpName == name and slot.tpEntity == entity then return end
         slot.tpDraw, slot.tpName, slot.tpEntity = draw, name, entity
         slot.drawTooltip = function(itemSlot, tooltip)
-            -- A batch that has just finished hands its data back before the slot goes.
-            local data = itemSlot.craftRecipeData
-            if data and data:getRecipe() then draw(itemSlot, tooltip, name, entity) end
+            -- A batch that has just finished hands its craftRecipeData back before the slot goes.
+            local craftRecipeData = itemSlot.craftRecipeData
+            if craftRecipeData and craftRecipeData:getRecipe() then draw(itemSlot, tooltip, name, entity) end
         end
     end)
 end

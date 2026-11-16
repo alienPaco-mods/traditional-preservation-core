@@ -35,9 +35,9 @@ UI.slotRules{
 -- Vanilla's popup on a running batch goes by the recipe's time alone, so it gets the real time left at the
 -- station's temperature instead.
 local function drawBatchTooltip(slot, tooltip)
-    local data = slot.craftRecipeData
+    local craftRecipeData = slot.craftRecipeData
     local M = __MOD__
-    local status = M.batchStatus(data:getModData(), data:getRecipe():getTime() / 3600, M.getLedger())
+    local status = M.batchStatus(craftRecipeData:getModData(), craftRecipeData:getRecipe():getTime() / 3600, M.getLedger())
     UI.drawTooltip(tooltip, function(layout)
         UI.addLine(layout, "IGUI___MOD___Progress", UI.percent(status.progress))
         UI.addLine(layout, "IGUI___MOD___TimeLeft", UI.timeText(status.hoursLeft, "IGUI___MOD___Time"))

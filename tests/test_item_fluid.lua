@@ -20,24 +20,24 @@ check("a fluid is named once", not pcall(ItemFluid.turnsHot, "Raw", "Other", 1)
 check("burns needs a mapper", not pcall(ItemFluid.burns, "Other", 1))
 
 -- The rules, on a plain record. Looks a minute apart while hot.
-local function steam(record, fluid, from, to, vessel)
+local function steam(itemFluid, fluid, from, to, vessel)
     local burnt
     for minute = from, to do
-        fluid, burnt = ItemFluid.advance(record, fluid, minute / 60, true, vessel or "Base.Pot")
+        fluid, burnt = ItemFluid.advance(itemFluid, fluid, minute / 60, true, vessel or "Base.Pot")
         if burnt then return fluid, true, minute end
     end
     return fluid, false
 end
 
-local record = {}
-ItemFluid.putPieces(record, { 100, 30, 50 }, 0)
-check("pieces: the lot goes off with the oldest", record.offAt == 30 and record.hot == 0)
-local fluid = steam(record, "Raw", 0, 59)
-check("59 minutes steaming: still raw", fluid == "Raw" and near(record.hot, 59 / 60))
-fluid = steam(record, "Raw", 60, 60)
-check("an hour in all: it turns, and no longer goes off", fluid == "Clear" and record.offAt == nil and near(record.hot, 0))
+local itemFluid = {}
+ItemFluid.putPieces(itemFluid, { 100, 30, 50 }, 0)
+check("pieces: the lot goes off with the oldest", itemFluid.offAt == 30 and itemFluid.steamedHours == 0)
+local fluid = steam(itemFluid, "Raw", 0, 59)
+check("59 minutes steaming: still raw", fluid == "Raw" and near(itemFluid.steamedHours, 59 / 60))
+fluid = steam(itemFluid, "Raw", 60, 60)
+check("an hour in all: it turns, and no longer goes off", fluid == "Clear" and itemFluid.offAt == nil and near(itemFluid.steamedHours, 0))
 local burnt, at
-fluid, burnt, at = steam(record, fluid, 61, 200)
+fluid, burnt, at = steam(itemFluid, fluid, 61, 200)
 check("an hour more steaming: it burns", burnt and fluid == "Clear" and at == 120)
 local saucepan = {}
 local _, never = steam(saucepan, "Clear", 0, 200, "Base.Bucket")
@@ -47,13 +47,13 @@ local cooled = {}
 steam(cooled, "Raw", 0, 30)
 ItemFluid.advance(cooled, "Raw", 31 / 60, false)
 steam(cooled, "Raw", 40, 45)
-check("off the heat the count stops; back on, a long gap doesn't count", near(cooled.hot, 35 / 60))
+check("off the heat the count stops; back on, a long gap doesn't count", near(cooled.steamedHours, 35 / 60))
 ItemFluid.putPieces(cooled, { 10 }, 1)
-check("more pieces start the hour over", cooled.hot == 0 and cooled.offAt == 11)
+check("more pieces start the hour over", cooled.steamedHours == 0 and cooled.offAt == 11)
 check("unheated it goes off at offAt", ItemFluid.advance(cooled, "Raw", 11, false) == "Spoilt" and cooled.offAt == nil)
 check("only a fluid that goes off does", ItemFluid.advance({ offAt = 0 }, "Clear", 5, false) == "Clear")
-check("hours left to turn and to burn", near(ItemFluid.hoursToTurn({ hot = 0.25 }, "Raw"), 0.75)
-    and near(ItemFluid.hoursToBurn({ hot = 0.5 }, "Clear"), 0.5) and ItemFluid.hoursToTurn({}, "Clear") == nil)
+check("hours left to turn and to burn", near(ItemFluid.hoursToTurn({ steamedHours = 0.25 }, "Raw"), 0.75)
+    and near(ItemFluid.hoursToBurn({ steamedHours = 0.5 }, "Clear"), 0.5) and ItemFluid.hoursToTurn({}, "Clear") == nil)
 
 check("room: a 1.5 L pot takes 6 quarter litres, a 0.6 L saucepan 2",
     ItemFluid.pieceRoom(1.5, 0, false, 250) == 6 and ItemFluid.pieceRoom(0.6, 0, false, 250) == 2)
@@ -137,12 +137,12 @@ check("unheated it goes off by its oldest piece, and can be emptied", near(cold.
 cold.fluids.Spoilt = nil
 cold.fluids.Water = 1
 ItemFluid.look(cold, 7)
-check("a pot of anything not named forgets its record", cold.modData.tpItemFluid == nil)
+check("a pot of anything not named forgets its itemFluid", cold.modData.tpItemFluid == nil)
 local sealed = pot("Base.Pot")
 sealed:getFluidContainer().canEmpty = false
 sealed.fluids.Milk = 1
 ItemFluid.look(sealed, 8)
-check("a sealed item with no record is left sealed", sealed:getFluidContainer().canEmpty == false)
+check("a sealed item with no itemFluid is left sealed", sealed:getFluidContainer().canEmpty == false)
 
 local changedMind = pot("Base.Pot")
 ItemFluid.addPieces(changedMind, "Raw", 250, { 100 }, 0)

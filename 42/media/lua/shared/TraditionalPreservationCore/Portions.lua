@@ -11,15 +11,15 @@ local Portions = {}
 
 local KEY = "IGUI_TraditionalPreservationCore_"
 
--- Sets a food item's values to `portions` of one portion's food p ({ hunger, calories, carbohydrates, lipids,
+-- Sets a food item's values to `portions` of one portion (portion = { hunger, calories, carbohydrates, lipids,
 -- proteins }, hunger as the engine keeps it); full is the portions of the whole item, for vanilla's eat shares.
-function Portions.set(food, p, portions, full)
-    food:setHungChange(p.hunger * portions)
-    food:setBaseHunger(p.hunger * (full or portions))
-    food:setCalories(p.calories * portions)
-    food:setCarbohydrates(p.carbohydrates * portions)
-    food:setLipids(p.lipids * portions)
-    food:setProteins(p.proteins * portions)
+function Portions.set(food, portion, portions, full)
+    food:setHungChange(portion.hunger * portions)
+    food:setBaseHunger(portion.hunger * (full or portions))
+    food:setCalories(portion.calories * portions)
+    food:setCarbohydrates(portion.carbohydrates * portions)
+    food:setLipids(portion.lipids * portions)
+    food:setProteins(portion.proteins * portions)
 end
 
 -- Portions left in a food item, from the hunger it still holds and one portion's. Vanilla's Eat Half and Eat
@@ -84,9 +84,9 @@ local function wrap(name)
         if not handler then return vanilla(self, ...) end
         local container = item:getContainer()
         local kept = handler.before and handler.before(item)
-        local result = vanilla(self, ...)
+        local vanillaReturn = vanilla(self, ...)
         handler.after(item, container, kept)
-        return result
+        return vanillaReturn
     end)
 end
 

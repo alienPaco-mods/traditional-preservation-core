@@ -34,9 +34,9 @@ function Doors.blocker(front, facing)
     for _, flag in ipairs(FRONT_WALLS[facing] or {}) do
         if properties:has(IsoFlagType[flag]) then return "wall " .. flag end
     end
-    local objects = front:getObjects()
-    for i = 0, objects:size() - 1 do
-        local sprite = objects:get(i):getSprite()
+    local isoObjects = front:getObjects()
+    for i = 0, isoObjects:size() - 1 do
+        local sprite = isoObjects:get(i):getSprite()
         local props = sprite and sprite:getProperties()
         if props then
             if props:has("BlocksPlacement") then return sprite:getName() .. " BlocksPlacement" end
@@ -59,9 +59,9 @@ end
 function Doors.doorOnto(square)
     for facing, step in pairs(Doors.FRONT) do
         local behind = squareAt(square, step, -1)
-        local objects = behind and behind:getObjects()
-        for i = 0, objects and objects:size() - 1 or -1 do
-            local sprite = objects:get(i):getSprite()
+        local isoObjects = behind and behind:getObjects()
+        for i = 0, isoObjects and isoObjects:size() - 1 or -1 do
+            local sprite = isoObjects:get(i):getSprite()
             if sprite and FACINGS[sprite:getName()] == facing then return sprite:getName() end
         end
     end

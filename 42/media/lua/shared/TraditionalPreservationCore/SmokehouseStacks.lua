@@ -1,18 +1,18 @@
--- Traditional Preservation core: a Smokehouse stack's fire counters (moved out of Smokehouse.lua 2026-11-14, refactor
--- b3). What hangs inside is each mod's: a stack records its owner when it starts (startCounters), and a mod steps
--- only its own stacks. The core counts the joined fire for them: hot, the hours of the stoked session now running
--- (Fire.logFire), and cold, banked hours and the hours of stoked sessions that broke off (fireStep). Plain modData
+-- Traditional Preservation core: a Smokehouse stack's fire counters. What hangs inside is each mod's: a stack records
+-- its owner when it starts (startCounters), and a mod steps only its own stacks. The core counts the joined fire for
+-- them: hotSmokeHours, the hours of the stoked session now running (Fire.logFire), and coldSmokeHours, banked hours
+-- and the hours of stoked sessions that broke off (fireStep). Plain modData
 -- in, plain modData out; Smokehouse passes every function on, so callers name Smokehouse only.
 local Fire = require "TraditionalPreservationCore/Fire"
 
 local SmokehouseStacks = {}
 
--- Starts a new stack's fire counters: owner is the mod whose recipe hung it (its id), hotNeed the stoked hours in
+-- Starts a new stack's fire counters: owner is the mod whose recipe hung it (its id), hotSmokeHoursNeeded the stoked hours in
 -- a row its cook takes (nil for a stack that never cooks).
-function SmokehouseStacks.startCounters(modData, owner, hotNeed)
+function SmokehouseStacks.startCounters(modData, owner, hotSmokeHoursNeeded)
     modData.smokeOwner = owner
-    modData.hotNeed = hotNeed
-    modData.hot, modData.hotCool, modData.cold = 0, 0, 0
+    modData.hotSmokeHoursNeeded = hotSmokeHoursNeeded
+    modData.hotSmokeHours, modData.hotSmokeCoolHours, modData.coldSmokeHours = 0, 0, 0
     modData.smokeFrom, modData.smokeSession, modData.lastStoked, modData.lastBanked = nil, nil, nil, nil
 end
 
@@ -22,16 +22,16 @@ function SmokehouseStacks.owns(modData, owner)
 end
 
 local function hotToCold(modData)
-    modData.cold = (modData.cold or 0) + (modData.hotCool or modData.hot or 0)
-    modData.hot, modData.hotCool = 0, 0
+    modData.coldSmokeHours = (modData.coldSmokeHours or 0) + (modData.hotSmokeCoolHours or modData.hotSmokeHours or 0)
+    modData.hotSmokeHours, modData.hotSmokeCoolHours = 0, 0
 end
 
 -- Brings a stack's counters up to the fire's record (a Stone Hearth's fire state), or none (not joined). A new or
 -- rebuilt Stone Hearth starts from what it has now; whatever hot the stack had becomes cold, as it does when the session
 -- it counted in ends. Of the stoked hours since the last look, those in a session that has since begun are hot.
 -- coolShare (default 1) is the share of the hours since the last look that were cool enough for cold smoke: fire
--- hours count as cold only then, stoked or banked, so hot keeps its cool part (hotCool) for when its session breaks
--- off. A stack marked noHot takes no cook: its stoked hours are smoke at once.
+-- hours count as cold only then, stoked or banked, so hot keeps its cool part (hotSmokeCoolHours) for when its session breaks
+-- off. A stack marked noHotSmoke takes no cook: its stoked hours are smoke at once.
 -- Returns the stoked and banked hours since the last look for the mod's own use (its drying by the fire's warmth),
 -- or nil when the stack starts counting from this fire (none, or another).
 function SmokehouseStacks.fireStep(modData, fire, coolShare)
@@ -55,22 +55,22 @@ function SmokehouseStacks.fireStep(modData, fire, coolShare)
     if not fire.session or fire.session ~= modData.smokeSession then
         local inNew = math.min(stoked, Fire.sessionHours(fire))
         hotToCold(modData)
-        modData.cold = modData.cold + (stoked - inNew) * coolShare
-        modData.hot, modData.hotCool = inNew, inNew * coolShare
+        modData.coldSmokeHours = modData.coldSmokeHours + (stoked - inNew) * coolShare
+        modData.hotSmokeHours, modData.hotSmokeCoolHours = inNew, inNew * coolShare
         modData.smokeSession = fire.session
     else
-        modData.hotCool = (modData.hotCool or modData.hot) + stoked * coolShare
-        modData.hot = modData.hot + stoked
+        modData.hotSmokeCoolHours = (modData.hotSmokeCoolHours or modData.hotSmokeHours) + stoked * coolShare
+        modData.hotSmokeHours = modData.hotSmokeHours + stoked
     end
-    modData.cold = modData.cold + banked * coolShare
+    modData.coldSmokeHours = modData.coldSmokeHours + banked * coolShare
     modData.lastStoked, modData.lastBanked = stokedHours, fire.bankedHours or 0
-    if modData.noHot then hotToCold(modData) end
+    if modData.noHotSmoke then hotToCold(modData) end
     return stoked, banked
 end
 
 -- Whether a stack's hot counter has done its cook.
 function SmokehouseStacks.hotDone(modData)
-    return modData.hotNeed ~= nil and not modData.noHot and (modData.hot or 0) >= modData.hotNeed
+    return modData.hotSmokeHoursNeeded ~= nil and not modData.noHotSmoke and (modData.hotSmokeHours or 0) >= modData.hotSmokeHoursNeeded
 end
 
 return SmokehouseStacks

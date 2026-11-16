@@ -23,32 +23,32 @@ local function hasFinished(station)
     return false
 end
 
-local function refresh(station, entry)
+local function refresh(station, sessionState)
     local face, part = Smokehouse.tileOf(station)
     local sprites = {}
     local flue = Smokehouse.chamberEntry(station)
     local ready = Smokehouse.readySprite(face, part, part == 1 and hasFinished(station))
     if flue then table.insert(sprites, Smokehouse.spriteName(flue)) end
     if ready then table.insert(sprites, Smokehouse.spriteName(ready)) end
-    Station.showSprites(station, entry, table.concat(sprites, ","), sprites)
+    Station.showSprites(station, sessionState, table.concat(sprites, ","), sprites)
 end
 
 -- A shed keeps the recipe tag it was built with in the save, so one built before the tag gets it when first seen.
-local function newEntry(station)
+local function newSessionState(station)
     if not Smokehouse.isChamber(station) then return nil end
     local logic = station:getComponent(ComponentType.DryingCraftLogic)
     if logic and logic:getRecipeTagQuery() ~= Smokehouse.RECIPES then logic:setRecipeTagQuery(Smokehouse.RECIPES) end
     return {}
 end
 
-local tracker = Station.tracker({ sprites = Tiles.CHAMBERS, entry = newEntry, refresh = refresh, scan = true })
+local tracker = Station.tracker({ sprites = Tiles.CHAMBERS, newSessionState = newSessionState, refresh = refresh, scan = true })
 
 World.track = tracker.track
 
 -- Redraws a chamber tile now, without waiting for the next tick, e.g. after the flue is laid.
 function World.refresh(station)
-    local entry = tracker.track(station)
-    if entry then refresh(station, entry) end
+    local sessionState = tracker.track(station)
+    if sessionState then refresh(station, sessionState) end
 end
 
 tracker.start()

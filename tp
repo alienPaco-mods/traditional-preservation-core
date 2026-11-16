@@ -374,7 +374,8 @@ RAW_WRAP = re.compile(r'^\s*(?:function\s+(IS\w+)[.:](\w+)\s*\(|(IS\w+)\.(\w+)\s
 
 
 def wrap_lint(root):
-    """Vanilla functions the mod replaces without TP Core's Wrap, and any wrapped twice in the series (every TP mod
+    """Vanilla functions the mod replaces without TP Core's Wrap (Core and the mods that require it: FuelBarrel never
+    does, so it has no Wrap to use), and any wrapped twice in the series (every TP mod
     is read: one function, one wrap), as 'path:line: reason' lines."""
     found, seen = [], {}
     for mod in all_mods():
@@ -384,7 +385,7 @@ def wrap_lint(root):
                 for owner, name in WRAP_CALL.findall(code):
                     seen.setdefault(f"{owner}.{name}", []).append(f"{mod}/{path.relative_to(MODS / mod)}:{number}")
                 raw = RAW_WRAP.match(code)
-                if raw and MODS / mod == root and not path.name.endswith("Dev.lua"):
+                if raw and MODS / mod == root and (root == CORE or requires_core(mod)) and not path.name.endswith("Dev.lua"):
                     target = ".".join(part for part in raw.groups() if part)
                     found.append(f"{path.relative_to(root)}:{number}: {target} replaced in place: use Wrap.method")
     for target, places in sorted(seen.items()):

@@ -16,7 +16,7 @@
 -- once.
 local Wrap = {}
 
-local entries = {}
+local wraps = {}
 local started = false
 local reported = {}
 
@@ -30,9 +30,9 @@ local function report(where, err)
     print("[TP Core] the wrap of " .. where .. " failed, vanilla went on: " .. tostring(err))
 end
 
-local function guarded(where, vanilla, entry)
+local function guarded(where, vanilla, wrap)
     return function(...)
-        local handler = entry.handler
+        local handler = wrap.handler
         if isDebugEnabled() then return handler(vanilla, ...) end
         local ran, inVanilla, results = false, false, nil
         local function callVanilla(...)
@@ -50,37 +50,37 @@ local function guarded(where, vanilla, entry)
     end
 end
 
-local function apply(entry)
-    if entry.applied then return end
-    local owner = _G[entry.owner]
-    if type(owner) ~= "table" or type(owner[entry.name]) ~= "function" then return end
-    entry.applied = true
-    owner[entry.name] = guarded(entry.owner .. "." .. entry.name, owner[entry.name], entry)
+local function apply(wrap)
+    if wrap.applied then return end
+    local owner = _G[wrap.owner]
+    if type(owner) ~= "table" or type(owner[wrap.name]) ~= "function" then return end
+    wrap.applied = true
+    owner[wrap.name] = guarded(wrap.owner .. "." .. wrap.name, owner[wrap.name], wrap)
 end
 
 local function startAll()
     started = true
-    for _, entry in ipairs(entries) do apply(entry) end
+    for _, wrap in ipairs(wraps) do apply(wrap) end
 end
 
 function Wrap.method(owner, name, handler)
     assert(type(owner) == "string" and type(name) == "string" and type(handler) == "function",
         "Wrap.method: owner and name (strings) and handler (function) needed")
-    for _, entry in ipairs(entries) do
-        if entry.owner == owner and entry.name == name then
-            entry.handler = handler
+    for _, wrap in ipairs(wraps) do
+        if wrap.owner == owner and wrap.name == name then
+            wrap.handler = handler
             return
         end
     end
-    local entry = { owner = owner, name = name, handler = handler }
-    table.insert(entries, entry)
-    if started or TPCoreTesting then apply(entry) end
+    local wrap = { owner = owner, name = name, handler = handler }
+    table.insert(wraps, wrap)
+    if started or TPCoreTesting then apply(wrap) end
 end
 
 -- Whether owner.name has been wrapped (for the tests and the console).
 function Wrap.applied(owner, name)
-    for _, entry in ipairs(entries) do
-        if entry.owner == owner and entry.name == name then return entry.applied == true end
+    for _, wrap in ipairs(wraps) do
+        if wrap.owner == owner and wrap.name == name then return wrap.applied == true end
     end
     return false
 end

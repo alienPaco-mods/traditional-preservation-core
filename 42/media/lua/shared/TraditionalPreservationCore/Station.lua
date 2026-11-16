@@ -8,11 +8,11 @@ Station.MAP_PRIORITY = 5
 Station.SCAN_TICKS = 30
 Station.SCAN_NEAR = 3
 
--- An unloaded object keeps its square and index until its chunk has been saved and reused, but the cell
+-- An unloaded station keeps its square and index until its chunk has been saved and reused, but the cell
 -- stops returning that square as soon as the chunk unloads (ENGINE_NOTES, "Chunk unload and generators").
-function Station.isLoaded(object)
-    local square = object:getSquare()
-    return square ~= nil and object:getObjectIndex() >= 0
+function Station.isLoaded(station)
+    local square = station:getSquare()
+    return square ~= nil and station:getObjectIndex() >= 0
         and getCell():getGridSquare(square:getX(), square:getY(), square:getZ()) == square
 end
 
@@ -21,7 +21,7 @@ end
 --   prefix  the tileset's prefix (Tiles.PREFIX)
 --   faces   tiles per station, one for each facing (Tiles.FACE_COUNT)
 --   bases   each kind's first tile: { vessel = Tiles.VESSEL, cask = Tiles.CASK }
--- Returns kindOf(object), giving the kind and the facing (from 0), or nil for anything else, and the lookup
+-- Returns kindOf(isoObject), giving the kind and the facing (from 0), or nil for anything else, and the lookup
 -- itself: tiles.kind[spriteName] and tiles.face[spriteName].
 function Station.kinds(prefix, faces, bases)
     local tiles = { kind = {}, face = {} }
@@ -31,8 +31,8 @@ function Station.kinds(prefix, faces, bases)
             tiles.face[prefix .. (base + face)] = face
         end
     end
-    local function kindOf(object)
-        local sprite = object and object:getSprite()
+    local function kindOf(isoObject)
+        local sprite = isoObject and isoObject:getSprite()
         local name = sprite and sprite:getName()
         if not name then return nil end
         return tiles.kind[name], tiles.face[name]
@@ -45,15 +45,15 @@ function Station.squareAt(square, dx, dy)
     return getCell():getGridSquare(square:getX() + dx, square:getY() + dy, square:getZ())
 end
 
--- Calls fn(object, dx, dy) for every object on the squares within radius tiles of x, y on level z: west to east,
+-- Calls fn(isoObject, dx, dy) for every object on the squares within radius tiles of x, y on level z: west to east,
 -- then north to south, then by its place on the square.
 local function eachObject(x, y, z, radius, fn)
     local cell = getCell()
     for dx = -radius, radius do
         for dy = -radius, radius do
             local there = cell:getGridSquare(x + dx, y + dy, z)
-            local objects = there and there:getObjects()
-            for i = 0, objects and objects:size() - 1 or -1 do fn(objects:get(i), dx, dy) end
+            local isoObjects = there and there:getObjects()
+            for i = 0, isoObjects and isoObjects:size() - 1 or -1 do fn(isoObjects:get(i), dx, dy) end
         end
     end
 end
@@ -61,34 +61,34 @@ end
 -- Every player here: all of them on a server, the local ones otherwise. A Java list.
 function Station.players()
     if isServer() then return getOnlinePlayers() end
-    local list = ArrayList.new()
+    local players = ArrayList.new()
     for i = 0, getNumActivePlayers() - 1 do
         local player = getSpecificPlayer(i)
-        if player then list:add(player) end
+        if player then players:add(player) end
     end
-    return list
+    return players
 end
 
 -- Calls fn(player) for every player here (Station.players).
 function Station.eachPlayer(fn)
-    local list = Station.players()
-    for i = 0, list:size() - 1 do fn(list:get(i)) end
+    local players = Station.players()
+    for i = 0, players:size() - 1 do fn(players:get(i)) end
 end
 
 -- Every object within radius tiles of the square at x, y on level z that passes test, nearest first; of two as near,
 -- the one the scan meets first (west to east, then north to south, then by its place on the square).
 function Station.nearAt(x, y, z, radius, test)
     local found = {}
-    eachObject(x, y, z, radius, function(object, dx, dy)
-        if test(object) then table.insert(found, { object = object, distance = dx * dx + dy * dy, order = #found }) end
+    eachObject(x, y, z, radius, function(isoObject, dx, dy)
+        if test(isoObject) then table.insert(found, { isoObject = isoObject, distance = dx * dx + dy * dy, order = #found }) end
     end)
     table.sort(found, function(a, b)
         if a.distance ~= b.distance then return a.distance < b.distance end
         return a.order < b.order
     end)
-    local list = {}
-    for index, entry in ipairs(found) do list[index] = entry.object end
-    return list
+    local nearest = {}
+    for index, nearby in ipairs(found) do nearest[index] = nearby.isoObject end
+    return nearest
 end
 
 -- The same round a square.
@@ -97,14 +97,14 @@ function Station.near(square, radius, test)
     return Station.nearAt(square:getX(), square:getY(), square:getZ(), radius, test)
 end
 
--- Calls fn(container, object) for every item container at heat or hotter (vanilla's container temperature: 1.0 is
+-- Calls fn(container, isoObject) for every item container at heat or hotter (vanilla's container temperature: 1.0 is
 -- cold, a lit stove or fire more) on any object within radius tiles of square on its level.
 function Station.hotContainers(square, radius, heat, fn)
     if not square then return end
-    eachObject(square:getX(), square:getY(), square:getZ(), radius, function(object)
-        for c = 0, object:getContainerCount() - 1 do
-            local container = object:getContainerByIndex(c)
-            if container:getTemperature() >= heat then fn(container, object) end
+    eachObject(square:getX(), square:getY(), square:getZ(), radius, function(isoObject)
+        for c = 0, isoObject:getContainerCount() - 1 do
+            local container = isoObject:getContainerByIndex(c)
+            if container:getTemperature() >= heat then fn(container, isoObject) end
         end
     end)
 end
@@ -136,16 +136,16 @@ local function lookAtHeat()
     if not lowest then return end
     local now = getGameTime():getWorldAgeHours()
     Station.eachPlayer(function(player)
-        Station.hotContainers(player:getSquare(), Station.HEAT_NEAR, lowest, function(container, object)
+        Station.hotContainers(player:getSquare(), Station.HEAT_NEAR, lowest, function(container, isoObject)
             local temperature = container:getTemperature()
             for _, watcher in ipairs(ready) do
-                if temperature >= watcher.heat then watcher.fn(container, now, object) end
+                if temperature >= watcher.heat then watcher.fn(container, now, isoObject) end
             end
         end)
     end)
 end
 
--- Calls fn(container, now, object) every game minute for each container at heat or hotter near a player (object: the
+-- Calls fn(container, now, isoObject) every game minute for each container at heat or hotter near a player (isoObject: the
 -- stove, fire or whatever holds it). heat is a vanilla
 -- container temperature, or a function giving one (nil: nothing to look for this minute).
 function Station.onHeatNear(heat, fn)
@@ -163,8 +163,8 @@ end
 local scanning = {}
 local scanTicks = 0
 
-local function foundByAll(object)
-    for _, tracker in ipairs(scanning) do tracker.found(object) end
+local function foundByAll(isoObject)
+    for _, tracker in ipairs(scanning) do tracker.found(isoObject) end
 end
 
 local function scanNear(player)
@@ -175,18 +175,21 @@ local function onScanTick()
     scanTicks = scanTicks + 1
     if scanTicks < Station.SCAN_TICKS then return end
     scanTicks = 0
-    local list = Station.players()
-    for i = 0, list:size() - 1 do scanNear(list:get(i)) end
+    local players = Station.players()
+    for i = 0, players:size() - 1 do scanNear(players:get(i)) end
 end
 
 -- options:
---   sprites  sprite names the map loader reports
---   entry    function(object): a new station's entry table, or nil to leave the object alone. Default {}.
---   refresh  function(object, entry), for each loaded station
---   ticks    ticks between refreshes (default TICKS_PER_REFRESH)
---   dropped  function(object, entry), optional: a station's area unloaded or it is gone; it won't be refreshed again
---   scan     true to find stations built or put down this session as soon as a player is near (see above).
---            entry must then turn down every object that isn't the mod's, and cheaply (Station.kinds).
+--   sprites          sprite names the map loader reports
+--   newSessionState  function(isoObject): a new station's session state (a table kept while it is loaded, never
+--                    saved), or nil to leave the object alone. Default {}.
+--   refresh          function(station, sessionState), for each loaded station
+--   ticks            ticks between refreshes (default TICKS_PER_REFRESH)
+--   dropped          function(station, sessionState), optional: a station's area unloaded or it is gone; it won't
+--                    be refreshed again
+--   scan             true to find stations built or put down this session as soon as a player is near (see above).
+--                    newSessionState must then turn down every object that isn't the mod's, and cheaply
+--                    (Station.kinds).
 function Station.tracker(options)
     assert(type(options.sprites) == "table", "Station.tracker: sprites (a list of sprite names) needed")
     assert(type(options.refresh) == "function", "Station.tracker: refresh (a function) needed")
@@ -194,39 +197,39 @@ function Station.tracker(options)
     local ticks = options.ticks or Station.TICKS_PER_REFRESH
     local ticksSinceRefresh = 0
 
-    -- The station's entry, made the first time. Nil if options.entry turned it down.
-    function tracker.track(object)
-        local entry = tracker.tracked[object]
-        if entry then return entry end
-        if options.entry then
-            entry = options.entry(object)
+    -- The station's session state, made the first time. Nil if options.newSessionState turned the object down.
+    function tracker.track(isoObject)
+        local sessionState = tracker.tracked[isoObject]
+        if sessionState then return sessionState end
+        if options.newSessionState then
+            sessionState = options.newSessionState(isoObject)
         else
-            entry = {}
+            sessionState = {}
         end
-        tracker.tracked[object] = entry
-        return entry
+        tracker.tracked[isoObject] = sessionState
+        return sessionState
     end
 
-    -- The station's entry, or nil if it isn't tracked. Never makes one.
-    function tracker.entry(object)
-        return tracker.tracked[object]
+    -- The station's session state, or nil if it isn't tracked. Never makes one.
+    function tracker.sessionStateOf(station)
+        return tracker.tracked[station]
     end
 
     -- For a station picked up or destroyed, so it isn't refreshed again.
-    function tracker.forget(object)
-        tracker.tracked[object] = nil
+    function tracker.forget(station)
+        tracker.tracked[station] = nil
     end
 
     -- A refresh may track another station, so this goes through a list made first.
     function tracker.refreshAll()
-        local objects = {}
-        for object in pairs(tracker.tracked) do table.insert(objects, object) end
-        for _, object in ipairs(objects) do
-            if not Station.isLoaded(object) then
-                if options.dropped then options.dropped(object, tracker.tracked[object]) end
-                tracker.tracked[object] = nil
-            elseif tracker.tracked[object] then
-                options.refresh(object, tracker.tracked[object])
+        local stations = {}
+        for station in pairs(tracker.tracked) do table.insert(stations, station) end
+        for _, station in ipairs(stations) do
+            if not Station.isLoaded(station) then
+                if options.dropped then options.dropped(station, tracker.tracked[station]) end
+                tracker.tracked[station] = nil
+            elseif tracker.tracked[station] then
+                options.refresh(station, tracker.tracked[station])
             end
         end
     end
@@ -239,11 +242,11 @@ function Station.tracker(options)
         tracker.refreshAll()
     end
 
-    -- Tracks and refreshes object now if it is a station not seen before.
-    function tracker.found(object)
-        if tracker.tracked[object] then return end
-        local entry = tracker.track(object)
-        if entry then options.refresh(object, entry) end
+    -- Tracks and refreshes isoObject now if it is a station not seen before.
+    function tracker.found(isoObject)
+        if tracker.tracked[isoObject] then return end
+        local sessionState = tracker.track(isoObject)
+        if sessionState then options.refresh(isoObject, sessionState) end
     end
 
     -- Call once at load: starts the tick loop and asks the map loader for the stations.
@@ -261,15 +264,15 @@ function Station.tracker(options)
     return tracker
 end
 
--- The station's CraftLogicUILogic, which lists its running batches. Its constructor reads the player's mod
--- data, so it needs a real player: nil until there is one.
-function Station.uiLogic(object, entry, logic)
-    if not entry.uiLogic or entry.uiLogic:getCraftLogic() ~= logic then
+-- The station's CraftLogicUILogic, which lists its running batches, kept in its session state. Its constructor
+-- reads the player's mod data, so it needs a real player: nil until there is one.
+function Station.uiLogic(station, sessionState, logic)
+    if not sessionState.uiLogic or sessionState.uiLogic:getCraftLogic() ~= logic then
         local player = getPlayer()
         if not player then return nil end
-        entry.uiLogic = CraftLogicUILogic.new(player, object, logic)
+        sessionState.uiLogic = CraftLogicUILogic.new(player, station, logic)
     end
-    return entry.uiLogic
+    return sessionState.uiLogic
 end
 
 -- The item slots of one resource group, input or output, as a Java list.
@@ -288,18 +291,18 @@ function Station.countItems(resources, group, io)
 end
 
 -- Shows these sprites on the station, in order, unless signature says nothing has changed since last time.
-function Station.showSprites(object, entry, signature, names)
-    if signature == entry.signature then return end
-    entry.signature = signature
-    object:clearAttachedAnimSprite()
+function Station.showSprites(station, sessionState, signature, names)
+    if signature == sessionState.signature then return end
+    sessionState.signature = signature
+    station:clearAttachedAnimSprite()
     for _, name in ipairs(names) do
-        object:addAttachedAnimSpriteByName(name)
+        station:addAttachedAnimSpriteByName(name)
     end
 end
 
 -- State kept in movableData goes onto the item when vanilla picks a station up, and back when it is placed.
-function Station.movableData(object)
-    local modData = object:getModData()
+function Station.movableData(station)
+    local modData = station:getModData()
     modData.movableData = modData.movableData or {}
     return modData.movableData
 end

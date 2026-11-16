@@ -74,7 +74,7 @@ end
 
 -- How a running batch is doing, for its popup. hoursLeft assumes the temperature holds.
 function M.batchStatus(modData, recipeHours, ledger)
-    return Weather.batchStatus(modData.done or 0, recipeHours, ledger, runPlace(modData), M.processRate)
+    return Weather.batchStatus(modData.workHours or 0, recipeHours, ledger, runPlace(modData), M.processRate)
 end
 
 function M.applySandbox()

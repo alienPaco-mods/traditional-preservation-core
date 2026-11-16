@@ -9,7 +9,7 @@ local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 
 local OnHeat = {}
 
--- Save key: never rename it once the mod is out. Inside: minutes, at (the hour last seen hot), done.
+-- Save key: never rename it once the mod is out. Inside: minutes, at (the hour last seen hot), finished.
 OnHeat.KEY = "tpOnHeat"
 OnHeat.HEAT_C = 100
 OnHeat.MAX_GAP_MINUTES = 2
@@ -23,20 +23,20 @@ local looking = false
 -- hot says whether it is hot now. Returns true once fn has run.
 function OnHeat.note(item, watch, now, hot)
     local modData = item:getModData()
-    local record = modData[OnHeat.KEY]
-    if record and record.done then return true end
+    local onHeat = modData[OnHeat.KEY]
+    if onHeat and onHeat.finished then return true end
     if not hot then
-        if record then record.at = nil end
+        if onHeat then onHeat.at = nil end
         return false
     end
-    record = record or { minutes = 0 }
+    onHeat = onHeat or { minutes = 0 }
     -- Only a gap of a look or two counts: an item taken off the heat isn't seen again until it is back on.
-    local gap = record.at and (now - record.at) * 60
-    if gap and gap > 0 and gap <= OnHeat.MAX_GAP_MINUTES then record.minutes = record.minutes + gap end
-    record.at = now
-    modData[OnHeat.KEY] = record
-    if record.minutes >= watch.minutes then
-        record.done = true
+    local gap = onHeat.at and (now - onHeat.at) * 60
+    if gap and gap > 0 and gap <= OnHeat.MAX_GAP_MINUTES then onHeat.minutes = onHeat.minutes + gap end
+    onHeat.at = now
+    modData[OnHeat.KEY] = onHeat
+    if onHeat.minutes >= watch.minutes then
+        onHeat.finished = true
         watch.fn(item)
         return true
     end

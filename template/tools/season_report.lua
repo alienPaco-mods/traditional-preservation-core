@@ -18,7 +18,7 @@ local function readDays(path)
     local days = {}
     for line in io.lines(path) do
         local f = {}
-        for value in line:gmatch("%S+") do table.insert(f, value) end
+        for column in line:gmatch("%S+") do table.insert(f, column) end
         -- Each month's forecast also holds the 10 days before it (offset below 0): skipped, so a month is 30 days.
         if #f >= 6 and tonumber(f[3]) >= 0 then
             table.insert(days, { world = tonumber(f[1]), offset = tonumber(f[3]), month = tonumber(f[2]), low = tonumber(f[4]), mean = tonumber(f[5]), high = tonumber(f[6]) })
@@ -34,12 +34,12 @@ local function temperatureAt(day, hour)
 end
 
 local function recipeData(seconds)
-    local data = { modData = {}, elapsed = 0 }
-    function data:getModData() return self.modData end
-    function data:getElapsedTime() return self.elapsed end
-    function data:setElapsedTime(value) self.elapsed = value end
-    function data:getRecipe() return { getTime = function() return seconds end } end
-    return data
+    local craftRecipeData = { modData = {}, elapsed = 0 }
+    function craftRecipeData:getModData() return self.modData end
+    function craftRecipeData:getElapsedTime() return self.elapsed end
+    function craftRecipeData:setElapsedTime(seconds) self.elapsed = seconds end
+    function craftRecipeData:getRecipe() return { getTime = function() return seconds end } end
+    return craftRecipeData
 end
 
 -- The first sampled world's calendar year, settled (Weather.settledMeans).
@@ -61,10 +61,10 @@ local seconds = M.PROCESS_HOURS * SECONDS_PER_HOUR
 local runs = {}
 local function startRuns(index)
     for _, place in ipairs({ "Open", "Sheltered", "Basement", "Moved" }) do
-        local data = recipeData(seconds)
-        M.onProcessStart(data)
-        data.modData.place = place == "Moved" and "Sheltered" or place
-        table.insert(runs, { data = data, place = place, month = days[index].month, startHour = H.hours })
+        local craftRecipeData = recipeData(seconds)
+        M.onProcessStart(craftRecipeData)
+        craftRecipeData.modData.place = place == "Moved" and "Sheltered" or place
+        table.insert(runs, { craftRecipeData = craftRecipeData, place = place, month = days[index].month, startHour = H.hours })
     end
 end
 
@@ -78,13 +78,13 @@ for index, day in ipairs(days) do
         end
         for _, run in ipairs(runs) do
             if not run.finished then
-                if run.place == "Moved" and H.hours - run.startHour >= 12 then run.data.modData.place = "Basement" end
-                M.onProcessUpdate(run.data)
+                if run.place == "Moved" and H.hours - run.startHour >= 12 then run.craftRecipeData.modData.place = "Basement" end
+                M.onProcessUpdate(run.craftRecipeData)
                 local key = run.month .. run.place
                 if not statuses[key] and H.hours - run.startHour >= 24 then
-                    statuses[key] = M.batchStatus(run.data.modData, M.PROCESS_HOURS, M.getLedger())
+                    statuses[key] = M.batchStatus(run.craftRecipeData.modData, M.PROCESS_HOURS, M.getLedger())
                 end
-                if run.data.elapsed >= seconds then
+                if run.craftRecipeData.elapsed >= seconds then
                     run.finished = true
                     results[key] = results[key] or (H.hours - run.startHour) / 24
                 end

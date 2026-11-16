@@ -9,29 +9,29 @@ local Appliances = require "TraditionalPreservationCore/Appliances"
 
 local Placement = {}
 
--- Picking a station up can break it, and one that holds something would lose it. mustStay(object) names the
+-- Picking a station up can break it, and one that holds something would lose it. mustStay(isoObject) names the
 -- vanilla pick-up line for a station that has to stay where it is (a test returns true for hasItems, vanilla's line
 -- for a full container, or an InfoPanelFlags name: "tooHot" for a fire); nil when it may go.
 local stayTests = {}
 
-local function mustStay(object)
-    if not object then return nil end
+local function mustStay(isoObject)
+    if not isoObject then return nil end
     for _, test in ipairs(stayTests) do
-        local why = test(object)
+        local why = test(isoObject)
         if why then return why == true and "hasItems" or why end
     end
     return nil
 end
 
 local function wrapPickUp()
-    Wrap.method("ISMoveableSpriteProps", "canPickUpMoveable", function(vanillaCanPickUp, self, character, square, object)
-        if mustStay(object) then return false end
-        return vanillaCanPickUp(self, character, square, object)
+    Wrap.method("ISMoveableSpriteProps", "canPickUpMoveable", function(vanillaCanPickUp, self, character, square, isoObject)
+        if mustStay(isoObject) then return false end
+        return vanillaCanPickUp(self, character, square, isoObject)
     end)
 
-    Wrap.method("ISMoveableSpriteProps", "getInfoPanelFlagsPerTile", function(vanillaInfoFlags, self, square, object, player, mode)
-        vanillaInfoFlags(self, square, object, player, mode)
-        local why = mode == "pickup" and mustStay(object)
+    Wrap.method("ISMoveableSpriteProps", "getInfoPanelFlagsPerTile", function(vanillaInfoFlags, self, square, isoObject, player, mode)
+        vanillaInfoFlags(self, square, isoObject, player, mode)
+        local why = mode == "pickup" and mustStay(isoObject)
         if why then InfoPanelFlags[why] = true end
     end)
 end
@@ -88,8 +88,8 @@ function Placement.keepDoorsFree(sprites)
             return not (doorKept[spriteName] or Doors.facingOf(spriteName)) or Doors.fits(square, spriteName)
         end)
     end
-    for key, value in pairs(sprites or {}) do
-        doorKept[type(key) == "number" and value or key] = true
+    for indexOrSprite, sprite in pairs(sprites or {}) do
+        doorKept[type(indexOrSprite) == "number" and sprite or indexOrSprite] = true
     end
 end
 

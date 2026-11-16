@@ -61,7 +61,7 @@ check("door end refused", Smokehouse.chamberRefusal({ allowed = false }) == "IGU
 check("one Stone Hearth a shed", Smokehouse.chamberRefusal({ allowed = true, chamberJoined = true }) == "IGUI_TraditionalPreservationCore_FlueChamberJoined")
 local flue = Fire.connection(Smokehouse.ID)
 check("the flue is a Stone Hearth connection by its kits, blocking only its own slot", flue ~= nil and flue.kits == Smokehouse.FLUE_KITS
-    and flue.kinds == Smokehouse.FLUE_KINDS and flue.blocks == "connection" and flue.finds ~= nil and flue.joined ~= nil)
+    and flue.kitNames == Smokehouse.FLUE_KIT_NAMES and flue.blocks == "connection" and flue.finds ~= nil and flue.joined ~= nil)
 check("Connect takes 400 ticks, Disconnect 200, 5 Masonry", flue.kits.Pipe.ticks == 400 and flue.kits.Stones.removeTicks == 200
     and flue.kits.Pipe.xp[1] == "Masonry" and flue.kits.Pipe.xp[2] == 5 and flue.kits.Stones.anim == "DigShovel")
 
@@ -71,11 +71,11 @@ check("a full pipe kit", #missing == 0 and not noTool)
 missing, noTool = Smokehouse.kitMissing("Stones", { ["Base.FlatStone"] = 1 }, false)
 check("two flat stones, two clay and the shovel short",
     #missing == 2 and missing[1][1] == "Base.FlatStone" and missing[1][2] == 2 and missing[2][2] == 2 and noTool)
-for _, kind in ipairs(Smokehouse.FLUE_KINDS) do
-    local kit = Smokehouse.FLUE_KITS[kind]
+for _, kitName in ipairs(Smokehouse.FLUE_KIT_NAMES) do
+    local kit = Smokehouse.FLUE_KITS[kitName]
     local gives = false
     for _, need in ipairs(kit.items) do gives = gives or need[1] == kit.back end
-    check(kind .. ": what comes back is part of the kit, and a tool, its text and the kit's texts are named", gives and kit.tool ~= nil
+    check(kitName .. ": what comes back is part of the kit, and a tool, its text and the kit's texts are named", gives and kit.tool ~= nil
         and kit.toolText ~= nil and kit.text ~= nil and kit.help ~= nil and kit.name ~= nil)
 end
 
@@ -91,7 +91,7 @@ Doors.fits = oldFits
 -- The stack's counters against the Stone Hearth's record (Fire.logFire), and its owner.
 local stack = {}
 Smokehouse.startCounters(stack, "SomeMod", 8)
-check("a new stack starts at nought, with its owner and need", stack.hot == 0 and stack.cold == 0 and stack.hotNeed == 8
+check("a new stack starts at nought, with its owner and need", stack.hotSmokeHours == 0 and stack.coldSmokeHours == 0 and stack.hotSmokeHoursNeeded == 8
     and Smokehouse.owns(stack, "SomeMod") and not Smokehouse.owns(stack, "OtherMod"))
 local fire = {}
 Fire.logFire(fire, 100, nil, nil)
@@ -100,13 +100,13 @@ check("joining takes the fire's record as it stands", Smokehouse.fireStep(stack,
 Fire.logFire(fire, 101, Fire.STOKED, 120)
 Fire.logFire(fire, 104, Fire.STOKED, 120)
 local stoked, banked = Smokehouse.fireStep(stack, fire)
-check("stoked hours in the session are hot, and handed back", near(stack.hot, 3) and not Smokehouse.hotDone(stack)
+check("stoked hours in the session are hot, and handed back", near(stack.hotSmokeHours, 3) and not Smokehouse.hotDone(stack)
     and near(stoked, 3) and banked == 0)
 Fire.logFire(fire, 104.5, nil, nil)
 Fire.logFire(fire, 105, Fire.STOKED, 120)
 Fire.logFire(fire, 110, Fire.STOKED, 120)
 Smokehouse.fireStep(stack, fire)
-check("a short gap keeps the cook going", near(stack.hot, 8.5) and Smokehouse.hotDone(stack))
+check("a short gap keeps the cook going", near(stack.hotSmokeHours, 8.5) and Smokehouse.hotDone(stack))
 
 local cool = {}
 Smokehouse.startCounters(cool, "SomeMod", 4)
@@ -115,20 +115,20 @@ Fire.logFire(fire, 111, Fire.BANKED, 160)
 Fire.logFire(fire, 115, Fire.BANKED, 160)
 stoked, banked = Smokehouse.fireStep(cool, fire, 0.5)
 -- The stoked hour before banking ended its session: smoke too, at the same share.
-check("banked hours are smoke by the share of cool hours", near(banked, 4) and near(stoked, 1) and near(cool.cold, 2.5) and cool.hot == 0)
+check("banked hours are smoke by the share of cool hours", near(banked, 4) and near(stoked, 1) and near(cool.coldSmokeHours, 2.5) and cool.hotSmokeHours == 0)
 
-local noCook = { noHot = true }
+local noCook = { noHotSmoke = true }
 Smokehouse.startCounters(noCook, "SomeMod", 4)
 Smokehouse.fireStep(noCook, fire)
 Fire.logFire(fire, 116, Fire.STOKED, 160)
 Fire.logFire(fire, 119, Fire.STOKED, 160)
 Smokehouse.fireStep(noCook, fire)
 -- An hour banked before the stoking, then three stoked.
-check("a stack that never cooks takes stoked hours as smoke at once", noCook.hot == 0 and near(noCook.cold, 4)
+check("a stack that never cooks takes stoked hours as smoke at once", noCook.hotSmokeHours == 0 and near(noCook.coldSmokeHours, 4)
     and not Smokehouse.hotDone(noCook))
 
-local moved = { hotNeed = 4, hot = 2, cold = 1, smokeFrom = fire.fireId, lastStoked = fire.stokedHours, lastBanked = fire.bankedHours }
+local moved = { hotSmokeHoursNeeded = 4, hotSmokeHours = 2, coldSmokeHours = 1, smokeFrom = fire.fireId, lastStoked = fire.stokedHours, lastBanked = fire.bankedHours }
 check("disconnected, nothing is handed back", Smokehouse.fireStep(moved, nil) == nil)
-check("and the hot hours become smoke", moved.hot == 0 and near(moved.cold, 3) and moved.smokeFrom == nil)
+check("and the hot hours become smoke", moved.hotSmokeHours == 0 and near(moved.coldSmokeHours, 3) and moved.smokeFrom == nil)
 
 H.done()

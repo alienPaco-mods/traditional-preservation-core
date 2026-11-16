@@ -6,32 +6,32 @@ local FluidTreat = require "TraditionalPreservationCore/FluidTreat"
 local UI = require "TraditionalPreservationCore/UI"
 local Uses = require "TraditionalPreservationCore/Uses"
 
-local function onTreat(playerObj, container, spec, treatment)
+local function onTreat(playerObj, container, fluidKind, treatment)
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, container)
-    ISTimedActionQueue.add(TPFluidTreat:new(playerObj, container, spec, treatment))
+    ISTimedActionQueue.add(TPFluidTreat:new(playerObj, container, fluidKind, treatment))
 end
 
 local function fillTreatMenu(playerNum, context, items)
-    local container, spec = UI.firstSelected(items, FluidTreat.treatableSpec)
+    local container, fluidKind = UI.firstSelected(items, FluidTreat.treatableFluidKind)
     if not container then return end
     local playerObj = getSpecificPlayer(playerNum)
-    local parent = UI.itemSubMenu(context, container):addOption(getText(spec.treatMenu))
-    parent.iconTexture = getTexture(spec.treatments[1].icon)
-    if spec.treatTooltip then
+    local parent = UI.itemSubMenu(context, container):addOption(getText(fluidKind.treatMenu))
+    parent.iconTexture = getTexture(fluidKind.treatments[1].icon)
+    if fluidKind.treatTooltip then
         local about = ISWorldObjectContextMenu.addToolTip()
-        about.description = getText(spec.treatTooltip)
+        about.description = getText(fluidKind.treatTooltip)
         parent.toolTip = about
     end
     local subMenu = context:getNew(context)
     context:addSubMenu(parent, subMenu)
-    local litres = FluidTreat.litresIn(container:getFluidContainer(), spec)
-    local uses = FluidTreat.treatUses(spec, litres)
-    for _, treatment in ipairs(spec.treatments) do
+    local litres = FluidTreat.litresIn(container:getFluidContainer(), fluidKind)
+    local uses = FluidTreat.treatUses(fluidKind, litres)
+    for _, treatment in ipairs(fluidKind.treatments) do
         -- The label counts what the player carries; the tooltip says what this takes.
         local owned = Uses.count(playerObj, treatment.tag())
-        local option = subMenu:addOption(getText(treatment.label, tostring(owned)), playerObj, onTreat, container, spec, treatment)
+        local option = subMenu:addOption(getText(treatment.label, tostring(owned)), playerObj, onTreat, container, fluidKind, treatment)
         option.iconTexture = getTexture(treatment.icon)
-        local refusal = FluidTreat.treatRefusal(container, spec, treatment, playerObj)
+        local refusal = FluidTreat.treatRefusal(container, fluidKind, treatment, playerObj)
         option.notAvailable = refusal ~= nil
         local tooltip = ISWorldObjectContextMenu.addToolTip()
         tooltip.description = getText(refusal or "IGUI_TraditionalPreservationCore_TreatTakes", string.format("%.1f", litres),

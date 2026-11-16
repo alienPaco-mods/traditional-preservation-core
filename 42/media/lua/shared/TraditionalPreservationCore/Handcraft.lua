@@ -24,12 +24,12 @@ local function install()
             local before = handlers[index].before
             if before then kept[index] = before(self) end
         end
-        local result = vanillaPerformRecipe(self)
+        local vanillaReturn = vanillaPerformRecipe(self)
         local recipeData = self.logic and self.logic:getRecipeData()
         if recipeData then
             for index, handler in ipairs(handlers) do handler.after(self, recipeData, kept[index]) end
         end
-        return result
+        return vanillaReturn
     end)
 end
 

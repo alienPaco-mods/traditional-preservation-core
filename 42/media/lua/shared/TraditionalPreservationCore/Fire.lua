@@ -40,7 +40,7 @@ Fire.KEY = "tpFire"
 Fire.PLACE = "Fireside"
 Fire.FIRE_C = 28
 Fire.FIRE_RADIUS = 2
-Fire.DEFAULT_UNDER = Weather.DEFAULT_PLACE   -- the place under a fire when none was noted: a room
+Fire.DEFAULT_PLACE_WITHOUT_FIRE = Weather.DEFAULT_PLACE   -- the place under a fire when none was noted: a room
 
 -- Banked
 Fire.BANKED_BURN = 1 / 3         -- of the wood a lit fire burns: a banked fire lasts three times as long
@@ -61,8 +61,8 @@ Fire.EMBERS_LIFT = { Covered = 10, Open = 5 }
 for _, fire in ipairs({ { Fire.PLACE, Fire.FIRE_C, Fire.FIRE_LIFT }, { Fire.EMBERS, Fire.EMBERS_C, Fire.EMBERS_LIFT } }) do
     local place, celsius, lifts = fire[1], fire[2], fire[3]
     Weather.FIRE_PLACES[place] = { celsius = celsius }
-    for under, lift in pairs(lifts) do
-        Weather.FIRE_PLACES[place .. under] = { celsius = celsius, under = under, lift = lift }
+    for placeWithoutFire, lift in pairs(lifts) do
+        Weather.FIRE_PLACES[place .. placeWithoutFire] = { celsius = celsius, placeWithoutFire = placeWithoutFire, lift = lift }
     end
 end
 
@@ -77,80 +77,80 @@ Fire.BANKED = "banked"
 -- in one go when its chunk loads again (ENGINE_NOTES), so its fuel afterwards can't say when it went out. A session
 -- ends once the fire hasn't been stoked for more than SESSION_GRACE hours; stoking again starts a new one (session =
 -- when it began, sessionBase = the stoked hours before it). fireId tells one fire's record from a rebuilt one's.
-function Fire.logFire(state, now, mode, ends)
-    state.fireId = state.fireId or now
-    local at = state.fireAt
-    if at and now > at and state.fireMode then
-        local stop = math.max(math.min(now, state.fireEnds or now), at)
+function Fire.logFire(fireModData, now, mode, ends)
+    fireModData.fireId = fireModData.fireId or now
+    local at = fireModData.fireAt
+    if at and now > at and fireModData.fireMode then
+        local stop = math.max(math.min(now, fireModData.fireEnds or now), at)
         local hours = stop - at
-        if state.fireMode == Fire.STOKED then
-            state.stokedHours = (state.stokedHours or 0) + hours
-            state.stokedLast = stop
+        if fireModData.fireMode == Fire.STOKED then
+            fireModData.stokedHours = (fireModData.stokedHours or 0) + hours
+            fireModData.stokedLast = stop
         else
-            state.bankedHours = (state.bankedHours or 0) + hours
+            fireModData.bankedHours = (fireModData.bankedHours or 0) + hours
         end
     end
-    if state.session and now - (state.stokedLast or now) > Fire.SESSION_GRACE then
-        state.session, state.sessionBase = nil, nil
+    if fireModData.session and now - (fireModData.stokedLast or now) > Fire.SESSION_GRACE then
+        fireModData.session, fireModData.sessionBase = nil, nil
     end
-    if mode == Fire.STOKED and not state.session then
-        state.session, state.sessionBase, state.stokedLast = now, state.stokedHours or 0, now
+    if mode == Fire.STOKED and not fireModData.session then
+        fireModData.session, fireModData.sessionBase, fireModData.stokedLast = now, fireModData.stokedHours or 0, now
     end
-    state.fireAt, state.fireMode, state.fireEnds = now, mode, ends
+    fireModData.fireAt, fireModData.fireMode, fireModData.fireEnds = now, mode, ends
 end
 
 -- The stoked hours of the session now running, or 0.
-function Fire.sessionHours(state)
-    if not state.session then return 0 end
-    return (state.stokedHours or 0) - (state.sessionBase or 0)
+function Fire.sessionHours(fireModData)
+    if not fireModData.session then return 0 end
+    return (fireModData.stokedHours or 0) - (fireModData.sessionBase or 0)
 end
 
-function Fire.stateOf(modData)
+function Fire.fireModData(modData)
     modData[Fire.KEY] = modData[Fire.KEY] or {}
     return modData[Fire.KEY]
 end
 
 -- An attachment's own state, under its id in the fire's.
-function Fire.partState(modData, id)
-    local state = Fire.stateOf(modData)
-    state[id] = state[id] or {}
-    return state[id]
+function Fire.partModData(modData, id)
+    local fireModData = Fire.fireModData(modData)
+    fireModData[id] = fireModData[id] or {}
+    return fireModData[id]
 end
 
--- A registry of specs by id (attachments here, FireConnect's connections). add(spec) registers one by spec.id, or
+-- A registry by id (attachments here, FireConnect's connections). add(added) registers one by added.id, or
 -- adds the fields given to one already registered, so its rules can be given in shared Lua and its menu in client
 -- Lua; a field already given may not be given again as something else. get(id) is one, list() every one in the order
--- registered. kind names the registering function in its errors.
-function Fire.registry(kind)
-    local specs, order = {}, {}
+-- registered. registrar names the registering function in its errors.
+function Fire.registry(registrar)
+    local byId, order = {}, {}
     local registry = {}
-    function registry.add(spec)
-        assert(type(spec.id) == "string", kind .. ": a spec needs an id")
-        local known = specs[spec.id]
+    function registry.add(added)
+        assert(type(added.id) == "string", registrar .. ": an id is needed")
+        local known = byId[added.id]
         if not known then
             known = {}
-            specs[spec.id] = known
-            table.insert(order, spec.id)
+            byId[added.id] = known
+            table.insert(order, added.id)
         end
-        for key, value in pairs(spec) do
-            assert(known[key] == nil or known[key] == value, kind .. " " .. spec.id .. ": " .. key .. " is already given")
-            known[key] = value
+        for field, given in pairs(added) do
+            assert(known[field] == nil or known[field] == given, registrar .. " " .. added.id .. ": " .. field .. " is already given")
+            known[field] = given
         end
         return known
     end
     function registry.get(id)
-        return specs[id]
+        return byId[id]
     end
     function registry.list()
         local list = {}
-        for _, id in ipairs(order) do table.insert(list, specs[id]) end
+        for _, id in ipairs(order) do table.insert(list, byId[id]) end
         return list
     end
     return registry
 end
 
 -- Attachments: what is fitted on a fire, one at a time, registered with Fire.attach (Fire.registry). Each
--- function gets the attachment's own state (part) and the fireplace; fireState is the fire's.
+-- function gets the attachment's own state (part) and the fireplace; fireModData is the fire's.
 --   name                                  its text key
 --   fit                                   what Fit takes: { items = { {full type, count} }, tool (an ItemTag's
 --                                         name, kept), ticks, removeTicks, xp = { perk, amount }, lost = { full type
@@ -162,21 +162,21 @@ end
 --                                         cauldron's StoneHearth.cauldronSprite)
 --   overlay(part, face, burning, banked)  optional: its overlay sprite and, to tint it, { r, g, b } (0-1), or nil
 --                                         (the cauldron's StoneHearth.liquidOverlay: what it holds, coloured)
---   heats(part, fire, now, fireState, airC, place)  brings what it holds up to now, by the fire and the air of the
+--   heats(part, fire, now, fireModData, airC, place)  brings what it holds up to now, by the fire and the air of the
 --                                         place the fire stands in (Weather.placeOf)
---   onFire(part, fire, now, fireState)    after each refresh, the look and glow set
+--   onFire(part, fire, now, fireModData)    after each refresh, the look and glow set
 --   display                               how the fitted fire shows, { icon, title (a text key: its submenu and
 --                                         Info window), info (the Info row's text key), fire = { bank, stoke }
 --                                         (Bank / Stoke's icons) }; the fire's kind's display if left out
 --   status(part)                          client: the menu's first row, text and icon
 --   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
 --   rows(window, y, info) -> y            client: its rows in the Info window; info.part is the part
---   notes(info, notes)                    client: its Info notes (FireUI.notes has info)
+--   notes(fireView, notes)                client: its Info notes (FireUI.notes has fireView)
 local ATTACHMENTS = Fire.registry("Fire.attach")
 
-function Fire.attach(spec)
-    local known = ATTACHMENTS.add(spec)
-    assert(not spec.fit or type(spec.fit.items) == "table", "Fire.attach " .. known.id .. ": fit needs items")
+function Fire.attach(attachment)
+    local known = ATTACHMENTS.add(attachment)
+    assert(not attachment.fit or type(attachment.fit.items) == "table", "Fire.attach " .. known.id .. ": fit needs items")
     return known
 end
 
@@ -186,12 +186,12 @@ Fire.attachment = ATTACHMENTS.get
 Fire.attachments = ATTACHMENTS.list
 
 -- Banks the fire (banked true) or stokes it up again, with fuel minutes in vanilla's fireplace now.
-function Fire.setBanked(state, banked, fuel, now)
-    state.banked = banked or nil
+function Fire.setBanked(fireModData, banked, fuel, now)
+    fireModData.banked = banked or nil
     if banked then
-        state.fuel, state.fuelAt, state.fuelSet = fuel, now, fuel
+        fireModData.fuel, fireModData.fuelAt, fireModData.fuelSet = fuel, now, fuel
     else
-        state.fuel, state.fuelAt, state.fuelSet = nil, nil, nil
+        fireModData.fuel, fireModData.fuelAt, fireModData.fuelSet = nil, nil, nil
     end
 end
 
@@ -199,23 +199,23 @@ end
 -- while banked). Returns the fuel to give vanilla's fireplace, nil to leave it alone. The count runs on the clock,
 -- away time included; wood added since the last reckoning counts in full. Burnt down, the fire is out and no longer
 -- banked. Lit by anything but stoking, it is a lit fire again.
-function Fire.reckonFuel(state, fuel, lit, now)
-    if not state.banked then return nil end
+function Fire.reckonFuel(fireModData, fuel, lit, now)
+    if not fireModData.banked then return nil end
     if lit then
-        Fire.setBanked(state, false)
+        Fire.setBanked(fireModData, false)
         return nil
     end
-    if not state.fuel then
-        Fire.setBanked(state, true, fuel, now)
+    if not fireModData.fuel then
+        Fire.setBanked(fireModData, true, fuel, now)
         return nil
     end
-    local left = state.fuel - (now - state.fuelAt) * Fire.MINUTES_PER_HOUR * Fire.BANKED_BURN + math.max(fuel - state.fuelSet, 0)
+    local left = fireModData.fuel - (now - fireModData.fuelAt) * Fire.MINUTES_PER_HOUR * Fire.BANKED_BURN + math.max(fuel - fireModData.fuelSet, 0)
     if left < 1 then
-        Fire.setBanked(state, false)
+        Fire.setBanked(fireModData, false)
         return 0
     end
-    state.fuel, state.fuelAt, state.fuelSet = left, now, math.ceil(left)
-    return state.fuelSet
+    fireModData.fuel, fireModData.fuelAt, fireModData.fuelSet = left, now, math.ceil(left)
+    return fireModData.fuelSet
 end
 
 -- A banked firebox cooks as slowly as it burns: vanilla adds cooking time at full speed, so of the minutes cooked
@@ -227,10 +227,10 @@ end
 
 -- Kinds: the fires Fire banks, stokes and keeps attachments and connections on, registered with Fire.kind
 -- (Fire.registry). The Stone Hearth (StoneHearth.lua) is the first; a mod can add its own fireplace the same way.
---   is(object)                             whether an object is one of this kind (an IsoFireplace)
+--   is(isoObject)                          whether an object is one of this kind (an IsoFireplace)
 --   face(spriteName)                       its facing (0 S, 1 E) by tile, nil for a tile not its own
 --   sprites                                every tile of the kind, for FireWorld to track
---   showing(fire, state, burning, banked)  the sprite it shows now, and the overlay and its colour (nil for none)
+--   showing(fire, fireModData, burning, banked)  the sprite it shows now, and the overlay and its colour (nil for none)
 --   fittedByTile(spriteName)               the id of what a tile shows fitted when nothing is noted (a fire picked
 --                                          up and put down: its modData doesn't go with it), or nil; optional
 --   display                                how it shows with nothing fitted: { icon, title, info, fire = { bank,
@@ -241,45 +241,45 @@ end
 local KINDS = Fire.registry("Fire.kind")
 
 -- Checked before it is kept, so a refused kind is never tracked or asked.
-function Fire.kind(spec)
-    local known = KINDS.get(spec.id) or {}
-    local function given(field) if spec[field] ~= nil then return spec[field] end return known[field] end
-    local name = "Fire.kind " .. tostring(spec.id) .. ": "
-    assert(type(given("is")) == "function", name .. "is needs a function")
-    assert(type(given("face")) == "function", name .. "face needs a function")
-    assert(type(given("showing")) == "function", name .. "showing needs a function")
-    assert(type(given("sprites")) == "table", name .. "sprites needs a list")
-    assert(type(given("display")) == "table", name .. "display needs a table")
+function Fire.kind(fireKind)
+    local known = KINDS.get(fireKind.id) or {}
+    local function given(field) if fireKind[field] ~= nil then return fireKind[field] end return known[field] end
+    local refusedAs = "Fire.kind " .. tostring(fireKind.id) .. ": "
+    assert(type(given("is")) == "function", refusedAs .. "is needs a function")
+    assert(type(given("face")) == "function", refusedAs .. "face needs a function")
+    assert(type(given("showing")) == "function", refusedAs .. "showing needs a function")
+    assert(type(given("sprites")) == "table", refusedAs .. "sprites needs a list")
+    assert(type(given("display")) == "table", refusedAs .. "display needs a table")
     local refusals = given("refusals")
-    assert(type(refusals) == "table" and refusals.joined and refusals.door, name .. "refusals needs joined and door")
-    return KINDS.add(spec)
+    assert(type(refusals) == "table" and refusals.joined and refusals.door, refusedAs .. "refusals needs joined and door")
+    return KINDS.add(fireKind)
 end
 
 -- The kind of fire an object is, or nil.
-function Fire.kindOf(object)
-    if not object then return nil end
-    for _, kind in ipairs(KINDS.list()) do
-        if kind.is(object) then return kind end
+function Fire.kindOf(isoObject)
+    if not isoObject then return nil end
+    for _, fireKind in ipairs(KINDS.list()) do
+        if fireKind.is(isoObject) then return fireKind end
     end
     return nil
 end
 
 -- Any fire of a registered kind: one this mod banks, stokes and counts the fuel of.
-function Fire.isFire(object)
-    return Fire.kindOf(object) ~= nil
+function Fire.isFire(isoObject)
+    return Fire.kindOf(isoObject) ~= nil
 end
 
 -- The facing (0 S, 1 E) of a fire, by its kind's tiles; nil for anything else.
 function Fire.faceOf(fire)
-    local kind = Fire.kindOf(fire)
-    return kind and kind.face(fire:getSprite():getName())
+    local fireKind = Fire.kindOf(fire)
+    return fireKind and fireKind.face(fire:getSprite():getName())
 end
 
 -- Every registered kind's tiles.
 function Fire.sprites()
     local sprites = {}
-    for _, kind in ipairs(KINDS.list()) do
-        for _, name in ipairs(kind.sprites) do table.insert(sprites, name) end
+    for _, fireKind in ipairs(KINDS.list()) do
+        for _, name in ipairs(fireKind.sprites) do table.insert(sprites, name) end
     end
     return sprites
 end
@@ -287,48 +287,48 @@ end
 -- The id of what is fitted on a fire, or nil. With nothing noted, what its tile shows fitted (its kind's fittedByTile);
 -- attached false is nothing, whatever the tile shows until redrawn.
 function Fire.attachedTo(fire)
-    local state = fire:getModData()[Fire.KEY]
-    local id = state and state.attached
+    local fireModData = fire:getModData()[Fire.KEY]
+    local id = fireModData and fireModData.attached
     if id ~= nil then return id or nil end
-    local kind = Fire.kindOf(fire)
-    if kind and kind.fittedByTile then return kind.fittedByTile(fire:getSprite():getName()) end
+    local fireKind = Fire.kindOf(fire)
+    if fireKind and fireKind.fittedByTile then return fireKind.fittedByTile(fire:getSprite():getName()) end
 end
 
 -- A fire with the attachment id fitted (Cauldron.ID on a Stone Hearth: the Stone Hearth (Cauldron)), or with anything fitted when id is nil.
-function Fire.isFitted(object, id)
-    if not Fire.isFire(object) then return false end
-    local fitted = Fire.attachedTo(object)
+function Fire.isFitted(isoObject, id)
+    if not Fire.isFire(isoObject) then return false end
+    local fitted = Fire.attachedTo(isoObject)
     if id == nil then return fitted ~= nil end
     return fitted == id
 end
 
 -- A fire with nothing fitted ("bare").
-function Fire.isBare(object)
-    return Fire.isFire(object) and Fire.attachedTo(object) == nil
+function Fire.isBare(isoObject)
+    return Fire.isFire(isoObject) and Fire.attachedTo(isoObject) == nil
 end
 
--- What is fitted on a fire: its spec and state, or nil.
+-- What is fitted on a fire: its attachment and state, or nil.
 function Fire.attachmentOf(fire)
     local id = Fire.isFire(fire) and Fire.attachedTo(fire)
-    local spec = id and ATTACHMENTS.get(id)
-    if not spec then return nil end
-    return spec, Fire.partState(fire:getModData(), id)
+    local attachment = id and ATTACHMENTS.get(id)
+    if not attachment then return nil end
+    return attachment, Fire.partModData(fire:getModData(), id)
 end
 
 -- Whether what is fitted may come off (or the fire be picked up): never while the fire burns; else the
 -- attachment's say. A fire with nothing fitted may.
 function Fire.canRemove(fire)
     if Fire.isBurning(fire) then return false, "Burning" end
-    local spec, part = Fire.attachmentOf(fire)
-    if not (spec and spec.canRemove) then return true end
-    return spec.canRemove(part, fire)
+    local attachment, part = Fire.attachmentOf(fire)
+    if not (attachment and attachment.canRemove) then return true end
+    return attachment.canRemove(part, fire)
 end
 
--- Why spec can't be fitted on this fire now, as a reason (Burning, Fitted, NoFit, Blocked), or nil. A connection
+-- Why attachment can't be fitted on this fire now, as a reason (Burning, Fitted, NoFit, Blocked), or nil. A connection
 -- blocks the attachment slot only when it says so (blocks "both"; the Smokehouse's flue doesn't: the Cauldron fits on
 -- a Stone Hearth joined to it).
-function Fire.fitRefusal(fire, spec)
-    if not (spec and spec.fit) then return "NoFit" end
+function Fire.fitRefusal(fire, attachment)
+    if not (attachment and attachment.fit) then return "NoFit" end
     if Fire.attachedTo(fire) then return "Fitted" end
     if Fire.isBurning(fire) then return "Burning" end
     local joined = Fire.connectionOf(fire)
@@ -338,40 +338,40 @@ end
 
 -- Fits the attachment id on a fire: its state starts empty.
 function Fire.fit(fire, id)
-    local state = Fire.stateOf(fire:getModData())
-    state[id] = {}
-    state.attached = id
+    local fireModData = Fire.fireModData(fire:getModData())
+    fireModData[id] = {}
+    fireModData.attached = id
 end
 
 -- Takes what is fitted off a fire, its state with it. Returns its id.
 function Fire.unfit(fire)
     local id = Fire.attachedTo(fire)
-    local state = Fire.stateOf(fire:getModData())
-    if id then state[id] = nil end
-    state.attached = false
+    local fireModData = Fire.fireModData(fire:getModData())
+    if id then fireModData[id] = nil end
+    fireModData.attached = false
     return id
 end
 
 -- What Remove gives back of an attachment's fit: { {full type, count} }, lost items left out.
-function Fire.fitBack(spec)
-    local back, lost = {}, spec.fit.lost or {}
-    for _, need in ipairs(spec.fit.items) do
+function Fire.fitBack(attachment)
+    local back, lost = {}, attachment.fit.lost or {}
+    for _, need in ipairs(attachment.fit.items) do
         if not lost[need[1]] then table.insert(back, need) end
     end
     return back
 end
 
 -- The sprite, overlay and overlay colour a fire shows now, by its kind; nil for anything else.
-function Fire.showing(fire, state, burning, banked)
-    local kind = Fire.kindOf(fire)
-    if not kind then return nil end
-    return kind.showing(fire, state, burning, banked)
+function Fire.showing(fire, fireModData, burning, banked)
+    local fireKind = Fire.kindOf(fire)
+    if not fireKind then return nil end
+    return fireKind.showing(fire, fireModData, burning, banked)
 end
 
 -- The fire's state, brought up to now where the World runs (a server or single player).
-function Fire.fireStateOf(fire)
+function Fire.fireModDataNow(fire)
     if Fire.World then return Fire.World.update(fire, getGameTime():getWorldAgeHours()) end
-    return Fire.stateOf(fire:getModData())
+    return Fire.fireModData(fire:getModData())
 end
 
 -- Redraws a fire now (FireWorld.refresh) where the World runs, e.g. after a pour or a fit.
@@ -382,13 +382,13 @@ end
 -- Fires
 
 -- A fire that is banked (vanilla's fire is out meanwhile).
-function Fire.isBanked(object)
-    return Fire.isFire(object) and Fire.stateOf(object:getModData()).banked == true
+function Fire.isBanked(isoObject)
+    return Fire.isFire(isoObject) and Fire.fireModData(isoObject:getModData()).banked == true
 end
 
 -- A fireplace whose fire burns, lit or banked.
-function Fire.isBurning(object)
-    return object:isLit() or Fire.isBanked(object)
+function Fire.isBurning(fire)
+    return fire:isLit() or Fire.isBanked(fire)
 end
 
 -- Hours of fuel the fire has left; nil if it can't be read (it is then taken to burn on).

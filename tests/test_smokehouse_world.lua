@@ -85,7 +85,7 @@ function stoneHearth:getY() return 10 end
 local isStoneHearth, flueSquare = StoneHearth.isStoneHearth, Fire.flueSquare
 StoneHearth.isStoneHearth = function(object) return object == stoneHearth end
 Fire.flueSquare = function(_, side) return side == "Left" and squares["10,10,0"] or nil end
-Fire.join(Fire.stateOf(stoneHearth.modData), Smokehouse.ID, "Pipe", "Left")
+Fire.join(Fire.fireModData(stoneHearth.modData), Smokehouse.ID, "Pipe", "Left")
 World.refresh(back)
 check("the joined Stone Hearth's pipe shows where it enters", table.concat(back.sprites, " ") == Tiles.PREFIX .. Tiles.CHAMBER_ENTRY)
 check("the shed knows its fire", Smokehouse.joinedStoneHearth(door) == stoneHearth and Smokehouse.fireOf(back) ~= nil)

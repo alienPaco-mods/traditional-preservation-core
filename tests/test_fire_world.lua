@@ -178,9 +178,9 @@ World.setFire(box, "stoke", 111)
 fire.fuel, fire.lit = 600, true
 H.setHours(120)
 World.setFire(fire, "stoke", 120)
-local spec, cauldron = Fire.attachmentOf(fire)
-check("a Stone Hearth's attachment is the cauldron, its state under its id", spec == Fire.attachment(Cauldron.ID)
-    and cauldron == modData[Fire.KEY].cauldron and spec.heats ~= nil and spec.onFire ~= nil)
+local attachment, cauldron = Fire.attachmentOf(fire)
+check("a Stone Hearth's attachment is the cauldron, its state under its id", attachment == Fire.attachment(Cauldron.ID)
+    and cauldron == modData[Fire.KEY].cauldron and attachment.heats ~= nil and attachment.onFire ~= nil)
 check("known by its cauldron tile, it is noted as fitted", modData[Fire.KEY].attached == Cauldron.ID and Fire.isFitted(fire, Cauldron.ID)
     and not Fire.isBare(fire))
 check("the fire's own state stays outside the cauldron's", modData[Fire.KEY].fireUntil ~= nil and cauldron.ml == nil)
@@ -188,7 +188,7 @@ CauldronFluid.pourInto(cauldron, "Water", 10000, 20, 120)
 H.setHours(120.5)
 World.update(fire, 120.5)
 check("the cauldron heats by the fire through its heats, as the fire was until now, the fire's fields kept the fire's",
-    cauldron.tempC > 40 and cauldron.last == 120.5 and cauldron.fireUntil == nil and cauldron.banked == nil)
+    cauldron.tempC > 40 and cauldron.lastHour == 120.5 and cauldron.fireUntil == nil and cauldron.banked == nil)
 check("what it holds shows as the overlay, tinted", fire.overlay:getName() == StoneHearth.liquidOverlay(cauldron, 0)
     and fire.tint ~= nil and fire.tint[1] == 1)
 fire.tint = nil
@@ -196,10 +196,10 @@ fire.overlay = getSprite(StoneHearth.liquidOverlay(cauldron, 0))
 World.update(fire, 120.5)
 check("an overlay already shown is not tinted again", fire.tint == nil)
 local Weather = require "TraditionalPreservationCore/Weather"
-local heats, heatsPlace = spec.heats, nil
-spec.heats = function(...) heatsPlace = select(6, ...) return heats(...) end
+local heats, heatsPlace = attachment.heats, nil
+attachment.heats = function(...) heatsPlace = select(6, ...) return heats(...) end
 World.update(fire, 120.5)
-spec.heats = heats
+attachment.heats = heats
 check("heats is given the place the Stone Hearth stands in", heatsPlace ~= nil and heatsPlace == Weather.placeOf(fire))
 -- Kahlua has no weak tables: the tint seen goes with the fire when its area unloads, so it is set again on return.
 cell.squares["5,6,0"] = nil
@@ -216,23 +216,23 @@ CauldronFluid.take(cauldron)
 check("out and empty, it may", Fire.canRemove(fire) == true)
 
 -- Two slots: the Cauldron and the Smokehouse's flue go together; Remove leaves the bare Stone Hearth.
-local cauldronSpec = Fire.attachment(Cauldron.ID)
-check("fitted, a second fit is refused", Fire.fitRefusal(fire, cauldronSpec) == "Fitted")
+local cauldronAttachment = Fire.attachment(Cauldron.ID)
+check("fitted, a second fit is refused", Fire.fitRefusal(fire, cauldronAttachment) == "Fitted")
 Fire.join(modData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")
 check("a fitted Stone Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Fire.isFitted(fire, Cauldron.ID))
-check("Remove gives the whole kit back", #Fire.fitBack(cauldronSpec) == 4)
+check("Remove gives the whole kit back", #Fire.fitBack(cauldronAttachment) == 4)
 check("taken off, the cauldron's state goes and nothing is fitted", Fire.unfit(fire) == Cauldron.ID
     and modData[Fire.KEY].cauldron == nil and modData[Fire.KEY].attached == false and Fire.attachmentOf(fire) == nil)
 World.update(fire, 121)
 check("its cauldron tile turns to the bare Stone Hearth's, the flue still joined", Fire.isBare(fire)
     and fire.sprite:getName() == StoneHearth.bareSprite(true, "Lid", 0) and Smokehouse.flueOf(fire) == "Pipe")
-check("the joined flue never blocks the fit", Fire.fitRefusal(fire, cauldronSpec) == nil)
+check("the joined flue never blocks the fit", Fire.fitRefusal(fire, cauldronAttachment) == nil)
 fire.lit = true
-check("but a burning fire does", Fire.fitRefusal(fire, cauldronSpec) == "Burning")
+check("but a burning fire does", Fire.fitRefusal(fire, cauldronAttachment) == "Burning")
 fire.lit = false
-Fire.connect({ id = "testWall", kinds = { "Pipe" }, kits = { Pipe = Smokehouse.FLUE_KITS.Pipe }, blocks = "both" })
+Fire.connect({ id = "testWall", kitNames = { "Pipe" }, kits = { Pipe = Smokehouse.FLUE_KITS.Pipe }, blocks = "both" })
 Fire.join(modData[Fire.KEY], "testWall", "Pipe", "Back")
-check("a connection that blocks both slots refuses the fit", Fire.fitRefusal(fire, cauldronSpec) == "Blocked")
+check("a connection that blocks both slots refuses the fit", Fire.fitRefusal(fire, cauldronAttachment) == "Blocked")
 World.update(fire, 121)
 check("a connection that doesn't take the smoke leaves the hole open", fire.sprite:getName() == StoneHearth.bareSprite(false, "Open", 0))
 Fire.join(modData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")

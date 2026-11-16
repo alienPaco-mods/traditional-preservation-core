@@ -11,7 +11,7 @@ TPFluidTreat.TICKS = 100
 
 function TPFluidTreat:isValid()
     return self.character:getInventory():containsRecursive(self.container)
-        and FluidTreat.treatRefusal(self.container, self.spec, self.treatment, self.character) == nil
+        and FluidTreat.treatRefusal(self.container, self.fluidKind, self.treatment, self.character) == nil
 end
 
 function TPFluidTreat:start()
@@ -19,7 +19,7 @@ function TPFluidTreat:start()
 end
 
 function TPFluidTreat:complete()
-    return FluidTreat.treatBy(self.container, self.spec, self.treatment, self.character)
+    return FluidTreat.treatBy(self.container, self.fluidKind, self.treatment, self.character)
 end
 
 function TPFluidTreat:perform()
@@ -30,10 +30,10 @@ function TPFluidTreat:getDuration()
     return Action.duration(self.character, TPFluidTreat.TICKS)
 end
 
-function TPFluidTreat:new(character, container, spec, treatment)
+function TPFluidTreat:new(character, container, fluidKind, treatment)
     local o = ISBaseTimedAction.new(self, character)
     o.container = container
-    o.spec = spec
+    o.fluidKind = fluidKind
     o.treatment = treatment
     o.maxTime = o:getDuration()
     return o

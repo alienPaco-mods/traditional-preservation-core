@@ -16,7 +16,7 @@ local Fireside = {}
 -- under a roof or in the open without a ledger.
 function Fireside.fireC(place, ledger)
     local fire = Weather.FIRE_PLACES[place]
-    if not fire or (fire.under and not ledger) then return nil end
+    if not fire or (fire.placeWithoutFire and not ledger) then return nil end
     return Weather.placeTemperature(ledger or {}, place)
 end
 
@@ -25,16 +25,16 @@ function Fireside.isFirePlace(place)
 end
 
 -- A fire's place (PLACE or EMBERS) where it warms under (Weather.placeOf): its own outside, plain indoors.
-function Fireside.firePlace(place, under)
-    if Fire.FIRE_LIFT[under] then return place .. under end
+function Fireside.firePlace(place, placeWithoutFire)
+    if Fire.FIRE_LIFT[placeWithoutFire] then return place .. placeWithoutFire end
     return place
 end
 
 -- Fireplaces, antique ovens, braziers, cooking pits and burn barrels are IsoFireplace; a player's campfire is a
 -- plain object named "Campfire" whose lit state the camping system copies into its modData (ENGINE_NOTES).
-local function isLitFire(object)
-    if instanceof(object, "IsoFireplace") then return Fire.isBurning(object) end
-    return object:getName() == "Campfire" and object:getModData().isLit == true
+local function isLitFire(isoObject)
+    if instanceof(isoObject, "IsoFireplace") then return Fire.isBurning(isoObject) end
+    return isoObject:getName() == "Campfire" and isoObject:getModData().isLit == true
 end
 
 -- Every object within FIRE_RADIUS tiles on the same floor that passes test, nearest first.
@@ -54,77 +54,77 @@ end
 
 -- Fires with the attachment id fitted within FIRE_RADIUS tiles, nearest first.
 function Fireside.fittedNear(square, id)
-    return Fireside.near(square, function(object) return Fire.isFitted(object, id) end)
+    return Fireside.near(square, function(isoObject) return Fire.isFitted(isoObject, id) end)
 end
 
 -- The opt-in place: by a fire (or by banked embers), else below ground, under a roof or in the open. The fire, if any, comes second.
-function Fireside.placeOf(object)
-    local square = object and object:getSquare()
+function Fireside.placeOf(isoObject)
+    local square = isoObject and isoObject:getSquare()
     local fire, place
     if square then fire, place = warmestFire(square) end
-    if fire then return Fireside.firePlace(place, Weather.placeOf(object)), fire end
-    return Weather.placeOf(object)
+    if fire then return Fireside.firePlace(place, Weather.placeOf(isoObject)), fire end
+    return Weather.placeOf(isoObject)
 end
 
 -- The work done since the marks at place, which may be by a fire (placeOf), and moves the marks on (Weather.mark).
 -- The ledger keeps totals for the weather's places only, so time by a fire counts by the clock at its heat, rateAt
--- the work's rate at a temperature, until the fire's noted fuel ran out (state.fireUntil, noteFire). The ledger's
--- totals can't be split at that hour, so the place under the fire (state.under, else Fire.DEFAULT_UNDER) gets its
+-- the work's rate at a temperature, until the fire's noted fuel ran out (stationModData.fireUntil, noteFire). The ledger's
+-- totals can't be split at that hour, so the place under the fire (stationModData.placeWithoutFire, else Fire.DEFAULT_PLACE_WITHOUT_FIRE) gets its
 -- share of the gap's weather by time. Marks taken without an hour count from the ledger's last record.
-function Fireside.catchUp(state, marks, ledger, kind, place, rateAt)
+function Fireside.catchUp(stationModData, marks, ledger, process, place, rateAt)
     local work
     if Fireside.isFirePlace(place) then
         local from, to = marks.hour or ledger.lastHour, ledger.lastHour
-        local byFire = math.max(math.min(state.fireUntil or to, to) - from, 0)
+        local byFire = math.max(math.min(stationModData.fireUntil or to, to) - from, 0)
         work = byFire * rateAt(Fireside.fireC(place, ledger))
         if to - from > byFire then
-            local under = state.under or Fire.DEFAULT_UNDER
-            work = work + Weather.catchUp(marks, ledger, kind, under) * (to - from - byFire) / (to - from)
+            local placeWithoutFire = stationModData.placeWithoutFire or Fire.DEFAULT_PLACE_WITHOUT_FIRE
+            work = work + Weather.catchUp(marks, ledger, process, placeWithoutFire) * (to - from - byFire) / (to - from)
         end
     else
-        work = Weather.catchUp(marks, ledger, kind, place)
+        work = Weather.catchUp(marks, ledger, process, place)
     end
-    Weather.mark(marks, ledger, kind)
+    Weather.mark(marks, ledger, process)
     return work
 end
 
 -- A weather-timed craft run (Yeast's culture, Vinegar's malt and wort, the template's batch): its recipe data's
--- modData keeps done (hours of work), last (the marks) and the place notePlace wrote. These bring one up to now at
--- that place, by a fire or not; a run not yet started (no done or no marks) is left alone.
-function Fireside.catchUpRun(modData, ledger, kind, place, rateAt)
-    if not (modData.done and modData.last) then return end
-    modData.done = modData.done + Fireside.catchUp(modData, modData.last, ledger, kind, place, rateAt)
+-- modData keeps workHours and marks (the ledger's) and the place notePlace wrote. These bring one up to now at
+-- that place, by a fire or not; a run not yet started (no workHours or no marks) is left alone.
+function Fireside.catchUpRun(modData, ledger, process, place, rateAt)
+    if not (modData.workHours and modData.marks) then return end
+    modData.workHours = modData.workHours + Fireside.catchUp(modData, modData.marks, ledger, process, place, rateAt)
 end
 
 -- A run's OnUpdate: catches it up and sets the craft's bar from the work done (Weather.showProgress).
-function Fireside.updateRun(craftRecipeData, ledger, kind, place, rateAt, speed)
+function Fireside.updateRun(craftRecipeData, ledger, process, place, rateAt, speed)
     local modData = craftRecipeData:getModData()
-    if not (modData.done and modData.last) then return end
-    Fireside.catchUpRun(modData, ledger, kind, place, rateAt)
-    Weather.showProgress(craftRecipeData, ledger, kind, place, speed or 1, getGameTime():getWorldAgeHours(), rateAt)
+    if not (modData.workHours and modData.marks) then return end
+    Fireside.catchUpRun(modData, ledger, process, place, rateAt)
+    Weather.showProgress(craftRecipeData, ledger, process, place, speed or 1, getGameTime():getWorldAgeHours(), rateAt)
 end
 
--- Where a station stands for its work, written into state (a run's or a station's modData): its place now, with
+-- Where a station stands for its work, written into stationModData (a run's or a station's): its place now, with
 -- the fire's fuel noted when it is by one. A move brings the work up to now first, at the place it left
--- (catchUp(state), the mod's own), so the hours by a fire count even when the station is seen again after it went out.
-function Fireside.notePlace(state, object, now, catchUp)
-    local place, fire = Fire.placeOf(object)
-    if state.place ~= nil and state.place ~= place and catchUp then catchUp(state) end
-    state.place = place
-    Fireside.noteFire(state, object, fire, now)
+-- (catchUp(stationModData), the mod's own), so the hours by a fire count even when the station is seen again after it went out.
+function Fireside.notePlace(stationModData, station, now, catchUp)
+    local place, fire = Fire.placeOf(station)
+    if stationModData.place ~= nil and stationModData.place ~= place and catchUp then catchUp(stationModData) end
+    stationModData.place = place
+    Fireside.noteFire(stationModData, station, fire, now)
     return place
 end
 
--- Notes on a station's state where it stands: by a fire, until when the fuel lasts and what it stands in without
+-- Notes in a station's modData where it stands: by a fire, until when the fuel lasts and what it stands in without
 -- the fire. A station's catch-up reads them for the time it was away.
-function Fireside.noteFire(state, object, fire, now)
+function Fireside.noteFire(stationModData, station, fire, now)
     if not fire then
-        state.fireUntil, state.under = nil, nil
+        stationModData.fireUntil, stationModData.placeWithoutFire = nil, nil
         return
     end
     local hours = Fire.fuelHours(fire)
-    state.fireUntil = hours and now + hours or nil
-    state.under = Weather.placeOf(object)
+    stationModData.fireUntil = hours and now + hours or nil
+    stationModData.placeWithoutFire = Weather.placeOf(station)
 end
 
 return Fireside

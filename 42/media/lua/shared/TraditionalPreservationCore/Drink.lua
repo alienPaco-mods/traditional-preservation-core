@@ -55,7 +55,7 @@ local function wrap()
         local container = self.fluidContainer
         local before, any
         if container then before, any = Drink.amounts(container) end
-        local result = vanilla(self, ...)
+        local vanillaReturn = vanilla(self, ...)
         if any then
             local player = self.character
             local stats = player:getStats()
@@ -66,7 +66,7 @@ local function wrap()
                 stats:isAboveMinimum(CharacterStat.FOOD_SICKNESS))
             if eased > 0 then stats:remove(CharacterStat.FOOD_SICKNESS, eased) end
         end
-        return result
+        return vanillaReturn
     end)
 end
 
@@ -77,14 +77,14 @@ local function install()
     wrap()
 end
 
--- Registers a fluid (by name) that eases food sickness when drunk: spec.foodSickness per litre, and optionally
--- spec.cooldown (a Cooldown key) with spec.hours.
-function Drink.cure(name, spec)
-    assert(type(spec.foodSickness) == "number" and spec.foodSickness > 0, "Drink.cure " .. tostring(name) .. ": no foodSickness")
-    assert(not spec.cooldown or (type(spec.hours) == "number" and spec.hours > 0), "Drink.cure " .. tostring(name) .. ": a cooldown needs hours")
+-- Registers a fluid (by name) that eases food sickness when drunk: cure.foodSickness per litre, and optionally
+-- cure.cooldown (a Cooldown key) with cure.hours.
+function Drink.cure(name, cure)
+    assert(type(cure.foodSickness) == "number" and cure.foodSickness > 0, "Drink.cure " .. tostring(name) .. ": no foodSickness")
+    assert(not cure.cooldown or (type(cure.hours) == "number" and cure.hours > 0), "Drink.cure " .. tostring(name) .. ": a cooldown needs hours")
     assert(not cures[name], "Drink.cure: " .. tostring(name) .. " is already registered")
     install()
-    cures[name] = { foodSickness = spec.foodSickness, cooldown = spec.cooldown, hours = spec.hours }
+    cures[name] = { foodSickness = cure.foodSickness, cooldown = cure.cooldown, hours = cure.hours }
 end
 
 return Drink

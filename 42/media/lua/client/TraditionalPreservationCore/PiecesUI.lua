@@ -7,7 +7,7 @@ local UI = require "TraditionalPreservationCore/UI"
 
 local PiecesUI = {}
 
--- Pieces in the order to put them: the nearest to going off first (hoursLeft(item), as a pieces spec's).
+-- Pieces in the order to put them: the nearest to going off first (hoursLeft(item), as an asFluid table has it).
 function PiecesUI.oldestFirst(pieces, hoursLeft)
     local left = {}
     for _, item in ipairs(pieces) do left[item] = hoursLeft(item) end
@@ -16,9 +16,9 @@ function PiecesUI.oldestFirst(pieces, hoursLeft)
 end
 
 -- Brings the chosen pieces to hand and queues them into into (Cauldron.piecesInto, ItemFluid.piecesInto).
-function PiecesUI.queue(playerObj, into, spec, chosen)
+function PiecesUI.queue(playerObj, into, asFluid, chosen)
     for _, item in ipairs(chosen) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
-    ISTimedActionQueue.add(TPPutPieces:new(playerObj, into, spec, chosen))
+    ISTimedActionQueue.add(TPPutPieces:new(playerObj, into, asFluid, chosen))
 end
 
 -- row = { label, room (how many fit there now), pieces (oldest first), refusal (finished text or nil), help, noRoom }.

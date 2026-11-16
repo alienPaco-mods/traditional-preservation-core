@@ -61,35 +61,35 @@ check("milk counts its hours at the steam, as any fluid does", near(CauldronFlui
 CauldronFluid.pourInto(cauldron, "CowMilk", 1000, 20, 4)
 check("pouring more in starts the count over", CauldronFluid.heldHours(cauldron) == 0)
 check("an empty cauldron has held nothing", CauldronFluid.heldHours({ held = 2 }) == 0)
-check("20 L takes about two hours", CauldronFluid.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 1.8
-    and CauldronFluid.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.1)
-check("a full 60 L cauldron under three hours", CauldronFluid.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) > 2.6
-    and CauldronFluid.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }) < 2.9)
+check("20 L takes about two hours", CauldronFluid.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }) > 1.8
+    and CauldronFluid.hoursToHot({ ml = 20000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }) < 2.1)
+check("a full 60 L cauldron under three hours", CauldronFluid.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }) > 2.6
+    and CauldronFluid.hoursToHot({ ml = 60000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }) < 2.9)
 check("and never boils", cauldron.tempC <= CauldronFluid.MAX_C)
-local split = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
+local split = { ml = 10000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }
 CauldronFluid.advance(split, 1, 20, split)
 CauldronFluid.advance(split, 2, 20, split)
-local once = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
+local once = { ml = 10000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }
 CauldronFluid.advance(once, 2, 20, once)
 check("ticks or one catch-up give the same heat", near(split.tempC, once.tempC, 1e-6))
-local small = { ml = 1000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100 }
+local small = { ml = 1000, fluid = "Water", tempC = 20, lastHour = 0, fireUntil = 100 }
 CauldronFluid.advance(small, 1, 20, small)
 check("a litre heats faster", CauldronFluid.isHot(small))
 check("cold fluid poured in lowers the heat", CauldronFluid.take(cauldron, 5000) == 5000
     and CauldronFluid.pourInto(cauldron, "CowMilk", 5000, 5, 4) == 5000 and cauldron.tempC < CauldronFluid.HOT_C and not CauldronFluid.isHot(cauldron))
-local outFire = { ml = 10000, fluid = "CowMilk", tempC = 90, last = 0, fireUntil = 1 }
+local outFire = { ml = 10000, fluid = "CowMilk", tempC = 90, lastHour = 0, fireUntil = 1 }
 CauldronFluid.advance(outFire, 3, 20, outFire)
 local byFireThenOut = CauldronFluid.cool(CauldronFluid.cool(90, CauldronFluid.MAX_C, 1, CauldronFluid.cauldronTau(10000, true)), 20, 2,
     CauldronFluid.cauldronTau(10000, false))
 check("out of fuel it cools to the room from then on", near(outFire.tempC, byFireThenOut, 1e-6))
 check("slower than it heated: the stone holds it", CauldronFluid.cauldronTau(10000, false) > 2 * CauldronFluid.cauldronTau(10000, true))
-local unlit = { ml = 10000, fluid = "CowMilk", tempC = 90, last = 0 }
+local unlit = { ml = 10000, fluid = "CowMilk", tempC = 90, lastHour = 0 }
 CauldronFluid.advance(unlit, 2, 20, unlit)
 check("a cauldron with no fire cools", unlit.tempC < 60 and unlit.tempC > 20)
 check("the cauldron shows empty, full or steaming", CauldronFluid.look({}) == "Empty"
     and CauldronFluid.look({ ml = 100, tempC = 40 }) == "Full" and CauldronFluid.look({ ml = 100, fluid = "Water", tempC = 90 }) == "Hot")
 for _, fluid in ipairs({ "CowMilk", "Water" }) do
-    local warming = { ml = 10000, fluid = fluid, tempC = 20, last = 0, fireUntil = 100 }
+    local warming = { ml = 10000, fluid = fluid, tempC = 20, lastHour = 0, fireUntil = 100 }
     local eta = CauldronFluid.hoursToHot(warming, warming.banked)
     CauldronFluid.advance(warming, eta - 0.01, 20, warming)
     local before = CauldronFluid.isHot(warming)
@@ -99,7 +99,7 @@ end
 check("an empty cauldron is never hot", CauldronFluid.hoursToHot({}) == nil)
 
 -- Water boils
-local pot = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+local pot = { ml = 10000, fluid = "TaintedWater", tempC = 20, lastHour = 0, fireUntil = 100 }
 check("water steams sooner than milk: it is let boil", CauldronFluid.hoursToHot(pot, pot.banked) < 1.1)
 CauldronFluid.advance(pot, 1.5, 20, pot)
 check("10 L of water is not at the boil in an hour and a half", pot.tempC < CauldronFluid.BOIL_C and pot.fluid == "TaintedWater")
@@ -108,26 +108,26 @@ check("it boils at 100 C and holds there", pot.tempC == CauldronFluid.BOIL_C and
 CauldronFluid.advance(pot, 1.9, 20, pot)
 check("ten minutes at the boil and it is clean", pot.fluid == "Water" and pot.tempC == CauldronFluid.BOIL_C)
 check("water at the boil pours out hot enough for vanilla to call it clean", CauldronFluid.itemHeat(CauldronFluid.BOIL_C) >= 1.6)
-local stepped = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+local stepped = { ml = 10000, fluid = "TaintedWater", tempC = 20, lastHour = 0, fireUntil = 100 }
 for minute = 1, 114 do CauldronFluid.advance(stepped, minute / 60, 20, stepped) end
 check("minute by minute it boils clean as well", stepped.fluid == "Water")
-local fullCauldron = { ml = 60000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100 }
+local fullCauldron = { ml = 60000, fluid = "TaintedWater", tempC = 20, lastHour = 0, fireUntil = 100 }
 CauldronFluid.advance(fullCauldron, 2.9, 20, fullCauldron)
 local notYet = fullCauldron.tempC < CauldronFluid.BOIL_C
 CauldronFluid.advance(fullCauldron, 3.3, 20, fullCauldron)
 check("a full cauldron of water boils clean in about three hours", notYet and fullCauldron.fluid == "Water")
-local interrupted = { ml = 10000, fluid = "TaintedWater", tempC = 99, last = 0, fireUntil = 0.1 }
+local interrupted = { ml = 10000, fluid = "TaintedWater", tempC = 99, lastHour = 0, fireUntil = 0.1 }
 CauldronFluid.advance(interrupted, 0.2, 20, interrupted)
 interrupted.fireUntil = 100
 CauldronFluid.advance(interrupted, 0.3, 20, interrupted)
 check("the boil starts over when the fire goes out", interrupted.fluid == "TaintedWater")
-local topped = { ml = 10000, fluid = "TaintedWater", tempC = 100, last = 0, fireUntil = 100, boiled = 0.1 }
+local topped = { ml = 10000, fluid = "TaintedWater", tempC = 100, lastHour = 0, fireUntil = 100, boiled = 0.1 }
 CauldronFluid.pourInto(topped, "TaintedWater", 1000, 20, 0)
 check("and when more is poured in", topped.boiled == nil)
-local milk = { ml = 10000, fluid = "CowMilk", tempC = 20, last = 0, fireUntil = 100 }
+local milk = { ml = 10000, fluid = "CowMilk", tempC = 20, lastHour = 0, fireUntil = 100 }
 CauldronFluid.advance(milk, 24, 20, milk)
 check("milk is kept off the boil", milk.tempC <= CauldronFluid.MAX_C and milk.boiled == nil)
-local bankedWater = { ml = 10000, fluid = "TaintedWater", tempC = 20, last = 0, fireUntil = 100, banked = true }
+local bankedWater = { ml = 10000, fluid = "TaintedWater", tempC = 20, lastHour = 0, fireUntil = 100, banked = true }
 CauldronFluid.advance(bankedWater, 24, 20, bankedWater)
 check("banked embers never boil water", bankedWater.fluid == "TaintedWater" and bankedWater.tempC < 60)
 
@@ -140,13 +140,13 @@ CauldronFluid.pourInto(fat, "RawFat", 1500, 20, 0)
 check("a fluid that stays in can't be filled out", not CauldronFluid.poursOut(fat) and CauldronFluid.poursOut({ fluid = "Water" }))
 check("it has its whole hour of steaming to go", CauldronFluid.hoursToTurn(fat) == 1 and CauldronFluid.hoursToTurn({ ml = 1000, fluid = "Water" }) == nil)
 CauldronFluid.advance(fat, 5, 20, fat)
-check("a cold cauldron turns nothing", fat.fluid == "RawFat" and fat.hot == 0)
+check("a cold cauldron turns nothing", fat.fluid == "RawFat" and fat.steamedHours == 0)
 fat.fireUntil = 100
 local toSteam = CauldronFluid.hoursToHot(fat, fat.banked)
 CauldronFluid.advance(fat, 5 + toSteam + 0.5, 20, fat)
-check("half an hour steaming is half the work", fat.fluid == "RawFat" and near(fat.hot, 0.5) and near(CauldronFluid.hoursToTurn(fat), 0.5))
+check("half an hour steaming is half the work", fat.fluid == "RawFat" and near(fat.steamedHours, 0.5) and near(CauldronFluid.hoursToTurn(fat), 0.5))
 CauldronFluid.advance(fat, 5 + toSteam + 1.01, 20, fat)
-check("an hour steaming and it has turned", fat.fluid == "MeltedFat" and fat.hot == nil and CauldronFluid.poursOut(fat))
+check("an hour steaming and it has turned", fat.fluid == "MeltedFat" and fat.steamedHours == nil and CauldronFluid.poursOut(fat))
 local away = {}
 CauldronFluid.pourInto(away, "RawFat", 1500, 20, 0)
 away.fireUntil = 100
@@ -159,14 +159,14 @@ for minute = 1, 100 do CauldronFluid.advance(stepped, minute / 60, 20, stepped) 
 check("minute by minute it isn't done at an hour and forty minutes", stepped.fluid == "RawFat")
 for minute = 101, 110 do CauldronFluid.advance(stepped, minute / 60, 20, stepped) end
 check("and is ten minutes on", stepped.fluid == "MeltedFat")
-local dying = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 0.5 }
+local dying = { ml = 1500, fluid = "RawFat", tempC = 95, lastHour = 0, fireUntil = 0.5 }
 CauldronFluid.advance(dying, 10, 20, dying)
-check("a fire that dies counts the steaming while the cauldron cools, and no more", dying.fluid == "RawFat" and dying.hot > 0.5 and dying.hot < 1)
-local more = { ml = 1500, fluid = "RawFat", tempC = 95, last = 0, fireUntil = 100, hot = 0.9 }
+check("a fire that dies counts the steaming while the cauldron cools, and no more", dying.fluid == "RawFat" and dying.steamedHours > 0.5 and dying.steamedHours < 1)
+local more = { ml = 1500, fluid = "RawFat", tempC = 95, lastHour = 0, fireUntil = 100, steamedHours = 0.9 }
 CauldronFluid.pourInto(more, "RawFat", 500, 20, 0)
-check("more put in starts the hour over", more.hot == nil)
+check("more put in starts the hour over", more.steamedHours == nil)
 check("what has turned doesn't take the raw", select(2, CauldronFluid.pourInto(fat, "RawFat", 500, 20, 7)) == "Mixed")
-local banked = { ml = 1500, fluid = "RawFat", tempC = 20, last = 0, fireUntil = 100, banked = true }
+local banked = { ml = 1500, fluid = "RawFat", tempC = 20, lastHour = 0, fireUntil = 100, banked = true }
 CauldronFluid.advance(banked, 24, 20, banked)
 check("banked embers are too cool to turn it", banked.fluid == "RawFat")
 
@@ -198,15 +198,15 @@ late.fireUntil = 100
 CauldronFluid.advance(late, 500, 20, late)
 check("a fire lit in time turns it, however late it is looked at", late.fluid == "MeltedFat")
 CauldronFluid.take(old)
-check("emptied, the cauldron forgets both clocks", old.hot == nil and old.offAt == nil)
+check("emptied, the cauldron forgets both clocks", old.steamedHours == nil and old.offAt == nil)
 
 -- Banked
-local banked = { ml = 10000, fluid = "Water", tempC = 20, last = 0, fireUntil = 100, banked = true }
+local banked = { ml = 10000, fluid = "Water", tempC = 20, lastHour = 0, fireUntil = 100, banked = true }
 CauldronFluid.advance(banked, 24, 20, banked)
 check("banked embers keep the cauldron about 50 C and never steam it", near(banked.tempC, CauldronFluid.BANKED_C, 0.5)
     and CauldronFluid.hoursToHot(banked, banked.banked) == nil)
-local fromHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0, fireUntil = 100, banked = true }
-local outHot = { ml = 10000, fluid = "Water", tempC = 90, last = 0 }
+local fromHot = { ml = 10000, fluid = "Water", tempC = 90, lastHour = 0, fireUntil = 100, banked = true }
+local outHot = { ml = 10000, fluid = "Water", tempC = 90, lastHour = 0 }
 CauldronFluid.advance(fromHot, 2, 20, fromHot)
 CauldronFluid.advance(outHot, 2, 20, outHot)
 check("a hot cauldron over banked embers cools, slower than with the fire out", fromHot.tempC < 90 and fromHot.tempC > outHot.tempC)
@@ -245,10 +245,10 @@ check("what it holds is the overlay, tinted (white when a fluid has no colour); 
     overlay == "traditionalpreservationcore_01_7" and tint[1] == 1 and tint[3] == 1
     and StoneHearth.liquidOverlay({ ml = 0, fluid = "Water" }, 0) == nil and StoneHearth.cauldronFace(overlay) == nil)
 -- Tainted water taints clean, either way round and whatever the share; the lot boils clean again.
-local tub = { ml = 10000, fluid = "Water", tempC = 60, last = 0, boiled = 0.5 }
+local tub = { ml = 10000, fluid = "Water", tempC = 60, lastHour = 0, boiled = 0.5 }
 check("clean water takes tainted water: the whole lot is tainted", CauldronFluid.pourInto(tub, "TaintedWater", 100, 20, 0) == 100
     and tub.fluid == "TaintedWater" and tub.ml == 10100 and tub.parts == nil and tub.boiled == nil)
-local foul = { ml = 1000, fluid = "TaintedWater", tempC = 20, last = 0 }
+local foul = { ml = 1000, fluid = "TaintedWater", tempC = 20, lastHour = 0 }
 check("tainted water takes clean, and stays tainted", CauldronFluid.pourInto(foul, { Water = 9000 }, 9000, 20, 0) == 9000
     and foul.fluid == "TaintedWater" and foul.ml == 10000 and foul.parts == nil)
 foul.fireUntil = 100
@@ -331,13 +331,13 @@ check("any stove food or fluid wins: the pot", StoneHearth.holeLook(H.list({ foo
     and StoneHearth.holeLook(H.list({ food("Base.Bread"), food("Base.Pot", 2) })) == StoneHearth.POT)
 -- Connections (Fire.connect): one at a time, its kind and side under its id.
 local trench = { tool = "DIG_GRAVE", items = { { "Base.FlatStone", 3 }, { "Base.Clay", 2 } }, back = "Base.FlatStone" }
-local duct = Fire.connect({ id = "testDuct", kinds = { "Stones" }, kits = { Stones = trench }, blocks = "both" })
+local duct = Fire.connect({ id = "testDuct", kitNames = { "Stones" }, kits = { Stones = trench }, blocks = "both" })
 check("a connection registers by its id, its fields given later added to it", Fire.connection("testDuct") == duct
     and Fire.connect({ id = "testDuct", notes = print }) == duct and duct.notes == print and duct.blocks == "both")
 local flue = {}
 Fire.join(flue, "testDuct", "Stones", "Back")
 check("joined to a side, its kind and side under its id", Fire.connectedTo(flue) == "testDuct"
-    and flue.testDuct.kind == "Stones" and flue.testDuct.side == "Back" and select(2, Fire.joinOf(flue)) == "Back")
+    and flue.testDuct.kitName == "Stones" and flue.testDuct.side == "Back" and select(2, Fire.joinOf(flue)) == "Back")
 check("taken up, it says what it was", Fire.unjoin(flue) == "testDuct" and flue.connected == nil and flue.testDuct == nil
     and Fire.joinOf(flue) == nil)
 Fire.join(flue, "testDuct", "Stones", "Front")
@@ -386,26 +386,26 @@ check("fireC: indoors needs no ledger, outside does", Fire.fireC(Fire.PLACE) == 
 check("firePlace: the fire's own place outside, plain indoors", Fire.firePlace(Fire.PLACE, "Open") == "FiresideOpen"
     and Fire.firePlace(Fire.EMBERS, "Covered") == "EmbersCovered" and Fire.firePlace(Fire.PLACE, "Basement") == Fire.PLACE
     and Fire.firePlace(Fire.PLACE, "Loft") == Fire.PLACE)
-local state = {}
-Fire.noteFire(state, nil, nil, 5)
-check("no fire, no notes", state.fireUntil == nil and state.under == nil)
+local stationModData = {}
+Fire.noteFire(stationModData, nil, nil, 5)
+check("no fire, no notes", stationModData.fireUntil == nil and stationModData.placeWithoutFire == nil)
 
 -- Catching up by a fire: by the clock at its heat until the fuel ran out, then the place under it by its share.
 local half = function(celsius) return celsius >= 20 and 1 or 0.5 end
-local kinds = { work = half }
-local book = Weather.newLedger(0, kinds)
+local processes = { work = half }
+local book = Weather.newLedger(0, processes)
 local marks = Weather.mark({}, book, "work")
-for hour = 1, 10 do Weather.advance(book, hour, 0, kinds) end
-local byFire = { fireUntil = 4, under = "Sheltered" }
+for hour = 1, 10 do Weather.advance(book, hour, 0, processes) end
+local byFire = { fireUntil = 4, placeWithoutFire = "Sheltered" }
 check("by a fire 4 hours at full speed, then 6 in a cold room at half", near(Fire.catchUp(byFire, marks, book, "work", Fire.PLACE, half), 4 + 3)
     and marks.hour == 10)
 check("a fire still burning counts all of it", near(Fire.catchUp({ fireUntil = 99 }, Weather.mark({}, book, "work"), book, "work",
     Fire.PLACE, half), 0))
 local away = Weather.mark({}, book, "work")
-for hour = 11, 20 do Weather.advance(book, hour, 0, kinds) end
+for hour = 11, 20 do Weather.advance(book, hour, 0, processes) end
 check("away from a fire it is Weather's catch-up", near(Fire.catchUp({}, away, book, "work", "Open", half), 5))
 local field = Weather.mark({}, book, "work")
-for hour = 21, 30 do Weather.advance(book, hour, 0, kinds) end
+for hour = 21, 30 do Weather.advance(book, hour, 0, processes) end
 check("by a fire in the open it counts at the air's heat plus the lift", near(Fire.catchUp({ fireUntil = 99 }, field, book, "work",
     "FiresideOpen", half), 5))
 local seen = { place = Fire.PLACE, fireUntil = 22 }
@@ -443,17 +443,17 @@ check("taken hooks hear how much left", took == 250)
 
 -- Save key
 local modData = {}
-local saved = Cauldron.state(modData)
+local saved = Cauldron.cauldronModData(modData)
 CauldronFluid.pourInto(saved, "Water", 1000, 20, 0)
 check("the cauldron lives under its id inside one prefixed key", modData.tpFire.cauldron.ml == 1000 and modData.tpFire.ml == nil
-    and modData.ml == nil and Cauldron.state(modData) == saved)
+    and modData.ml == nil and Cauldron.cauldronModData(modData) == saved)
 
 -- The attachment registry
 local first = Fire.attach({ id = "testPan", look = function() return "Full" end })
 local later = Fire.attach({ id = "testPan", menu = function() end })
 check("attaching an id again adds its fields to the one registered", first == later and Fire.attachment("testPan") == first
     and first.look ~= nil and first.menu ~= nil and first.id == "testPan")
-check("each attachment's state is its own", Fire.partState(modData, "testPan") ~= saved and modData.tpFire.testPan ~= nil)
+check("each attachment's state is its own", Fire.partModData(modData, "testPan") ~= saved and modData.tpFire.testPan ~= nil)
 
 -- What register is given (refactoring rule 6): each refusal names the function and what is wrong.
 local function refuses(name, fn, ...)
@@ -476,8 +476,8 @@ check("a kind of fire needs is, face, showing, its sprites, display and refusals
 check("the Stone Hearth is a kind of fire, its tiles Fire's to track", StoneHearth.kind.id == "stoneHearth"
     and #Fire.sprites() >= #StoneHearth.SPRITES and StoneHearth.SPRITES[1] ~= nil)
 check("a connection's kinds come with its kits, a kit for every kind",
-    refuses("kinds and kits come together", Fire.connect, { id = "testHalf", kinds = { "Pipe" } })
-    and refuses("no kit for kind Clay", Fire.connect, { id = "testOdd", kinds = { "Clay" }, kits = { Pipe = {} } }))
+    refuses("kitNames and kits come together", Fire.connect, { id = "testHalf", kitNames = { "Pipe" } })
+    and refuses("no kit for Clay", Fire.connect, { id = "testOdd", kitNames = { "Clay" }, kits = { Pipe = {} } }))
 check("a hook has a known name and a function", refuses("no hook named heats", CauldronFluid.hook, "heats", print)
     and refuses("needs a function", CauldronFluid.hook, "taken", "print"))
 CauldronFluid.blend("TestMilkA", "TestMilkB")

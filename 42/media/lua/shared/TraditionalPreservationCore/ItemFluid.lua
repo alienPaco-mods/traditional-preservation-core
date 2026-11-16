@@ -4,7 +4,7 @@
 -- all the item holds.
 -- turnsHot(from, to, hours): from, kept steaming (the item's heat at CauldronFluid.HOT_C or more) for hours in all,
 --   becomes to. The hours start over when more pieces go in (putPieces).
--- goesOff(from, to): from becomes to at the record's offAt, unless it turned first. Pieces put in set it by the
+-- goesOff(from, to): from becomes to at the itemFluid's offAt, unless it turned first. Pieces put in set it by the
 --   oldest (putPieces); counted by the clock, at any place.
 -- burns(fluid, hours, mapper): fluid kept steaming hours more burns: the item is emptied and swapped where it lies for
 --   mapper[its full type], flagged burnt, its condition kept. An item the mapper doesn't name never burns.
@@ -72,52 +72,52 @@ function ItemFluid.burntItem(fluid, vesselType)
     return burn and burn.mapper[vesselType]
 end
 
--- The rules, on a plain record
+-- The rules, on a plain itemFluid table
 
 -- Pieces going in: the hot hours start over, and the lot goes off when its oldest piece would have. hoursLeft has,
 -- for each piece, the hours until it would have gone off.
-function ItemFluid.putPieces(record, hoursLeft, now)
-    record.hot, record.at = 0, nil
+function ItemFluid.putPieces(itemFluid, hoursLeft, now)
+    itemFluid.steamedHours, itemFluid.at = 0, nil
     for _, left in ipairs(hoursLeft) do
         local at = now + math.max(left, 0)
-        record.offAt = math.min(record.offAt or at, at)
+        itemFluid.offAt = math.min(itemFluid.offAt or at, at)
     end
 end
 
--- Brings a record up to now for the fluid it holds (fluid, all the item holds), seen hot or not. Returns what the
+-- Brings an itemFluid table up to now for the fluid it holds (fluid, all the item holds), seen hot or not. Returns what the
 -- fluid is now (fluid when unchanged), and true when it has burnt (only for a vessel burns' mapper names).
-function ItemFluid.advance(record, fluid, now, hot, vesselType)
-    if record.offAt and record.offAt <= now and OFF[fluid] then
-        record.hot, record.at, record.offAt = 0, nil, nil
+function ItemFluid.advance(itemFluid, fluid, now, hot, vesselType)
+    if itemFluid.offAt and itemFluid.offAt <= now and OFF[fluid] then
+        itemFluid.steamedHours, itemFluid.at, itemFluid.offAt = 0, nil, nil
         return OFF[fluid], false
     end
     if not hot then
-        record.at = nil
+        itemFluid.at = nil
         return fluid, false
     end
-    local gap = record.at and now - record.at
-    if gap and gap > 0 and gap <= ItemFluid.MAX_GAP_HOURS then record.hot = (record.hot or 0) + gap end
-    record.at = now
+    local gap = itemFluid.at and now - itemFluid.at
+    if gap and gap > 0 and gap <= ItemFluid.MAX_GAP_HOURS then itemFluid.steamedHours = (itemFluid.steamedHours or 0) + gap end
+    itemFluid.at = now
     local turn = TURNS[fluid]
-    if turn and (record.hot or 0) >= turn.hours then
+    if turn and (itemFluid.steamedHours or 0) >= turn.hours then
         -- What has turned no longer goes off, and its steaming from here on counts towards burning.
-        record.hot, record.offAt = record.hot - turn.hours, nil
+        itemFluid.steamedHours, itemFluid.offAt = itemFluid.steamedHours - turn.hours, nil
         fluid = turn.to
     end
     local burn = BURNS[fluid]
-    if burn and burn.mapper[vesselType] and (record.hot or 0) >= burn.hours then return fluid, true end
+    if burn and burn.mapper[vesselType] and (itemFluid.steamedHours or 0) >= burn.hours then return fluid, true end
     return fluid, false
 end
 
 -- Hours of steaming still to go before the fluid turns, or burns once turned; nil if neither ever will.
-function ItemFluid.hoursToTurn(record, fluid)
+function ItemFluid.hoursToTurn(itemFluid, fluid)
     local turn = TURNS[fluid]
-    return turn and math.max(turn.hours - (record.hot or 0), 0) or nil
+    return turn and math.max(turn.hours - (itemFluid.steamedHours or 0), 0) or nil
 end
 
-function ItemFluid.hoursToBurn(record, fluid)
+function ItemFluid.hoursToBurn(itemFluid, fluid)
     local burn = BURNS[fluid]
-    return burn and math.max(burn.hours - (record.hot or 0), 0) or nil
+    return burn and math.max(burn.hours - (itemFluid.steamedHours or 0), 0) or nil
 end
 
 -- How many pieces of pieceMl fit in a vessel holding amountL of capacityL: none if it holds anything but fluid.
@@ -177,9 +177,9 @@ function ItemFluid.look(item, now)
         end
         return item
     end
-    local record = modData[ItemFluid.KEY] or { hot = 0 }
-    modData[ItemFluid.KEY] = record
-    local became, burnt = ItemFluid.advance(record, fluid, now, item:getItemHeat() >= ItemFluid.HOT_HEAT, item:getFullType())
+    local itemFluid = modData[ItemFluid.KEY] or { steamedHours = 0 }
+    modData[ItemFluid.KEY] = itemFluid
+    local became, burnt = ItemFluid.advance(itemFluid, fluid, now, item:getItemHeat() >= ItemFluid.HOT_HEAT, item:getFullType())
     if burnt then return burn(item, BURNS[became].mapper[item:getFullType()]) or item end
     if became ~= fluid then swap(container, fluid, became, litres) end
     container:setCanPlayerEmpty(ItemFluid.canEmpty(became))
@@ -193,11 +193,11 @@ function ItemFluid.addPieces(item, fluid, pieceMl, hoursLeft, now)
     if count <= 0 then return 0 end
     ItemFluid.look(item, now)
     local modData = item:getModData()
-    local record = modData[ItemFluid.KEY] or { hot = 0 }
+    local itemFluid = modData[ItemFluid.KEY] or { steamedHours = 0 }
     local taken = {}
     for index = 1, count do taken[index] = hoursLeft[index] end
-    ItemFluid.putPieces(record, taken, now)
-    modData[ItemFluid.KEY] = record
+    ItemFluid.putPieces(itemFluid, taken, now)
+    modData[ItemFluid.KEY] = itemFluid
     local container = item:getFluidContainer()
     container:addFluid(fluid, count * pieceMl / CauldronFluid.ML_PER_L)
     container:setCanPlayerEmpty(ItemFluid.canEmpty(fluid))
@@ -209,8 +209,8 @@ function ItemFluid.piecesInto(item)
     return {
         item = item,
         here = function(character) return character:getInventory():containsRecursive(item) end,
-        room = function(spec) return ItemFluid.roomFor(item, spec.fluid, spec.pieceMl) end,
-        put = function(spec, hoursLeft, now) return ItemFluid.addPieces(item, spec.fluid, spec.pieceMl, hoursLeft, now) end,
+        room = function(asFluid) return ItemFluid.roomFor(item, asFluid.fluid, asFluid.pieceMl) end,
+        put = function(asFluid, hoursLeft, now) return ItemFluid.addPieces(item, asFluid.fluid, asFluid.pieceMl, hoursLeft, now) end,
     }
 end
 

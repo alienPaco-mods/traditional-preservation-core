@@ -16,9 +16,9 @@ local TITLES = { bank = "ContextMenu_TraditionalPreservationCore_BankFire", stok
 local HELP = { bank = "IGUI_TraditionalPreservationCore_BankHelp", stoke = "IGUI_TraditionalPreservationCore_StokeHelp" }
 
 -- "bank" for a lit fire, "stoke" for a banked one, nil for anything else.
-local function modeOf(object)
-    if not object or not Fire.isFire(object) or not Fire.isBurning(object) then return nil end
-    return Fire.isBanked(object) and "stoke" or "bank"
+local function modeOf(isoObject)
+    if not isoObject or not Fire.isFire(isoObject) or not Fire.isBurning(isoObject) then return nil end
+    return Fire.isBanked(isoObject) and "stoke" or "bank"
 end
 
 function Handler:shouldBeVisible()
@@ -51,8 +51,8 @@ function Handler:new()
     return o
 end
 
-local function isBanked(object)
-    return object ~= nil and instanceof(object, "IsoFireplace") and Fire.isBanked(object)
+local function isBanked(isoObject)
+    return isoObject ~= nil and instanceof(isoObject, "IsoFireplace") and Fire.isBanked(isoObject)
 end
 
 Wrap.method("ISLootWindowObjectControlHandler_LightFireOption", "shouldBeVisible", function(lightFireVisible, self)

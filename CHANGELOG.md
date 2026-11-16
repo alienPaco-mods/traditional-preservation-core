@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.7
+- **The Stone Hearth is built of stone** (2026-11-16): 12 Stone Blocks (vanilla's cut mason blocks, as its tiles draw it), 2 Clay and a mason's trowel kept, Masonry 2; was 8 Clay Bricks, which matched neither its look nor its name. `TPC.kit("stone")` and `TPC.kit()` follow (test_console). README, guide 6, DEVHELP, Workshop text.
+
 ## 0.1.6
 - **Fix: a new save's weather no longer starts at 0 C** (2026-11-16, `Weather.weatherModData`): the series' weather took its first reading on first use, and a new save first uses it as the mods load (`OnInitGlobalModData`), before the game's climate has run, when it reads 0 C and 0 humidity. The season's mean, the ground's and the humidity started at 0 and took weeks to catch up, so basements, sheds and the open read as winter in July. It now starts only once `ClimateManager:isUpdated()`, otherwise on the first ten-minute reading. test_core: a new check; every test's climate stand-in answers `isUpdated`.
 

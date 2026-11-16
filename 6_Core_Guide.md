@@ -42,7 +42,7 @@ On its own it adds only those, and the cauldron's recipe; it changes no vanilla 
 
 | Step | You need | You get |
 |---|---|---|
-| Build a **Stone Hearth** (Build menu, Masonry) | 8 Clay Bricks, 2 Clay, a mason's trowel (kept). Masonry 2 | A fireplace that cooks and warms. 8 Masonry XP |
+| Build a **Stone Hearth** (Build menu, Masonry) | 12 Stone Blocks, 2 Clay, a mason's trowel (kept). Masonry 2 | A fireplace that cooks and warms. 8 Masonry XP |
 | **Add Fuel** and **Light** it | Firewood and a lighter, as any fireplace | Fire, room heat, an oven, a hob over the hole |
 | **Forge Cauldron** at a forge | 2 Steel Sheets, 3 Charcoal, 1 Wire; a ball-peen hammer, pliers or tongs and a metalworking chisel (kept). Blacksmith 4, and the recipe (chapter 4) | A **Forged Cauldron**. 35 Blacksmithing XP |
 | **Fit Cauldron** (the Stone Hearth's menu, fire out) | The Forged Cauldron, 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook; pliers (kept) | The **Stone Hearth (Cauldron)**: 60 L over the fire. 5 Blacksmithing XP |
@@ -339,7 +339,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes: `"stoneCauldron"` (the default: the Stone Hearth's build and Fit Cauldron's kit), `"stone"` (a mason's trowel, 8 clay bricks and 2 clay, Masonry 2), `"cauldron"` (a Forged Cauldron, 2 iron pipes, a heavy chain, a large hook and pliers), `"forge"` (Forge Cauldron's materials and tools, Blacksmith 4, and the magazine), `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3), `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel) or `"hole"` (a stove food, an oven food and a pot to fill, for the hole's looks). `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes: `"stoneCauldron"` (the default: the Stone Hearth's build and Fit Cauldron's kit), `"stone"` (a mason's trowel, 12 stone blocks and 2 clay, Masonry 2), `"cauldron"` (a Forged Cauldron, 2 iron pipes, a heavy chain, a large hook and pliers), `"forge"` (Forge Cauldron's materials and tools, Blacksmith 4, and the magazine), `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3), `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel) or `"hole"` (a stove food, an oven food and a pot to fill, for the hole's looks). `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.setWeather(c, season, ground)` | Pretends the weather for a test that wants a cold month or a warm day: the day's temperature `c` (the engine's own override, the one the debug menu's Climate debugger sets), the season's mean (`c` if left out) and the ground's (left alone if left out). The mods read it at their next ten-minute reading, so run the clock; `TPC.weather()` shows it then. The season drifts towards the day again as it would. `TPC.setWeather()` ends it. Not kept through a load. |

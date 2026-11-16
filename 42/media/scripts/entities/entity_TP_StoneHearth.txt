@@ -31,7 +31,7 @@ module TraditionalPreservationCore
                 }
             }
         }
-        /* Fired bricks laid in clay, as the Stone Hearth, smaller and with no cauldron; the door is beaten from scrap iron
+        /* Cut stone blocks laid in clay, as the tiles draw it (vanilla's mason blocks); the door is beaten from scrap iron
            in the game's abstraction (none asked). */
         component CraftRecipe
         {
@@ -44,7 +44,7 @@ module TraditionalPreservationCore
             inputs
             {
                 item 1 tags[base:masonstrowel] mode:keep flags[Prop1;MayDegradeLight],
-                item 8 [Base.ClayBrick],
+                item 12 [Base.StoneBlock],
                 item 2 [Base.Clay] flags[DontRecordInput],
             }
         }

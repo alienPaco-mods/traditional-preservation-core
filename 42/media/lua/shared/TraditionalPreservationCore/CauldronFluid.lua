@@ -321,6 +321,18 @@ local function heat(cauldron, hours, banked)
     end
 end
 
+-- Runs step(hours) over from to to, split at the fluid's offAt when it falls inside: what turns after offAt has gone
+-- off first, however long the stretch, as it would have looked minute by minute.
+local function stretch(cauldron, from, to, step)
+    local offAt = cauldron.offAt
+    if offAt and offAt > from and offAt < to then
+        step(offAt - from)
+        goOff(cauldron, offAt)
+        from = offAt
+    end
+    step(to - from)
+end
+
 -- Brings the cauldron up to now by the fire's state (Fire.fireModData: fireUntil, banked; nil for no fire): heating
 -- while the fire burns (to fireUntil), cooling to roomC after. Over banked embers it settles at BANKED_C, as slowly
 -- as it cools: the fire is low and the stone holds the heat.
@@ -331,13 +343,15 @@ function CauldronFluid.advance(cauldron, now, roomC, fire)
     goOff(cauldron, hour)
     if fireUntil and fireUntil > hour then
         local stop = math.min(fireUntil, now)
-        heat(cauldron, stop - hour, fire.banked)
+        stretch(cauldron, hour, stop, function(hours) heat(cauldron, hours, fire.banked) end)
         hour = stop
     end
     if now > hour then
         local tau = CauldronFluid.cauldronTau(cauldron.ml, false)
-        countHot(cauldron, roomC, now - hour, tau)
-        cauldron.tempC = CauldronFluid.cool(cauldron.tempC, roomC, now - hour, tau)
+        stretch(cauldron, hour, now, function(hours)
+            countHot(cauldron, roomC, hours, tau)
+            cauldron.tempC = CauldronFluid.cool(cauldron.tempC, roomC, hours, tau)
+        end)
         cauldron.boiled = nil
     end
     goOff(cauldron, now)

@@ -389,14 +389,32 @@ check("untreated ages on the process's totals", jar.md.tpFluidAge.age == 10)
 FluidAgeing.treat(jar, 0, "Kept")
 bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 30, 9
 FluidAgeing.look(jar, 0, "Sheltered")
-check("the change of state loses one stretch, then marks the state's process", jar.md.tpFluidAge.age == 10
+check("a change of state marks the state's process at once: the stretch after it counts", jar.md.tpFluidAge.age == 15
     and jar.md.tpFluidAge.markProcess == "coldKept")
 bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 50, 15
 FluidAgeing.look(jar, 0, "Sheltered")
-check("treated, it ages on the state's totals", jar.md.tpFluidAge.age == 16)
+check("treated, it ages on the state's totals", jar.md.tpFluidAge.age == 21)
 jar.md.tpFluidAge.place, jar.md.tpFluidAge.hour = FluidAgeing.FRIDGE, 0
 FluidAgeing.look(jar, 10, "Sheltered")
-check("in a fridge, by the state's curve", jar.md.tpFluidAge.age == 16 + 10 * 0.5)
+check("in a fridge, by the state's curve", jar.md.tpFluidAge.age == 21 + 10 * 0.5)
+local leftAlone = item({ Gore = 1 })
+FluidAgeing.look(leftAlone, 0, "Sheltered")
+FluidAgeing.treat(leftAlone, 0, "Kept")
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 100, 65
+FluidAgeing.look(leftAlone, 0, "Sheltered")
+check("treated and left alone a long while, all of it counts", leftAlone.md.tpFluidAge.age == 50)
+local found = item({ KeptGore = 1 })
+FluidAgeing.look(found, 0, "Sheltered")
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 120, 70
+FluidAgeing.look(found, 0, "Sheltered")
+check("found already in a state, it ages on the state's totals from the first look", found.md.tpFluidAge.age == 5)
+local untreated = item({ KeptGore = 1 })
+FluidAgeing.look(untreated, 0, "Sheltered")
+untreated.fc.fluids.Gore = 1
+FluidAgeing.untreat(untreated, 0)
+bloodLedger.coldSheltered, bloodLedger.coldKeptSheltered = 130, 72
+FluidAgeing.look(untreated, 0, "Sheltered")
+check("untreated, it goes back to the plain totals at once", untreated.md.tpFluidAge.age == 10)
 check("nameAt: milk in the heat state goes by its scalded name", FluidAgeing.nameAt(milk, "Fresh", "CowMilk", milk.states.Scalded) == "ScaldedCowMilk")
 -- One state at a time, for a kind with a heat state and one by hand.
 local whey = FluidAgeing.register({

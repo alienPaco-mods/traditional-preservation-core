@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.4
+- **Fix: the cauldron no longer renders what had already gone off** (2026-11-16, `CauldronFluid.advance`): a long catch-up counted every hot hour before checking the going-off hour, so raw fat or butter due to go rancid partway through its hour of steaming came out rendered in one look, and rancid when looked at every ten minutes. The stretch is now split at the going-off hour, while the fire burns and while the cauldron cools after it, so one look and many agree. test_fire: three new checks.
+- **Fix: a fluid's change of state no longer loses the time until the next look** (2026-11-16, `FluidAgeing`): a state with its own ageing process (Fish & Meat's Cured blood) was marked on the old process after treating, so everything up to the next look was dropped, not one look's worth: blood cured on the floor and left unviewed did not age. Every change of state (treat, untreat, scald, a pour that merges, a fluid found already in a state) now re-marks at once, on the process it ages by. test_fluid_ageing: the old "loses one stretch" check now expects the stretch counted, plus three new checks.
+- README header shows the right version.
+
 ## 0.1.3
 - **Dairy's kefir grains on the core's ageing** (2026-11-16): Dairy 0.0.5's grains starve and dry on `FluidAgeing` ages and are looked at through `PlaceKeepingUI.watch` (any table with `keep(item)` serves as a keeper); Dairy's season report golden gains the grains' ledger totals, nothing else in it changes. FluidAgeing's header names scalded milk by its name now, Cow's Milk (Scalded, Fresh). Nothing changes in game.
 

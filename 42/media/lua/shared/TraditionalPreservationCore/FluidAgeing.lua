@@ -163,6 +163,16 @@ local function agingOf(fluidAge, fluidKind)
     return fluidKind.process, fluidKind.rate
 end
 
+-- After its state changed (treated, untreated, merged, started in a state): marks a fluidAge, already brought up to
+-- now, on the ledger process it ages by now, so the next look counts from here. Left alone when the process is the
+-- one it was marked on, so no stretch is lost.
+local function markState(fluidAge, fluidKind, ledger)
+    local process = agingOf(fluidAge, fluidKind)
+    if fluidAge.marks and (fluidAge.markProcess or fluidKind.process) == process then return end
+    fluidAge.marks = Weather.mark({}, ledger or fluidKind.getLedger(), process)
+    fluidAge.markProcess = process ~= fluidKind.process and process or nil
+end
+
 -- True if nothing will turn the fluidAge before it spoils: it is in a state.
 local function neverTurns(fluidAge)
     return fluidAge.treated ~= nil
@@ -204,8 +214,9 @@ end
 
 -- A new fluidAge, marked on the ledger now: nothing done yet, or in the state called stateName.
 function FluidAgeing.newFluidAge(fluidKind, ledger, now, place, stateName)
-    return { process = fluidKind.process, age = 0, treated = stateName and { [stateName] = true } or nil, place = place, hour = now,
-        marks = Weather.mark({}, ledger, fluidKind.process) }
+    local fluidAge = { process = fluidKind.process, age = 0, treated = stateName and { [stateName] = true } or nil, place = place, hour = now }
+    markState(fluidAge, fluidKind, ledger)
+    return fluidAge
 end
 
 local function shallowCopy(fields)
@@ -232,7 +243,8 @@ end
 -- where it is now, and counts from here on.
 function FluidAgeing.advance(fluidAge, fluidKind, ledger, now, place)
     -- A state with its own curve counts on its own ledger process. The marks are of the process they were taken on
-    -- (markProcess, nil for the fluidKind's own): when the state has changed since, the stretch is lost (one look's worth).
+    -- (markProcess, nil for the fluidKind's own). Every change of state re-marks at once (markState), so a mismatch is
+    -- only an old save's record: its stretch is lost, once.
     local process, rate = agingOf(fluidAge, fluidKind)
     local was, work = fluidAge.place, 0
     if was == FluidAgeing.FRIDGE then
@@ -339,6 +351,7 @@ local function startFluidAge(fluidKind, found, now, place, scalds)
     local fluidAge = FluidAgeing.newFluidAge(fluidKind, fluidKind.getLedger(), now, place)
     fluidAge.treated = treatedIn(fluidKind, found)
     if scalds then scaldIfFresh(fluidAge, fluidKind) end
+    markState(fluidAge, fluidKind)
     return fluidAge
 end
 
@@ -478,6 +491,7 @@ function FluidAgeing.receive(holder, fluidAge, hadSome, place)
     local into = hadSome and holder[FluidAgeing.KEY]
     if into and into.process == fluidAge.process then
         FluidAgeing.merge(into, fluidAge)
+        if fluidKind then markState(into, fluidKind) end
     else
         local copy = FluidAgeing.copy(fluidAge)
         copy.place = place or copy.place
@@ -554,6 +568,7 @@ end
 local function changeFluidAge(owner, now, change)
     local fluidAge, fluidKind = FluidAgeing.look(owner, now)
     if not fluidAge or not change(fluidAge, fluidKind) then return false end
+    markState(fluidAge, fluidKind)
     FluidAgeing.apply(owner:getFluidContainer(), fluidAge, fluidKind)
     return true
 end

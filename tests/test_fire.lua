@@ -197,6 +197,25 @@ CauldronFluid.advance(late, 40, 20, late)
 late.fireUntil = 100
 CauldronFluid.advance(late, 500, 20, late)
 check("a fire lit in time turns it, however late it is looked at", late.fluid == "MeltedFat")
+local function nearlyOff()
+    local c = { ml = 1500, fluid = "RawFat", tempC = 95, lastHour = 0, fireUntil = 100 }
+    CauldronFluid.offBy(c, 0.5)
+    return c
+end
+local once, stepped10 = nearlyOff(), nearlyOff()
+CauldronFluid.advance(once, 2, 20, once)
+for step = 1, 12 do CauldronFluid.advance(stepped10, step / 6, 20, stepped10) end
+check("going off before its hour of steaming is done, it goes off, in one look or in ten-minute steps",
+    once.fluid == "RancidFat" and stepped10.fluid == "RancidFat")
+local cooledOff = { ml = 60000, fluid = "RawFat", tempC = 95, lastHour = 0, fireUntil = 0.4 }
+CauldronFluid.offBy(cooledOff, 0.45)
+cooledOff.steamedHours = 0.5
+CauldronFluid.advance(cooledOff, 10, 20, cooledOff)
+check("and while the cauldron cools after the fire as well", cooledOff.fluid == "RancidFat")
+local justInTime = { ml = 1500, fluid = "RawFat", tempC = 95, lastHour = 0, fireUntil = 100 }
+CauldronFluid.offBy(justInTime, 1.5)
+CauldronFluid.advance(justInTime, 3, 20, justInTime)
+check("turned before its hour to go off, it stays turned", justInTime.fluid == "MeltedFat" and justInTime.offAt == nil)
 CauldronFluid.take(old)
 check("emptied, the cauldron forgets both clocks", old.steamedHours == nil and old.offAt == nil)
 

@@ -59,6 +59,11 @@ check("an unseen item keeps counting where it was last seen", butter.modData.tpK
 keeper.age(fridge, 5)
 check("the console's age moves it on at its place", near(fridge.age, 6, 1e-6))
 check("a line for the console", keeper.describe(fridge):find("Base.Butter in Fridge: x0.40", 1, true) ~= nil)
+local frozen = food("Base.Butter", 30, 45)
+keeper.keep(frozen, 0, "Freezer", ledger)
+local line = keeper.describe(frozen)
+check("a frozen one keeps forever there: no days counted as 0", line:find("x0.00 (keeps forever here)", 1, true) ~= nil
+    and line:find("stale in never, rotten in never", 1, true) ~= nil)
 
 on = false
 local plain = food("Base.Butter", 1e9, 1e9, 4)

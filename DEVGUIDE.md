@@ -143,8 +143,9 @@ hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../Flu
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
-vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`) and `.../Pour.lua` (the one
-wrap of `ISFluidTransferAction`), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
+vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
+wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
+`ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
 `SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua` and `FluidAgeingWorld.lua`. A mod that uses it says so in its mod.info:
@@ -290,7 +291,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
      freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`spec.ledgerKey`) and
      modData clock (`spec.modDataKey`); `spec.enabled` is the sandbox switch, `spec.days` sets fresh and rotten days on
      an item whose script has none. The mod's World calls `keeper.record(now, temperature)` in its `Weather.record`;
-     `PlaceKeepingUI.watch(keeper, types)` looks at the items (Fish & Meat looks at its crocks in its own look).
+     `PlaceKeepingUI.watch(keeper, types)` looks at the items (Fish & Meat looks at its crocks in its own look);
+     `PlaceKeepingUI.near(types, reach)` lists such items carried and in containers within `REACH` (4) tiles, for the
+     consoles (`TPD.butter`, `TPFM.crocks`).
    - `Portions`: food eaten from a vessel a portion at a time. `set`, `left`, `text`, `name`, `label` and `used` do
      the sums, the name ("Jar of Yogurt (3 portions)", the core's text), the weight and the empty vessel;
      `Portions.onEat(fullType, before, after)` hangs a mod's handlers on the one wrap of the eat action.
@@ -298,6 +301,13 @@ local Weather = require "TraditionalPreservationCore/Weather"
      action, for a mod that gives something back for what a craft used up.
    - `Pour.before(name, fn)` / `Pour.after(name, fn)` (name is `start`, `stop` or `complete`) and `Pour.owner`:
      handlers on the one wrap of the fluid transfer, for what rides along with a fluid.
+   - `Drink.cure(fluid, { foodSickness, cooldown, hours })`: a fluid that eases food sickness, so much a litre
+     drunk, only while the drinker has some (as vanilla's food). A fluid script's `foodSicknessChange` never reaches
+     the drinker (ENGINE_NOTES), so the one wrap of the drink action measures it. With a cooldown, a drink cures only
+     if the key has run out at its first sick step, and starts it. Auto-drink takes only Water-category fluid.
+   - `Cooldown.ready(player, key)` / `Cooldown.start(player, key, hours)` / `Cooldown.left(player, key)`: a named
+     cooldown in the player's modData (`tpCooldowns`), in world hours. Keys are shared on purpose: `foodSickness` is
+     every TP cure's, as vanilla's foods share theirs; a mod's own key carries its prefix.
    - `Uses.count(character, tag)` / `Uses.take(character, tag, owed)`: salt, vinegar or any tagged food or drainable
      by the use from what a character carries, part-used first. `Uses.onEmptied(tag, fn)`: fn(character, emptied)
      for items of the tag a take used up (Salt gives back its empty shakers and bags). Charge what a recipe line
@@ -378,6 +388,7 @@ of all:
 | `ISMilkAnimal.milk` | core `FluidAgeingWorld` | A container whose milk is all gone forgets its age before new milk goes in |
 | `ISWidgetInput.updateValues` | core `ChargeUI` (Fish & Meat's filler) | A charged line (`Charge`) shows its real amount (*n/12 Uses*, *n/12*) with the consumed icon; other lines pass straight through |
 | `ISGatherBloodFromAnimal.updateBucket` | core `FluidAgeingWorld` (for Fish & Meat's blood) | A container with no blood starts a new record; fresh blood gathered onto treated blood makes it untreated |
+| `ISDrinkFluidAction.updateEat` | core `Drink` only; cures: Dairy `...Kefir` | Fresh kefir eases food sickness, 10 a litre drunk, on the shared `foodSickness` cooldown |
 | `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Clay Jar or Clay Pot back; a crock's first portion opens it |
 | `ISCampingMenu.doLightFireOption` | core `FireUI` | A banked Stone Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `FireLootControls` | The same in the loot window's buttons |
@@ -386,7 +397,7 @@ of all:
 
 Two mods wrapping the same function each call the one before, so load order doesn't matter. A new wrap goes in this
 table. **When a second mod needs a vanilla function a first one wraps, the wrap moves to the core** and both add
-handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`): one place to compare with vanilla after a game update.
+handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`, `Drink`): one place to compare with vanilla after a game update.
 The handler order differs: Transfer runs its handlers in the order added, Pour and Handcraft as nested wraps would
 (the last added's before first). Each module's header says which; a handler that depends on another's must not
 assume the other order.

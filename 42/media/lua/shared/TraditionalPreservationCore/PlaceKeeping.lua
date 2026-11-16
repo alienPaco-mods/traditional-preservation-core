@@ -93,9 +93,9 @@ function PlaceKeeping.new(spec)
             if age >= limit then return "past" end
             return rate > 0 and string.format("%.0f d", (limit - age) / rate) or "never"
         end
-        return string.format("%s in %s: x%.2f (%.0f days fresh here), age %.1f d, stale in %s, rotten in %s",
-            item:getDisplayName(), place, rate, rate > 0 and item:getOffAge() / rate or 0, age,
-            left(item:getOffAge()), left(item:getOffAgeMax()))
+        local fresh = rate > 0 and string.format("%.0f days fresh here", item:getOffAge() / rate) or "keeps forever here"
+        return string.format("%s in %s: x%.2f (%s), age %.1f d, stale in %s, rotten in %s",
+            item:getDisplayName(), place, rate, fresh, age, left(item:getOffAge()), left(item:getOffAgeMax()))
     end
 
     return keeper

@@ -138,7 +138,7 @@ every mod's translation files for a literal `%`.
 This folder is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP mod requires. Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
-line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../OnHeat.lua` (food kept
+line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../ItemFluid.lua` (fluid that turns, goes off, burns or stays in a pot or saucepan: the cauldron's rules for an item; `ItemFluidUI.addPieces` puts pieces in as a fluid), `.../OnHeat.lua` (food kept
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
@@ -278,14 +278,17 @@ local Weather = require "TraditionalPreservationCore/Weather"
      needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them.
      **`Action.startClock(action)`** in an action's start and **`Action.clockProgress(action, item, minutes)`** in its
      update run it on the game clock (getDuration -1): the item's job bar follows, done at the minutes (Salt's Dig, Fill).
-     **`Action.removeItem(item)`** takes an item out of whatever holds it (a bag too). `Fire.redraw(fire)`
+     **`Action.removeItem(item)`** takes an item out of whatever holds it (a bag too); **`Action.replaceItem(old, new)`** puts new where old is, in a container or on the ground. `Fire.redraw(fire)`
      redraws a Stone Hearth after an action changed it (nothing where the World doesn't run).
    - `Fire.catchUpRun(modData, ledger, kind, place, rateAt)` and `Fire.updateRun(craftRecipeData, ledger, kind,
      place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
      default and old-save migration (Yeast, Vinegar, the template).
-   - Pieces into the cauldron as a fluid (Fish & Meat's fat, Dairy's butter): `CauldronFluid.pieceRoom`, `putPieces`,
-     the action `TPCauldronPieces` and the menu row `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, kinds,
-     help, noRoom, refusal })`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
+   - Pieces into something as a fluid (Fish & Meat's fat, Dairy's butter): one action, **`TPPutPieces`**, takes a
+     destination (`Cauldron.piecesInto(fire)`, `ItemFluid.piecesInto(item)`: here, room, put, object, after), and one
+     row, **`PiecesUI.row`**: with more than one fitting it opens One (the piece nearest to going off,
+     `PiecesUI.oldestFirst`) and All (n). The cauldron's rules are `CauldronFluid.pieceRoom`, `putPieces`, its menu
+     `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, kinds, help, noRoom, refusal })`; a pot's are
+     `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
    - `PlaceKeeping.new(spec)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
      `spec.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
      freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`spec.ledgerKey`) and

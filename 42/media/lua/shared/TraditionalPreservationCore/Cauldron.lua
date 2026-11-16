@@ -56,6 +56,20 @@ Cauldron.spec = Fire.attach({
     end,
 })
 
+-- Where TPPutPieces puts pieces (fat, butter) into a fire's cauldron, as many as fit, as a fluid.
+function Cauldron.piecesInto(fire)
+    return {
+        object = fire,
+        here = function() return fire:getSquare() ~= nil end,
+        room = function(spec) return CauldronFluid.pieceRoom(Cauldron.state(fire:getModData()), spec.fluid, spec.pieceMl) end,
+        -- Brought up to the minute first, so the pieces mix with the cauldron as it is now.
+        put = function(spec, hoursLeft, now)
+            return CauldronFluid.putPieces(Cauldron.of(fire), spec.fluid, spec.pieceMl, hoursLeft, now)
+        end,
+        after = function() Fire.redraw(fire) end,
+    }
+end
+
 Events.OnInitGlobalModData.Add(function()
     Recipes.teach("Base.SmithingMag2", Cauldron.RECIPE, "TP")
     Recipes.researchable(Cauldron.ITEM, Cauldron.RECIPE, "TP")

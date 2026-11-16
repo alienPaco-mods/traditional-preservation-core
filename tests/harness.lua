@@ -184,7 +184,11 @@ function H.player(at)
     local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end,
         isOutside = function() return at.outside == true end, isInARoom = function() return at.outside ~= true end }
     local player = { given = {} }
-    local inventory = { AddItem = function(_, fullType) table.insert(player.given, fullType) return {} end }
+    -- What AddItem gives back takes the setters a console calls on a new item.
+    local function given(fullType)
+        return { fullType = fullType, setBurnt = function(self, burnt) self.burnt = burnt end }
+    end
+    local inventory = { AddItem = function(_, fullType) table.insert(player.given, fullType) return given(fullType) end }
     function player:getInventory() return inventory end
     function player:getSquare() return square end
     function player:getCurrentSquare() return square end

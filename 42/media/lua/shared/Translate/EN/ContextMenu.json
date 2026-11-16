@@ -15,5 +15,7 @@
   "ContextMenu_TraditionalPreservationCore_ConnectStones": "With a Stone Trench",
   "ContextMenu_TraditionalPreservationCore_DisconnectStoneHearth": "Disconnect the Stone Hearth",
   "ContextMenu_TraditionalPreservationCore_Fit": "Fit %1",
-  "ContextMenu_TraditionalPreservationCore_Remove": "Remove %1"
+  "ContextMenu_TraditionalPreservationCore_Remove": "Remove %1",
+  "ContextMenu_TraditionalPreservationCore_PiecesOne": "One",
+  "ContextMenu_TraditionalPreservationCore_PiecesAll": "All (%1)"
 }

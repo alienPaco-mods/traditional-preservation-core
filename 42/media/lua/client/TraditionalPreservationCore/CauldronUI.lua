@@ -3,11 +3,11 @@
 -- (or a blend), Fill from Cauldron and Empty Cauldron only when it holds something; mods' rows (CauldronUI.addMenu) go
 -- between. The fire's Info shows its litres, fluid, heat and when it steams, then its notes and mods' (CauldronUI.addNotes).
 require "TimedActions/TPCauldronWork"
-require "TimedActions/TPCauldronPieces"
 local UI = require "TraditionalPreservationCore/UI"
 local Fire = require "TraditionalPreservationCore/Fire"
 local Cauldron = require "TraditionalPreservationCore/Cauldron"
 local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
+local PiecesUI = require "TraditionalPreservationCore/PiecesUI"
 require "TraditionalPreservationCore/Cauldron"
 
 local CauldronUI = {}
@@ -157,17 +157,11 @@ function CauldronUI.addNotes(fn)
     table.insert(NOTES, fn)
 end
 
--- A menu row putting pieces in the cauldron as a fluid (TPCauldronPieces), with a sub-row for each kind carried, the
--- pieces counted and rotten ones left out; only someone carrying some sees it. spec: { title, icon (a texture name),
+-- A menu row putting pieces in the cauldron as a fluid (PiecesUI, TPPutPieces), with a sub-row for each kind carried,
+-- the pieces counted and rotten ones left out, One or All; only someone carrying some sees it. spec: { title, icon (a texture name),
 -- pieceMl, hoursLeft = function(item), kinds = { { fluid, items = { [fullType] = true }, label = function(count) } },
 -- help, noRoom (finished text), refusal = optional function(playerObj) giving finished text when the player can't }.
 function CauldronUI.addPieces(spec)
-    local function onPieces(playerObj, fire, kind, pieces)
-        if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-        for _, item in ipairs(pieces) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
-        ISTimedActionQueue.add(TPCauldronPieces:new(playerObj, fire,
-            { fluid = kind.fluid, pieceMl = spec.pieceMl, hoursLeft = spec.hoursLeft }, pieces))
-    end
     CauldronUI.addMenu(function(menu, playerObj, fire, cauldron)
         local carried = {}
         for _, kind in ipairs(spec.kinds) do
@@ -181,15 +175,15 @@ function CauldronUI.addPieces(spec)
         menu:addSubMenu(option, sub)
         local refusal = spec.refusal and spec.refusal(playerObj)
         for _, entry in ipairs(carried) do
-            local row = sub:addOption(entry.kind.label(#entry.pieces), playerObj, onPieces, fire, entry.kind, entry.pieces)
+            local pieces = { fluid = entry.kind.fluid, pieceMl = spec.pieceMl, hoursLeft = spec.hoursLeft }
+            local row = PiecesUI.row(sub, { label = entry.kind.label(#entry.pieces),
+                room = CauldronFluid.pieceRoom(cauldron, entry.kind.fluid, spec.pieceMl),
+                pieces = PiecesUI.oldestFirst(entry.pieces, spec.hoursLeft),
+                refusal = refusal, help = spec.help, noRoom = spec.noRoom }, function(chosen)
+                if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
+                PiecesUI.queue(playerObj, Cauldron.piecesInto(fire), pieces, chosen)
+            end)
             row.itemForTexture = entry.pieces[1]
-            if refusal then
-                UI.refuse(row, refusal)
-            elseif CauldronFluid.pieceRoom(cauldron, entry.kind.fluid, spec.pieceMl) > 0 then
-                tooltipFor(row, spec.help)
-            else
-                UI.refuse(row, spec.noRoom)
-            end
         end
     end)
 end

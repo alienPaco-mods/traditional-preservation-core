@@ -66,6 +66,28 @@ function Action.removeItem(item)
     if container then container:Remove(item) end
 end
 
+-- Puts new where old is, in an item container or on the ground (at the same spot). Returns new, or nil when old is
+-- nowhere. (Salt's boiling bucket, Core's burnt vessels.)
+function Action.replaceItem(old, new)
+    local inventory = old:getContainer()
+    local worldItem = old:getWorldItem()
+    if worldItem then
+        local square = worldItem:getSquare()
+        local x, y, z = worldItem:getWorldPosX() - square:getX(), worldItem:getWorldPosY() - square:getY(),
+            worldItem:getWorldPosZ() - square:getZ()
+        if inventory then Action.removeItem(old) end
+        square:transmitRemoveItemFromSquare(worldItem)
+        worldItem:removeFromWorld()
+        worldItem:removeFromSquare()
+        square:AddWorldInventoryItem(new, x, y, z)
+        return new
+    end
+    if not inventory then return nil end
+    Action.removeItem(old)
+    inventory:AddItem(new)
+    return new
+end
+
 -- xp is { perk name, amount }, or nil for none.
 function Action.addXp(character, xp)
     if xp and Perks[xp[1]] then character:getXp():AddXP(Perks[xp[1]], xp[2]) end

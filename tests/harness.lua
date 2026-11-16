@@ -33,7 +33,7 @@ end
 function H.useModPaths()
     local core = (os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/42/media/lua/"
     package.path = "42/media/lua/shared/?.lua;42/media/lua/client/?.lua;42/media/lua/server/?.lua;"
-        .. core .. "shared/?.lua;" .. core .. "client/?.lua;" .. package.path
+        .. core .. "shared/?.lua;" .. core .. "client/?.lua;" .. core .. "server/?.lua;" .. package.path
     H.preloadVanilla()
 end
 
@@ -43,6 +43,7 @@ H.VANILLA = {
     "Entity/TimedActions/ISHandcraftAction", "TimedActions/ISEatFoodAction", "Fluids/ISFluidTransferAction",
     "Entity/ISUI/CraftRecipe/ISWidgetInput", "TimedActions/Animals/ISGatherBloodFromAnimal",
     "Entity/TimedActions/ISItemSlotRemoveAction", "TimedActions/ISInventoryTransferAction", "TimedActions/ISDrinkFluidAction",
+    "Items/ProceduralDistributions",
 }
 
 function H.preloadVanilla()

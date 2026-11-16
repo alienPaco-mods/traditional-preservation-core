@@ -9,7 +9,7 @@
 -- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours.
 --
 -- States (optional): a kind may name variants of its fresh fluid, each with its own name for each fresh fluid and,
--- if it keeps longer, its own spoilHours (Fish & Meat's blood: Cured; Dairy's milk: Scalded, Cow's Milk (Scalded)).
+-- if it keeps longer, its own spoilHours (Fish & Meat's blood: Cured; Dairy's milk: Scalded, Cow's Milk (Scalded, Fresh)).
 -- A fluidAge keeps the treatments done (treated = { Cured = true }); its state is the one whose treatments match
 -- exactly. A fluidAge in a state never turns: it stays fresh until its spoilHours and then spoils. Fluid seen for the
 -- first time under a state's name takes that state; a mix of two states' names takes none.

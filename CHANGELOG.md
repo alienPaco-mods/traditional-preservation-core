@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.3
+- **Dairy's kefir grains on the core's ageing** (2026-11-16): Dairy 0.0.5's grains starve and dry on `FluidAgeing` ages and are looked at through `PlaceKeepingUI.watch` (any table with `keep(item)` serves as a keeper); Dairy's season report golden gains the grains' ledger totals, nothing else in it changes. FluidAgeing's header names scalded milk by its name now, Cow's Milk (Scalded, Fresh). Nothing changes in game.
+
 ## 0.1.2
 - **Naming sweep** (2026-11-16): every name says what the thing is in game, by DEVGUIDE "How code is named" (new). The station tracker's table is `sessionState`, a station `station`, any world object `isoObject`; a registered fluid is a `fluidKind` (was `spec`), its age a `fluidAge` (was `record`), the ledger's kind of work a `process`; saved tables are `fireModData`, `stationModData`, `weatherModData`; the craft clock's keys are `workHours`, `marks`, `placeWithoutFire` and the Smokehouse stack's `hotSmokeHours`, `coldSmokeHours`, `hotSmokeCoolHours`, `hotSmokeHoursNeeded`, `noHotSmoke`; windows keep a `fireView` / `stationView`. `TPC.flue(kitName, side)`. `tp test`: the Wrap lint's in-place check runs only on mods that require TP Core (FuelBarrel never does). Tests and golden results unchanged; nothing changes in game. Pre-release: an old test save's stations read as new, so test on a fresh save.
 

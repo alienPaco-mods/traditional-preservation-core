@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.6
+- **Fix: a new save's weather no longer starts at 0 C** (2026-11-16, `Weather.weatherModData`): the series' weather took its first reading on first use, and a new save first uses it as the mods load (`OnInitGlobalModData`), before the game's climate has run, when it reads 0 C and 0 humidity. The season's mean, the ground's and the humidity started at 0 and took weeks to catch up, so basements, sheds and the open read as winter in July. It now starts only once `ClimateManager:isUpdated()`, otherwise on the first ten-minute reading. test_core: a new check; every test's climate stand-in answers `isUpdated`.
+
 ## 0.1.5
 - **`Loot`** (2026-11-16, `server/TraditionalPreservationCore/Loot.lua`): `Loot.add(fullType, { listName = weight })` puts a mod's item into vanilla's loot lists, skipping a list the game doesn't have. Salt's Bag of Salt and Dairy's kefir grains use it in place of their own copies of the loop. The test harness finds Core's server modules and stands in for `Items/ProceduralDistributions`. test_loot. DEVGUIDE: the module, and `server/<Mod>Loot.lua` in the mod layout. Nothing changes in game.
 

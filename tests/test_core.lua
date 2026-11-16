@@ -126,10 +126,15 @@ local function newLedger(now) made = made + 1 return Weather.newLedger(now, kind
 local first = Weather.getLedger("Key", newLedger)
 check("getLedger: made once, in ModData", Weather.getLedger("Key", newLedger) == first and made == 1 and first.lastHour == 50)
 check("getLedger: no climate yet, no reading yet", first.temperature == nil)
-local outside, damp = 12, 60
+local outside, damp, updated = 12, 60, false
 getClimateManager = function()
-    return { getTemperature = function() return outside end, getHumidity = function() return damp end }
+    return { isUpdated = function() return updated end, getTemperature = function() return outside end,
+        getHumidity = function() return damp end }
 end
+local loading = Weather.getLedger("Loading", newLedger)
+check("getLedger: a save loading, the climate not yet run, is not read", loading.temperature == nil
+    and Weather.weatherModData().temperature == nil and Weather.weatherModData().seasonTemperature == nil)
+updated = true
 local seeded = Weather.getLedger("Seeded", newLedger)
 check("getLedger: a new ledger starts on the weather there is", Weather.placeTemperature(seeded, "Open") == 12
     and Weather.placeTemperature(seeded, "Covered") == 12)

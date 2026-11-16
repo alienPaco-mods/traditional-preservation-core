@@ -210,14 +210,17 @@ function Weather.observe(means, now, temperature, humidity, gridOn)
 end
 
 -- The series' weather, made on first use. Until its first record it would read 0 C, so it starts on the weather
--- there is now.
+-- there is now. Not while a save loads: the climate reads 0 C until its first update, so the first ten-minute
+-- reading starts it instead.
 function Weather.weatherModData()
     local coreModData = ModData.getOrCreate(Weather.SHARED_KEY)
     coreModData.ledger = coreModData.ledger or { lastHour = getGameTime():getWorldAgeHours() }
     local weatherModData = coreModData.ledger
     if weatherModData.temperature == nil then
         local climate = getClimateManager and getClimateManager()
-        if climate then Weather.observe(weatherModData, weatherModData.lastHour, climate:getTemperature(), climate:getHumidity()) end
+        if climate and climate:isUpdated() then
+            Weather.observe(weatherModData, weatherModData.lastHour, climate:getTemperature(), climate:getHumidity())
+        end
     end
     return weatherModData
 end

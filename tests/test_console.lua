@@ -55,7 +55,7 @@ function override:setAdminValue(value) self.value = value end
 ClimateManager = { FLOAT_TEMPERATURE = 4 }
 function getClimateManager()
     return { getClimateFloat = function(_, id) return id == 4 and override or nil end,
-        getTemperature = function() return 18 end, getHumidity = function() return 0.5 end }
+        isUpdated = function() return true end, getTemperature = function() return 18 end, getHumidity = function() return 0.5 end }
 end
 local Weather = require("TraditionalPreservationCore/Weather")
 local weatherModData = Weather.weatherModData()

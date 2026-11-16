@@ -1,6 +1,7 @@
 -- Traditional Preservation core: text and popups for the station windows, and what the right-click menus share.
 require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local UI = {}
 
@@ -262,15 +263,14 @@ local hooked = false
 local function hook()
     if hooked then return end
     hooked = true
-    local vanillaProgressItems = ISWidgetCraftLogicOutputProgress.updateProgressItems
-    function ISWidgetCraftLogicOutputProgress:updateProgressItems()
+    Wrap.method("ISWidgetCraftLogicOutputProgress", "updateProgressItems", function(vanillaProgressItems, self)
         vanillaProgressItems(self)
         for _, slot in ipairs(self.progressItems:getItemSlots()) do
             local recipe = slot.craftRecipeData and slot.craftRecipeData:getRecipe()
             local name = recipe and UI.shortName(recipe)
             for _, handler in ipairs(slotHandlers) do handler(slot, name, self) end
         end
-    end
+    end)
 end
 
 -- Adds a handler (see above). The first call installs the one wrap.
@@ -307,8 +307,7 @@ local outputHooked = false
 function UI.outputTooltips(draws)
     if not outputHooked then
         outputHooked = true
-        local vanillaCreateChildren = ISWidgetCraftLogicInputControl.createChildren
-        function ISWidgetCraftLogicInputControl:createChildren()
+        Wrap.method("ISWidgetCraftLogicInputControl", "createChildren", function(vanillaCreateChildren, self)
             vanillaCreateChildren(self)
             local name = self.recipe and UI.shortName(self.recipe)
             local draw = name and self.outputItems and outputDraws[name]
@@ -316,7 +315,7 @@ function UI.outputTooltips(draws)
             local entity = self.entity
             self.outputItems.drawTooltip = function(_itemSlot, tooltip) draw(tooltip, name, entity) end
             self:updateOutputItems()
-        end
+        end)
     end
     for name, draw in pairs(draws) do outputDraws[name] = draw end
 end
@@ -344,7 +343,7 @@ local function passOn(file, names)
     end
 end
 
-passOn("SlotRules", { "slotRules" })
+passOn("SlotRules", { "slotRules", "craftRefusal" })
 passOn("Placement", { "keepInPlace", "outdoorOnly", "notInRooms", "keepDoorsFree", "offAppliances" })
 
 return UI

@@ -137,6 +137,29 @@ A mod can register a food that is seasoned after it is made, as a stew is (`Seas
 
 Nothing on its own beyond adding its stations and the cauldron's recipe. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update.
 
+## Compatibility
+
+Every TP wrap calls the function it replaced, and goes in once all mods have loaded, so a mod that replaces one of these functions as its files load keeps working under TP. A mod that replaces one later, without calling the one before, switches TP's part off. In normal play an error in TP's part is printed once to the console and vanilla carries on; an error inside vanilla's code, or another mod's version of it, is raised with its own message. What the TP mods wrap:
+
+| Vanilla function | What for |
+|---|---|
+| `ISInventoryTransferAction.transferItem` | Milk, butter, crocks and brine moved on and off the heat |
+| `ISFluidTransferAction.start`, `stop`, `complete` | A poured fluid's age and heat |
+| `ISEatFoodAction.complete`, `serverStop` | Yogurt jars and Potted Meat crocks eaten by the portion |
+| `ISDrinkFluidAction.updateEat` | Kefir easing food sickness |
+| `ISHandcraftAction.performRecipe` | Empty shakers and bottles given back; boiled bones smashed |
+| `ISMilkAnimal.milk`, `ISGatherBloodFromAnimal.updateBucket` | A fresh age for new milk and blood |
+| `ISAddItemInRecipe.complete`, `checkName` | Fish & Meat's ingredient icons and stock dish names |
+| `ISToolTipInv.render` | Brine strength in a bucket's tooltip |
+| `ISItemSlotRemoveAction.complete` | Brine taken out of Salt's vat |
+| `ISCraftLogicPanel.ItemSlotAddItems`, `createChildren`; `ISItemSlot.defaultVerifyItem`, `onMouseUp`; `ISWidgetCraftLogicControl.startCraft`; `ISWidgetCraftLogicInputControl.createChildren`, `updateOutputItems`; `ISWidgetCraftLogicOutputProgress.updateProgressItems`, `createDynamicChildren`, `calculateLayout`; `ISWidgetInput.updateValues` | The TP stations' crafting windows: slot rules, popups, info blocks, tanks |
+| `ISMoveableSpriteProps.canPickUpMoveable`, `getInfoPanelFlagsPerTile`, `canPlaceMoveable` | Where stations may stand, and which can't be picked up |
+| `ISObjectClickHandler.doClickSpecificObject` | Clicking a station opens its info window |
+| `ISWorldMenuElements.ContextEntity` | Station icons in the right-click menu |
+| `ISCampingMenu.doLightFireOption`, the loot window's Light Fire and Put Out buttons | A banked fire |
+
+The Dairy, Vinegar and Salt mods also change three vanilla items' script fields at load: Yoghurt (its food values and the cup it leaves), Vinegar (the bottle it leaves) and the salt shaker (what it leaves). A mod that changes the same fields wins or loses by load order. Some vanilla lists are widened at load, keeping what was there: with Dairy, Make Cake Batter, Prepare Muffins, Make Bowl of Cereal, Churn Butter and Make Mildew Cure also take soured or scalded milk; and the magazine that teaches the forged pot also teaches the Forged Cauldron.
+
 ## Tuning
 
 The cauldron's size, heats and time constants, the fire's reach and the banked fire's numbers are at the top of `42/media/lua/shared/TraditionalPreservationCore/CauldronFluid.lua` (the cauldron) and `Fire.lua` (the fire). The places are at the top of `Weather.lua`, the fridge's temperature in `FluidAgeing.lua`. The build recipes are `42/media/scripts/entities/entity_TP_StoneHearth.txt` (the Stone Hearth) and `entity_Smokehouse_Chamber.txt`, the cauldron and its forge recipe `42/media/scripts/TraditionalPreservationCore_Cauldron.txt`; the cauldron's fit kit in `Cauldron.lua`, the Smokehouse's flue kits and times at the top of `Smokehouse.lua`.

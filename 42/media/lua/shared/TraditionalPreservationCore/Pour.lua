@@ -6,8 +6,9 @@
 --   Pour.after(name, fn)   fn(action) after it
 -- Handlers run as nested wraps would: of the befores the last added runs first, of the afters the first added.
 -- Pour.owner(fluidObject) is the item or world object a pour's source or target belongs to.
--- Outside the game (tests) there may be no transfer action: then nothing is wrapped.
+-- Wrapped through Wrap (late, guarded).
 require "Fluids/ISFluidTransferAction"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local Pour = {}
 
@@ -16,19 +17,17 @@ local befores, afters = { start = {}, stop = {}, complete = {} }, { start = {}, 
 local installed = false
 
 local function wrap(name)
-    local vanilla = ISFluidTransferAction[name]
-    ISFluidTransferAction[name] = function(self, ...)
+    Wrap.method("ISFluidTransferAction", name, function(vanilla, self, ...)
         local first = befores[name]
         for index = #first, 1, -1 do first[index](self) end
         local result = vanilla(self, ...)
         for _, fn in ipairs(afters[name]) do fn(self) end
         return result
-    end
+    end)
 end
 
 local function install()
     if installed then return end
-    if not ISFluidTransferAction then return end
     installed = true
     for _, name in ipairs(NAMES) do wrap(name) end
 end

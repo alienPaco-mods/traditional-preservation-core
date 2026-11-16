@@ -2,6 +2,8 @@
 --   local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 -- Everything here is opt-in: a test keeps any stub of its own that behaves differently on purpose.
 local H = {}
+-- Wraps go in at once in tests (TP Core's Wrap waits for the game to start otherwise).
+TPCoreTesting = true
 
 -- The core's Log asks this before it prints: tests run quiet unless one sets it.
 isDebugEnabled = isDebugEnabled or function() return false end

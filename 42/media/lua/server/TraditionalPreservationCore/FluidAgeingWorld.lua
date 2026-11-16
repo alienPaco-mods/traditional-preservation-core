@@ -10,6 +10,7 @@ local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Pour = require "TraditionalPreservationCore/Pour"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 Weather.record(function(now)
     Station.eachPlayer(function(player) FluidAgeing.lookIn(player:getInventory(), now) end)
@@ -35,22 +36,18 @@ end
 Pour.after("stop", lookAtBoth)
 Pour.after("complete", lookAtBoth)
 
-local vanillaMilk = ISMilkAnimal.milk
-function ISMilkAnimal:milk()
+Wrap.method("ISMilkAnimal", "milk", function(vanillaMilk, self)
     FluidAgeing.clearIfEmpty(self.bucket)
     return vanillaMilk(self)
-end
+end)
 
 -- Bleeding a carcass (vanilla's ISGatherBloodFromAnimal adds blood a tick at a time), for a mod that ages blood
 -- (Fish & Meat): a container holding none of the kind starts a new record, and fresh blood gathered onto treated
 -- blood makes the lot untreated, as pouring does. Nothing happens to a fluid no kind is registered for.
 require "TimedActions/Animals/ISGatherBloodFromAnimal"
-if ISGatherBloodFromAnimal then
-    local vanillaUpdateBucket = ISGatherBloodFromAnimal.updateBucket
-    function ISGatherBloodFromAnimal:updateBucket()
-        FluidAgeing.clearIfEmpty(self.bucket)
-        local result = vanillaUpdateBucket(self)
-        if self.bucket then FluidAgeing.untreat(self.bucket, getGameTime():getWorldAgeHours()) end
-        return result
-    end
-end
+Wrap.method("ISGatherBloodFromAnimal", "updateBucket", function(vanillaUpdateBucket, self)
+    FluidAgeing.clearIfEmpty(self.bucket)
+    local result = vanillaUpdateBucket(self)
+    if self.bucket then FluidAgeing.untreat(self.bucket, getGameTime():getWorldAgeHours()) end
+    return result
+end)

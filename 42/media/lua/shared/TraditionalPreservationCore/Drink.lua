@@ -7,9 +7,10 @@
 -- only if the key has run out at its first sick step, and then the rest of it counts; it starts the key.
 -- Auto-drink (thirst) takes only containers of Water-category fluid, so a registered Beverage is never drunk past this.
 --   Drink.cure(fluidName, { foodSickness = per litre, cooldown = key, hours = h })
--- Outside the game (tests) there may be no drink action: then nothing is wrapped.
+-- Wrapped through Wrap (late, guarded).
 local Cooldown = require "TraditionalPreservationCore/Cooldown"
 require "TimedActions/ISDrinkFluidAction"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local Drink = {}
 
@@ -50,8 +51,7 @@ function Drink.eased(before, after, opened, ready, start, sick)
 end
 
 local function wrap()
-    local vanilla = ISDrinkFluidAction.updateEat
-    ISDrinkFluidAction.updateEat = function(self, ...)
+    Wrap.method("ISDrinkFluidAction", "updateEat", function(vanilla, self, ...)
         local container = self.fluidContainer
         local before, any
         if container then before, any = Drink.amounts(container) end
@@ -67,13 +67,12 @@ local function wrap()
             if eased > 0 then stats:remove(CharacterStat.FOOD_SICKNESS, eased) end
         end
         return result
-    end
+    end)
 end
 
 -- Wraps ISDrinkFluidAction.updateEat, once for every mod: compare it with vanilla after a game update.
 local function install()
     if installed then return end
-    if not ISDrinkFluidAction then return end
     installed = true
     wrap()
 end

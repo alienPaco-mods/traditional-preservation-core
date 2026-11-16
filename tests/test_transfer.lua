@@ -2,7 +2,7 @@
 -- TraditionalPreservationCore: luajit tests/test_transfer.lua
 local H = dofile("tests/harness.lua")
 local check = H.check
-package.path = "42/media/lua/client/?.lua;" .. package.path
+package.path = "42/media/lua/client/?.lua;42/media/lua/shared/?.lua;" .. package.path
 package.preload["TimedActions/ISInventoryTransferAction"] = function() return true end
 
 local seen = {}

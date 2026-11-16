@@ -5,6 +5,7 @@
 -- the one wrap of vanilla's eat action (Portions.onEat), so a mod adds a handler instead of wrapping it again.
 local Action = require "TraditionalPreservationCore/Action"
 require "TimedActions/ISEatFoodAction"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local Portions = {}
 
@@ -77,8 +78,7 @@ local handlers = {}
 local installed = false
 
 local function wrap(name)
-    local vanilla = ISEatFoodAction[name]
-    ISEatFoodAction[name] = function(self, ...)
+    Wrap.method("ISEatFoodAction", name, function(vanilla, self, ...)
         local item = self.item
         local handler = item and handlers[item:getFullType()]
         if not handler then return vanilla(self, ...) end
@@ -87,14 +87,13 @@ local function wrap(name)
         local result = vanilla(self, ...)
         handler.after(item, container, kept)
         return result
-    end
+    end)
 end
 
 -- Wraps ISEatFoodAction.complete and serverStop, once for every mod: compare them with vanilla after a game update.
--- Outside the game (tests) there may be no eat action: then nothing is wrapped.
+-- Wrapped through Wrap (late, guarded).
 local function install()
     if installed then return end
-    if not ISEatFoodAction then return end
     installed = true
     wrap("complete")
     wrap("serverStop")

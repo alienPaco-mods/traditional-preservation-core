@@ -13,6 +13,7 @@ require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
 local Station = require "TraditionalPreservationCore/Station"
 local UI = require "TraditionalPreservationCore/UI"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local StationInfo = {}
 
@@ -85,10 +86,7 @@ local hooked = false
 local function hook()
     if hooked then return end
     hooked = true
-    local vanillaChildren = ISWidgetCraftLogicOutputProgress.createDynamicChildren
-    local vanillaLayout = ISWidgetCraftLogicOutputProgress.calculateLayout
-
-    function ISWidgetCraftLogicOutputProgress:createDynamicChildren()
+    Wrap.method("ISWidgetCraftLogicOutputProgress", "createDynamicChildren", function(vanillaChildren, self)
         vanillaChildren(self)
         for _, provider in ipairs(providers) do
             if provider(self.entity) then
@@ -99,11 +97,11 @@ local function hook()
                 return
             end
         end
-    end
+    end)
 
     -- Vanilla lays its rows out from the top and takes the height it is given, so the block goes under them: vanilla
     -- gets the height less the block's, and the widget is that much taller again.
-    function ISWidgetCraftLogicOutputProgress:calculateLayout(preferredWidth, preferredHeight)
+    Wrap.method("ISWidgetCraftLogicOutputProgress", "calculateLayout", function(vanillaLayout, self, preferredWidth, preferredHeight)
         local panel = self.tpInfo
         if not panel then return vanillaLayout(self, preferredWidth, preferredHeight) end
         preferredWidth = math.max(preferredWidth or 0, StationInfo.MIN_WIDTH)
@@ -115,7 +113,7 @@ local function hook()
         panel:setWidth(self:getWidth())
         panel:setHeight(extra)
         self:setHeight(self:getHeight() + extra)
-    end
+    end)
 end
 
 -- The last station asked about and its window logic: one window is open at a time, and the logic is costly to make.

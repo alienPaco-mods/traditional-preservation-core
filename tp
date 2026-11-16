@@ -133,7 +133,7 @@ CORE_HEADER = "-- Copied from ~/MODS/TraditionalPreservationCore/{source} by `tp
 
 
 # Core modules that only work from the required TP Core mod (they own tiles, a save key or a World): never copied.
-REQUIRED_ONLY = {"Action.lua", "Container.lua", "Log.lua", "Fire.lua", "Cauldron.lua", "Tiles.lua", "FireWorld.lua", "FireUI.lua", "CauldronUI.lua", "InfoWindow.lua", "Smokehouse.lua", "SmokehouseWorld.lua", "SmokehouseUI.lua"}
+REQUIRED_ONLY = {"Action.lua", "Container.lua", "Log.lua", "Wrap.lua", "Fire.lua", "Cauldron.lua", "Tiles.lua", "FireWorld.lua", "FireUI.lua", "CauldronUI.lua", "InfoWindow.lua", "Smokehouse.lua", "SmokehouseWorld.lua", "SmokehouseUI.lua"}
 
 
 def core_copies(mod):
@@ -368,8 +368,33 @@ def key_lint(root):
     return found
 
 
+WRAP_CALL = re.compile(r'Wrap\.method\(\s*"(\w+)",\s*"(\w+)"')
+# A vanilla function replaced in place: `function ISThing:name(` / `ISThing.name = function` (TP's own classes aren't IS*).
+RAW_WRAP = re.compile(r'^\s*(?:function\s+(IS\w+)[.:](\w+)\s*\(|(IS\w+)\.(\w+)\s*=\s*function\b)')
+
+
+def wrap_lint(root):
+    """Vanilla functions the mod replaces without TP Core's Wrap, and any wrapped twice in the series (every TP mod
+    is read: one function, one wrap), as 'path:line: reason' lines."""
+    found, seen = [], {}
+    for mod in all_mods():
+        for path in sorted((MODS / mod).glob("*/media/lua/**/*.lua")):
+            for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+                code = line.split("--", 1)[0]
+                for owner, name in WRAP_CALL.findall(code):
+                    seen.setdefault(f"{owner}.{name}", []).append(f"{mod}/{path.relative_to(MODS / mod)}:{number}")
+                raw = RAW_WRAP.match(code)
+                if raw and MODS / mod == root and not path.name.endswith("Dev.lua"):
+                    target = ".".join(part for part in raw.groups() if part)
+                    found.append(f"{path.relative_to(root)}:{number}: {target} replaced in place: use Wrap.method")
+    for target, places in sorted(seen.items()):
+        if len(places) > 1 and any(place.startswith(root.name + "/") for place in places):
+            found.append(f"{target} is wrapped {len(places)} times ({', '.join(places)}): one Wrap a function")
+    return found
+
+
 def lint_failed(root):
-    found = kahlua_lint(root) + translation_lint(root) + key_lint(root)
+    found = kahlua_lint(root) + translation_lint(root) + key_lint(root) + wrap_lint(root)
     for entry in found:
         print(f"  FAIL {root.name}/{entry}")
     return bool(found)

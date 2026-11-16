@@ -9,6 +9,7 @@
 -- window: each takes the element to draw on and its layout { padding, labelWidth, barHeight }.
 require "ISUI/ISCollapsableWindow"
 local Station = require "TraditionalPreservationCore/Station"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local InfoWindow = ISCollapsableWindow:derive("TraditionalPreservationCoreInfoWindow")
 
@@ -196,8 +197,8 @@ end
 
 -- Clicking a station opens its info window, as clicking a door opens it. test(object) says whether the object is
 -- the mod's station, and open(playerObj, object) opens the window. Not while paused, aiming or out of reach:
--- vanilla's own checks for a click. Wraps ISObjectClickHandler.doClickSpecificObject once for every mod; it is in
--- vanilla's server folder, which loads after this one, so it is wrapped once the game has started.
+-- vanilla's own checks for a click. Wraps ISObjectClickHandler.doClickSpecificObject once for every mod, through
+-- Wrap (late, guarded: it is in vanilla's server folder, which loads after this one).
 local clicks = {}
 
 local function canClick(object, playerObj)
@@ -207,10 +208,7 @@ local function canClick(object, playerObj)
 end
 
 local function wrapClickHandler()
-    if not ISObjectClickHandler or ISObjectClickHandler.tpInfoClick then return end
-    local vanillaClickObject = ISObjectClickHandler.doClickSpecificObject
-    ISObjectClickHandler.tpInfoClick = true
-    function ISObjectClickHandler.doClickSpecificObject(object, playerNum, playerObj)
+    Wrap.method("ISObjectClickHandler", "doClickSpecificObject", function(vanillaClickObject, object, playerNum, playerObj)
         if object then
             for _, click in ipairs(clicks) do
                 if click.test(object) then
@@ -221,12 +219,12 @@ local function wrapClickHandler()
             end
         end
         return vanillaClickObject(object, playerNum, playerObj)
-    end
+    end)
 end
 
 function InfoWindow.clickOpens(test, open)
     assert(type(test) == "function" and type(open) == "function", "InfoWindow.clickOpens: test and open (functions) needed")
-    if #clicks == 0 then Events.OnGameStart.Add(wrapClickHandler) end
+    if #clicks == 0 then wrapClickHandler() end
     table.insert(clicks, { test = test, open = open })
 end
 

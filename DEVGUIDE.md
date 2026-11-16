@@ -24,6 +24,8 @@ The examples run `tp`, the script at the top of this folder (`TraditionalPreserv
    what Kahlua lacks, translation JSON the game would refuse (not valid, or a key given twice), and translation keys
    written whole in Lua that no EN file has (the mod's, TP Core's or the game's; a key finished with `..` isn't
    checked). The game's files are found under `TP_GAME` (default the Steam install); without them keys are skipped.
+   It also fails on a vanilla function replaced in place instead of through `Wrap`, and on a function two places in
+   the series wrap.
 3. `tp install <Mod>`: runs the same checks again and copies the mod only if they all pass.
 4. Restart the game (Lua or scripts changed) or reload to the main menu (translations only), then follow the in-game test steps.
 5. Commit in the mod's repo.
@@ -88,6 +90,7 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 | `H.installModData()` | `ModData.getOrCreate`, one table per key in `H.modData`. |
 | `H.installEvents()`, `H.fire(name, ...)` | `Events.<Any>.Add`, and firing the handlers added. |
 | `H.useModPaths()` | `require` finds the mod's own Lua and TP Core's as the game does, e.g. `require "TraditionalPreservationCore/Weather"`. Also runs `H.preloadVanilla()`. |
+| `TPCoreTesting` | Set by the harness: `Wrap` puts a wrap in at once instead of waiting for the game to start, so a test stubs the vanilla function before requiring the file that wraps it. A stand-in missing a function the code wraps is skipped, as in game; give the stand-in the method. |
 | `H.preloadVanilla()` | The vanilla files TP code `require`s before wrapping them (`H.VANILLA`) load as nothing, so the action's global stays the test's stub, or nil and the wrap is skipped. A new plain `require` of a vanilla file goes in `H.VANILLA`. |
 | `H.installGetText()` | `getText` with the mod's real EN translations. Notes the game formatter's `%` errors in `H.textWarnings`. |
 | `H.player{ x, y, z, outside }` | A player for a console or a menu: a square, an inventory, and the full types it was given in `.given`. |
@@ -144,7 +147,7 @@ line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helper
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a stack's fire counters),
-`.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
+`.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
 `ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
@@ -371,8 +374,14 @@ the table: `FluidTreat.REFUSALS`, `Season.REFUSALS`, `FireConnect.REFUSALS`, `Sm
 `F.REFUSALS` and `F.WORDS`, Vinegar's `V.PUMP_REFUSALS`. So does a key written more than once in a module. Tests
 compare the full key, so they check the one the translation file holds.
 
-**Vanilla wraps.** A wrap saves the vanilla function in a local (`vanilla...`), replaces it, and calls the saved
-one for anything that isn't the mod's. Its comment says why vanilla's isn't enough. After every B42 patch, check
+**Vanilla wraps.** Every wrap goes through Core's `Wrap.method(owner, name, handler)`: handler(vanilla, ...) gets
+the call's arguments and calls `vanilla(...)` for anything that isn't the mod's. Its comment says why vanilla's isn't
+enough. `Wrap` puts it in late (OnGameStart; OnGameBoot on a dedicated server, which never fires OnGameStart), so a
+mod that replaces the function outright as its file loads is wrapped too instead of wiping TP's out. In normal play
+the handler is guarded: if it fails, vanilla still runs and the error is printed once; vanilla's own call (or another
+mod's version of the function) is never inside the guard, so its errors are raised with their own message. Debug mode
+runs the handler bare, so every error shows where it happened with its full trace. `tp test` fails on a vanilla
+function replaced in place (`function ISThing:name(`) and on a function wrapped twice anywhere in the series. After every B42 patch, check
 each one below against the new vanilla Lua; the copied add loop in `UI.slotRules` most
 of all:
 
@@ -381,16 +390,15 @@ of all:
 | `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, Yeast, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
 | `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; Fish, Vinegar, Yeast, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
-| `ISWidgetCraftLogicControl.startCraft` | core `UI.slotRules` with `recipeRefusal` (Fish & Meat) | Craft refuses stored inputs the selected recipe can't take |
+| `ISWidgetCraftLogicControl.startCraft` | core `SlotRules`: `UI.slotRules` with `recipeRefusal` (Fish & Meat), `UI.craftRefusal` (Vinegar) | Craft refuses stored inputs the selected recipe can't take; Craft on a vessel that can't run says why, and a second press doesn't queue another run |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `Placement` (one wrap for every rule): `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish, the Smokehouse), `UI.keepDoorsFree` (every TP station), `UI.offAppliances` (Dairy's crock) | Outdoor stations can't be carried indoors (or into a room); a station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door (the build menu asks `TraditionalPreservationCore.doorFits`, `OnIsValid`); table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square; its build ghost asks only on a solid square, so the build recipe asks `TraditionalPreservationCore.offAppliances`) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles`, Fish & Meat `...Stock` | Empty shakers and the right bottles come back; a boiled bone smashes into boiled pieces (without giving vanilla's Smash Bone an OnCreate, which would replace another mod's) |
 | `ISCraftLogicPanel.createChildren` | Vinegar `...UI` | Fluid tank columns in the vessel's window |
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
-| `ISWidgetCraftLogicControl.startCraft` | Vinegar `...UI` | Says why the vessel can't start, and stops a second run |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why |
-| `ISObjectClickHandler.doClickSpecificObject` (wrapped on `OnGameStart`) | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
+| `ISObjectClickHandler.doClickSpecificObject` | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
@@ -403,12 +411,14 @@ of all:
 | `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Clay Jar or Clay Pot back; a crock's first portion opens it |
 | `ISCampingMenu.doLightFireOption` | core `FireUI` | A banked Stone Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `FireLootControls` | The same in the loot window's buttons |
+| `ISItemSlotRemoveAction.complete` | Salt `...Brine` | Brine taken out of the vat turns back into fluid in its bucket |
 | `ISTakeGenerator.isValid` | FuelBarrel `ISFuelBarrelHose` | A generator with a barrel can't be picked up |
-| `ISGeneratorInfoWindow.getRichText` | FuelBarrel `...Menu` | Barrel level in the generator's info |
+| `ISGeneratorInfoWindow.getRichText` | FuelBarrel `...Menu` | Barrel level in the generator's info (FuelBarrel is not a TP mod and wraps directly) |
 
-Two mods wrapping the same function each call the one before, so load order doesn't matter. A new wrap goes in this
-table. **When a second mod needs a vanilla function a first one wraps, the wrap moves to the core** and both add
-handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`, `Drink`): one place to compare with vanilla after a game update.
+A new wrap goes in this table. **One function has one wrap in the series: when a second mod needs a vanilla function
+a first one wraps, the wrap moves to the core** and both add handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`,
+`Drink`, `SlotRules`' layers): one place to compare with vanilla after a game update. Registering the same function
+again replaces the handler (a file reloaded in debug mode); it never wraps twice.
 The handler order differs: Transfer runs its handlers in the order added, Pour and Handcraft as nested wraps would
 (the last added's before first). Each module's header says which; a handler that depends on another's must not
 assume the other order.
@@ -492,7 +502,9 @@ What a refactor (and new code) aims for. `FluidAgeing.lua` follows every rule an
 13. **No guard for what the engine always has.** `x.method and x:method()` or a `pcall` around an engine call is for
     a real second kind only (a server or a test with no inventory menu, a non-food item that has no spices); say
     which in a comment. A guard that only covers a test stand-in missing the method is wrong: give the stand-in the
-    method. A `pcall` that puts something back before raising the error again (Salt's tooltip draw) is a real case.
+    method. A `pcall` that puts something back before raising the error again (Salt's tooltip draw) is a real case,
+    and so is `Wrap`'s guard around a TP handler, in normal play only (vanilla and other mods' code run outside it,
+    and debug mode runs bare).
     Check the class in the Umbrella stubs (and `decompile.sh` for whether the call can fail) before guarding.
 
 ## FAQ: why the series does it this way

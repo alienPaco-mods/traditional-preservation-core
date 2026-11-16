@@ -13,6 +13,7 @@ require "TimedActions/TPFireConnect"
 local UI = require "TraditionalPreservationCore/UI"
 local Fire = require "TraditionalPreservationCore/Fire"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local FireUI = {}
 
@@ -84,13 +85,12 @@ end
 
 -- Vanilla offers to light a fire that is out: a banked one's is, so Put out Fire takes its place there (in the
 -- right-click menu and the loot window's controller menu), and it unbanks.
-local doLightFireOption = ISCampingMenu.doLightFireOption
-function ISCampingMenu.doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
+Wrap.method("ISCampingMenu", "doLightFireOption", function(doLightFireOption, playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
     if instanceof(target, "IsoFireplace") and Fire.isBanked(target) then
         return context:addOption(getText("ContextMenu_Put_out_fire"), playerObj, onFireAction, target, "out")
     end
     return doLightFireOption(playerObj, context, worldobjects, hasFuel, fuelInfo, target, ...)
-end
+end)
 
 local FireWindow -- below
 

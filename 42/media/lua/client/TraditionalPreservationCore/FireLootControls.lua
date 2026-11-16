@@ -7,6 +7,7 @@ require "ISUI/LootWindow/Handlers/LightFuelOption"
 require "ISUI/LootWindow/Handlers/PutOut"
 local Fire = require "TraditionalPreservationCore/Fire"
 local FireUI = require "TraditionalPreservationCore/FireUI"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 ISLootWindowObjectControlHandler_TPFireTend = ISLootWindowObjectControlHandler:derive("ISLootWindowObjectControlHandler_TPFireTend")
 local Handler = ISLootWindowObjectControlHandler_TPFireTend
@@ -54,27 +55,23 @@ local function isBanked(object)
     return object ~= nil and instanceof(object, "IsoFireplace") and Fire.isBanked(object)
 end
 
-local LightFire = ISLootWindowObjectControlHandler_LightFireOption
-local lightFireVisible = LightFire.shouldBeVisible
-function LightFire:shouldBeVisible()
+Wrap.method("ISLootWindowObjectControlHandler_LightFireOption", "shouldBeVisible", function(lightFireVisible, self)
     if isBanked(self.object) then return false end
     return lightFireVisible(self)
-end
+end)
 
-local PutOut = ISLootWindowObjectControlHandler_PutOut
-local putOutVisible, putOutPerform = PutOut.shouldBeVisible, PutOut.perform
-function PutOut:shouldBeVisible()
+Wrap.method("ISLootWindowObjectControlHandler_PutOut", "shouldBeVisible", function(putOutVisible, self)
     if isBanked(self.object) then return true end
     return putOutVisible(self)
-end
+end)
 
-function PutOut:perform()
+Wrap.method("ISLootWindowObjectControlHandler_PutOut", "perform", function(putOutPerform, self)
     if isBanked(self.object) then
         if not isGamePaused() then FireUI.fireAction(self.playerObj, self.object, "out") end
         return
     end
     return putOutPerform(self)
-end
+end)
 
 -- Right-hand buttons are laid out from the right in list order, so just after Put out Fire puts it beside it.
 ISLootWindowContainerControls.AddHandler(Handler, true)

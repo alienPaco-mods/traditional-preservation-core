@@ -3,6 +3,7 @@
 -- with the consumed icon, red when too little is carried. Wraps ISWidgetInput.updateValues, which runs every frame.
 require "Entity/ISUI/CraftRecipe/ISWidgetInput"
 local Charge = require "TraditionalPreservationCore/Charge"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local function relabel(widget)
     local primary, script = widget.primary, widget.inputScript
@@ -27,14 +28,7 @@ local function relabel(widget)
     end
 end
 
-local function install()
-    if not ISWidgetInput or ISWidgetInput.tpChargeWrapped then return end
-    ISWidgetInput.tpChargeWrapped = true
-    local vanillaUpdateValues = ISWidgetInput.updateValues
-    function ISWidgetInput:updateValues()
-        vanillaUpdateValues(self)
-        relabel(self)
-    end
-end
-
-install()
+Wrap.method("ISWidgetInput", "updateValues", function(vanillaUpdateValues, self)
+    vanillaUpdateValues(self)
+    relabel(self)
+end)

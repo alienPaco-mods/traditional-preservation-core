@@ -51,6 +51,7 @@ Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique
 [h2]Good to know[/h2]
 [list]
 [*]On its own the mod only adds the Stone Hearth, the Forged Cauldron (and its forge recipe) and the Smokehouse. It changes no vanilla recipe, item or loot table.
+[*]Compatibility: the TP mods wrap some vanilla Lua functions (crafting windows, item transfers, pours, eating, tooltips). Every wrap calls the function it replaced and goes in after all mods have loaded, so most mods that touch the same functions keep working. The full list is in the README.
 [*]The tiledef number 5173 must be unique among your active mods.
 [/list]
 

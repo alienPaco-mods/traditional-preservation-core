@@ -6,8 +6,9 @@
 --                                    recipeData, kept) runs once vanilla has crafted, for a craft with recipe data
 --   Handcraft.after(after)           the same with nothing to keep
 -- Handlers run as nested wraps would: the last one added is outermost, so its before runs first and its after last.
--- Outside the game (tests) there may be no hand craft action: then nothing is wrapped.
+-- Wrapped through Wrap (late, guarded).
 require "Entity/TimedActions/ISHandcraftAction"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local Handcraft = {}
 
@@ -16,10 +17,8 @@ local installed = false
 
 local function install()
     if installed then return end
-    if not ISHandcraftAction then return end
     installed = true
-    local vanillaPerformRecipe = ISHandcraftAction.performRecipe
-    function ISHandcraftAction:performRecipe()
+    Wrap.method("ISHandcraftAction", "performRecipe", function(vanillaPerformRecipe, self)
         local kept = {}
         for index = #handlers, 1, -1 do
             local before = handlers[index].before
@@ -31,7 +30,7 @@ local function install()
             for index, handler in ipairs(handlers) do handler.after(self, recipeData, kept[index]) end
         end
         return result
-    end
+    end)
 end
 
 function Handcraft.around(before, after)

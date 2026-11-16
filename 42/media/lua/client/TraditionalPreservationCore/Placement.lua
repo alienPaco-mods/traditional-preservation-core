@@ -1,8 +1,9 @@
 -- Traditional Preservation core: where a station may be put down, and when it may be picked up. Reached through UI
 -- (UI.keepInPlace, UI.outdoorOnly, UI.notInRooms, UI.keepDoorsFree, UI.offAppliances). Wraps
--- ISMoveableSpriteProps.canPickUpMoveable, getInfoPanelFlagsPerTile and canPlaceMoveable, once each for every mod:
--- compare them with vanilla after a game update.
+-- ISMoveableSpriteProps.canPickUpMoveable, getInfoPanelFlagsPerTile and canPlaceMoveable through Wrap (late,
+-- guarded), once each for every mod: compare them with vanilla after a game update.
 require "Moveables/ISMoveableSpriteProps"
+local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local Appliances = require "TraditionalPreservationCore/Appliances"
 
@@ -23,19 +24,16 @@ local function mustStay(object)
 end
 
 local function wrapPickUp()
-    local vanillaCanPickUp = ISMoveableSpriteProps.canPickUpMoveable
-    local vanillaInfoFlags = ISMoveableSpriteProps.getInfoPanelFlagsPerTile
-
-    function ISMoveableSpriteProps:canPickUpMoveable(character, square, object)
+    Wrap.method("ISMoveableSpriteProps", "canPickUpMoveable", function(vanillaCanPickUp, self, character, square, object)
         if mustStay(object) then return false end
         return vanillaCanPickUp(self, character, square, object)
-    end
+    end)
 
-    function ISMoveableSpriteProps:getInfoPanelFlagsPerTile(square, object, player, mode)
+    Wrap.method("ISMoveableSpriteProps", "getInfoPanelFlagsPerTile", function(vanillaInfoFlags, self, square, object, player, mode)
         vanillaInfoFlags(self, square, object, player, mode)
         local why = mode == "pickup" and mustStay(object)
         if why then InfoPanelFlags[why] = true end
-    end
+    end)
 end
 
 function Placement.keepInPlace(test)
@@ -49,13 +47,12 @@ local placeRules = {}
 
 local function placeRule(fits)
     if #placeRules == 0 then
-        local vanillaCanPlace = ISMoveableSpriteProps.canPlaceMoveable
-        function ISMoveableSpriteProps:canPlaceMoveable(character, square, item)
+        Wrap.method("ISMoveableSpriteProps", "canPlaceMoveable", function(vanillaCanPlace, self, character, square, item)
             for _, ruleFits in ipairs(placeRules) do
                 if not ruleFits(self.spriteName, square) then return false end
             end
             return vanillaCanPlace(self, character, square, item)
-        end
+        end)
     end
     table.insert(placeRules, fits)
 end

@@ -239,7 +239,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
      same id adds fields, so rules go in shared Lua and the menu in client Lua. Its modData is its own table under its
      id in `tpFire` (`Fire.partModData(modData, id)`; the cauldron's is `Cauldron.cauldronModData(modData)`, and
      `Cauldron.of(fire)` brings it up to now). `Fire.attachmentOf(fire)` gives the attachment and its modData;
-     `Fire.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty).
+     `Fire.canRemove(fire)` refuses while the fire burns, then asks the attachment (the cauldron: only empty);
+     its `removeText` gives Remove's hover for its own reasons.
      `Fire.fireModDataNow(fire)` is the fire's own modData brought up to now. Each field's arguments are in
      `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses one without an
      id and a field given again as something else. Fit / Remove are Core's (`TPFireFit`, by the attachment's `fit`).
@@ -273,7 +274,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
      any with no id; `Fire.fittedNear(square, id)` those near). A fitted one shows as its attachment's `display` says
      (icon, title, Info row, Bank / Stoke icons; its kind's if left out), a bare one as its kind's: the same fire with
      nothing fitted, in the same state table (`tpFire`). An attachment draws itself on the fire with its `sprite`
-     and optional `overlay` (the cauldron's: `StoneHearth.cauldronSprite`, `StoneHearth.liquidOverlay`). `Fire.flueSideTo(fire, square)` is the side a square is on (nil for the
+     and optional `overlay` (the cauldron's: `StoneHearth.cauldronSprite`, `StoneHearth.liquidOverlay`). Its tiles are whole-hearth tiles, the stone with it fitted;
+     a mod's live in its own tileset and become Stone Hearth tiles with `StoneHearth.fittedTiles(id, sprites, faces)` in
+     shared Lua (tracked, facing and door known, and shown fitted when put down with nothing noted; the cauldron's go
+     the same way). `Fire.flueSideTo(fire, square)` is the side a square is on (nil for the
      door's side or not beside it), `Fire.flueSquare(fire, side)` the square on a side; `FireConnect.FLUE_SIDES`
      matches the tile builder's.
    - `FluidAgeing.register{ process, rate, turnHours, spoilHours, fresh, spoiled, states, scaldHeat, sealed, ... }`: a

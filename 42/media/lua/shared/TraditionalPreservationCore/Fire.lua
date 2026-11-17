@@ -157,6 +157,8 @@ end
 --                                         = true } }; Remove gives the items back, all but lost ones
 --   fitHelp, fitIcon                      client: Fit's tooltip line (a text key) and Fit / Remove's icon path
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
+--   removeText                            client: optional, { reason = text key } for Remove's hover; any other
+--                                         reason reads "Empty it first"
 --   look(part, fire)                      the look its tile shows (the cauldron's: Empty, Full, Hot)
 --   sprite(look, face, burning, banked)   its tile by look, facing and fire, the fire's glow drawn in it (the
 --                                         cauldron's StoneHearth.cauldronSprite)

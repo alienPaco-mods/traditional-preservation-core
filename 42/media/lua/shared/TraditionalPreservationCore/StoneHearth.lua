@@ -62,9 +62,21 @@ function StoneHearth.bareFace(spriteName)
     return spriteName and BARE_TILES.face[spriteName]
 end
 
+-- What is fitted shows as whole-hearth tiles of its own: the cauldron's here, a mod's in its own tileset (Salt's pan).
+-- StoneHearth.fittedTiles(id, sprites, faces) makes them Stone Hearth tiles: sprites is their list, faces their facing
+-- by name (Station.kinds' tiles.face). Called in shared Lua, before FireWorld's tracker reads Fire.sprites. A tile
+-- with nothing noted (a Stone Hearth picked up and put down) shows that id fitted.
+local FITTED_TILES = {}   -- spriteName -> { id, face }
+
+-- The facing of any fitted tile, whatever is fitted; nil for any other tile.
+function StoneHearth.fittedFace(spriteName)
+    local tile = spriteName and FITTED_TILES[spriteName]
+    return tile and tile.face
+end
+
 -- The facing of any Stone Hearth tile, fitted or not.
 function StoneHearth.face(spriteName)
-    return StoneHearth.bareFace(spriteName) or StoneHearth.cauldronFace(spriteName)
+    return StoneHearth.bareFace(spriteName) or StoneHearth.fittedFace(spriteName)
 end
 
 -- With a connection that takes the smoke (smoke true) the hole is never open: the smoke must go up the flue.
@@ -81,27 +93,45 @@ function StoneHearth.bareGlow(lit, banked, smoke, hole, face)
     return base and Tiles.PREFIX .. (base + face) or nil
 end
 
--- Every Stone Hearth tile, fitted or not.
+-- Every Stone Hearth tile, fitted or not (the kind's sprites: fitted tiles added later join the same list).
 StoneHearth.SPRITES = {}
 local STONE_TILES = {}
-for _, list in ipairs({ StoneHearth.CAULDRON_SPRITES, StoneHearth.BARE_SPRITES }) do
-    for _, name in ipairs(list) do
-        table.insert(StoneHearth.SPRITES, name)
+
+-- The Stone Hearth's door need their front tile free (Doors), every look of each.
+StoneHearth.FACE_NAMES = { [0] = "S", [1] = "E" }   -- a face number (StoneHearth.face, Smokehouse.chamberOn) as Doors names it
+
+local function addStoneTiles(sprites)
+    local doorFacings = {}
+    for _, name in ipairs(sprites) do
+        if not STONE_TILES[name] then table.insert(StoneHearth.SPRITES, name) end
         STONE_TILES[name] = true
+        doorFacings[name] = StoneHearth.FACE_NAMES[StoneHearth.face(name)]
     end
+    Doors.register(doorFacings)
 end
+
+function StoneHearth.fittedTiles(id, sprites, faces)
+    for _, name in ipairs(sprites) do
+        assert(faces[name], "StoneHearth.fittedTiles " .. tostring(id) .. ": no facing for " .. name)
+        FITTED_TILES[name] = { id = id, face = faces[name] }
+    end
+    addStoneTiles(sprites)
+end
+
+-- The id of what a fitted tile shows fitted, or nil.
+function StoneHearth.fittedByTile(spriteName)
+    local tile = spriteName and FITTED_TILES[spriteName]
+    return tile and tile.id
+end
+
+StoneHearth.fittedTiles(StoneHearth.CAULDRON, StoneHearth.CAULDRON_SPRITES, CAULDRON_TILES.face)
+addStoneTiles(StoneHearth.BARE_SPRITES)
 
 -- Any Stone Hearth, fitted or not.
 function StoneHearth.isStoneHearth(isoObject)
     local sprite = isoObject and isoObject:getSprite()
     return sprite ~= nil and STONE_TILES[sprite:getName()] == true and instanceof(isoObject, "IsoFireplace")
 end
-
--- The Stone Hearth's door need their front tile free (Doors), every look of each.
-StoneHearth.FACE_NAMES = { [0] = "S", [1] = "E" }   -- a face number (StoneHearth.face, Smokehouse.chamberOn) as Doors names it
-local doorFacings = {}
-for _, name in ipairs(StoneHearth.SPRITES) do doorFacings[name] = StoneHearth.FACE_NAMES[StoneHearth.face(name)] end
-Doors.register(doorFacings)
 
 -- Stove or oven: where a food is cooked, which picks what shows in the hole. A stove food (a pot on the hob: stews,
 -- soups) or a fluid sets the forged pot in it; anything else is oven food (clay pots, roasting pans), under the lid.
@@ -163,18 +193,12 @@ local function showing(fire, fireModData, burning, banked)
         StoneHearth.bareGlow(burning, banked, smoke, smoke and StoneHearth.LID or hole, face)
 end
 
--- A cauldron tile with nothing noted (a Stone Hearth picked up and put down: its modData doesn't go with it) is the
--- cauldron fitted.
-local function fittedByTile(spriteName)
-    if StoneHearth.cauldronFace(spriteName) then return StoneHearth.CAULDRON end
-end
-
 StoneHearth.kind = Fire.kind({
     id = "stoneHearth",
     is = StoneHearth.isStoneHearth,
     face = StoneHearth.face,
     sprites = StoneHearth.SPRITES,
-    fittedByTile = fittedByTile,
+    fittedByTile = StoneHearth.fittedByTile,
     showing = showing,
     -- How a bare Stone Hearth shows in its menu and Info window, its fire banked or burning up again, and its help.
     display = { icon = "media/textures/Item_TPStoneHearth.png", title = "IGUI_CraftingWindow_TPStoneHearth",

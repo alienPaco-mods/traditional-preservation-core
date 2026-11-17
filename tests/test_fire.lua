@@ -526,4 +526,22 @@ check("banked hours count apart", near(fire.bankedHours, 8) and near(fire.stoked
 check("banked more than the grace ends the session", fire.session == nil)
 Fire.logFire(fire, 41, Fire.BANKED, 50)
 check("banking never starts one", fire.session == nil and fire.fireId == 10)
+
+-- A mod's attachment with whole-hearth tiles of its own (Salt's pan)
+local Doors = require "TraditionalPreservationCore/Doors"
+check("the cauldron's tiles are fitted tiles", StoneHearth.fittedByTile(StoneHearth.cauldronSprite("Hot", 1)) == Cauldron.ID
+    and StoneHearth.fittedFace(StoneHearth.cauldronSprite("Empty", 0)) == 0 and StoneHearth.fittedByTile(bareTile) == nil)
+local before = #StoneHearth.SPRITES
+StoneHearth.fittedTiles("testPan", { "testmod_01_0", "testmod_01_1" }, { testmod_01_0 = 0, testmod_01_1 = 1 })
+instanceof = instanceof or function(object, name) return type(object) == "table" and object.class == name end
+local panFire = { class = "IsoFireplace", getModData = function() return {} end, getSprite = function() return { getName = function() return "testmod_01_1" end } end }
+check("a mod's fitted tiles are Stone Hearth tiles, with their facing and door",
+    #StoneHearth.SPRITES == before + 2 and StoneHearth.face("testmod_01_1") == 1 and StoneHearth.cauldronFace("testmod_01_1") == nil
+    and StoneHearth.isStoneHearth(panFire) and Doors.facingOf("testmod_01_1") == "E")
+local tracked = {}
+for _, name in ipairs(Fire.sprites()) do tracked[name] = true end
+check("tracked as fires, and with nothing noted the tile shows its attachment fitted",
+    tracked.testmod_01_0 and Fire.attachedTo(panFire) == "testPan")
+StoneHearth.fittedTiles("testPan", { "testmod_01_0" }, { testmod_01_0 = 0 })
+check("given again, a tile isn't listed twice", #StoneHearth.SPRITES == before + 2)
 H.done()

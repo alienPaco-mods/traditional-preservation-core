@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.8
+- **A mod's own attachment tiles** (2026-11-17, for Salt's salt pan): `StoneHearth.fittedTiles(id, sprites, faces)` makes an attachment's whole-hearth tiles, in its mod's own tileset, Stone Hearth tiles: tracked as fires, their facing and door known, and shown with that attachment fitted when put down with nothing noted (`StoneHearth.fittedFace`, `StoneHearth.fittedByTile`). The cauldron's tiles go the same way; nothing changes for it. An attachment's `removeText` (client) gives Remove's hover for its own refusals; any other still reads "Empty it first". test_fire. DEVGUIDE.
+
 ## 0.1.7
 - **The Stone Hearth is built of stone** (2026-11-16): 12 Stone Blocks (vanilla's cut mason blocks, as its tiles draw it), 2 Clay and a mason's trowel kept, Masonry 2; was 8 Clay Bricks, which matched neither its look nor its name. `TPC.kit("stone")` and `TPC.kit()` follow (test_console). README, guide 6, DEVHELP, Workshop text.
 

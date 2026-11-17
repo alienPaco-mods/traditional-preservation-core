@@ -77,11 +77,12 @@ Right-click it. Its **Stone Hearth** submenu has:
 | **Stone Hearth Info** | A small window: the fire, the fuel, a note. **Clicking the Stone Hearth opens it too** |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
+| With Salt: **Fit Salt Pan** | Beds a 30 L salt pan in clay over the hole, to boil brine down (Salt's guide). One thing fitted at a time: the cauldron or the pan |
 | **Connect the Stone Hearth** | With a Smokehouse beside it: lays the flue (chapter 6) |
 
 **Keep the door clear.** The tile in front of the Stone Hearth's door must be free: it won't build or go down with a crate, a fence, a wall on that edge or another station there, and nothing of the Traditional Preservation mods can be built or put down on that tile afterwards. Picked up, it turns between its two facings as you put it down.
 
-**You can't pick a Stone Hearth up** while it burns (it's too hot), while a cauldron is fitted, or while it's joined to a Smokehouse.
+**You can't pick a Stone Hearth up** while it burns (it's too hot), while a cauldron or salt pan is fitted, or while it's joined to a Smokehouse.
 
 ---
 

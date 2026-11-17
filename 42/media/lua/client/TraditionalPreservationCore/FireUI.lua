@@ -181,7 +181,8 @@ local function addRemoveOption(menu, playerObj, fire, attachment)
     local lines = { say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Fire.fitBack(attachment)), kitToolName(attachment.fit)) }
     local ok, why = Fire.canRemove(fire)
     if not ok then
-        table.insert(lines, getText(why == "Burning" and "IGUI_TraditionalPreservationCore_FireBurning" or "IGUI_TraditionalPreservationCore_RemoveFull"))
+        table.insert(lines, getText(why == "Burning" and "IGUI_TraditionalPreservationCore_FireBurning"
+            or attachment.removeText and attachment.removeText[why] or "IGUI_TraditionalPreservationCore_RemoveFull"))
     elseif not select(2, kitInReach(playerObj, attachment.fit)) then
         table.insert(lines, say("IGUI_TraditionalPreservationCore_KitMissing", kitToolName(attachment.fit)))
     end

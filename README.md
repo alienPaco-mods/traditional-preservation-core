@@ -18,9 +18,9 @@ A knee-high block of grey dressed stone in courses under one overhanging slab, f
 
 **The hole** shows what is cooking (`StoneHearth.holeLook`, by the stove or oven flag of what is inside, `StoneHearth.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
 
-**Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (fire and fuel, with a note; clicking it opens it too), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** and, with a Smokehouse beside it, **Connect the Stone Hearth**.
+**Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (fire and fuel, with a note; clicking it opens it too), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** (and **Fit Salt Pan** with Salt) and, with a Smokehouse beside it, **Connect the Stone Hearth**.
 
-**Two slots** (`Fire.attach`, `Fire.connect`): one thing fitted over the hole (the Forged Cauldron) and one thing joined to its back or a flank (the Smokehouse's flue), each free of the other. A Stone Hearth can't be picked up while it burns (too hot), while something is fitted or while something is joined; the pick-up cursor says so.
+**Two slots** (`Fire.attach`, `Fire.connect`): one thing fitted over the hole (the Forged Cauldron, or Salt's salt pan: a mod's attachment brings its own whole-hearth tiles through `StoneHearth.fittedTiles`) and one thing joined to its back or a flank (the Smokehouse's flue), each free of the other. A Stone Hearth can't be picked up while it burns (too hot), while something is fitted or while something is joined; the pick-up cursor says so.
 
 ## The Forged Cauldron
 

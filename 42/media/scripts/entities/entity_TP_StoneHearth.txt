@@ -45,7 +45,7 @@ module TraditionalPreservationCore
             {
                 item 1 tags[base:masonstrowel] mode:keep flags[Prop1;MayDegradeLight],
                 item 12 [Base.StoneBlock],
-                item 2 [Base.Clay] flags[DontRecordInput],
+                item 12 [Base.Clay] flags[DontRecordInput],
             }
         }
     }

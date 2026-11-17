@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.9
+- **The Stone Hearth takes 12 Clay** (2026-11-17), was 2: 12 Stone Blocks laid in clay need more than two lumps of mortar. `TPC.kit("stone")` and `TPC.kit()` give 12 (test_console). README (its heading also read 0.1.7, now 0.1.9), guide 6, DEVHELP, Workshop text.
+
 ## 0.1.8
 - **A mod's own attachment tiles** (2026-11-17, for Salt's salt pan): `StoneHearth.fittedTiles(id, sprites, faces)` makes an attachment's whole-hearth tiles, in its mod's own tileset, Stone Hearth tiles: tracked as fires, their facing and door known, and shown with that attachment fitted when put down with nothing noted (`StoneHearth.fittedFace`, `StoneHearth.fittedByTile`). The cauldron's tiles go the same way; nothing changes for it. An attachment's `removeText` (client) gives Remove's hover for its own refusals; any other still reads "Empty it first". test_fire. DEVGUIDE.
 

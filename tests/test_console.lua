@@ -17,7 +17,7 @@ run("kit")
 local counts = {}
 for _, fullType in ipairs(player.given) do counts[fullType] = (counts[fullType] or 0) + 1 end
 check("kit gives a Stone Hearth and Fit Cauldron's kit", counts["Base.MasonsTrowel_Wood"] == 1 and counts["Base.StoneBlock"] == 12
-    and counts["Base.Clay"] == 2 and counts["TraditionalPreservationCore.ForgedCauldron"] == 1 and counts["Base.MetalPipe"] == 2
+    and counts["Base.Clay"] == 12 and counts["TraditionalPreservationCore.ForgedCauldron"] == 1 and counts["Base.MetalPipe"] == 2
     and counts["Base.HeavyChain"] == 1 and counts["Base.LargeHook"] == 1 and counts["Base.Pliers"] == 1)
 local given = #player.given
 run("kit", "cauldron")
@@ -27,9 +27,9 @@ run("kit", "forge")
 check("kit(\"forge\") gives the forging and the magazine", #player.given == given + 10)
 local before = #player.given
 run("kit", "stone")
-check("kit(\"stone\") gives what a Stone Hearth is built from", #player.given == before + 15)
+check("kit(\"stone\") gives what a Stone Hearth is built from", #player.given == before + 25)
 check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"stone\")", 1, true) ~= nil
-    and #player.given == before + 15)
+    and #player.given == before + 25)
 before = #player.given
 run("kit", "smokehouse")
 check("kit(\"smokehouse\") gives what a Smokehouse is built from", #player.given == before + 35)

@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.7)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.9)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -14,7 +14,7 @@ Copy this folder's `42/` to `~/Zomboid/mods/TraditionalPreservationCore/42` (`tp
 
 A knee-high block of grey dressed stone in courses under one overhanging slab, four fifths of a tile across, with an iron door on its arched mouth and a small stone-lined hole in the top. It is a vanilla fireplace (the built tile is swapped for an `IsoFireplace`), so vanilla gives it Add Fuel, lighting, burn time, room heat and cooking inside: as an oven, and a pot over the hole as on a hob. Its door's vents show the fire.
 
-**Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 12 Stone Blocks, 2 Clay and a mason's trowel (kept). Two facings. It is the only build recipe: the cauldron is fitted to it afterwards.
+**Build** (Build menu, Masonry; Masonry 2; 8 Masonry XP): 12 Stone Blocks, 12 Clay and a mason's trowel (kept). Two facings. It is the only build recipe: the cauldron is fitted to it afterwards.
 
 **The hole** shows what is cooking (`StoneHearth.holeLook`, by the stove or oven flag of what is inside, `StoneHearth.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
 

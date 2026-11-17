@@ -16,7 +16,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [/list]
 
 [h2]The Stone Hearth[/h2]
-Build menu, Masonry. Masonry 2: 12 Stone Blocks, 2 Clay and a mason's trowel (kept).
+Build menu, Masonry. Masonry 2: 12 Stone Blocks, 12 Clay and a mason's trowel (kept).
 
 It is a working fireplace: add fuel and light it as you would any other, cook in it, warm the room. The hole shows what is cooking: open with smoke rising, a lidded forged pot for stews and fluids, a steel lid for oven food. Its right-click menu also has [b]Bank the Fire[/b] (a third of the wood, warms only the 2 tiles round it, cooks a third as fast; [b]Stoke the Fire[/b] brings it back) and [b]Stone Hearth Info[/b] (or just click it): the fire, the fuel and how long it will burn.
 

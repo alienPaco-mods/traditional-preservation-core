@@ -1,5 +1,26 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.13
+- **The Smokehouse is 2 x 2** (2026-11-19, a new look only: the same 6 stacks, recipe, places and rules). A plank
+  shed on four tiles under a low pitched roof, its ridge from the door end to the back; the door end a gable with a
+  pair of plank doors and a sooted galvanised louvre vent (preview `WIP/TPCore/art/smokehouse_2x2_mock.py`, from the
+  user's reference photos). Painted whole and cut into tiles by footprint in the new `tools/smokehouse_tiles.py`;
+  tiles 76-83 (`Tiles.CHAMBERS`, each face column by column, back row first), entity `Smokehouse_Chamber` two rows of
+  two. **Old 2-tile Smokehouses are not kept** (tiles 32-35 and the ham 44-45 left empty): empty one before updating
+  and replace it.
+- `Smokehouse.tileOf` gives the facing, row (part) and column; `chamberTiles` all four, each where its own row and
+  column say (a shed next door is never taken); `stepTo` (was `otherStep`); `sideAllowed(face, part, col, dx, dy)`: any
+  outer side but the door's end. Both front tiles keep their front free (Doors). The flue's entry overlays are
+  unchanged, on the column in view.
+- **What hangs by the door** (`Smokehouse.pieceSprites`, was `readySprite`): a piece for every two finished stacks,
+  counted by their `stackId` (`Smokehouse.STACKS_A_PIECE`): a country ham (shorter and fuller than the old ham) on the
+  front-left tile, then a smoked chicken and a smoked rabbit on the front-right one, each with a shadow on the boards
+  (`Tiles.CHAMBER_PIECES`, `CHAMBER_PIECE_COLUMNS`).
+- **Smoke from the vent** while the joined Stone Hearth burns (`Smokehouse.smokeLook`, `smokeSprite`): a plume stoked,
+  a wisp banked, static as the cauldron's steam, over the two front tiles (`Tiles.CHAMBER_SMOKE`).
+- `TPC.smokehouse()` names each tile's row and column and the smoke. test_smokehouse, test_smokehouse_world. README,
+  guide 6, Workshop text, tooltip, DEVGUIDE.
+
 ## 0.1.12
 - **`UI.durationText(hours)`** (2026-11-19): a long wait as text, whole hours up to two days (`UI.DAYS_FROM_HOURS`), then "about N days" to the nearest day; Fish & Meat's Tub Info reads "Cured in about 21 days" instead of 504 hours. test_station_info. DEVGUIDE.
 

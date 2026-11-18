@@ -13,35 +13,41 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local function name(index) return Tiles.PREFIX .. index end
 
--- Sprite names: facing S back and door tile, then facing E.
-local face, part = Smokehouse.tileOfName(name(Tiles.CHAMBER))
-check("the first chamber tile is facing S, back", face == 0 and part == 0)
-face, part = Smokehouse.tileOfName(name(Tiles.CHAMBER + 3))
-check("the fourth is facing E, door", face == 1 and part == 1)
-check("anything else isn't a chamber tile", Smokehouse.tileOfName(name(Tiles.CHAMBER + 4)) == nil
+-- Sprite names: each facing's four tiles, column by column (0 the hidden long side, 1 the one in view), back row first.
+local face, part, col = Smokehouse.tileOfName(name(Tiles.CHAMBER))
+check("the first chamber tile is facing S, back, hidden side", face == 0 and part == 0 and col == 0)
+face, part, col = Smokehouse.tileOfName(name(Tiles.CHAMBER + 3))
+check("the fourth is facing S, door's end, side in view", face == 0 and part == 1 and col == 1)
+face, part, col = Smokehouse.tileOfName(name(Tiles.CHAMBER + 6))
+check("the seventh is facing E, back, side in view", face == 1 and part == 0 and col == 1)
+check("eight tiles in all", #Tiles.CHAMBERS == 8 and Smokehouse.tileOfName(name(Tiles.CHAMBER + 8)) == nil
     and Smokehouse.tileOfName(name(Tiles.CHAMBER - 1)) == nil and Smokehouse.tileOfName(nil) == nil)
 check("an entry overlay isn't a chamber tile", Smokehouse.tileOfName(name(Tiles.CHAMBER_ENTRY)) == nil)
 check("nor is another mod's tile", Smokehouse.tileOfName("traditionalpreservationfishmeat_02_448") == nil)
-check("the chamber, its entries and the ham fit the core's sheet", Tiles.CHAMBER_READY + 1 < Tiles.SHEETS[1].tiles)
-check("each door tile opens its way, the back tiles have no door", Doors.facingOf(name(Tiles.CHAMBER + 1)) == "S"
-    and Doors.facingOf(name(Tiles.CHAMBER + 3)) == "E" and Doors.facingOf(name(Tiles.CHAMBER)) == nil)
+check("the shed, its entries, pieces and smoke fit the core's sheet", Tiles.CHAMBER_SMOKE + 7 < Tiles.SHEETS[1].tiles)
+check("both front tiles keep their front free, the back ones have no door", Doors.facingOf(name(Tiles.CHAMBER + 1)) == "S"
+    and Doors.facingOf(name(Tiles.CHAMBER + 3)) == "S" and Doors.facingOf(name(Tiles.CHAMBER + 5)) == "E"
+    and Doors.facingOf(name(Tiles.CHAMBER + 7)) == "E" and Doors.facingOf(name(Tiles.CHAMBER)) == nil
+    and Doors.facingOf(name(Tiles.CHAMBER + 2)) == nil)
 check("the shed takes 6 stacks", Smokehouse.STACKS == 6)
 
--- The other tile: facing S the door's tile is south of the back one.
-local dx, dy = Smokehouse.otherStep(0, 0)
-check("facing S the door tile is one south of the back tile", dx == 0 and dy == 1)
-dx, dy = Smokehouse.otherStep(1, 1)
-check("facing E the back tile is one west of the door tile", dx == -1 and dy == 0)
+-- The steps between its tiles: facing S the door's end is south and the side in view east.
+local dx, dy = Smokehouse.stepTo(0, 0, 0, 1, 1)
+check("facing S, from the back-left tile to the front-right one: one south, one east", dx == 1 and dy == 1)
+dx, dy = Smokehouse.stepTo(1, 1, 1, 0, 0)
+check("facing E, from the front-right tile to the back-left one: one west, one north", dx == -1 and dy == -1)
+dx, dy = Smokehouse.stepTo(1, 0, 0, 0, 1)
+check("facing E the side in view is south", dx == 0 and dy == 1)
 
--- Where a Stone Hearth may stand.
-check("facing S the back tile's long sides", Smokehouse.sideAllowed(0, 0, 1, 0) and Smokehouse.sideAllowed(0, 0, -1, 0))
-check("facing S the back gable", Smokehouse.sideAllowed(0, 0, 0, -1))
-check("never on the shed's other tile", not Smokehouse.sideAllowed(0, 0, 0, 1))
-check("facing S the door tile's long sides", Smokehouse.sideAllowed(0, 1, 1, 0) and Smokehouse.sideAllowed(0, 1, -1, 0))
-check("never at the door's end", not Smokehouse.sideAllowed(0, 1, 0, 1))
-check("facing E: back gable west, door end east", Smokehouse.sideAllowed(1, 0, -1, 0) and not Smokehouse.sideAllowed(1, 1, 1, 0))
-check("facing E the door tile's long sides", Smokehouse.sideAllowed(1, 1, 0, 1) and Smokehouse.sideAllowed(1, 1, 0, -1))
-check("not diagonal or further away", not Smokehouse.sideAllowed(0, 0, 1, 1) and not Smokehouse.sideAllowed(0, 0, 2, 0))
+-- Where a Stone Hearth may stand: any outer side but the door's end. (face, row, column, dx, dy)
+check("facing S, back-left: west and the back gable", Smokehouse.sideAllowed(0, 0, 0, -1, 0) and Smokehouse.sideAllowed(0, 0, 0, 0, -1))
+check("never on the shed's own tiles", not Smokehouse.sideAllowed(0, 0, 0, 1, 0) and not Smokehouse.sideAllowed(0, 0, 0, 0, 1)
+    and not Smokehouse.sideAllowed(0, 1, 1, 0, -1) and not Smokehouse.sideAllowed(0, 1, 1, -1, 0))
+check("facing S, the side in view: east of both right tiles", Smokehouse.sideAllowed(0, 0, 1, 1, 0) and Smokehouse.sideAllowed(0, 1, 1, 1, 0))
+check("never at the door's end, either front tile", not Smokehouse.sideAllowed(0, 1, 0, 0, 1) and not Smokehouse.sideAllowed(0, 1, 1, 0, 1))
+check("facing E: back gable west, door's end east", Smokehouse.sideAllowed(1, 0, 0, -1, 0) and not Smokehouse.sideAllowed(1, 1, 1, 1, 0))
+check("facing E: south of the side in view, north of the hidden one", Smokehouse.sideAllowed(1, 1, 1, 0, 1) and Smokehouse.sideAllowed(1, 1, 0, 0, -1))
+check("not diagonal or further away", not Smokehouse.sideAllowed(0, 0, 0, -1, -1) and not Smokehouse.sideAllowed(0, 0, 0, -2, 0))
 
 -- The entry art, only on the side the camera sees (S: east, E: south), numbered as the tile builder's.
 check("pipe, facing S, back tile", Smokehouse.entrySprite("Pipe", 0, 0, 1, 0) == Tiles.CHAMBER_ENTRY)
@@ -50,10 +56,24 @@ check("trench, facing S, door tile", Smokehouse.entrySprite("Stones", 0, 1, 1, 0
 check("trench, facing E, back tile", Smokehouse.entrySprite("Stones", 1, 0, 0, 1) == Tiles.CHAMBER_ENTRY + 6)
 check("nothing on hidden sides", Smokehouse.entrySprite("Pipe", 0, 0, -1, 0) == nil and Smokehouse.entrySprite("Pipe", 0, 0, 0, -1) == nil)
 check("nothing when the flue isn't laid", Smokehouse.entrySprite(nil, 0, 0, 1, 0) == nil)
-check("the ham hangs on the door's tile while stacks wait", Smokehouse.readySprite(0, 1, true) == Tiles.CHAMBER_READY
-    and Smokehouse.readySprite(1, 1, true) == Tiles.CHAMBER_READY + 1)
-check("never on the back tile, nor with nothing finished", Smokehouse.readySprite(0, 0, true) == nil and Smokehouse.readySprite(0, 1, false) == nil)
-check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_READY) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_READY)
+
+-- What hangs by the door: a piece for every two finished stacks, the ham on the front-left tile, the chicken and the
+-- rabbit on the front-right one.
+local P = Tiles.CHAMBER_PIECES
+local function pieces(f, p, c, n) return table.concat(Smokehouse.pieceSprites(f, p, c, n), ",") end
+check("one or two stacks: the ham, front-left", pieces(0, 1, 0, 1) == tostring(P) and pieces(0, 1, 0, 2) == tostring(P)
+    and pieces(0, 1, 1, 2) == "")
+check("three or four: the chicken too, front-right", pieces(0, 1, 1, 3) == tostring(P + 1) and pieces(0, 1, 1, 4) == tostring(P + 1))
+check("five or six: the rabbit after it", pieces(0, 1, 1, 5) == (P + 1) .. "," .. (P + 2) and pieces(0, 1, 0, 6) == tostring(P))
+check("never more than three", pieces(0, 1, 1, 12) == (P + 1) .. "," .. (P + 2))
+check("facing E, its own three", pieces(1, 1, 0, 6) == tostring(P + 3) and pieces(1, 1, 1, 6) == (P + 4) .. "," .. (P + 5))
+check("nothing on the back row, nor with nothing finished", pieces(0, 0, 0, 6) == "" and pieces(0, 1, 0, 0) == ""
+    and pieces(0, 1, 0, nil) == "")
+check("the vent's smoke, stoked and banked, over both front tiles", Smokehouse.smokeSprite(0, 1, 0, "Lit") == Tiles.CHAMBER_SMOKE
+    and Smokehouse.smokeSprite(0, 1, 1, "Lit") == Tiles.CHAMBER_SMOKE + 1 and Smokehouse.smokeSprite(0, 1, 0, "Banked") == Tiles.CHAMBER_SMOKE + 2
+    and Smokehouse.smokeSprite(1, 1, 1, "Banked") == Tiles.CHAMBER_SMOKE + 7)
+check("no smoke on the back row, nor with no fire", Smokehouse.smokeSprite(0, 0, 0, "Lit") == nil and Smokehouse.smokeSprite(0, 1, 0, nil) == nil)
+check("an overlay's name is the core's", Smokehouse.spriteName(Tiles.CHAMBER_PIECES) == "traditionalpreservationcore_01_" .. Tiles.CHAMBER_PIECES)
 
 -- The shed's own refusals (Fire.connectRefusal asks them after "already joined").
 check("a long side of a free shed joins", Smokehouse.chamberRefusal({ allowed = true }) == nil)

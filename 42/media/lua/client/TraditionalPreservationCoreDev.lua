@@ -288,13 +288,14 @@ function TPC.doors()
 end
 
 local PARTS = { [0] = "back", [1] = "door" }
+local COLUMNS = { [0] = "hidden side", [1] = "side in view" }
 
 function TPC.smokehouse()
     local player, seen = getPlayer(), 0
     local cell, x, y, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), player:getZ()
     for dx = -3, 3 do
         for dy = -3, 3 do
-            local tile, face, part = Smokehouse.chamberOn(cell:getGridSquare(x + dx, y + dy, z))
+            local tile, face, part, col = Smokehouse.chamberOn(cell:getGridSquare(x + dx, y + dy, z))
             if tile then
                 seen = seen + 1
                 local lines = {}
@@ -306,8 +307,9 @@ function TPC.smokehouse()
                             or (Smokehouse.connectRefusalFor(found) or "may join")))
                     end
                 end
-                say(string.format("%d,%d facing %s, %s tile, entry art %s; %s", tile:getX(), tile:getY(), StoneHearth.FACE_NAMES[face],
-                    PARTS[part], tostring(Smokehouse.chamberEntry(tile)), #lines > 0 and table.concat(lines, "; ") or "no Stone Hearth beside it"))
+                say(string.format("%d,%d facing %s, %s row, %s, entry art %s, smoke %s; %s", tile:getX(), tile:getY(),
+                    StoneHearth.FACE_NAMES[face], PARTS[part], COLUMNS[col], tostring(Smokehouse.chamberEntry(tile)),
+                    tostring(Smokehouse.smokeLook(tile)), #lines > 0 and table.concat(lines, "; ") or "no Stone Hearth beside it"))
             end
         end
     end

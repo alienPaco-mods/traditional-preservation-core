@@ -1,7 +1,8 @@
 -- Traditional Preservation core: keeps track of every Smokehouse chamber tile and draws its look. The chamber is
 -- closed: nothing hangs in sight. Each tile shows where a joined Stone Hearth's flue enters it, master or not (the other
--- tile has no slots), and the door's tile a ham (Smokehouse.readySprite) while finished stacks wait. What hangs inside is stepped by the mod
--- that owns each stack (Smokehouse.startCounters).
+-- tiles have no slots); the front row what hangs by the door while finished stacks wait (Smokehouse.pieceSprites) and
+-- the vent's smoke while the joined fire burns (Smokehouse.smokeSprite). What hangs inside is stepped by the mod that
+-- owns each stack (Smokehouse.startCounters).
 if isClient() then return end
 
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
@@ -11,25 +12,39 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 local World = {}
 Smokehouse.World = World
 
--- Whether either tile of the shed holds finished stacks not yet taken out (the slots are on one of them).
-local function hasFinished(station)
+-- How many finished stacks wait in the shed's outputs (the slots are on one of its tiles): the pieces of a stack share
+-- its stackId (the owning mod's), so each different one is a stack; pieces with none count as one.
+local function finishedStacks(station)
+    local seen, stacks = {}, 0
     for _, found in ipairs(Smokehouse.chamberTiles(station)) do
         local resources = found[1]:getComponent(ComponentType.Resources)
         local logic = found[1]:getComponent(ComponentType.DryingCraftLogic)
-        if resources and logic and Station.countItems(resources, logic:getOutputsGroupName(), ResourceIO.Output) > 0 then
-            return true
+        if resources and logic then
+            local slots = Station.itemSlots(resources, logic:getOutputsGroupName(), ResourceIO.Output)
+            for i = 0, slots:size() - 1 do
+                local stored = slots:get(i):getStoredItems()
+                for j = 0, stored:size() - 1 do
+                    local stackId = tostring(stored:get(j):getModData().stackId)
+                    if not seen[stackId] then seen[stackId], stacks = true, stacks + 1 end
+                end
+            end
         end
     end
-    return false
+    return stacks
 end
 
 local function refresh(station, sessionState)
-    local face, part = Smokehouse.tileOf(station)
+    local face, part, col = Smokehouse.tileOf(station)
     local sprites = {}
     local flue = Smokehouse.chamberEntry(station)
-    local ready = Smokehouse.readySprite(face, part, part == 1 and hasFinished(station))
     if flue then table.insert(sprites, Smokehouse.spriteName(flue)) end
-    if ready then table.insert(sprites, Smokehouse.spriteName(ready)) end
+    if part == 1 then
+        for _, piece in ipairs(Smokehouse.pieceSprites(face, part, col, finishedStacks(station))) do
+            table.insert(sprites, Smokehouse.spriteName(piece))
+        end
+        local smoke = Smokehouse.smokeSprite(face, part, col, Smokehouse.smokeLook(station))
+        if smoke then table.insert(sprites, Smokehouse.spriteName(smoke)) end
+    end
     Station.showSprites(station, sessionState, table.concat(sprites, ","), sprites)
 end
 

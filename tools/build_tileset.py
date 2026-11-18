@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds the TP Core art: the shared stations' tileset (42/media/*.tiles and texturepacks/*.pack), their build icons,
-the mod icon, the Stone Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse chamber (from tile CHAMBER),
-moved from Fish & Meat 2026-11-13 with its art unchanged.
+the mod icon, the Stone Hearth's menu icons and the generated Tiles.lua. Also the Smokehouse (from tile CHAMBER), a
+2 x 2 shed painted by tools/smokehouse_tiles.py, with its overlays.
 
 The Stone Hearth: a Stone Hearth with the Forged Cauldron fitted (design 2026-11-13, after Alpine cheese kettles on a
 crane). The Stone Hearth's knee-high block of split fieldstone, as vanilla's kilns are built, four fifths of a tile
@@ -162,21 +162,16 @@ HOLE_D = 0.09                  # the Stone Hearth's hole, in tiles (option "D", 
 POT = (62, 62, 64)             # vanilla's forged pot: dark, mottled cast iron
 LID = (64, 64, 66)
 
-# The Smokehouse chamber (moved from Fish & Meat, 2026-11-13; drawn as it was there): a plank shed two tiles long,
-# the back half then the front half with the door, each face (chamber_index). Smokehouse.lua reads the numbers from
-# the generated Tiles.lua.
-CHAMBER = 32
+# The Smokehouse (2 x 2 since 2026-11-19; tools/smokehouse_tiles.py paints it): each face's four tiles, column by
+# column (0 the hidden long side, 1 the one in view), back row first (chamber_index). Smokehouse.lua reads the numbers
+# from the generated Tiles.lua. Tiles 32-35 and 44-45 held the 2-tile shed and its ham, and are left empty.
+CHAMBER = 76
 CHAMBER_STACKS = 6
-CHAMBER_HALF = 0.46       # half the shed's width, and how far each end wall stands from its tile's middle, in tiles
-CHAMBER_OVERHANG = 0.06   # the roof past the walls
-CHAMBER_EAVE = 132        # px up to the roof: flat (was one slope along the shed)
+CHAMBER_HALF = 0.46       # how far the walls stand from the outer tiles' middles, in tiles
 CHAMBER_SILL = 7          # the stone sill under the planks
-CHAMBER_DOOR = 106        # the door's top
-CHAMBER_DOOR_HALF = 0.3   # wider (was 0.17)
 CHAMBER_PLANK = 0.15      # a plank's width, in tiles: thick boards, as vanilla's barricades
 CHAMBER_GAP = 0.2         # the share of joins left open a crack (the roof's and the door's)
 CHAMBER_WALL_GAP = 0.45   # the walls': more of them, as boards nailed up on a smokehouse are
-CHAMBER_JOIN = 0.02       # the back tile runs this far under the front one, so no seam shows
 CHAMBER_WOOD = (112, 78, 50)
 CHAMBER_ROOF = (90, 64, 44)
 CHAMBER_STONE = (120, 112, 100)
@@ -190,13 +185,18 @@ CHAMBER_FOOT_SHADE = 0.5
 # at ground level, in the middle.
 CHAMBER_ENTRY = 36
 FLUE_KIT_NAMES = ["Pipe", "Stones"]
-# A ham hung by the door while finished stacks wait in the chamber: one overlay per face, on the
-# door's tile, on the door's end wall beside the door. Named for what it means, not the ham (Core names no product).
-CHAMBER_READY = 44
-HAM_A = -0.44             # across the end wall (was -0.37, moved out for the wider door), on the door's far side from the long wall in view: it overhangs the corner
+# What hangs by the door while finished stacks wait, one piece for every two stacks: a country ham, a smoked chicken,
+# a smoked rabbit, each on its front tile (CHAMBER_PIECE_COLUMNS), one overlay each a face. Then the vent's smoke, a
+# look (Lit, Banked) a face, split over the two front tiles: (face * 2 + look) * 2 + column.
+CHAMBER_PIECES = 84
+CHAMBER_PIECE_KINDS = ["ham", "chicken", "rabbit"]
+CHAMBER_PIECE_COLUMNS = [0, 1, 1]
+CHAMBER_SMOKE = CHAMBER_PIECES + len(CHAMBER_PIECE_KINDS) * 2
+SMOKE_LOOKS = ["Lit", "Banked"]
+HAM_A = -0.26             # across the front-left tile's end wall, between its corner and the door's post
 HAM_TOP = 98              # px up to the bone's knob; the nail is above it
-HAM_SCALE = 1.35          # its width against the first ham's
-HAM_STEP = 6.6            # px between its outline's steps down (the first ham's were 5)
+HAM_SCALE = 1.55          # its width against the first ham's (2026-11-19: fuller, user)
+HAM_STEP = 5.5            # px between its outline's steps down (was 6.6: "long and skinny", user)
 # Tones dark to light, taken from vanilla's Ham icon and pulled a little towards smoke: the glazed skin, and the
 # cut face's pale pinks with a lighter middle.
 HAM_SKIN_TONES = [(84, 42, 28), (108, 54, 32), (132, 70, 38), (158, 90, 46), (184, 112, 58)]
@@ -1029,9 +1029,9 @@ def paint_liquid(face):
 # --- Output ------------------------------------------------------------------------------------------------------
 
 
-def chamber_index(face_index, part):
-    """part 0 is the back tile, 1 the front one with the door."""
-    return CHAMBER + face_index * 2 + part
+def chamber_index(face_index, col, row):
+    """col 0 the hidden long side, 1 the one in view; row 0 the back, 1 the door's end."""
+    return CHAMBER + face_index * 4 + col * 2 + row
 
 
 def chamber_entry_index(kit_name, face_index, part):
@@ -1039,23 +1039,28 @@ def chamber_entry_index(kit_name, face_index, part):
     return CHAMBER_ENTRY + (FLUE_KIT_NAMES.index(kit_name) * len(FACES) + face_index) * 2 + part
 
 
-# A two-tile station names each tile's place in the grid ("x,y", as vanilla's Drying Rack and Loom): facing S the
-# back tile is 0,0 and the door's 0,1; facing E 0,0 and 1,0.
+# A multi-tile station names each tile's place in the grid ("x,y", as vanilla's Drying Rack and Loom): facing S the
+# column is x and the row y (the door south), facing E the row is x (the door east) and the column y.
 for face_index, face in enumerate(FACES):
+    for col in range(2):
+        for row in range(2):
+            grid = f"{col},{row}" if face == "S" else f"{row},{col}"
+            TILE_PROPS[chamber_index(face_index, col, row)] = [("BlocksPlacement", ""), ("CustomName", "Chamber"), ("Facing", face),
+                                                               ("GroupName", "Smokehouse"), ("IsMoveAble", ""), ("PickUpWeight", "200"),
+                                                               ("solidtrans", ""), ("ForceSingleItem", ""), ("SpriteGridPos", grid)]
     for part in range(2):
-        grid = f"0,{part}" if face == "S" else f"{part},0"
-        TILE_PROPS[chamber_index(face_index, part)] = [("BlocksPlacement", ""), ("CustomName", "Chamber"), ("Facing", face),
-                                                       ("GroupName", "Smokehouse"), ("IsMoveAble", ""), ("PickUpWeight", "200"),
-                                                       ("solidtrans", ""), ("ForceSingleItem", ""), ("SpriteGridPos", grid)]
         for kit_name in FLUE_KIT_NAMES:
             TILE_PROPS[chamber_entry_index(kit_name, face_index, part)] = [("Facing", face)]
-    TILE_PROPS[CHAMBER_READY + face_index] = [("Facing", face)]
+    for k in range(len(CHAMBER_PIECE_KINDS)):
+        TILE_PROPS[CHAMBER_PIECES + face_index * len(CHAMBER_PIECE_KINDS) + k] = [("Facing", face)]
+    for look in range(len(SMOKE_LOOKS)):
+        for col in range(2):
+            TILE_PROPS[CHAMBER_SMOKE + (face_index * 2 + look) * 2 + col] = [("Facing", face)]
 
 
-# --- The Smokehouse chamber ----------------------------------------------------------------------------------
-# A plank hut two tiles long under one roof slope, high over the door on the front end. Drawn in the shed's own coordinates: a across
-# it (+a the visible long side), b along it (+b the door's end); the front tile's middle is b = 0, the back tile's
-# b = -1. Each tile paints only its half, so the two meet on screen.
+# --- The Smokehouse: shared with tools/smokehouse_tiles.py ------------------------------------------------------
+# Drawn in the shed's own coordinates: a across it (+a the visible long side), b along it (+b the door's end); a
+# front tile's middle is b = 0, a back tile's b = -1.
 
 def chamber_world(face, a, b):
     """World x, y of a shed point: facing S the door looks south (+y), facing E east (+x)."""
@@ -1063,7 +1068,7 @@ def chamber_world(face, a, b):
 
 
 def chamber_px(face, part, a, b, z):
-    """A shed point on the tile of that part (0 back, 1 front), supersampled."""
+    """A shed point on a tile of that row (0 back, 1 front), a across that tile, supersampled."""
     x, y = chamber_world(face, a, b + (1 - part))
     sx, sy = pzart.project(x, y, z)
     return (sx * SS, sy * SS)
@@ -1099,114 +1104,6 @@ def chamber_planks(draw, rng, quad, start, stop, width, colour, light, clip=None
             seam = rng.uniform(0.016, 0.026) if gap else 0.006
             draw.polygon(quad(u1 - seam, u1 + seam), fill=shade(CHAMBER_DARK if gap else CHAMBER_EDGE, 1 if gap else light * 0.8))
         u = u1
-
-
-def paint_chamber(face, part):
-    rng = random.Random(200 + 2 * FACES.index(face) + part)
-    layer = pzart.new_layer(SS)
-    draw = ImageDraw.Draw(layer)
-    h, o = CHAMBER_HALF, CHAMBER_OVERHANG
-    # This tile's stretch of the shed along b, and its walls' lights by the way the world face looks.
-    b0, b1 = (-1 - h, -0.5 + CHAMBER_JOIN) if part == 0 else (-0.5, h)
-    door_light, side_light = (1.0, 0.72) if face == "S" else (0.72, 1.0)
-
-    def px(a, b, z):
-        return chamber_px(face, part, a, b, z)
-
-    def roof_z(a):
-        """Flat: the roof's height anywhere across the shed."""
-        return CHAMBER_EAVE
-
-    def nails(points, light):
-        for x, y in points:
-            draw.ellipse([x - 0.7 * SS, y - 0.6 * SS, x + 0.7 * SS, y + 0.6 * SS], fill=shade(CHAMBER_DARK, light * 1.6))
-
-    # The long side in view, up to the eave, then the stone sill and two battens across its boards, nailed.
-    eave = roof_z(h) - 2
-    side = lambda u0, u1: [px(h, u0, 0), px(h, u1, 0), px(h, u1, eave), px(h, u0, eave)]
-    chamber_planks(draw, random.Random(210 + FACES.index(face)), side, -1 - h, h, CHAMBER_PLANK, CHAMBER_WOOD, side_light, (b0, b1),
-                   CHAMBER_WALL_GAP)
-    draw.polygon([px(h, b0, 0), px(h, b1, 0), px(h, b1, CHAMBER_SILL), px(h, b0, CHAMBER_SILL)], fill=shade(CHAMBER_STONE, side_light * 0.8))
-    for z in (CHAMBER_SILL + 6, eave - 14):
-        draw.polygon([px(h + 0.004, b0, z), px(h + 0.004, b1, z), px(h + 0.004, b1, z + 5), px(h + 0.004, b0, z + 5)],
-                     fill=shade(CHAMBER_WOOD, side_light * 0.8))
-        draw.line([px(h + 0.005, b0, z + 5), px(h + 0.005, b1, z + 5)], fill=shade(CHAMBER_EDGE, side_light), width=SS)
-        u = -1 - h + CHAMBER_PLANK / 2
-        while u < h:
-            if b0 < u < b1:
-                nails([px(h + 0.006, u, z + 2.5)], side_light)
-            u += CHAMBER_PLANK
-
-    if part == 1:
-        # The door's end: boards up to the roof's slope, the smoke slot under it with two slats, a sill and the door.
-        end = lambda u0, u1: [px(u0, h, 0), px(u1, h, 0), px(u1, h, roof_z(u1) - 2), px(u0, h, roof_z(u0) - 2)]
-        chamber_planks(draw, random.Random(220 + FACES.index(face)), end, -h, h, CHAMBER_PLANK, CHAMBER_WOOD, door_light,
-                       gaps=CHAMBER_WALL_GAP)
-        a0, a1 = -h + 0.05, h - 0.05
-        draw.polygon([px(a0, h, roof_z(a0) - 14), px(a1, h, roof_z(a1) - 14), px(a1, h, roof_z(a1) - 4), px(a0, h, roof_z(a0) - 4)],
-                     fill=shade(CHAMBER_DARK, 1))
-        for dz in (11, 7):
-            draw.polygon([px(a0, h + 0.004, roof_z(a0) - dz), px(a1, h + 0.004, roof_z(a1) - dz), px(a1, h + 0.004, roof_z(a1) - dz + 2),
-                          px(a0, h + 0.004, roof_z(a0) - dz + 2)], fill=shade(CHAMBER_WOOD, door_light * 0.7))
-        draw.polygon([px(-h, h, 0), px(h, h, 0), px(h, h, CHAMBER_SILL), px(-h, h, CHAMBER_SILL)], fill=shade(CHAMBER_STONE, door_light * 0.8))
-        # The door: darker boards in a frame, two ledges and a brace, strap hinges on its left and a wooden latch.
-        d = CHAMBER_DOOR_HALF
-        draw.polygon([px(-d - 0.03, h + 0.003, CHAMBER_SILL), px(d + 0.03, h + 0.003, CHAMBER_SILL),
-                      px(d + 0.03, h + 0.003, CHAMBER_DOOR + 4), px(-d - 0.03, h + 0.003, CHAMBER_DOOR + 4)], fill=shade(CHAMBER_EDGE, door_light))
-        # Uneven cracks where the latch side and the top meet the frame, the dark inside showing through.
-        crack = random.Random(235 + FACES.index(face))
-        zs = [CHAMBER_SILL + 1 + (CHAMBER_DOOR - CHAMBER_SILL - 1) * k / 8 for k in range(9)]
-        widths = [crack.uniform(0.006, 0.028) for _ in zs]
-        draw.polygon([px(d, h + 0.004, z) for z in zs] + [px(d + w, h + 0.004, z) for z, w in reversed(list(zip(zs, widths)))],
-                     fill=shade(CHAMBER_DARK, 1))
-        us = [-d + 2 * d * k / 8 for k in range(9)]
-        heights = [crack.uniform(0.6, 2.4) for _ in us]
-        draw.polygon([px(u, h + 0.004, CHAMBER_DOOR) for u in us] + [px(u, h + 0.004, CHAMBER_DOOR + z) for u, z in reversed(list(zip(us, heights)))],
-                     fill=shade(CHAMBER_DARK, 1))
-        door = lambda u0, u1: [px(u0, h + 0.006, CHAMBER_SILL + 1), px(u1, h + 0.006, CHAMBER_SILL + 1),
-                               px(u1, h + 0.006, CHAMBER_DOOR), px(u0, h + 0.006, CHAMBER_DOOR)]
-        chamber_planks(draw, random.Random(230 + FACES.index(face)), door, -d, d, CHAMBER_PLANK * 0.8, CHAMBER_WOOD, door_light * 0.82)
-        for z0 in (CHAMBER_SILL + 12, CHAMBER_DOOR - 16):
-            draw.polygon([px(-d, h + 0.008, z0), px(d, h + 0.008, z0), px(d, h + 0.008, z0 + 6), px(-d, h + 0.008, z0 + 6)],
-                         fill=shade(CHAMBER_WOOD, door_light * 0.68))
-            nails([px(u, h + 0.009, z0 + 3) for u in (-d + 0.04, -d / 3, d / 3, d - 0.04)], door_light)
-        draw.polygon([px(-d, h + 0.008, CHAMBER_SILL + 18), px(-d + 0.05, h + 0.008, CHAMBER_SILL + 18),
-                      px(d, h + 0.008, CHAMBER_DOOR - 16), px(d - 0.05, h + 0.008, CHAMBER_DOOR - 16)], fill=shade(CHAMBER_WOOD, door_light * 0.72))
-        for z0 in (CHAMBER_SILL + 13, CHAMBER_DOOR - 15):
-            draw.polygon([px(-d - 0.02, h + 0.01, z0), px(-d + 0.13, h + 0.01, z0 + 1), px(-d + 0.13, h + 0.01, z0 + 3),
-                          px(-d - 0.02, h + 0.01, z0 + 4)], fill=shade(CHAMBER_IRON, 1.0))
-        latch = CHAMBER_DOOR * 0.55
-        draw.polygon([px(d - 0.06, h + 0.01, latch), px(d + 0.02, h + 0.01, latch), px(d + 0.02, h + 0.01, latch + 3),
-                      px(d - 0.06, h + 0.01, latch + 3)], fill=shade(CHAMBER_WOOD, door_light * 0.6))
-        # A rope handle under the latch (not in the recipe): through two holes, hanging in a loop.
-        holes, z0 = (d - 0.2, d - 0.06), latch - 3
-        for u in holes:
-            x, y = px(u, h + 0.01, z0)
-            draw.ellipse([x - 1.1 * SS, y - 1.0 * SS, x + 1.1 * SS, y + 1.0 * SS], fill=shade(CHAMBER_DARK, 1))
-        # A U: the rope drops from each hole, then rounds under, sagging a little more on its far side.
-        loop = []
-        for k in range(17):
-            f = k / 16
-            sag = 6 * math.sin(math.pi * f) ** 0.6 + 0.6 * f
-            loop.append(px(holes[0] + (holes[1] - holes[0]) * (0.5 - 0.5 * math.cos(math.pi * f)), h + 0.014, z0 - sag))
-        draw.line([(x, y + 0.5 * SS) for x, y in loop], fill=shade(HAM_CORD, door_light * 0.55), width=int(1.8 * SS), joint="curve")
-        draw.line(loop, fill=shade(HAM_CORD, door_light * 0.95), width=int(1.2 * SS), joint="curve")
-
-    # The roof: boards running across the shed, laid side by side along it and past its walls; a fascia board along the
-    # edge in view and another over the door's end.
-    lo, hi = b0 - (o if part == 0 else 0), b1 + (o if part == 1 else 0)
-    roof = lambda u0, u1: [px(-h - o, u0, roof_z(-h - o)), px(-h - o, u1, roof_z(-h - o)), px(h + o, u1, roof_z(h + o)),
-                           px(h + o, u0, roof_z(h + o))]
-    chamber_planks(draw, random.Random(240 + FACES.index(face)), roof, -1 - h - o, h + o, CHAMBER_PLANK, CHAMBER_ROOF, 1.0, (lo, hi))
-    z = roof_z(h + o)
-    draw.polygon([px(h + o, lo, z), px(h + o, hi, z), px(h + o, hi, z - 5), px(h + o, lo, z - 5)], fill=shade(CHAMBER_EDGE, side_light * 0.9))
-    if part == 1:
-        f = h + o
-        draw.polygon([px(-h - o, f, roof_z(-h - o)), px(h + o, f, roof_z(h + o)), px(h + o, f, roof_z(h + o) - 5),
-                      px(-h - o, f, roof_z(-h - o) - 5)], fill=shade(CHAMBER_EDGE, door_light * 0.9))
-
-    layer = pzart.darken_down(layer, pzart.FOOT[1] - 60, pzart.FOOT[1] + 30, CHAMBER_FOOT_SHADE, SS)
-    return pzart.hard_edges(pzart.weather(shrink(layer), random.Random((250 + 2 * FACES.index(face) + part) * 31 + 7), CHAMBER_WEATHER, True).convert("RGBA"))
 
 
 def paint_chamber_entry(kind, face, part):
@@ -1285,9 +1182,9 @@ def ham_tone(tones, level):
 
 
 def paint_chamber_ham(face):
-    """A smoked ham on a cord from a nail on the door's end wall, on the side away from the long wall the camera sees:
-    the shank up, the round of it at the bottom, the bone's knob at the top, and low on its face a slice taken off,
-    which gives it depth. It hangs a little past the shed's corner. Painted as vanilla's Ham icon is: a few tones in
+    """A smoked country ham on a cord from a nail on the door's end wall, on the front-left tile between its corner and
+    the door's post: the shank up, the round of it at the bottom, the bone's knob at the top, and low on its face a slice
+    taken off, which gives it depth. Painted as vanilla's Ham icon is: a few tones in
     small patches, lit from the upper left, a pale mottled cut with a lighter middle, and a dark line round it."""
     h, a = CHAMBER_HALF, HAM_A
     light = 1.0 if face == "S" else 0.78
@@ -1368,16 +1265,9 @@ def paint_chamber_ham(face):
     return tile
 
 
-def chamber_icon(tiles, face_index=0):
-    """Both halves of the chamber as they stand, the back one drawn first, for the build menu."""
-    face = FACES[face_index]
-    dx, dy = chamber_world(face, 0, -1)
-    sx, sy = round((dx - dy) * pzart.DIAMOND_HALF_W), round((dx + dy) * pzart.DIAMOND_HALF_H)
-    canvas = Image.new("RGBA", (TILE_W + abs(sx), TILE_H + abs(sy)), (0, 0, 0, 0))
-    ox, oy = max(0, -sx), max(0, -sy)
-    canvas.alpha_composite(tiles[chamber_index(face_index, 0)], (ox + sx, oy + sy))
-    canvas.alpha_composite(tiles[chamber_index(face_index, 1)], (ox, oy))
-    return canvas
+def chamber_icon(shed):
+    """The four tiles as they stand, facing S, for the build menu."""
+    return shed.assemble("S", shed.paint_shed("S"))
 
 
 def lua_tiles():
@@ -1392,13 +1282,16 @@ def lua_tiles():
         "BARE_LOOKS": BARE_LOOKS,
         "BARE_SPRITES": [prefix + str(base + offset) for base in BARE_LOOKS.values() for offset in range(len(FACES))],
         "BARE_GLOWS": BARE_GLOWS,
-        # The Smokehouse chamber: both tiles of each face (back, then the door's), its stacks, the flue's entry
-        # overlays (Pipe then Stones, each face, each part) and the ready overlay (a ham) by the door, one a face.
+        # The Smokehouse: the four tiles of each face (column by column, back row first), its stacks, the flue's
+        # entry overlays (Pipe then Stones, each face, each row), the pieces by the door (ham, chicken, rabbit, each
+        # face; which front tile each hangs on) and the vent's smoke (Lit, Banked, each face, each front tile).
         "CHAMBER": CHAMBER,
-        "CHAMBERS": [prefix + str(chamber_index(face, part)) for face in range(len(FACES)) for part in range(2)],
+        "CHAMBERS": [prefix + str(chamber_index(face, col, row)) for face in range(len(FACES)) for col in range(2) for row in range(2)],
         "CHAMBER_STACKS": CHAMBER_STACKS,
         "CHAMBER_ENTRY": CHAMBER_ENTRY,
-        "CHAMBER_READY": CHAMBER_READY,
+        "CHAMBER_PIECES": CHAMBER_PIECES,
+        "CHAMBER_PIECE_COLUMNS": CHAMBER_PIECE_COLUMNS,
+        "CHAMBER_SMOKE": CHAMBER_SMOKE,
     }
 
 
@@ -1421,6 +1314,7 @@ def contact_sheet(tiles, path):
 
 
 def main():
+    import smokehouse_tiles as shed  # it imports this file for the shared painters, so only once this one is loaded
     media = Path(__file__).resolve().parent.parent / "42" / "media"
     pzart.write_lua_tiles(media, MOD, lua_tiles(), "tools/build_tileset.py")
     tiles = {}
@@ -1432,11 +1326,16 @@ def main():
             tiles[index + face] = paint_bare(look, face)
         for kind, index in BARE_GLOWS.items():
             tiles[index + face] = paint_bare_glow(kind, face)
+        for (col, row), tile in shed.paint_shed(FACES[face]).items():
+            tiles[chamber_index(face, col, row)] = tile
         for part in range(2):
-            tiles[chamber_index(face, part)] = paint_chamber(FACES[face], part)
             for kit_name in FLUE_KIT_NAMES:
                 tiles[chamber_entry_index(kit_name, face, part)] = paint_chamber_entry(kit_name, FACES[face], part)
-        tiles[CHAMBER_READY + face] = paint_chamber_ham(FACES[face])
+        for k, piece in enumerate(shed.paint_pieces(FACES[face])):
+            tiles[CHAMBER_PIECES + face * len(CHAMBER_PIECE_KINDS) + k] = piece
+        for look, name in enumerate(SMOKE_LOOKS):
+            for (col, _), tile in shed.paint_smoke(FACES[face], name).items():
+                tiles[CHAMBER_SMOKE + (face * 2 + look) * 2 + col] = tile
     (media / "texturepacks").mkdir(parents=True, exist_ok=True)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
@@ -1454,7 +1353,7 @@ def main():
         icon = tiles[BARE_PLAIN].copy()
         icon.alpha_composite(tiles[BARE_GLOWS[kind]])
         pzart.write_build_icon(icon, media / "textures" / f"Item_TPStoneHearth{kind}.png", MENU_ICON)
-    pzart.write_build_icon(chamber_icon(tiles), media / "textures" / "Item_SmokehouseChamber.png")
+    pzart.write_build_icon(chamber_icon(shed), media / "textures" / "Item_SmokehouseChamber.png")
     # The mod list shows the cauldron steaming.
     pzart.write_mod_icon(tiles[CAULDRON_LOOKS["Steam"]], media.parent / "icon.png")
     if len(sys.argv) > 1:

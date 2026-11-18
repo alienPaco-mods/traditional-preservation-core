@@ -197,7 +197,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 4. **Modules only the required mod has:** `Fire` (the Stone Hearth and its cauldron, save key `tpFire`, the opt-in "by
    a fire" place, hooks) and `Cauldron`, its `Tiles`, the server's `FireWorld`, and the client's `FireUI`, `CauldronUI` and `InfoWindow` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
-   mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173).
+   mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
    makes a click on the station open it.

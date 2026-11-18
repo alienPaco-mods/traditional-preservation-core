@@ -8,7 +8,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [list]
 [*][b]The Stone Hearth[/b]: a knee-high stone fire with an iron door and a stone-lined hole in its top: an oven, a hob over the hole, and heat for the stations round it
 [*][b]The Forged Cauldron[/b]: 60 L of forged iron hung by a chain over the Stone Hearth's hole, for heating any fluid
-[*][b]The Smokehouse[/b]: a plank shed two tiles long, joined to a Stone Hearth by a clay pipe or a stone trench, where the TP mods smoke their food
+[*][b]The Smokehouse[/b]: a plank shed on four tiles, joined to a Stone Hearth by a clay pipe or a stone trench, where the TP mods smoke their food
 [*]One weather record for the whole series, so every station keeps working while you are away
 [*]Eight kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, in a shed, by a fire and by banked embers
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
@@ -34,7 +34,7 @@ With the fire lit the cauldron heats towards 95 C and steams at 85 C: about 1.5 
 
 [h2]The Smokehouse[/h2]
 
-A plank shed two tiles long under a flat roof, its wide door on one end (Woodwork 3: 14 planks, 20 nails, hammer kept). Open air or under an open roof, never in a room; 6 stacks. Right-click it or a Stone Hearth beside it to [b]Connect the Stone Hearth[/b] with a clay pipe (2 Clay Pipe Segments, 1 Clay, a Mason's Trowel kept) or a stone trench (3 Flat Stones, 2 Clay, a shovel kept). You can still cook in the Stone Hearth and fit the cauldron while it smokes. What hangs inside and what the smoke does to it is each mod's: Fish & Meat smokes fish, meat and sausage there.
+A plank shed on four tiles, two by two, under a low pitched roof, its pair of doors under the gable and a metal vent above them (Woodwork 3: 14 planks, 20 nails, hammer kept). Open air or under an open roof, never in a room; 6 stacks. Right-click it or a Stone Hearth beside it to [b]Connect the Stone Hearth[/b] with a clay pipe (2 Clay Pipe Segments, 1 Clay, a Mason's Trowel kept) or a stone trench (3 Flat Stones, 2 Clay, a shovel kept). You can still cook in the Stone Hearth and fit the cauldron while it smokes. What hangs inside and what the smoke does to it is each mod's: Fish & Meat smokes fish, meat and sausage there.
 
 The tile in front of the Stone Hearth's and the Smokehouse's doors must stay clear: neither builds or goes down with something in front of it. A picked-up Stone Hearth turns to either facing as you put it down.
 

@@ -3,7 +3,8 @@
 -- core keeps an age fluidAge on whatever holds it: an item's modData or a world object's, under KEY. The age is in
 -- hours at the curve's reference (rate 1), counted on the mod's weather ledger by place, like a station's work, so
 -- an item left alone catches up when it is next looked at, at the place it was seen in last. A powered fridge
--- counts at FRIDGE_C by the clock, a powered freezer not at all.
+-- counts at FRIDGE_C by the clock, a powered freezer not at all, a place by a fire at its heat by the clock while
+-- the fuel noted at the last look lasted (Fire.noteFire).
 --
 -- Stages: Fresh, then Turned (each fresh fluid swapped for its twin: soured milk) at turnHours, then Spoiled (each
 -- fresh fluid and its twin swapped for the fresh one's spoiled fluid: rotten milk) at spoilHours.
@@ -26,10 +27,12 @@
 -- milk) keep their own fluid without a fluidAge; poured out, it is in the heat state. Every rule here works on plain tables; the engine parts are at the end. Treating by hand
 -- (the treat menu, the uses it takes) is FluidTreat's; its functions are reached here too.
 local Weather = require "TraditionalPreservationCore/Weather"
+local Fire = require "TraditionalPreservationCore/Fire"
 
 local FluidAgeing = {}
 
--- Save key: never rename it once the mod is out. Inside: process, age, treated, place, marks, hour.
+-- Save key: never rename it once the mod is out. Inside: process, age, treated, place, marks, hour; by a fire,
+-- fireUntil and placeWithoutFire (Fire.noteFire).
 FluidAgeing.KEY = "tpFluidAge"
 FluidAgeing.FRIDGE = "Fridge"
 FluidAgeing.FREEZER = "Freezer"
@@ -228,7 +231,8 @@ end
 
 function FluidAgeing.copy(fluidAge)
     return { process = fluidAge.process, age = fluidAge.age, treated = shallowCopy(fluidAge.treated),
-        markProcess = fluidAge.markProcess, place = fluidAge.place, hour = fluidAge.hour, marks = shallowCopy(fluidAge.marks or {}) }
+        markProcess = fluidAge.markProcess, place = fluidAge.place, hour = fluidAge.hour, marks = shallowCopy(fluidAge.marks or {}),
+        fireUntil = fluidAge.fireUntil, placeWithoutFire = fluidAge.placeWithoutFire }
 end
 
 -- Puts a fresh fluidAge in the kind's heat state (scalding kills what would sour it), unless it is in a state already.
@@ -240,18 +244,33 @@ local function scaldIfFresh(fluidAge, fluidKind)
 end
 
 -- Brings the fluidAge up to now: the time since it was last seen counts at the place it was seen in then. place is
--- where it is now, and counts from here on.
-function FluidAgeing.advance(fluidAge, fluidKind, ledger, now, place)
+-- where it is now, and counts from here on. By a fire, fireNote (default the fluidAge) holds the fire noted then
+-- (Fire.noteFire: fireUntil, placeWithoutFire); a station's own modData may stand in for it.
+function FluidAgeing.advance(fluidAge, fluidKind, ledger, now, place, fireNote)
     -- A state with its own curve counts on its own ledger process. The marks are of the process they were taken on
     -- (markProcess, nil for the fluidKind's own). Every change of state re-marks at once (markState), so a mismatch is
     -- only an old save's record: its stretch is lost, once.
     local process, rate = agingOf(fluidAge, fluidKind)
     local was, work = fluidAge.place, 0
+    local marked = (fluidAge.markProcess or fluidKind.process) == process
+    local function sinceMarks(at)
+        local total = ledger[process .. at] or 0
+        return total - ((fluidAge.marks or {})[at] or total)
+    end
     if was == FluidAgeing.FRIDGE then
         work = math.max(now - (fluidAge.hour or now), 0) * rate(FluidAgeing.FRIDGE_C)
-    elseif was ~= FluidAgeing.FREEZER and was and (fluidAge.markProcess or fluidKind.process) == process then
-        local total = ledger[process .. was] or 0
-        work = total - ((fluidAge.marks or {})[was] or total)
+    elseif Weather.FIRE_PLACES[was] then
+        -- The ledger keeps no totals by a fire: the time counts by the clock at the fire's heat until its noted fuel
+        -- ran out, the rest at the place under it by its share of the stretch (as Fire.catchUp).
+        fireNote = fireNote or fluidAge
+        local from = fluidAge.hour or now
+        local byFire = math.max(math.min(fireNote.fireUntil or now, now) - from, 0)
+        work = byFire * rate(Weather.placeTemperature(ledger, was))
+        if now - from > byFire and marked then
+            work = work + sinceMarks(fireNote.placeWithoutFire or Fire.DEFAULT_PLACE_WITHOUT_FIRE) * (now - from - byFire) / (now - from)
+        end
+    elseif was ~= FluidAgeing.FREEZER and was and marked then
+        work = sinceMarks(was)
     end
     fluidAge.marks = Weather.mark(fluidAge.marks or {}, ledger, process)
     fluidAge.markProcess = process ~= fluidKind.process and process or nil
@@ -371,28 +390,48 @@ function FluidAgeing.apply(container, fluidAge, fluidKind, found)
     return changed
 end
 
--- Where an item is for ageing: a powered fridge or freezer, else the weather place of whatever holds it (a player,
--- a world container, the floor, a vehicle). Nil when nothing says.
+-- The place of whatever holds an item (or a world object itself), by a fire too (Fire.placeOf), with the fire. The
+-- last answer is kept for its square and hour: a look through a crate asks once, not once an item.
+local lastHolder = {}
+local function placeOfHolder(holder)
+    local square, hour = holder:getSquare(), getGameTime():getWorldAgeHours()
+    if not (square and lastHolder.square == square and lastHolder.hour == hour) then
+        local place, fire = Fire.placeOf(holder)
+        lastHolder = { square = square, hour = hour, place = place, fire = fire }
+    end
+    return lastHolder.place, lastHolder.fire
+end
+
+-- Where an item is for ageing: a powered fridge or freezer, else the place of whatever holds it (a player, a world
+-- container, the floor, a vehicle), by a fire or not. Nil when nothing says. By a fire, the fire and the holder
+-- come second and third, for Fire.noteFire.
 function FluidAgeing.placeOfItem(item)
+    local holder
     local container = item:getOutermostContainer()
     if container then
         local containerType = container:getType()
         if (containerType == "fridge" or containerType == "freezer") and container:isPowered() then
             return containerType == "freezer" and FluidAgeing.FREEZER or FluidAgeing.FRIDGE
         end
-        local parent = container:getParent()
-        if parent then return Weather.placeOf(parent) end
-        local part = container:getVehiclePart()
-        if part and part:getVehicle() then return Weather.placeOf(part:getVehicle()) end
+        holder = container:getParent()
+        local part = not holder and container:getVehiclePart()
+        if part then holder = part:getVehicle() end
     end
-    local world = item:getWorldItem()
-    if world then return Weather.placeOf(world) end
-    return nil
+    holder = holder or item:getWorldItem()
+    if not holder then return nil end
+    local place, fire = placeOfHolder(holder)
+    return place, fire, holder
 end
 
 local function placeOfOwner(owner)
     if instanceof(owner, "InventoryItem") then return FluidAgeing.placeOfItem(owner) end
-    return Weather.placeOf(owner)
+    local place, fire = placeOfHolder(owner)
+    return place, fire, owner
+end
+
+-- Notes on a fluidAge seen at a place found here (placeOfItem) the fire it is by, or that it is by none (fire nil).
+function FluidAgeing.noteFire(fluidAge, fire, holder, now)
+    Fire.noteFire(fluidAge, holder, fire, now)
 end
 
 -- True if the owner is an item as hot as the kind scalds at (on a stove or a fire: an item's heat follows what holds it).
@@ -449,7 +488,9 @@ local function see(owner, now, place)
     local scalds = FluidAgeing.heldLongEnough(fluidKind, noteHeat(owner, fluidKind, now))
     if not isOn(fluidKind) then return nil end
     local fluidAge = modData[FluidAgeing.KEY]
-    place = place or placeOfOwner(owner) or (fluidAge and fluidAge.place) or FluidAgeing.DEFAULT_PLACE
+    local fire, holder
+    if not place then place, fire, holder = placeOfOwner(owner) end
+    place = place or (fluidAge and fluidAge.place) or FluidAgeing.DEFAULT_PLACE
     if not fluidAge or fluidAge.process ~= fluidKind.process then
         if isSealed(owner, fluidKind) then return nil, nil, fluidKind end
         fluidAge = startFluidAge(fluidKind, found, now, place, scalds)
@@ -458,6 +499,7 @@ local function see(owner, now, place)
         FluidAgeing.advance(fluidAge, fluidKind, fluidKind.getLedger(), now, place)
         if scalds then scaldIfFresh(fluidAge, fluidKind) end
     end
+    if holder then FluidAgeing.noteFire(fluidAge, fire, holder, now) end
     FluidAgeing.apply(container, fluidAge, fluidKind, found)
     return fluidAge, fluidKind
 end
@@ -554,7 +596,11 @@ function FluidAgeing.pour(source, target, now)
     local fluidAge = FluidAgeing.sourceFluidAge(source, now)
     if not fluidAge then return end
     local hadSome = FluidAgeing.look(target, now) ~= nil
-    FluidAgeing.receive(target:getModData(), fluidAge, hadSome, placeOfOwner(target))
+    local place, fire, holder = placeOfOwner(target)
+    local modData = target:getModData()
+    FluidAgeing.receive(modData, fluidAge, hadSome, place)
+    local received = modData[FluidAgeing.KEY]
+    if holder and received.place == place then FluidAgeing.noteFire(received, fire, holder, now) end
 end
 
 -- Forgets the fluidAge of an owner holding none of the kind's fluid, so new fluid starts fresh (before milking).

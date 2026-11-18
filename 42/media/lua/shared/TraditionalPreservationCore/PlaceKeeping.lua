@@ -1,7 +1,7 @@
 -- Traditional Preservation core: food that keeps by place (Fish & Meat's Crock of Potted Meat, Dairy's butter). The
 -- item's script days are what it keeps in a 15 C cellar; a keeper's curve says how many days of age a day counts as at
--- a temperature, read at Core's place temperature (Weather.placeTemperature), a powered fridge at 4 C, a powered
--- freezer not at all. The item carries its own clock in modData (keepingRules.modDataKey) = { base = its age when the clock
+-- a temperature, read at Core's place temperature (Weather.placeTemperature; by a fire or banked embers too, as the
+-- stations), a powered fridge at 4 C, a powered freezer not at all. The item carries its own clock in modData (keepingRules.modDataKey) = { base = its age when the clock
 -- started, fluidAge = a FluidAgeing age on the keeper's ledger }, so one left in a basement for a month catches up
 -- when it is next seen: its age is base plus the fluidAge's hours. Vanilla ages it between looks at its own rate; each
 -- look puts that right. A mod makes one keeper, records the weather into its ledger and looks at its items.
@@ -62,14 +62,17 @@ function PlaceKeeping.new(keepingRules)
         end
         local itemModData = item:getModData()
         local clock = itemModData[keepingRules.modDataKey]
-        place = place or FluidAgeing.placeOfItem(item) or (clock and clock.fluidAge.place) or Weather.DEFAULT_PLACE
+        local fire, holder
+        if not place then place, fire, holder = FluidAgeing.placeOfItem(item) end
+        place = place or (clock and clock.fluidAge.place) or Weather.DEFAULT_PLACE
         if not clock then
             clock = { base = item:getAge(), fluidAge = FluidAgeing.newFluidAge(keeper.ageing, ledger, now, place) }
             itemModData[keepingRules.modDataKey] = clock
-            return clock
+        else
+            FluidAgeing.advance(clock.fluidAge, keeper.ageing, ledger, now, place)
+            item:setAge(clock.base + clock.fluidAge.age / 24)
         end
-        FluidAgeing.advance(clock.fluidAge, keeper.ageing, ledger, now, place)
-        item:setAge(clock.base + clock.fluidAge.age / 24)
+        if holder then FluidAgeing.noteFire(clock.fluidAge, fire, holder, now) end
         return clock
     end
 

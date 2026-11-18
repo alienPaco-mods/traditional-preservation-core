@@ -65,6 +65,34 @@ local line = keeper.describe(frozen)
 check("a frozen one keeps forever there: no days counted as 0", line:find("x0.00 (keeps forever here)", 1, true) ~= nil
     and line:find("stale in never, rotten in never", 1, true) ~= nil)
 
+-- By a fire (Fire.placeOf): the item takes the fire's place and notes its fuel; the stretch since counts by the clock at
+-- the fire's heat while that fuel lasted, the rest at the room under it by its share.
+local Fire = require "TraditionalPreservationCore/Fire"
+local Weather = require "TraditionalPreservationCore/Weather"
+local placeOf, fuelHours, weatherPlaceOf = Fire.placeOf, Fire.fuelHours, Weather.placeOf
+local stove = {}
+local holder = { getSquare = function() return {} end }
+Fire.placeOf = function() return Fire.PLACE, stove end
+Fire.fuelHours = function() return 48 end
+Weather.placeOf = function() return "Sheltered" end
+local byFire = food("Base.Butter", 30, 45)
+function byFire:getWorldItem() return holder end
+H.setHours(240)
+local seen = keeper.keep(byFire, 240, nil, ledger)
+check("by a fire an item takes the fire's place and notes the fuel and the room under it",
+    seen.fluidAge.place == Fire.PLACE and seen.fluidAge.fireUntil == 288 and seen.fluidAge.placeWithoutFire == "Sheltered")
+local roomBefore = ledger.testSheltered
+for hour = 241, 480 do keeper.recordWeather(hour, 15) end
+Fire.placeOf = function() return "Sheltered" end
+keeper.keep(byFire, 480, nil, ledger)
+local room = (ledger.testSheltered - roomBefore) * (480 - 288) / (480 - 240)
+check("48 h at the fire's 28 C, then the room for the rest of the stretch",
+    near(byFire.age, (48 * keeper.ageRate(Fire.FIRE_C) + room) / 24, 1e-6))
+check("away from the fire the note is gone", byFire.modData.tpKeep.fluidAge.fireUntil == nil
+    and byFire.modData.tpKeep.fluidAge.place == "Sheltered")
+check("the fire place's rate reads the fire's heat", keeper.rate(Fire.PLACE, ledger) == keeper.ageRate(Fire.FIRE_C))
+Fire.placeOf, Fire.fuelHours, Weather.placeOf = placeOf, fuelHours, weatherPlaceOf
+
 on = false
 local plain = food("Base.Butter", 1e9, 1e9, 4)
 check("off, an item gets no clock and keeps its script days", keeper.keep(plain, 240, "Sheltered", ledger) == nil

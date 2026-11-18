@@ -327,7 +327,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
    - `PlaceKeeping.new(keepingRules)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
      `keepingRules.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
-     freezer stopped). The keeper's `keep(item)` brings an item up to now on its own ledger (`keepingRules.ledgerKey`) and
+     freezer stopped, by a fire or banked embers as the stations: `FluidAgeing.placeOfItem` asks `Fire.placeOf` of
+     whatever holds the item, and each look notes the fire's fuel on the clock, `FluidAgeing.noteFire`; the stretch
+     after counts by the clock at the fire's heat while that fuel lasted, the rest at the place under it). The keeper's `keep(item)` brings an item up to now on its own ledger (`keepingRules.ledgerKey`) and
      modData clock (`keepingRules.modDataKey`); `keepingRules.enabled` is the sandbox switch, `keepingRules.days` sets fresh and rotten days on
      an item whose script has none. The mod's World calls `keeper.recordWeather(now, temperature)` in its `Weather.onReading`;
      `PlaceKeepingUI.watch(keeper, types)` looks at the items (Fish & Meat looks at its crocks in its own look);

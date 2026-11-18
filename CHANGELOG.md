@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.12
+- **`UI.durationText(hours)`** (2026-11-19): a long wait as text, whole hours up to two days (`UI.DAYS_FROM_HOURS`), then "about N days" to the nearest day; Fish & Meat's Tub Info reads "Cured in about 21 days" instead of 504 hours. test_station_info. DEVGUIDE.
+
 ## 0.1.11
 - **Kept food and fluids read the fire places** (2026-11-18): whatever keeps by place (Fish & Meat's Potted Meat, Dairy's butter and milk, Fruits and Vegetables' crops and their cures) now counts by a fire (28 C) or by banked embers (24 C), less under a roof or in the open, as the stations do. `FluidAgeing.placeOfItem` asks `Fire.placeOf` of whatever holds the item (a crate, the floor, the player, a vehicle; a powered fridge or freezer still comes first) and returns the fire and the holder too; one answer a square and hour, so a crate is scanned once. Each look notes the fire's fuel on the item's clock (`FluidAgeing.noteFire`: `fireUntil`, `placeWithoutFire`); `FluidAgeing.advance` counts a stretch by a fire by the clock at its heat while that fuel lasted, the rest at the place under it by its share (as `Fire.catchUp`), and takes a station's own note (`fireNote`). Before, a fluidAge by a fire counted nothing (the ledger keeps no totals there). test_place_keeping. DEVGUIDE.
 

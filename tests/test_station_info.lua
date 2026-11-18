@@ -120,6 +120,8 @@ check("a frozen batch has no time left: its bar says paused", frozen.bars[1].pro
 local bare = StationInfo.block({ place = "Open" })
 check("by the clock: one row, and nothing in it", #bare.rows == 1 and #bare.bars == 0 and #bare.notes == 1)
 local UI = require "TraditionalPreservationCore/UI"
+check("a long wait reads in days past two days", UI.durationText(504) == "IGUI_TraditionalPreservationCore_AboutDays"
+    and UI.durationText(30) == "IGUI_TraditionalPreservationCore_Hours")
 local days, hours = UI.daysHours(30.2)
 check("time left: rounded up, whole days and hours as text (30.2 h is 1 d 7 h)", days == "1" and hours == "7"
     and select(1, UI.daysHours(24)) == "1" and select(2, UI.daysHours(24)) == "0")

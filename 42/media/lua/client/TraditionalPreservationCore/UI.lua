@@ -140,6 +140,13 @@ function UI.hoursText(hours)
     return UI.say("IGUI_TraditionalPreservationCore_Hours", tostring(math.ceil(hours)))
 end
 
+-- A long wait: whole hours up to two days, then "about N days" to the nearest day (504 -> "about 21 days").
+UI.DAYS_FROM_HOURS = 48
+function UI.durationText(hours)
+    if hours <= UI.DAYS_FROM_HOURS then return UI.hoursText(hours) end
+    return UI.say("IGUI_TraditionalPreservationCore_AboutDays", string.format("%.0f", math.floor(hours / 24 + 0.5)))
+end
+
 -- Vanilla names tainted water "Water" and adds its "(Tainted)" only when the sandbox's tainted water text is on
 -- (ENGINE_NOTES: getUiName; sinks and rain barrels ask the same option).
 local TAINTED = "TaintedWater"

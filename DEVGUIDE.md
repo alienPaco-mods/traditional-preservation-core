@@ -208,7 +208,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    (one look, one set of colours: `InfoWindow.LABEL_COLOUR` and the rest); running batches are listed furthest along
    first, ties by recipe name then count (`StationInfo.batchBefore`).
 6. **What the core already does, so a mod doesn't write it again:**
-   - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `fluidName`, and
+   - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `durationText` (hours up to two days, then "about N days"), `fluidName`, and
      `keepInPlace(test)` for a station that mustn't be picked up while it holds something (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
    - Stations (`Station`): `kinds(prefix, faces, bases)` tells a mod's stations by one lookup on the sprite's name
      (never cut the name apart), and the tracker's `scan = true` finds one built or put down this session at once.

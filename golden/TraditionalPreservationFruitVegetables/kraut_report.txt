@@ -1,0 +1,16 @@
+A kraut barrel salted and compressed on the first of the month: days to ready (28 at 18 C), then days it keeps
+| Month | Room | Loft | Basement | Under a roof | Open air |
+|---|---|---|---|---|---|
+| Jan | 134, keeps 51 | 134, keeps 41 | 94, keeps 132 | 144, keeps 46 | 129, keeps 44 |
+| Feb | 104, keeps 51 | 104, keeps 41 | 87, keeps 121 | 114, keeps 46 | 99, keeps 44 |
+| Mar | 74, keeps 51 | 74, keeps 41 | 76, keeps 113 | 84, keeps 46 | 71, keeps 43 |
+| Apr | 51, keeps 47 | 50, keeps 37 | 63, keeps 108 | 56, keeps 45 | 49, keeps 41 |
+| May | 35, keeps 41 | 33, keeps 33 | 52, keeps 106 | 37, keeps 40 | 31, keeps 38 |
+| Jun | 27, keeps 35 | 22, keeps 27 | 44, keeps 108 | 27, keeps 35 | 24, keeps 35 |
+| Jul | 22, keeps 46 | 18, keeps 30 | 40, keeps 123 | 22, keeps 47 | 21 soft, keeps 29 |
+| Aug | 27, keeps 220 | 21, keeps 66 | 39, keeps 154 | 27, keeps 255 | 28, keeps 238 |
+| Sep | 33, keeps 238 | 29, keeps 236 | 41, keeps 185 | 36, keeps 247 | 40, keeps 227 |
+| Oct | 167, keeps 94 | 166, keeps 87 | 47, keeps 196 | 198, keeps 71 | 183, keeps 70 |
+| Nov | 182, keeps 58 | 182, keeps 49 | 60, keeps 181 | 198, keeps 49 | 182, keeps 48 |
+| Dec | 164, keeps 51 | 164, keeps 41 | 83, keeps 154 | 174, keeps 46 | 157, keeps 45 |
+exit=0

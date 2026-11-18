@@ -7,6 +7,10 @@
     "tools/season_report.lua",
     "tools/storage_model.lua"
   ],
+  "TraditionalPreservationFruitVegetables": [
+    "tools/cellar_report.lua",
+    "tools/kraut_report.lua"
+  ],
   "TraditionalPreservationVinegar": [
     "tools/season_report.lua",
     "tools/simulate.lua"

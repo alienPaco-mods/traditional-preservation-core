@@ -45,7 +45,10 @@ getSprite = function(name) return { getName = function() return name end } end
 local square = { getX = function() return 5 end, getY = function() return 6 end, getZ = function() return 0 end,
     isOutside = function() return false end, isInARoom = function() return true end }
 cell.squares["5,6,0"] = square
-local container = { custom = 0, processed = 0, getItems = function() return H.list({}) end }
+-- Built when the fire box held 10: the save keeps a container's capacity.
+local container = { custom = 0, processed = 0, capacity = 10, getItems = function() return H.list({}) end }
+function container:getCapacity() return self.capacity end
+function container:setCapacity(value) self.capacity = value end
 function container:getCustomTemperature() return self.custom end
 function container:setCustomTemperature(value) self.custom = value end
 function container:addItemsToProcessItems() self.processed = self.processed + 1 end
@@ -71,6 +74,12 @@ function fire:setOverlaySprite(name, r, g, b) self.overlay, self.tint = name and
 
 World.track(fire)
 World.update(fire, 100)
+check("an old fire box (capacity 10) is raised to the Stone Hearth's, to take a full bucket of brine",
+    container.capacity == StoneHearth.FIREBOX_CAPACITY and StoneHearth.FIREBOX_CAPACITY >= 11 and StoneHearth.FIREBOX_CAPACITY < 22)
+container.capacity = 40
+World.update(fire, 100)
+check("a bigger one is never lowered", container.capacity == 40)
+container.capacity = StoneHearth.FIREBOX_CAPACITY
 check("a lit Stone Hearth has no embers of its own", count(cell.heat) == 0 and count(cell.lights) == 0 and container.custom == 0)
 
 World.setFire(fire, "bank", 100)

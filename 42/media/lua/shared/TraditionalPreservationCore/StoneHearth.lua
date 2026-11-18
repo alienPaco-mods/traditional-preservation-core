@@ -193,8 +193,12 @@ local function showing(fire, fireModData, burning, banked)
         StoneHearth.bareGlow(burning, banked, smoke, smoke and StoneHearth.LID or hole, face)
 end
 
+-- Its fire box holds a full metal bucket of brine (11: Salt boils it in the fire) but not two; the tiles say the same.
+StoneHearth.FIREBOX_CAPACITY = 15
+
 StoneHearth.kind = Fire.kind({
     id = "stoneHearth",
+    fireboxCapacity = StoneHearth.FIREBOX_CAPACITY,
     is = StoneHearth.isStoneHearth,
     face = StoneHearth.face,
     sprites = StoneHearth.SPRITES,

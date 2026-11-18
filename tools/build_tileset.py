@@ -143,7 +143,7 @@ for look, base in CAULDRON_LOOKS.items():
                                             ("container", "woodstove"), ("solidtrans", "")] + group(look, "Cold"))
 for look, base in BARE_LOOKS.items():
     for offset, facing in enumerate(FACES):
-        TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "10"), ("ContainerPosition", "Low"),
+        TILE_PROPS[base + offset] = sorted([("BlocksPlacement", ""), ("ContainerCapacity", "15"), ("ContainerPosition", "Low"),
                                             ("CustomName", "Hearth"), ("Facing", facing),
                                             ("IsMoveAble", ""), ("IsoType", "IsoFireplace"), ("PickUpWeight", "80"),
                                             ("container", "woodstove"), ("solidtrans", "")] + group(look, "Open"))

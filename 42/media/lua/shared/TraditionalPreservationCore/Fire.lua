@@ -240,6 +240,8 @@ end
 --                                          Info's first note by its fire (text keys)
 --   refusals                               why Connect is refused, in its words: { joined (something already
 --                                          is), door (the target is on its door's side) } (text keys)
+--   fireboxCapacity                        optional: its fire box's capacity. The game saves a container's capacity
+--                                          with the object, so FireWorld raises a fire built before a change to it
 local KINDS = Fire.registry("Fire.kind")
 
 -- Checked before it is kept, so a refused kind is never tracked or asked.

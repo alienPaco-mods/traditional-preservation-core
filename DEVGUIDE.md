@@ -260,13 +260,15 @@ local Weather = require "TraditionalPreservationCore/Weather"
      object (the Smokehouse's entry overlay draws the whole flue, `Smokehouse.entrySprite`; `onChange` redraws it),
      never on the stone, which has no flue tiles. `smoke = true` (the Smokehouse's) says it takes the fire's smoke: the
      bare Stone Hearth's hole is lidded and its glow goes up the flue.
-   - **Kinds of fire** (`Fire.kind{ id, is, face, sprites, showing, fittedByTile, display, refusals }`): a vanilla fireplace by
+   - **Kinds of fire** (`Fire.kind{ id, is, face, sprites, showing, fittedByTile, display, refusals, fireboxCapacity }`): a vanilla fireplace by
      its tiles that Fire banks, stokes and keeps attachments and connections on; the Stone Hearth (`StoneHearth.lua`)
      is the first, and Fire names no stone. `Fire.isFire(object)` is any kind, `Fire.kindOf(object)` which,
      `Fire.faceOf(fire)` its facing, `Fire.sprites()` every kind's tiles (FireWorld's tracker; it requires
      `StoneHearth` first). A kind's `display` is how it shows bare (icon, title, Info row, Bank / Stoke icons) with
      `help = { out, lit, banked }`, its Info's first note; `refusals = { joined, door }` are Connect's refusals in its
-     words. `Fire.kind` refuses a kind missing any of these but `fittedByTile` before keeping it. FireUI is the
+     words. `fireboxCapacity` (optional) is its fire box's capacity: the game saves a container's capacity with the object,
+     so FireWorld raises a fire built with less (the Stone Hearth's is 15, `StoneHearth.FIREBOX_CAPACITY`: a full bucket of
+     brine, 11, but not two). `Fire.kind` refuses a kind missing any of these but `fittedByTile` and `fireboxCapacity` before keeping it. FireUI is the
      kind-free menu and Info window (`FireWindow`), with `FireUI.addMenu(fn)` and `FireUI.addNotes(fn)` for rows and
      notes on any fire.
      `StoneHearth.isStoneHearth` is the stone alone (the Smokehouse's chamber looks for it).

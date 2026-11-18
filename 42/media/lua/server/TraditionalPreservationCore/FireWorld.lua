@@ -104,6 +104,14 @@ Fire.attach({ id = Cauldron.ID, onFire = function(cauldron, fire) simmer(fire, C
 -- again the first time a fire is seen after a load (tints starts empty), and whenever it changes. Dropped with the fire.
 local tints = {}
 
+-- A fire box built with a smaller capacity than its kind's now (the game saves it with the object) is raised to it.
+local function fitFirebox(fire)
+    local fireKind = Fire.kindOf(fire)
+    local capacity = fireKind and fireKind.fireboxCapacity
+    local container = capacity and fire:getContainer()
+    if container and container:getCapacity() < capacity then container:setCapacity(capacity) end
+end
+
 local function showOverlay(fire, overlay, colour)
     local shown = fire:getOverlaySprite()
     local key = overlay and colour and string.format("%.3f %.3f %.3f", colour[1], colour[2], colour[3]) or ""
@@ -121,6 +129,7 @@ end
 -- attachment's look (a Stone Hearth: its flue and what is in the hole) and the fire mouth's glow, lit or banked. Returns the fire's state.
 function World.update(fire, now)
     local fireModData = Fire.fireModData(fire:getModData())
+    fitFirebox(fire)
     local attachment, part = Fire.attachmentOf(fire)
     -- Known by its tile only (put down after a pick-up): noted, so the hole's tiles never take its place.
     if attachment then fireModData.attached = attachment.id end

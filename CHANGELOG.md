@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.10
+- **Fix: a full bucket of brine fits in the Stone Hearth's fire box** (2026-11-18): the bare Stone Hearth's fire box held 10, and a full metal bucket of brine weighs 11, so Salt's boil on the Stone Hearth refused a full bucket (*11/10*). It now holds 15 (`StoneHearth.FIREBOX_CAPACITY`), as the cauldron's tiles already did: one full bucket, not two. The game saves a container's capacity with the object, so a kind of fire can name its `fireboxCapacity` and FireWorld raises a fire built with less the first time it looks at it; Stone Hearths already built are fixed in place. The tiles' `ContainerCapacity` is 15 for new ones (`tools/build_tileset.py`; the art is unchanged). test_fire_world. DEVGUIDE.
+
 ## 0.1.9
 - **The Stone Hearth takes 12 Clay** (2026-11-17), was 2: 12 Stone Blocks laid in clay need more than two lumps of mortar. `TPC.kit("stone")` and `TPC.kit()` give 12 (test_console). README (its heading also read 0.1.7, now 0.1.9), guide 6, DEVHELP, Workshop text.
 

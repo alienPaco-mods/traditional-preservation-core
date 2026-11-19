@@ -1,5 +1,5 @@
 # Traditional Preservation: CORE
-### The Official Player's Guide to the Stone Hearth, the Forged Cauldron, the Smokehouse and the Shared Rules
+### The Official Player's Guide to the Stone Hearth, the Forged Cauldron, the Smokehouse, the Drying Cloth and the Shared Rules
 
 > *"One fire, one cauldron, and the weather over all of it."*
 
@@ -11,7 +11,7 @@
 3. The Stone Hearth
 4. The Forged Cauldron
 5. Banking the Fire
-6. The Smokehouse
+6. The Smokehouse and the Drying Cloth
 7. By the Fire
 8. Places and Weather
 9. Milk and Other Fluids That Go Off
@@ -30,7 +30,8 @@ It also adds the series' shared stations:
 
 - the **Stone Hearth**, a knee-high stone firebox with an iron door and a stone-lined hole in its top: a stove, an oven and a fire to warm the stations round it (chapter 3);
 - the **Forged Cauldron**, 60 L of forged iron you hang over the Stone Hearth's hole to heat whatever you pour into it (chapter 4);
-- the **Smokehouse**, a plank shed the Stone Hearth's smoke can be led into (chapter 6).
+- the **Smokehouse**, a plank shed the Stone Hearth's smoke can be led into (chapter 6);
+- the **Drying Cloth**, a sheet held down with two stones, where the other mods' things dry in the air (chapter 6).
 
 On its own it adds only those, and the cauldron's recipe; it changes no vanilla recipe, item or loot.
 
@@ -174,7 +175,7 @@ The embers keep burning while you're away, at their third. **Put out Fire** work
 
 ---
 
-## 6. The Smokehouse
+## 6. The Smokehouse and the Drying Cloth
 
 A plank shed on four tiles, two by two, under a low pitched roof of boards, built of thick planks with a crack of light between some of them. Its end is a gable with a pair of plank doors, ledged and braced on strap hinges, and a galvanised louvre vent under the peak, black with soot (Build menu, Furniture: Woodwork 3, 14 planks, 20 nails, a hammer kept; 15 Carpentry XP). It stands in the open or under an open roof, never in a room, and the two tiles in front of its doors stay clear. Inside, the air is an open shed's, only still and out of the rain (chapter 8). It holds 6 stacks of whatever the TP mods smoke: today the fish, meat and sausage of *Traditional Preservation (Fish & Meat)*, whose guide tells what each does in the smoke.
 
@@ -190,6 +191,22 @@ Right-click the Stone Hearth or the shed: **Connect the Stone Hearth**, about ha
 Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth's hole is covered (its lid, or the pot when stove food is in), and its smoke goes up the flue instead of out of the hole or round the door. Stone Hearth Info says *Flue: joined to the Smokehouse (clay pipe)*. While finished stacks wait inside, something hangs by the door: a country ham for the first one or two, a smoked chicken beside it for three or four, a smoked rabbit too for five or six. While the joined Stone Hearth burns, smoke comes out of the vent, a plume when stoked and a thin wisp when banked. You can still cook in the Stone Hearth while it smokes, and still fit the cauldron.
 
 > *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
+
+### The Drying Cloth
+
+A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and **Cloth Info** (or just click it): the place, its temperature and a bar for each lot.
+
+| | |
+|---|---|
+| Lots | 5, each one kind: one batch of yeast cakes, or 10 kefir grains |
+| Dries | In the open, under a roof, in a room with a window open, in a basement, by a fire |
+| Waits | In a shut room (the air doesn't move: open a window), and when frozen |
+| Too hot | Yeast cakes die after an hour above 35 C |
+| Taken off early | It comes back as it went on |
+
+A cloth with anything on it stays where it is.
+
+> *Margin note:* the shade and a draught, never the sun or the stove: that's how yeast cakes, grains, hops and herbs were dried in a farmhouse, on a cloth under the roof where the air moved, or on a rack by an open window. Heat dries quicker and kills what's alive in them.
 
 ---
 
@@ -345,7 +362,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Command | What it does |
 |---|---|
 | `TPC.speed(x)` | Game speed: the clock runs `x` times as fast (`getGameTime():setMultiplier(x)`); `TPC.speed()` shows it. Vanilla's speed buttons are 1, 5, 20 and 40, and clicking one sets vanilla's speed again. |
-| `TPC.kit(kind)` | Gives what a station takes: `"stoneCauldron"` (the default: the Stone Hearth's build and Fit Cauldron's kit), `"stone"` (a mason's trowel, 12 stone blocks and 12 clay, Masonry 2), `"cauldron"` (a Forged Cauldron, 2 iron pipes, a heavy chain, a large hook and pliers), `"forge"` (Forge Cauldron's materials and tools, Blacksmith 4, and the magazine), `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3), `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel) or `"hole"` (a stove food, an oven food and a pot to fill, for the hole's looks). `TPC.kit("?")` lists them. |
+| `TPC.kit(kind)` | Gives what a station takes: `"stoneCauldron"` (the default: the Stone Hearth's build and Fit Cauldron's kit), `"stone"` (a mason's trowel, 12 stone blocks and 12 clay, Masonry 2), `"cauldron"` (a Forged Cauldron, 2 iron pipes, a heavy chain, a large hook and pliers), `"forge"` (Forge Cauldron's materials and tools, Blacksmith 4, and the magazine), `"smokehouse"` (a hammer, 14 planks and 20 nails, Woodwork 3), `"cloth"` (a Sheet and 2 Stones, for a Drying Cloth), `"flue"` (both flue kits: 2 Clay Pipe Segments, 3 Flat Stones, 3 Clay, with a Mason's Trowel and a Shovel) or `"hole"` (a stove food, an oven food and a pot to fill, for the hole's looks). `TPC.kit("?")` lists them. |
 | `TPC.weather()` | The series' weather as every TP mod reads it: the temperature now, the season's mean and humidity, the ground's mean (the season a month behind, which a basement follows), and each place's temperature. |
 | `TPC.here()` | Which place you're standing in, and its temperature. |
 | `TPC.windows()` | Whether the room you stand in counts as aired (a window open), and how long that check takes. |
@@ -359,6 +376,8 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.stone()` | The nearest Stone Hearth within 2 tiles, fitted or not: position, fire, fuel in minutes, sprite, what is fitted, what is joined (its kit and side), the hole's look, and the square on its back and each flank. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Stone Hearth's or Smokehouse's door opens onto it. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
+| `TPC.cloth()` | Each Drying Cloth within 3 tiles: its place and temperature, free lots, and each lot's kind, count, state, share dried and hours left. |
+| `TPC.dryCloth(hours)` | Every wet lot on the Drying Cloths within 3 tiles dries this many hours at full speed (24 if left out). |
 | `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 
 **Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Stone Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.

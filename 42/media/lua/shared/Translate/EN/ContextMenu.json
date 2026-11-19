@@ -17,5 +17,11 @@
   "ContextMenu_TraditionalPreservationCore_Fit": "Fit %1",
   "ContextMenu_TraditionalPreservationCore_Remove": "Remove %1",
   "ContextMenu_TraditionalPreservationCore_PiecesOne": "One",
-  "ContextMenu_TraditionalPreservationCore_PiecesAll": "All (%1)"
+  "ContextMenu_TraditionalPreservationCore_PiecesAll": "All (%1)",
+  "ContextMenu_TraditionalPreservationCore_ClothInfo": "Cloth Info",
+  "ContextMenu_TraditionalPreservationCore_ClothLay": "Lay %1 on the Cloth",
+  "ContextMenu_TraditionalPreservationCore_ClothOneLot": "One Lot",
+  "ContextMenu_TraditionalPreservationCore_ClothAllLots": "All (%1 lots)",
+  "ContextMenu_TraditionalPreservationCore_ClothTakeDone": "Take Off the Finished Lots (%1)",
+  "ContextMenu_TraditionalPreservationCore_ClothTakeAll": "Take Everything Off"
 }

@@ -1,5 +1,23 @@
 # Changelog: Traditional Preservation (Core)
 
+
+## 0.1.20
+- **The Drying Cloth** (2026-11-19): a Sheet spread on the floor with 2 Stones on its corners (Build menu, Furniture),
+  where things dry by the air of their place. Five lots, each what one lay put down, of one kind; the kinds belong to
+  the mods, which register them (`DryingCloth.register`: Yeast's cakes, Dairy's kefir grains). A lot dries on a
+  FluidAgeing age on the cloth's own ledger (`TraditionalPreservationCoreCloth`), so time counts while the cloth is
+  unloaded; it waits in a shut room's still air (the series' rule) and as its kind's curve says in the cold; a kind may
+  die past a heat (`killAbove`, an hour there), or go off before it dries (`goesOff`, the earlier of the two wins;
+  Cloth Info: *Gone off*). Right-click: *Lay <kind> on the Cloth* (One Lot / All), *Take Off the
+  Finished Lots*, *Take Everything Off*, **Cloth Info** (also a click on the cloth): the place, a bar for each lot. A
+  cloth with anything on it can't be picked up, and none goes down in front of a door. The lots are the object's
+  modData `tpcCloth`. Tiles 100 and 101 (`tools/cloth_art.py`, which also gives mods `lot_spot` for their overlays).
+- **InfoWindow:barNamed**, a bar with a label not from a translation key.
+- **PlaceKeeping keeper.addAgeing**: a second ageing curve on a keeper's ledger (Yeast's cakes on the cloth); the
+  ledger fills totals for every process once a game.
+- **Console:** `TPC.kit("cloth")`, `TPC.cloth()` (each cloth near you: place and every lot) and `TPC.dryCloth(hours)`
+  (dries the wet lots near you). `test_drying_cloth.lua` new; test_console checks the new commands.
+
 ## 0.1.19
 - **An empty doorway airs a room** (2026-11-19, from the long save: a door broken off read shut): a door frame on an
   outside wall (the DoorWallN / DoorWallW flag on the square that owns the wall) with no door in it lets air in. A shut

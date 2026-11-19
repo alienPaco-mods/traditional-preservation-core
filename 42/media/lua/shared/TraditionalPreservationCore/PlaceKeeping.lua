@@ -33,8 +33,24 @@ function PlaceKeeping.new(keepingRules)
         return Weather.newLedger(now, keeper.processes)
     end
 
+    -- The ledger, with totals for every process (a save from before one was added starts it at 0; once a game).
+    local filledLedger
     function keeper.ledger()
-        return Weather.getLedger(keepingRules.ledgerKey, keeper.newLedger)
+        local ledger = Weather.getLedger(keepingRules.ledgerKey, keeper.newLedger)
+        if ledger ~= filledLedger then
+            Weather.fillLedger(ledger, keeper.processes)
+            filledLedger = ledger
+        end
+        return ledger
+    end
+
+    -- A second ageing on the keeper's ledger (a mod's own curve for its items somewhere else, as Yeast's cakes on the
+    -- Drying Cloth), made at load. Returns the ageing, a FluidAgeing fluid kind with the keeper's speed.
+    function keeper.addAgeing(process, curve)
+        local function rate(celsius) return Weather.curve(curve, celsius) end
+        keeper.processes[process] = rate
+        filledLedger = nil
+        return { process = process, rate = rate, speed = keeper.ageing.speed }
     end
 
     -- Adds a stretch of weather to the ledger (every ten minutes, from a Weather.onReading).

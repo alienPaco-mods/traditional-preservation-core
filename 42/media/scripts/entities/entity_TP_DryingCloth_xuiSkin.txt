@@ -1,0 +1,12 @@
+module Base
+{
+    xuiSkin default
+    {
+        entity ES_TPDryingCloth
+        {
+            LuaWindowClass = ISEntityWindow,
+            DisplayName = TP_DryingCloth,
+            Icon = Item_TPDryingCloth,
+        }
+    }
+}

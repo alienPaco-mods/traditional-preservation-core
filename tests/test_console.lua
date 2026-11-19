@@ -30,6 +30,9 @@ run("kit", "stone")
 check("kit(\"stone\") gives what a Stone Hearth is built from", #player.given == before + 25)
 check("an unknown kind lists the kits and gives nothing", run("kit", "?"):find("TPC.kit(\"stone\")", 1, true) ~= nil
     and #player.given == before + 25)
+given = #player.given
+run("kit", "cloth")
+check("kit(\"cloth\") gives a Sheet and 2 Stones", #player.given == given + 3)
 before = #player.given
 run("kit", "smokehouse")
 check("kit(\"smokehouse\") gives what a Smokehouse is built from", #player.given == before + 35)
@@ -40,6 +43,8 @@ before = #player.given
 run("kit", "hole")
 check("kit(\"hole\") gives a stove food, an oven food and a pot", #player.given == before + 3)
 check("smokehouse says so when none is near", run("smokehouse"):find("No Smokehouse", 1, true) ~= nil)
+check("cloth says so when none is near", run("cloth"):find("No Drying Cloth", 1, true) ~= nil)
+check("dryCloth dries nothing when no cloth is near", run("dryCloth", 48):find("Dried 0 lot(s) on 0 cloth(s) by 48.0 hours", 1, true) ~= nil)
 local multiplier = 1
 getGameTime = function()
     return { setMultiplier = function(_, x) multiplier = x end, getTrueMultiplier = function() return multiplier end }

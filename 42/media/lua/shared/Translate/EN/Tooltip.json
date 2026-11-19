@@ -4,5 +4,6 @@
   "Tooltip_TraditionalPreservationCore_SeasonTakes": "Takes %1 of its uses for each of the %2 selected that hasn't had it yet, as much as a stew would.",
   "Tooltip_craft_smokehouseChamberDesc": "A plank smokehouse on four tiles, two by two, its pair of doors under the gable. Hangs up to 6 stacks of what the TP mods smoke (Fish & Meat: Salt Cured fish, salted meat and sausage). With no fire it is still air out of the rain. Join a Stone Hearth beside it (its menu) for smoke. Open air or under an open roof, not in a room.",
   "Tooltip_TraditionalPreservationCore_ForgedCauldron": "A 60 L cauldron of forged iron, greased and blacked. Fit it over a Stone Hearth's hole (its menu) with 2 metal pipes, a heavy chain, a large hook and pliers.",
-  "Tooltip_craft_TPCauldronDesc": "A 60 L cauldron for the Stone Hearth: two sheets of iron beaten into a pot, a wire bail. Fit it from the Stone Hearth's menu."
+  "Tooltip_craft_TPCauldronDesc": "A 60 L cauldron for the Stone Hearth: two sheets of iron beaten into a pot, a wire bail. Fit it from the Stone Hearth's menu.",
+  "Tooltip_craft_TPDryingClothDesc": "A sheet spread on the floor, two stones on its corners. Things laid on it dry by the air where it lies: five lots at a time. Nothing dries in a shut room."
 }

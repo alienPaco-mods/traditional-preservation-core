@@ -42,4 +42,6 @@ return {
     CHAMBER_PIECES = 84,
     CHAMBER_PIECE_COLUMNS = { 0, 1, 1 },
     CHAMBER_SMOKE = 90,
+    CLOTH = 100,
+    CLOTHS = { "traditionalpreservationcore_01_100", "traditionalpreservationcore_01_101" },
 }

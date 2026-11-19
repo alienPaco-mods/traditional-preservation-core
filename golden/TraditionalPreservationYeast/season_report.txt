@@ -16,6 +16,54 @@ Days for one culture (120 hours at full speed), started on the first of the mont
 Fireside indoors (28 C), any month: 5.00 days
 Embers indoors (24 C), any month: 5.00 days
 
+Days an Active Culture keeps before it is Spent (script 3 / 5 days, a 15 C cellar's), made on the first of the month
+| Month | Outdoors | Under a roof | Shut room | Aired room | Basement |
+|---|---|---|---|---|---|
+| Jan | 52.87 | 52.87 | 55.29 | 59.00 | 13.54 |
+| Feb | 34.75 | 34.75 | 29.17 | 31.58 | 15.08 |
+| Mar | 19.75 | 19.75 | 18.87 | 19.75 | 13.92 |
+| Apr | 12.33 | 12.33 | 11.08 | 11.04 | 12.42 |
+| May | 5.87 | 5.87 | 6.00 | 6.29 | 10.54 |
+| Jun | 3.62 | 3.62 | 4.04 | 4.04 | 8.54 |
+| Jul | 3.46 | 3.46 | 3.29 | 3.62 | 6.62 |
+| Aug | 1.62 | 1.62 | 2.54 | 2.37 | 5.83 |
+| Sep | 4.17 | 4.17 | 4.83 | 4.79 | 5.92 |
+| Oct | 8.83 | 8.83 | 6.96 | 8.83 | 6.67 |
+| Nov | 40.58 | 40.58 | 17.25 | 32.92 | 8.71 |
+| Dec | 76.29 | 76.29 | 81.54 | 81.25 | 11.04 |
+
+Days a Hopped Culture keeps before it is Spent (script 7 / 10 days, a 15 C cellar's), made on the first of the month
+| Month | Outdoors | Under a roof | Shut room | Aired room | Basement |
+|---|---|---|---|---|---|
+| Jan | 77.33 | 77.33 | 76.87 | 79.04 | 27.79 |
+| Feb | 51.04 | 51.04 | 48.42 | 50.42 | 29.75 |
+| Mar | 36.71 | 36.71 | 32.58 | 35.71 | 27.17 |
+| Apr | 19.46 | 19.46 | 19.71 | 19.58 | 24.08 |
+| May | 9.75 | 9.75 | 10.50 | 10.42 | 20.33 |
+| Jun | 5.54 | 5.54 | 6.58 | 6.25 | 16.29 |
+| Jul | 6.46 | 6.46 | 6.58 | 7.00 | 13.08 |
+| Aug | 3.12 | 3.12 | 4.12 | 3.96 | 11.58 |
+| Sep | 6.17 | 6.17 | 7.79 | 7.08 | 11.87 |
+| Oct | 18.83 | 18.83 | 16.54 | 18.75 | 13.63 |
+| Nov | 108.21 | 108.21 | 105.08 | 111.33 | 18.04 |
+| Dec | 103.58 | 103.58 | 103.58 | 106.50 | 23.17 |
+
+Days for a lot of yeast cakes to dry on a Drying Cloth (168 hours at full speed; dies past 35 C), laid fresh on the first of the month, and their age then in days (Spent at 8); a shut room never dries
+| Month | Outdoors | Under a roof | Aired room | Basement |
+|---|---|---|---|---|
+| Jan | 75.79 (3.4 old) | 75.79 (3.4 old) | 78.50 (3.9 old) | 21.04 (2.5 old) |
+| Feb | 47.12 (3.0 old) | 47.12 (3.0 old) | 48.79 (3.5 old) | 24.25 (2.7 old) |
+| Mar | 31.58 (2.8 old) | 31.58 (2.8 old) | 31.92 (3.1 old) | 21.12 (2.6 old) |
+| Apr | 15.83 (2.4 old) | 15.83 (2.4 old) | 15.75 (2.3 old) | 17.71 (2.4 old) |
+| May | 8.96 (2.7 old) | 8.96 (2.7 old) | 8.25 (2.2 old) | 14.00 (2.3 old) |
+| Jun | 7.71 (3.0 old) | 7.71 (3.0 old) | 7.08 (2.8 old) | 10.96 (2.2 old) |
+| Jul | 7.25 (3.1 old) | 7.25 (3.1 old) | 7.04 (3.2 old) | 8.92 (2.3 old) |
+| Aug | 7.46 (4.0 old) | 7.46 (4.0 old) | 7.04 (3.7 old) | 8.00 (2.3 old) |
+| Sep | 7.92 (2.9 old) | 7.92 (2.9 old) | 7.46 (2.5 old) | 8.12 (2.3 old) |
+| Oct | 15.29 (2.5 old) | 15.29 (2.5 old) | 11.75 (2.2 old) | 9.04 (2.3 old) |
+| Nov | 106.71 (2.9 old) | 106.71 (2.9 old) | 113.17 (3.2 old) | 11.38 (2.2 old) |
+| Dec | 101.79 (3.5 old) | 101.79 (3.5 old) | 107.87 (4.7 old) | 15.58 (2.3 old) |
+
 Popup after one day: progress, hours left, temperature, rate
 Jan Open      0.000000 paused -10.973869 0.000000 Open
 Jan Sheltered 0.000000 paused -8.160956 0.000000 Sheltered

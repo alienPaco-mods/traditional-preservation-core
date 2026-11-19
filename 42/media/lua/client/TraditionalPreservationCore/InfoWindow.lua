@@ -190,6 +190,11 @@ function InfoWindow:bar(y, label, share, colour, text)
     return InfoWindow.drawBar(self, LAYOUT, y, getText(label), share, colour, text)
 end
 
+-- A bar whose label is already text (a numbered lot: "1. Yeast Cakes").
+function InfoWindow:barNamed(y, labelText, share, colour, text)
+    return InfoWindow.drawBar(self, LAYOUT, y, labelText, share, colour, text)
+end
+
 -- The notes, after which the window fits its height to them.
 function InfoWindow:drawNotes(y, notes)
     local height = InfoWindow.drawNoteLines(self, LAYOUT, y, notes) + InfoWindow.PADDING

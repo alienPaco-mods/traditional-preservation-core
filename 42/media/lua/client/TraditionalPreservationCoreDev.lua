@@ -11,9 +11,12 @@ local Doors = require "TraditionalPreservationCore/Doors"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Windows = require "TraditionalPreservationCore/Windows"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
+
+local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
 TPC = {}
 
 local HOT_TEST_C = 90   -- TPC.hot's steam: above CauldronFluid.HOT_C, so it shows Hot at once
+local CLOTH_RADIUS = 3
 
 local function say(text) print("[TPC] " .. text) end
 
@@ -34,6 +37,8 @@ function TPC.help()
     say("TPC.flue(kitName, side) show its flue: kitName Pipe or Stones, side Back, Left or Right; no kitName caps it (art check only)")
     say("TPC.smokehouse()     each Smokehouse tile within 3 tiles: facing, part, the Stone Hearths beside it and why each can't join")
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
+    say(string.format("TPC.cloth()          each Drying Cloth within %d tiles: place, and each lot's kind, count, state, progress and hours left", CLOTH_RADIUS))
+    say(string.format("TPC.dryCloth(hours)  every wet lot on the Drying Cloths within %d tiles dries this many hours at full speed (default 24)", CLOTH_RADIUS))
 end
 
 -- What building each of the core's stations takes ("stoneCauldron" is stone and cauldron together, below).
@@ -50,6 +55,8 @@ local KITS = {
         ["Base.PotOfStew"] = 1, ["Base.PieWholeRaw"] = 1, ["Base.Pot"] = 1 },
     smokehouse = { about = "a hammer, 14 planks and 20 nails, to build a Smokehouse (Woodwork 3)",
         ["Base.Hammer"] = 1, ["Base.Plank"] = 14, ["Base.Nails"] = 20 },
+    cloth = { about = "a Sheet and 2 Stones, to make a Drying Cloth (Build menu, Furniture)",
+        ["Base.Sheet"] = 1, ["Base.Stone2"] = 2 },
     flue = { about = "both flue kits (2 Clay Pipe Segments, 3 Flat Stones, 3 Clay), a Mason's Trowel and a Shovel",
         ["Base.ClayPipeSegment"] = 2, ["Base.FlatStone"] = 3, ["Base.Clay"] = 3, ["Base.MasonsTrowel"] = 1, ["Base.Shovel"] = 1 },
 }
@@ -330,6 +337,56 @@ function TPC.smokehouse()
         end
     end
     if seen == 0 then say("No Smokehouse within 3 tiles on this floor.") end
+end
+
+-- The Drying Cloths within CLOTH_RADIUS on this floor.
+local function clothsNear()
+    local player, cloths = getPlayer(), {}
+    local cell, x, y, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), player:getZ()
+    for dx = -CLOTH_RADIUS, CLOTH_RADIUS do
+        for dy = -CLOTH_RADIUS, CLOTH_RADIUS do
+            local square = cell:getGridSquare(x + dx, y + dy, z)
+            local objects = square and square:getObjects()
+            for i = 0, objects and objects:size() - 1 or -1 do
+                if DryingCloth.isCloth(objects:get(i)) then table.insert(cloths, objects:get(i)) end
+            end
+        end
+    end
+    return cloths
+end
+
+function TPC.cloth()
+    local cloths = clothsNear()
+    if #cloths == 0 then return say(string.format("No Drying Cloth within %d tiles on this floor.", CLOTH_RADIUS)) end
+    for _, cloth in ipairs(cloths) do
+        local record, place = DryingCloth.update(cloth)
+        local placeC = Weather.placeTemperature(DryingCloth.getLedger(), place)
+        say(string.format("Drying Cloth at %d,%d: %s, %.1f C, %d of %d lots free", cloth:getX(), cloth:getY(), tostring(place), placeC,
+            DryingCloth.freeLots(record), DryingCloth.LOTS))
+        for i, lot in ipairs(record.lots) do
+            if lot then
+                local status = DryingCloth.status(lot, placeC, place)
+                say(string.format("  lot %d: %s x %d, %s, %.0f%%, %s", i, lot.kind, lot.count, status.state, status.progress * 100,
+                    status.hoursLeft and string.format("%.1f h left", status.hoursLeft) or (status.waits or "done")))
+            end
+        end
+    end
+end
+
+function TPC.dryCloth(hours)
+    hours = hours or 24
+    local cloths, dried = clothsNear(), 0
+    for _, cloth in ipairs(cloths) do
+        local record = DryingCloth.update(cloth)
+        for _, lot in ipairs(record.lots) do
+            if lot and DryingCloth.state(lot) == "wet" then
+                lot.dry.age = lot.dry.age + hours
+                dried = dried + 1
+            end
+        end
+        if TraditionalPreservationCoreDryingCloth then TraditionalPreservationCoreDryingCloth.updateCloth(cloth) end
+    end
+    say(string.format("Dried %d lot(s) on %d cloth(s) by %.1f hours. TPC.cloth() to see them.", dried, #cloths, hours))
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

@@ -33,6 +33,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pzart  # noqa: E402
+import cloth_art  # noqa: E402
 from pzart import TILE_W, TILE_H, shrink  # noqa: E402
 from pzart import tint as shade  # noqa: E402
 
@@ -192,6 +193,8 @@ CHAMBER_PIECES = 84
 CHAMBER_PIECE_KINDS = ["ham", "chicken", "rabbit"]
 CHAMBER_PIECE_COLUMNS = [0, 1, 1]
 CHAMBER_SMOKE = CHAMBER_PIECES + len(CHAMBER_PIECE_KINDS) * 2
+# The Drying Cloth (cloth_art.py), one tile a face; what lies on it is each mod's own art.
+CLOTH = 100
 SMOKE_LOOKS = ["Lit", "Banked"]
 HAM_A = -0.26             # across the front-left tile's end wall, between its corner and the door's post
 HAM_TOP = 98              # px up to the bone's knob; the nail is above it
@@ -1056,6 +1059,10 @@ for face_index, face in enumerate(FACES):
     for look in range(len(SMOKE_LOOKS)):
         for col in range(2):
             TILE_PROPS[CHAMBER_SMOKE + (face_index * 2 + look) * 2 + col] = [("Facing", face)]
+# The Drying Cloth: flat on the floor, light to carry, the facings linked so a moved one turns.
+for face_index, face in enumerate(FACES):
+    TILE_PROPS[CLOTH + face_index] = [("BlocksPlacement", ""), ("CustomName", "DryingCloth"), ("Facing", face),
+                                      ("GroupName", "Linen"), ("IsMoveAble", ""), ("PickUpWeight", "10")]
 
 
 # --- The Smokehouse: shared with tools/smokehouse_tiles.py ------------------------------------------------------
@@ -1292,6 +1299,8 @@ def lua_tiles():
         "CHAMBER_PIECES": CHAMBER_PIECES,
         "CHAMBER_PIECE_COLUMNS": CHAMBER_PIECE_COLUMNS,
         "CHAMBER_SMOKE": CHAMBER_SMOKE,
+        "CLOTH": CLOTH,
+        "CLOTHS": [prefix + str(CLOTH + face) for face in range(len(FACES))],
     }
 
 
@@ -1337,6 +1346,8 @@ def main():
             for (col, _), tile in shed.paint_smoke(FACES[face], name).items():
                 tiles[CHAMBER_SMOKE + (face * 2 + look) * 2 + col] = tile
     (media / "texturepacks").mkdir(parents=True, exist_ok=True)
+    for face, name in enumerate(FACES):
+        tiles[CLOTH + face] = cloth_art.paint_cloth(name)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
     (media / "textures").mkdir(parents=True, exist_ok=True)
@@ -1354,6 +1365,7 @@ def main():
         icon.alpha_composite(tiles[BARE_GLOWS[kind]])
         pzart.write_build_icon(icon, media / "textures" / f"Item_TPStoneHearth{kind}.png", MENU_ICON)
     pzart.write_build_icon(chamber_icon(shed), media / "textures" / "Item_SmokehouseChamber.png")
+    pzart.write_build_icon(tiles[CLOTH], media / "textures" / "Item_TPDryingCloth.png")
     # The mod list shows the cauldron steaming.
     pzart.write_mod_icon(tiles[CAULDRON_LOOKS["Steam"]], media.parent / "icon.png")
     if len(sys.argv) > 1:

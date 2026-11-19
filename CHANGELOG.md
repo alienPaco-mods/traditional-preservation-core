@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.18
+- **An open outside door airs a room too** (2026-11-19, user): a door open to the outside, and not barricaded, counts as
+  an open window does (`getDoorTo`, one more call on an outside wall with no window letting air in). A map door or a
+  built one; a door into another room doesn't count, as the scan asks only walls to the outside. A door broken off
+  (an empty doorway) isn't seen yet: to check in game.
+
 ## 0.1.17
 - **A lighter window scan** (2026-11-19; the series must never cost a game its frame rate). Each outside wall is asked
   through the game's own lookups (`getWindowTo`, `getWindowFrameTo`, `getWindowThumpableTo`: one call each, either side

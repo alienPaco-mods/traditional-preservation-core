@@ -95,6 +95,9 @@ local function square(x, y, z, roomId, region)
     function sq:getWindowThumpableTo(next)
         return onWall(sq, next, function(o) return o.class == "IsoThumpable" and o:isWindow() end)
     end
+    function sq:getDoorTo(next)
+        return onWall(sq, next, function(o) return o.class == "IsoDoor" or o.class == "IsoThumpable" and o.door end)
+    end
     world[x .. "," .. y .. "," .. z] = sq
     return sq
 end
@@ -165,6 +168,31 @@ check("placeOf: a frame with a window in it goes by the window", Weather.placeOf
 world["0,2,0"].objects = {}
 on(window({ open = true }), 3, 1, 0)
 check("placeOf: an open window into the next room doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+local function door(state)
+    local d = { class = "IsoDoor" }
+    function d:isNorth() return state.north or false end
+    function d:IsOpen() return state.open or false end
+    function d:isBarricaded() return state.barricaded or false end
+    return d
+end
+on(door({ open = true }), 0, 1, 0)
+check("placeOf: an open outside door airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+on(door({}), 0, 1, 0)
+check("placeOf: a shut one doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+on(door({ open = true, barricaded = true }), 0, 1, 0)
+check("placeOf: nor a barricaded one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["0,1,0"].objects = {}
+on(door({ open = true }), 3, 1, 0)
+check("placeOf: an open door into the next room doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["3,1,0"].objects = {}
+local builtDoor = { class = "IsoThumpable", door = true }
+function builtDoor:isWindow() return false end
+function builtDoor:isWindowN() return true end
+function builtDoor:IsOpen() return true end
+function builtDoor:isBarricaded() return false end
+on(builtDoor, 1, 0, 0)
+check("placeOf: an open built door to the outside airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+world["1,0,0"].objects = {}
 world["3,1,0"].objects = {}
 on(window({ open = true, north = true }), 1, 0, 0)
 Weather.placeOf(standing(1, 1, 0))

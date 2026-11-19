@@ -1,11 +1,11 @@
 -- Traditional Preservation core: whether a room lets air in, for Weather's aired room. A window open, smashed or
--- without its glass, or an empty frame, and not barricaded, on any wall between the room and the outside air, on the
--- room's own level. A room is a map room (its squares share a room id) or one a player built (its squares share a
+-- without its glass, an empty frame, or a door open, and not barricaded, on any wall between the room and the outside
+-- air, on the room's own level (a door to another room doesn't count: the scan asks only walls to the outside). A room is a map room (its squares share a room id) or one a player built (its squares share a
 -- world region, IsoWorldRegion:isPlayerRoom): found by walking from the station's square through squares of the same
 -- room. Read square by square because a map room's own list stays empty (42.22.2: IsoRoom:getWindows() is never
 -- filled, IsoRoom.windows is only cleared). Each outside wall is asked through the game's own lookups (getWindowTo,
--- getWindowFrameTo, getWindowThumpableTo: one call each, either side of the wall), so nothing else on the square is
--- touched. A room's answer is kept for a reading (ten minutes): a window opened counts from the next one.
+-- getWindowFrameTo, getWindowThumpableTo, getDoorTo: one call each, either side of the wall), so nothing else on the
+-- square is touched. A room's answer is kept for a reading (ten minutes): a window opened counts from the next one.
 local Windows = {}
 
 Windows.MAX_SQUARES = 150        -- a room bigger than this is read that far from the station (a hall, a warehouse)
@@ -34,7 +34,7 @@ function Windows.roomKey(square)
     return "region" .. tostring(region:getID())
 end
 
--- Whether one window, frame or built window lets air through.
+-- Whether one window, frame, built window or door lets air through.
 local function letsAirIn(isoObject)
     if instanceof(isoObject, "IsoWindow") then
         calls = calls + 4
@@ -43,7 +43,8 @@ local function letsAirIn(isoObject)
         -- A frame with a window in it: the window says.
         calls = calls + 2
         return not isoObject:hasWindow() and not isoObject:isBarricaded()
-    elseif instanceof(isoObject, "IsoThumpable") then
+    elseif instanceof(isoObject, "IsoThumpable") or instanceof(isoObject, "IsoDoor") then
+        -- A built window or door, or a map door: open and not barricaded.
         calls = calls + 2
         return not isoObject:isBarricaded() and isoObject:IsOpen()
     end
@@ -51,7 +52,7 @@ local function letsAirIn(isoObject)
 end
 
 -- Whether the wall between square and its neighbour lets air in: a window there, else an empty frame, else a built
--- window. A neighbour out of the loaded world is read as a wall with no window.
+-- window, else a door. A neighbour out of the loaded world is read as a wall with no window.
 local function edgeAired(square, neighbour)
     if not neighbour then return false end
     calls = calls + 1
@@ -62,7 +63,10 @@ local function edgeAired(square, neighbour)
     if frame and letsAirIn(frame) then return true end
     calls = calls + 1
     local built = square:getWindowThumpableTo(neighbour)
-    return built ~= nil and letsAirIn(built)
+    if built and letsAirIn(built) then return true end
+    calls = calls + 1
+    local door = square:getDoorTo(neighbour)
+    return door ~= nil and letsAirIn(door)
 end
 
 local function at(x, y) return x .. "," .. y end

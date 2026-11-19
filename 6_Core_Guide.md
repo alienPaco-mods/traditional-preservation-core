@@ -230,7 +230,7 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Open air** | Nothing overhead | The weather, hour by hour |
 | **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The same: a roof keeps off rain and sun, not the cold |
 | **Indoors** (a shut room) | A room (walls and a whole roof, built by you or found) with every window to the outside shut or boarded | The average of the last **3 days**, **2 C warmer in the cold months** and **up to 2 C warmer in summer** (stuffy: the sun through the glass, nowhere for the heat to go); **22 C while the power grid is on** |
-| **Aired room** | A room with a window to the outside open, smashed, with its glass taken out or an empty frame, and not boarded | The day's average, at most 1 C warmer in winter, never stuffy; 22 C while the power grid is on. Anything drying by air dries here as on a porch |
+| **Aired room** | A room with a window to the outside open, smashed, with its glass taken out or an empty frame, or a door to the outside left open, and not boarded | The day's average, at most 1 C warmer in winter, never stuffy; 22 C while the power grid is on. Anything drying by air dries here as on a porch |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 | *In the Smokehouse* | Not a place of its own: what hangs inside the Smokehouse | As under an open roof, but out of the rain and wind; the power grid doesn't warm it |
 
@@ -238,7 +238,7 @@ Every station in the series works by the temperature of **where it stands**. The
 
 > *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it; one open on a side is under an open roof. Inside the Smokehouse the air is an open shed's, only still: what hangs there dries slower than on a porch, out of the wind, and never gets rained on.
 
-> *Margin note:* the ground floor of most houses is boarded up, so the room with its window open is usually upstairs. A window takes up to 10 minutes to count once you open or shut it.
+> *Margin note:* the ground floor of most houses is boarded up, so the room with its window open is usually upstairs. An outside door left open airs a room too, and lets in more than air. A window or door takes up to 10 minutes to count once you open or shut it.
 
 > *Margin note:* why three days? Walls follow the weather slowly. One warm afternoon in January does nothing to a shut room, but a week of thaw does. An unheated house is nearly as cold as the weather: in Kentucky's January that is still below freezing. It keeps a couple of degrees over the air in winter (its mass, the people in it, the sun through the glass), and in summer it gets stuffy. Open a window and it follows the air within a degree. Vanilla's rooms start from the outdoor temperature with the grid off.
 

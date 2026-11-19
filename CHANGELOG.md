@@ -1,5 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.21
+- **A scrolling list for info windows** (`PieceList.lua`, `InfoWindow:pieceList`), the first step of moving the
+  CraftLogic workstations onto info windows: one row a piece (icon, name, a bar with its text, an optional line under
+  the bar), at most 8 rows shown before it scrolls, a sort switch (*Furthest along* / *Least along*, one choice for
+  every list) and each row's popup on hover, drawn like a crafting slot's. No station uses it yet.
+- **Console:** `TPC.pieceList(n)`, a sample window with made-up pieces to check the list in game.
+  `test_piece_list.lua` new; test_console checks the command.
 
 ## 0.1.20
 - **The Drying Cloth** (2026-11-19): a Sheet spread on the floor with 2 Stones on its corners (Build menu, Furniture),

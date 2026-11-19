@@ -22,6 +22,7 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (its front tile free, or what blocks it: a wall edge or a sprite with `BlocksPlacement`, `solid` or `solidtrans`), and whether a registered door (Stone Hearth, Smokehouse) opens onto it. For a station the build ghost refuses beside another. |
 | `TPC.cloth()` | Each Drying Cloth within 3 tiles on your floor: its place and temperature, free lots, and each lot's kind, count, state, share dried and hours left (or why it waits). |
+| `TPC.pieceList(n)` | A sample info window on the floor you stand on, with `n` made-up pieces (14 if left out) in Core's scrolling list (`PieceList`): scroll it, flip the sort switch, hover a row for its popup. For checking the list before a station uses it. |
 | `TPC.dryCloth(hours)` | Every wet lot on the Drying Cloths within 3 tiles dries this many hours at full speed (24 if left out), and the cloths redraw. Dead and dry lots are left alone. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
 

@@ -8,6 +8,8 @@
 --     function MyWindow.open(playerObj, station) InfoWindow.open(MyWindow, playerObj, station) end
 -- The drawing (drawRow, drawBar, noteLines, drawNoteLines) is shared with StationInfo's block in vanilla's crafting
 -- window: each takes the element to draw on and its layout { padding, labelWidth, barHeight }.
+-- A station holding many pieces lists them with pieceList (PieceList.lua, required by the first window that draws
+-- one): a scrolling list, one row a piece.
 require "ISUI/ISCollapsableWindow"
 local Station = require "TraditionalPreservationCore/Station"
 local Wrap = require "TraditionalPreservationCore/Wrap"
@@ -30,6 +32,10 @@ InfoWindow.NOTE_COLOUR = { 0.8, 0.8, 0.65 }
 InfoWindow.BAR_BACK, InfoWindow.BAR_BORDER = { 0.1, 0.1, 0.1 }, { 0.4, 0.4, 0.4 }
 
 local LAYOUT = { padding = InfoWindow.PADDING, labelWidth = InfoWindow.LABEL_WIDTH, barHeight = InfoWindow.BAR_HEIGHT }
+-- What PieceList draws with: its bars start under the rows' values.
+local LIST_LOOK = { padding = InfoWindow.PADDING, gap = InfoWindow.BAR_GAP, barX = InfoWindow.LABEL_WIDTH,
+    barHeight = InfoWindow.BAR_HEIGHT, label = InfoWindow.LABEL_COLOUR, value = InfoWindow.VALUE_COLOUR,
+    note = InfoWindow.NOTE_COLOUR, barBack = InfoWindow.BAR_BACK, barBorder = InfoWindow.BAR_BORDER }
 
 local current -- the info window open, from any mod
 
@@ -69,6 +75,7 @@ end
 function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
+    if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
         self.ticks = 0
@@ -193,6 +200,12 @@ end
 -- A bar whose label is already text (a numbered lot: "1. Yeast Cakes").
 function InfoWindow:barNamed(y, labelText, share, colour, text)
     return InfoWindow.drawBar(self, LAYOUT, y, labelText, share, colour, text)
+end
+
+-- The pieces, one row each, under a header (label is a translation key) with the sort switch; rows as PieceList's
+-- header says, a new table each refresh. Returns the y under the list.
+function InfoWindow:pieceList(y, label, rows)
+    return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, getText(label), rows)
 end
 
 -- The notes, after which the window fits its height to them.

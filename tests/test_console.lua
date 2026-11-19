@@ -45,6 +45,10 @@ check("kit(\"hole\") gives a stove food, an oven food and a pot", #player.given 
 check("smokehouse says so when none is near", run("smokehouse"):find("No Smokehouse", 1, true) ~= nil)
 check("cloth says so when none is near", run("cloth"):find("No Drying Cloth", 1, true) ~= nil)
 check("dryCloth dries nothing when no cloth is near", run("dryCloth", 48):find("Dried 0 lot(s) on 0 cloth(s) by 48.0 hours", 1, true) ~= nil)
+local square = player.getCurrentSquare
+player.getCurrentSquare = function() return nil end
+check("pieceList says so with no floor under the player", run("pieceList"):find("No floor", 1, true) ~= nil)
+player.getCurrentSquare = square
 local multiplier = 1
 getGameTime = function()
     return { setMultiplier = function(_, x) multiplier = x end, getTrueMultiplier = function() return multiplier end }

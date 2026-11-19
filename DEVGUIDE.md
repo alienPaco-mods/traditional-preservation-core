@@ -174,7 +174,7 @@ Smokehouse every mod smokes in; the one name callers use, passing on
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
-`ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua`, `StationInfo.lua`,
+`ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list), `StationInfo.lua`,
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
 `SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and Cloth Info) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua`, `FluidAgeingWorld.lua`, `DryingClothWorld.lua` and `Loot.lua` (a mod's item into vanilla's loot lists). A mod that uses it says so in its mod.info:
@@ -195,12 +195,16 @@ local Weather = require "TraditionalPreservationCore/Weather"
    borrow the core's harness and `pzart`). A test with its own `require` stub (e.g. `name:find("^TraditionalPreservation<Mod>/")`)
    must also let `^TraditionalPreservationCore/` through, or use `H.useModPaths()`.
 4. **Modules only the required mod has:** `Fire` (the Stone Hearth and its cauldron, save key `tpFire`, the opt-in "by
-   a fire" place, hooks) and `Cauldron`, its `Tiles`, the server's `FireWorld`, and the client's `FireUI`, `CauldronUI` and `InfoWindow` are
+   a fire" place, hooks) and `Cauldron`, its `Tiles`, the server's `FireWorld`, and the client's `FireUI`, `CauldronUI`, `InfoWindow` and `PieceList` are
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
-   makes a click on the station open it.
+   makes a click on the station open it. A station holding many pieces lists them with `self:pieceList(y, label,
+   rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, or least
+   along first), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
+   hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
+   sorts it again only then. `TPC.pieceList(n)` opens a sample.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

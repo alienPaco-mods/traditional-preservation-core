@@ -39,6 +39,7 @@ function TPC.help()
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
     say(string.format("TPC.cloth()          each Drying Cloth within %d tiles: place, and each lot's kind, count, state, progress and hours left", CLOTH_RADIUS))
     say(string.format("TPC.dryCloth(hours)  every wet lot on the Drying Cloths within %d tiles dries this many hours at full speed (default 24)", CLOTH_RADIUS))
+    say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, hover popups")
 end
 
 -- What building each of the core's stations takes ("stoneCauldron" is stone and cauldron together, below).
@@ -387,6 +388,74 @@ function TPC.dryCloth(hours)
         if TraditionalPreservationCoreDryingCloth then TraditionalPreservationCoreDryingCloth.updateCloth(cloth) end
     end
     say(string.format("Dried %d lot(s) on %d cloth(s) by %.1f hours. TPC.cloth() to see them.", dried, #cloths, hours))
+end
+
+-- A sample window for Core's scrolling list (PieceList), before any station uses it. The pieces are made up: a
+-- name, a share and a popup each; every third has a line under its bar, every fifth is done. The window's class is
+-- made on the first call (the info window code is the client's, loaded after this file).
+local SAMPLE_PIECES = { { "Bluegill", "Base.Bluegill" }, { "Yellow Perch", "Base.YellowPerch" },
+    { "Beef (Salted)", "Base.Steak" }, { "Pork (Salted)", "Base.PorkChop" }, { "Blood Sausage", "Base.Sausage" },
+    { "Chicken (Corned)", "Base.Chicken" }, { "Salmon, a long name to cut", "Base.Salmon" } }
+local SAMPLE_DONE, SAMPLE_SLOW = { 0.35, 0.7, 0.35 }, { 0.8, 0.6, 0.25 }
+local SAMPLE_COUNT = 14
+local SampleWindow
+
+local function sampleRows(UI, count)
+    local rows = {}
+    for i = 1, count do
+        local piece = SAMPLE_PIECES[(i - 1) % #SAMPLE_PIECES + 1]
+        local script = getScriptManager():FindItem(piece[2])
+        local share = i % 5 == 0 and 1 or ((i * 37) % 97) / 100
+        local text = share >= 1 and "Done"
+            or UI.say("IGUI_TraditionalPreservationCore_ClothLeft", UI.percent(share), UI.durationText((1 - share) * 120))
+        rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text,
+            colour = share >= 1 and SAMPLE_DONE or (i % 4 == 0 and SAMPLE_SLOW or nil),
+            note = i % 3 == 0 and string.format("Cold smoke %.1f of 72 h", share * 72) or nil,
+            popup = function(tooltip)
+                UI.drawTooltip(tooltip, function(layout)
+                    UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoPlace", "Sample")
+                    UI.addLine(layout, "EC_CraftLogic_Progress", UI.percent(share))
+                    UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoLots", "piece " .. i)
+                end)
+            end }
+    end
+    return rows
+end
+
+local function sampleWindow()
+    if SampleWindow then return SampleWindow end
+    local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+    local UI = require "TraditionalPreservationCore/UI"
+    SampleWindow = InfoWindow:derive("TraditionalPreservationCoreSampleListWindow")
+    function SampleWindow:new(playerObj, station)
+        local o = InfoWindow.new(self, playerObj, station)
+        o.title = "Piece List (sample)"
+        return o
+    end
+    -- The first refresh makes the rows, once.
+    function SampleWindow:refresh()
+        if not self.rows then self.rows = sampleRows(UI, SampleWindow.count) end
+    end
+    function SampleWindow:render()
+        ISCollapsableWindow.render(self)
+        if self.isCollapsed or not self.rows then return end
+        local y = self:top()
+        y = self:row(y, "IGUI_TraditionalPreservationCore_ClothInfoPlace", "Sample")
+        y = self:pieceList(y, "IGUI_TraditionalPreservationCore_ClothInfoLots", self.rows)
+        self:drawNotes(y, { string.format("%d made-up pieces. Hover a row for its popup; the switch sorts.", #self.rows) })
+    end
+    return SampleWindow
+end
+
+function TPC.pieceList(count)
+    local player = getPlayer()
+    local square = player:getCurrentSquare()
+    local floor = square and square:getFloor()
+    if not floor then return say("No floor under you to hang the sample window on.") end
+    local window = sampleWindow()
+    window.count = count or SAMPLE_COUNT
+    require("TraditionalPreservationCore/InfoWindow").open(window, player, floor)
+    say(string.format("Sample list opened with %d pieces. Walk off or close it.", window.count))
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

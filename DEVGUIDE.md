@@ -209,7 +209,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    first, ties by recipe name then count (`StationInfo.batchBefore`).
 6. **What the core already does, so a mod doesn't write it again:**
    - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `durationText` (hours up to two days, then "about N days"), `fluidName`, and
-     `keepInPlace(test)` for a station that mustn't be picked up while it holds something (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
+     `keepInPlace(test)` for a station that mustn't be picked up while it holds something (every station that keeps its state in movableData uses it, so nothing is carried mid-process; vanilla already refuses a station whose slots or container hold items) (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
    - Stations (`Station`): `kinds(prefix, faces, bases)` tells a mod's stations by one lookup on the sprite's name
      (never cut the name apart), and the tracker's `scan = true` finds one built or put down this session at once.
    - Weather: `Weather.sensitivity(option)` for the sandbox's Temperature Sensitivity, and `Weather.rate(curve,
@@ -434,7 +434,7 @@ of all:
 | `ISCraftLogicPanel.createChildren` | Vinegar `...UI` | Fluid tank columns in the vessel's window |
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
-| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth) | A station holding liquid, a running batch or a hose can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why |
+| `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth, the kraut barrel, the Salting Tub, Dairy's pot and crock) | A station holding liquid, a running batch, a hose or anything kept in its movableData can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why. No station moves mid-process: each process has its time and place |
 | `ISObjectClickHandler.doClickSpecificObject` | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |

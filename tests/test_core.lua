@@ -65,6 +65,20 @@ H.installClock(0)
 function instanceof(object, name) return type(object) == "table" and object.class == name end
 local world = {}
 getCell = function() return { getGridSquare = function(_, x, y, z) return world[x .. "," .. y .. "," .. z] end } end
+-- The game's per-wall lookups (IsoGridSquare.getEdgeElementTo): the object of a class on the wall between a and b.
+-- Walls stand on a square's north and west edges, so the wall to the north or west is a's own, else b's.
+local function onWall(a, b, isKind)
+    local dx, dy = b:getX() - a:getX(), b:getY() - a:getY()
+    local owner, north = a, dy ~= 0
+    if dx == 1 or dy == 1 then owner = b end
+    for _, isoObject in ipairs(owner.objects) do
+        if isKind(isoObject) then
+            local edgeNorth = isoObject.class == "IsoThumpable" and isoObject:isWindowN() or isoObject.class ~= "IsoThumpable" and isoObject:isNorth()
+            if (edgeNorth == true) == north then return isoObject end
+        end
+    end
+    return nil
+end
 local function square(x, y, z, roomId, region)
     local sq = { objects = {} }
     function sq:getX() return x end
@@ -76,9 +90,10 @@ local function square(x, y, z, roomId, region)
     function sq:getIsoWorldRegion()
         return region and { isPlayerRoom = function() return true end, getID = function() return region end } or nil
     end
-    function sq:getObjects()
-        local list = sq.objects
-        return { size = function() return #list end, get = function(_, index) return list[index + 1] end }
+    function sq:getWindowTo(next) return onWall(sq, next, function(o) return o.class == "IsoWindow" end) end
+    function sq:getWindowFrameTo(next) return onWall(sq, next, function(o) return o.class == "IsoWindowFrame" end) end
+    function sq:getWindowThumpableTo(next)
+        return onWall(sq, next, function(o) return o.class == "IsoThumpable" and o:isWindow() end)
     end
     world[x .. "," .. y .. "," .. z] = sq
     return sq
@@ -109,13 +124,20 @@ local function frame(state)
     function f:isBarricaded() return state.barricaded or false end
     return f
 end
+-- What else stands on a square, as in game: a wall, the floor, a crate, a built door. None has isNorth (calling it
+-- would fail, as the first build did in game: "tried to call nil in onEdge").
+local others = { { class = "IsoObject" }, { class = "IsoWorldInventoryObject" },
+    { class = "IsoThumpable", isWindow = function() return false end } }
 local function on(isoObject, x, y, z)
     Windows.forget()
-    world[x .. "," .. y .. "," .. z].objects = { isoObject }
+    local objects = { isoObject }
+    for _, other in ipairs(others) do table.insert(objects, 1, other) end
+    world[x .. "," .. y .. "," .. z].objects = objects
     return isoObject
 end
 local function standing(x, y, z) return { getSquare = function() return world[x .. "," .. y .. "," .. z] end } end
 house(0, 7)
+for _, where in ipairs({ "0,1,0", "1,0,0", "1,3,0", "3,1,0" }) do world[where].objects = { others[1], others[3] } end
 check("placeOf: a room with every window shut is sheltered", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 on(window({ open = true }), 0, 1, 0)
 check("placeOf: an open window on the room's west wall airs it, wherever the station stands in the room",
@@ -147,7 +169,8 @@ world["3,1,0"].objects = {}
 on(window({ open = true, north = true }), 1, 0, 0)
 Weather.placeOf(standing(1, 1, 0))
 H.setHours(1 / 12)
-world["1,0,0"].objects[1] = window({ north = true })
+local wall = world["1,0,0"].objects
+wall[#wall] = window({ north = true })
 check("placeOf: a room's answer holds for the reading", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
 H.setHours(1 / 6)
 check("a window shut counts from the next reading", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
@@ -156,6 +179,30 @@ local both = Windows.keptCount()
 H.setHours(2 / 6)
 Weather.placeOf(standing(1, 1, 0))
 check("a new reading keeps only the rooms looked at since", both == 2 and Windows.keptCount() == 1)
+-- The frame budget: one scan in SCAN_GAP_MS of real time; a room due inside it keeps the last reading's answer.
+local clockMs = 1000
+getTimestampMs = function() return clockMs end
+Windows.forget()
+H.setHours(3 / 6)
+world["1,0,0"].objects = { window({ open = true, north = true }) }
+check("a scan when the budget allows", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+H.setHours(4 / 6)
+world["1,0,0"].objects = { window({ north = true }) }
+clockMs = clockMs + 5
+local waited = Weather.placeOf(standing(3, 1, 0))
+local kept = Weather.placeOf(standing(1, 1, 0))
+check("a second room inside the budget waits: no answer before (shut), and a room due again keeps its last",
+    waited == "Sheltered" and kept == "AiredRoom")
+clockMs = clockMs + Windows.SCAN_GAP_MS
+check("once the budget allows, it is read again", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+getTimestampMs = nil
+local measured = Windows.measure(world["1,1,0"])
+check("measure: a fresh scan of the room, its squares, outside walls (12 less the 3 to the room next door) and calls",
+    measured.aired == false and measured.squares == 9 and measured.walls == 9 and measured.calls > 0 and Windows.measure(world["-1,-1,0"]) == nil)
+local saved = Windows.MAX_SQUARES
+Windows.MAX_SQUARES = 4
+check("a room past the cap is read that far from the station", Windows.measure(world["1,1,0"]).squares == 4)
+Windows.MAX_SQUARES = saved
 house(1, nil, 42)
 local built = { class = "IsoThumpable" }
 function built:isWindow() return true end

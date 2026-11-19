@@ -574,7 +574,10 @@ Every mean is kept once in the series' weather and copied into each ledger by `W
 tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. A room is not a
 heated house: most players don't keep one heated, so autumn indoors is slow and a fire is the answer.
 `Windows.lua` walks the room's squares (a map room by `getRoomID()`, a built one by its world region) because
-`IsoRoom:getWindows()` is never filled; a room's answer holds for the ten-minute reading.
+`IsoRoom:getWindows()` is never filled, and asks each outside wall through the game's own lookups (`getWindowTo`,
+`getWindowFrameTo`, `getWindowThumpableTo`), never the other objects on a square. It is kept cheap on purpose: a
+room's answer holds for the ten-minute reading, a room is read at most 150 squares from the station, and at most one
+scan runs in 20 real milliseconds (a room due inside that keeps its last answer). `TPC.windows()` times one.
 Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse
 (*In the Smokehouse*, `Smokehouse.PLACE`) the stacks carry the Smokehouse's word, set by the station's session state
 (`sessionState.place`), and its temperature is an open roof's (`Weather.STATION_PLACES`). The still air and the rain

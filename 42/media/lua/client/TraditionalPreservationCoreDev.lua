@@ -9,6 +9,7 @@ local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local FireConnect = require "TraditionalPreservationCore/FireConnect"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Weather = require "TraditionalPreservationCore/Weather"
+local Windows = require "TraditionalPreservationCore/Windows"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 TPC = {}
 
@@ -19,6 +20,7 @@ local function say(text) print("[TPC] " .. text) end
 function TPC.help()
     say("TPC.weather()        the series' weather: temperature now, the season's mean, and each place's temperature")
     say("TPC.here()           which place you're standing in, and its temperature")
+    say("TPC.windows()        scan the room you stand in for an open window, now: aired or shut, squares read, outside walls, engine calls, milliseconds")
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean and the rooms' (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"stoneCauldron\" (the default: the Stone Hearth and Fit Cauldron's kit), \"stone\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
@@ -107,6 +109,18 @@ function TPC.here()
     local place = Fire.placeOf(player)
     say(string.format("You're in: %s (%.1f C); with roofs told from rooms: %s.", tostring(place),
         Weather.placeTemperature(Weather.weatherModData(), place), tostring(Weather.placeOf(player))))
+end
+
+-- One fresh window scan of the room the player stands in, timed: what a station's look costs there once a reading.
+function TPC.windows()
+    local square = getPlayer():getSquare()
+    local start = getTimestampMs()
+    local measured = square and Windows.measure(square)
+    local took = getTimestampMs() - start
+    if not measured then return say("Not in a room: nothing to scan.") end
+    say(string.format("This room: %s. Read %d squares (at most %d) and %d outside walls, about %d engine calls, in %d ms.",
+        measured.aired and "aired (a window lets air in)" or "shut", measured.squares, Windows.MAX_SQUARES, measured.walls,
+        measured.calls, took))
 end
 
 -- Pretends the weather for a test that wants a cold month or a warm day. The day's temperature goes through the

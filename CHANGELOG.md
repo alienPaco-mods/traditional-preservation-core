@@ -1,5 +1,21 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.17
+- **A lighter window scan** (2026-11-19; the series must never cost a game its frame rate). Each outside wall is asked
+  through the game's own lookups (`getWindowTo`, `getWindowFrameTo`, `getWindowThumpableTo`: one call each, either side
+  of the wall) instead of a loop over everything on the square; each square carries its coordinates through the walk.
+  At most **150 squares** a room (`Windows.MAX_SQUARES`, was 400). **A frame budget:** at most one scan in 20 real
+  milliseconds (`Windows.SCAN_GAP_MS`); a room due inside it keeps its last answer (shut, if it has none) until its
+  next look. A room is still scanned at most once a ten-minute reading.
+- **`TPC.windows()`**: scans the room you stand in and prints aired or shut, the squares read, the outside walls, about
+  how many engine calls and the milliseconds it took. Guide 6 and DEVHELP list it.
+
+## 0.1.16
+- **Fix: the window scan failed in game** (2026-11-19, seen in console.txt at the first load: "Object tried to call nil
+  in onEdge"). It asked every object on a wall's square which edge it stands on, and a wall, the floor or an item has
+  no `isNorth`. `Windows.lua` now asks only a window, a window frame or a built window. The tests' squares carry a wall,
+  an item and a built door beside the window, as in game.
+
 ## 0.1.15
 - **The aired room and new place temperatures** (2026-11-19, ROADMAP section 10, simulated in every mod's season tool
   first). Five places: Open, Covered, Sheltered (a shut room), **AiredRoom** (*Aired room*, new) and Basement; **the

@@ -10,6 +10,7 @@
   window of the same station type (kept in `~/Zomboid/Lua/TraditionalPreservationWindowWidths.txt`, not the save).
 - A disabled button draws its icon faded; vanilla draws it at full alpha.
 - `TPC.pieceList(n)`'s sample rows show warnings.
+- Guide 6: a list window widens from its bottom-right corner and opens that wide next time.
 
 ## 0.1.35
 - The Drying Cloth's window row reads "Drying Cloth Info" (was "Cloth Info"), its title "Drying Cloth"; DEVGUIDE: a

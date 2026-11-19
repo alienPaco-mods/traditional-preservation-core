@@ -74,6 +74,11 @@ check("one or two stacks: the ham, front-left", pieces(0, 1, 0, 1) == tostring(P
 check("three or four: the chicken too, front-right", pieces(0, 1, 1, 3) == tostring(P + 1) and pieces(0, 1, 1, 4) == tostring(P + 1))
 check("five or six: the rabbit after it", pieces(0, 1, 1, 5) == (P + 1) .. "," .. (P + 2) and pieces(0, 1, 0, 6) == tostring(P))
 check("never more than three", pieces(0, 1, 1, 12) == (P + 1) .. "," .. (P + 2))
+local function piecesToo(f, p, c, stacks, done) return table.concat(Smokehouse.pieceSprites(f, p, c, stacks, done), ",") end
+check("a finished piece in a mod's own record shows one look each: one, the ham", piecesToo(0, 1, 0, 0, 1) == tostring(P)
+    and piecesToo(0, 1, 1, 0, 1) == "")
+check("three pieces, all three; stacks and pieces add up", piecesToo(0, 1, 1, 0, 3) == (P + 1) .. "," .. (P + 2)
+    and piecesToo(0, 1, 1, 2, 1) == tostring(P + 1) and piecesToo(0, 1, 1, 0, 9) == (P + 1) .. "," .. (P + 2))
 check("facing E, its own three", pieces(1, 1, 0, 6) == tostring(P + 3) and pieces(1, 1, 1, 6) == (P + 4) .. "," .. (P + 5))
 check("nothing on the back row, nor with nothing finished", pieces(0, 0, 0, 6) == "" and pieces(0, 1, 0, 0) == ""
     and pieces(0, 1, 0, nil) == "")

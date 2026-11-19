@@ -130,14 +130,16 @@ function Smokehouse.entrySprite(kitName, face, part, dx, dy)
     return Tiles.CHAMBER_ENTRY + (kitIndex * FACES + face) * 2 + part
 end
 
--- What hangs by the door while finished stacks wait in the shed, one piece for every two (a country ham, then a
--- smoked chicken, then a smoked rabbit; Tiles.CHAMBER_PIECE_COLUMNS says which front tile each is on): the overlays
--- of this tile, in order, or none.
+-- What hangs by the door while finished things wait in the shed (a country ham, then a smoked chicken, then a smoked
+-- rabbit; Tiles.CHAMBER_PIECE_COLUMNS says which front tile each is on): one for every two finished stacks in its
+-- crafting slots, and one for each finished piece a mod keeps in its own record (Smokehouse.finishedPieces). The
+-- overlays of this tile, in order, or none.
 Smokehouse.STACKS_A_PIECE = 2
-function Smokehouse.pieceSprites(face, part, col, finishedStacks)
+function Smokehouse.pieceSprites(face, part, col, finishedStacks, finishedPieces)
     local sprites = {}
     if part ~= 1 then return sprites end
-    local count = math.min(#Tiles.CHAMBER_PIECE_COLUMNS, math.ceil((finishedStacks or 0) / Smokehouse.STACKS_A_PIECE))
+    local count = math.min(#Tiles.CHAMBER_PIECE_COLUMNS,
+        math.ceil((finishedStacks or 0) / Smokehouse.STACKS_A_PIECE) + (finishedPieces or 0))
     for k = 1, count do
         if Tiles.CHAMBER_PIECE_COLUMNS[k] == col then
             table.insert(sprites, Tiles.CHAMBER_PIECES + face * #Tiles.CHAMBER_PIECE_COLUMNS + k - 1)
@@ -228,6 +230,30 @@ function Smokehouse.chamberTiles(tile)
         end
     end
     return tiles
+end
+
+-- The tile a mod keeps its record of what hangs in the shed on (the piece records, ROADMAP section 12): the back
+-- left one, row 0 and column 0, from any of its tiles; the tile itself if that one isn't there.
+function Smokehouse.recordTile(tile)
+    for _, found in ipairs(Smokehouse.chamberTiles(tile)) do
+        if found[3] == 0 and found[4] == 0 then return found[1] end
+    end
+    return tile
+end
+
+-- How many finished pieces wait in a shed, for its door look: each mod that keeps its own record adds a count
+-- (Smokehouse.countsFinished(fn): fn(recordTile) returns a number).
+local finishedCounts = {}
+
+function Smokehouse.countsFinished(fn)
+    assert(type(fn) == "function", "Smokehouse.countsFinished: a function needed")
+    table.insert(finishedCounts, fn)
+end
+
+function Smokehouse.finishedPieces(tile)
+    local record, count = Smokehouse.recordTile(tile), 0
+    for _, fn in ipairs(finishedCounts) do count = count + (fn(record) or 0) end
+    return count
 end
 
 -- The tile of a chamber that holds its slots (the engine's master tile), from either; the tile itself if neither

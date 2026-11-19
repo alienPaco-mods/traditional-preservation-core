@@ -57,7 +57,7 @@ module TraditionalPreservationCore
         {
             timedAction = BuildWoodenStructureMedium,
             time = 400,
-            SkillRequired = Woodwork:3,
+            SkillRequired = Woodwork:5,
             xpAward = Woodwork:15,
             category = Furniture,
             Tags = Carpentry;Furniture,
@@ -67,6 +67,7 @@ module TraditionalPreservationCore
                 item 1 tags[base:hammer] mode:keep flags[Prop1;MayDegradeVeryLight],
                 item 14 [Base.Plank],
                 item 20 [Base.Nails],
+                item 2 [Base.LargeHook],
             }
         }
     }

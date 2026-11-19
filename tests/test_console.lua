@@ -35,7 +35,7 @@ run("kit", "cloth")
 check("kit(\"cloth\") gives a Sheet and 2 Stones", #player.given == given + 3)
 before = #player.given
 run("kit", "smokehouse")
-check("kit(\"smokehouse\") gives what a Smokehouse is built from", #player.given == before + 35)
+check("kit(\"smokehouse\") gives what a Smokehouse is built from: a hammer, 14 planks, 20 nails, 2 large hooks", #player.given == before + 37)
 before = #player.given
 run("kit", "flue")
 check("kit(\"flue\") gives both flue kits and their tools", #player.given == before + 10)

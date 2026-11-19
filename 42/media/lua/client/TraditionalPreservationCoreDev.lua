@@ -26,7 +26,7 @@ function TPC.help()
     say("TPC.windows()        scan the room you stand in for an open window, now: aired or shut, squares read, outside walls, engine calls, milliseconds")
     say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean and the rooms' (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
-    say("TPC.kit(kind)        what a station takes to build: \"stoneCauldron\" (the default: the Stone Hearth and Fit Cauldron's kit), \"stone\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
+    say("TPC.kit(kind)        what a station takes to build: \"stoneCauldron\" (the default: the Stone Hearth and Fit Cauldron's kit), \"stone\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 5, 2 large hooks), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
     say(string.format("TPC.cauldronInfo()   the nearest Stone Hearth with the Cauldron within %d tiles: fire (lit, banked or out), fuel, the cauldron, when it steams", Fire.FIRE_RADIUS))
     say(string.format("TPC.cauldron(l, c, f) fill its cauldron: l litres (0 empties it) of fluid f at c degrees (default 10 L CowMilk at 20 C; it holds %g; f TaintedWater to boil)", CauldronFluid.CAULDRON_ML / 1000))
     say("TPC.fuel(minutes)    set the nearest Stone Hearth's fuel, fitted or not (default 600, ten hours; banked, what the embers have left); vanilla's menu still lights it")
@@ -54,8 +54,8 @@ local KITS = {
         ["Base.MasonsTrowel_Wood"] = 1, ["Base.StoneBlock"] = 12, ["Base.Clay"] = 12 },
     hole = { about = "a Pot of Stew (stove food), an uncooked pie (oven food) and an empty Cooking Pot to fill with water",
         ["Base.PotOfStew"] = 1, ["Base.PieWholeRaw"] = 1, ["Base.Pot"] = 1 },
-    smokehouse = { about = "a hammer, 14 planks and 20 nails, to build a Smokehouse (Woodwork 3)",
-        ["Base.Hammer"] = 1, ["Base.Plank"] = 14, ["Base.Nails"] = 20 },
+    smokehouse = { about = "a hammer, 14 planks, 20 nails and 2 large hooks, to build a Smokehouse (Woodwork 5)",
+        ["Base.Hammer"] = 1, ["Base.Plank"] = 14, ["Base.Nails"] = 20, ["Base.LargeHook"] = 2 },
     cloth = { about = "a Sheet and 2 Stones, to make a Drying Cloth (Build menu, Furniture)",
         ["Base.Sheet"] = 1, ["Base.Stone2"] = 2 },
     flue = { about = "both flue kits (2 Clay Pipe Segments, 3 Flat Stones, 3 Clay), a Mason's Trowel and a Shovel",

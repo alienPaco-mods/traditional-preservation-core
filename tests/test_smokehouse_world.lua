@@ -85,6 +85,14 @@ check("one built before its recipe tag gets it", empty.logic.tag == Smokehouse.R
 check("an empty shed shows nothing", shows(empty.backLeft) == "" and shows(empty.frontLeft) == "" and shows(empty.frontRight) == "")
 check("any tile finds the slots", Smokehouse.slotTile(empty.frontRight) == empty.backLeft and Smokehouse.slotTile(empty.backLeft) == empty.backLeft)
 check("any tile finds all four", #Smokehouse.chamberTiles(empty.frontRight) == 4 and #Smokehouse.chamberTiles(empty.backLeft) == 4)
+check("the record tile is the back left one, from any tile", Smokehouse.recordTile(empty.frontRight) == empty.backLeft
+    and Smokehouse.recordTile(empty.backRight) == empty.backLeft and Smokehouse.recordTile(empty.backLeft) == empty.backLeft)
+local askedWith, finishedNow = nil, 2
+Smokehouse.countsFinished(function(record) askedWith = record return finishedNow end)
+check("a mod's count of finished pieces is asked of the record tile", Smokehouse.finishedPieces(empty.frontLeft) == 2
+    and askedWith == empty.backLeft)
+finishedNow = 0
+check("a count is a function", not pcall(Smokehouse.countsFinished, 3))
 
 -- Two sheds side by side: neither takes the other's tiles.
 local beside = shed(12, 10)

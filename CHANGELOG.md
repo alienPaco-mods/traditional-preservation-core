@@ -1,5 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.28
+- **The Smokehouse's build** (ROADMAP section 12, item 5): Woodwork 5 and 2 Large Hooks with the 14 planks and 20
+  nails (was Woodwork 3), between the Hanging Beam's 4 and the Gantry's 6; `TPC.kit("smokehouse")` gives the hooks.
+- **For the Smokehouse's move off its crafting slots** (S2): `Smokehouse.recordTile` (the back left tile, where a mod
+  keeps its record of what hangs in the shed), and `Smokehouse.countsFinished(fn)` / `finishedPieces`: each mod's
+  count of finished pieces adds a door look each (up to three), beside the slots' stacks.
+
 ## 0.1.27
 - **Items move into the inventory before the walk** (user, session 53; vanilla's order, and more natural): the Drying Cloth and the cauldron's rows (`PiecesUI.queue` takes a walk step, run after the move) move what they need from a crate or a bag first, then walk, then act, so a crate left behind can't cancel the queue. `UI.walkTo` walks keeping the queue (vanilla's `walkAdj` and `WalkToEntity` clear it first, which dropped the moves). The test harness's walk now clears the queue as vanilla's does, and counts it (`ui.cleared`).
 

@@ -39,7 +39,7 @@ local function refresh(station, sessionState)
     local flue = Smokehouse.chamberEntry(station)
     if flue then table.insert(sprites, Smokehouse.spriteName(flue)) end
     if part == 1 then
-        for _, piece in ipairs(Smokehouse.pieceSprites(face, part, col, finishedStacks(station))) do
+        for _, piece in ipairs(Smokehouse.pieceSprites(face, part, col, finishedStacks(station), Smokehouse.finishedPieces(station))) do
             table.insert(sprites, Smokehouse.spriteName(piece))
         end
         local smoke = Smokehouse.smokeSprite(face, part, col, Smokehouse.smokeLook(station))

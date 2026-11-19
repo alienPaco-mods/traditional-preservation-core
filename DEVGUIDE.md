@@ -210,7 +210,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
    `self:dropZone(y, idleText, judge, drop)` (`DropZone.lua`): an always-shown square that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
-   shown green (all taken), orange (some taken, `refused` set) or red (none) while held over it, `drop(take)` queues the hand jobs, and `refused` shows over the player.
+   shown green (all taken), orange (some taken, `refused` set) or red (none) while held over it,
+   and `self:buttonRow(y, buttons)` a row of buttons (`{ title, enabled, tooltip, onClick }`, sharing the width), `drop(take)` queues the hand jobs, and `refused` shows over the player.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

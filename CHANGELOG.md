@@ -1,5 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.26
+- **A row of buttons for info windows** (`InfoWindow:buttonRow`): buttons across the window sharing its width, each
+  `{ title, enabled, tooltip, onClick }`, kept and set anew each draw. `test_button_row.lua` new.
+
 ## 0.1.25
 - **The drop square has three colours** (user, session 53): green when it takes everything dragged, orange when it
   takes some and refuses the rest, red when it takes nothing. `test_drop_zone` checks each.

@@ -12,6 +12,7 @@
 -- one): a scrolling list, one row a piece. dropZone (DropZone.lua, the same way) is a square that takes a selection
 -- dragged from the inventory or a loot window.
 require "ISUI/ISCollapsableWindow"
+require "ISUI/ISButton"
 local Station = require "TraditionalPreservationCore/Station"
 
 local InfoWindow = ISCollapsableWindow:derive("TraditionalPreservationCoreInfoWindow")
@@ -25,6 +26,7 @@ InfoWindow.REFRESH_TICKS = 30
 InfoWindow.START_HEIGHT = 200   -- drawNotes fits it to what is drawn
 InfoWindow.VALUE_CACHE = 32     -- row values kept wrapped before the cache starts over (a value counts down)
 InfoWindow.ROW_GAP, InfoWindow.BAR_GAP, InfoWindow.NOTE_GAP = 2, 4, 4
+InfoWindow.BUTTON_HEIGHT, InfoWindow.BUTTON_GAP = 22, 6
 -- Text colours { r, g, b }: a row's label, its value, the notes; a bar's empty part and border.
 InfoWindow.LABEL_COLOUR = { 0.7, 0.7, 0.7 }
 InfoWindow.VALUE_COLOUR = { 1, 1, 1 }
@@ -77,6 +79,9 @@ function InfoWindow:update()
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
     if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
+    for _, button in ipairs(self.buttonsUI or {}) do
+        if button:getIsVisible() == self.isCollapsed then button:setVisible(not self.isCollapsed) end
+    end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
         self.ticks = 0
@@ -213,6 +218,36 @@ end
 -- dragged over it, drop(take) on release. Returns the y under it.
 function InfoWindow:dropZone(y, idleText, judge, drop)
     return require("TraditionalPreservationCore/DropZone").draw(self, InfoWindow.PADDING, InfoWindow.BAR_GAP, y, idleText, judge, drop)
+end
+
+-- A row of buttons across the window at y, each { title (finished text), enabled, tooltip (or nil), onClick () }, as
+-- wide as they share; made on the first call, then kept and set from the list each draw. Returns the y under them.
+local function onButton(entry)
+    if entry.onClick then entry.onClick() end
+end
+
+function InfoWindow:buttonRow(y, buttons)
+    self.buttonsUI = self.buttonsUI or {}
+    local count = #buttons
+    local width = (self.width - InfoWindow.PADDING * 2 - InfoWindow.BUTTON_GAP * (count - 1)) / count
+    for index, entry in ipairs(buttons) do
+        local button = self.buttonsUI[index]
+        if not button then
+            button = ISButton:new(0, 0, width, InfoWindow.BUTTON_HEIGHT, "", {}, onButton)
+            button:initialise()
+            button:instantiate()
+            self:addChild(button)
+            self.buttonsUI[index] = button
+        end
+        button.target = entry
+        local x = InfoWindow.PADDING + (index - 1) * (width + InfoWindow.BUTTON_GAP)
+        if button.x ~= x then button:setX(x) end
+        if button.y ~= y then button:setY(y) end
+        if button.title ~= entry.title then button:setTitle(entry.title) end
+        if button.enable ~= entry.enabled then button:setEnable(entry.enabled) end
+        button:setTooltip(entry.tooltip)
+    end
+    return y + InfoWindow.BUTTON_HEIGHT + InfoWindow.BAR_GAP
 end
 
 -- The notes, after which the window fits its height to them.

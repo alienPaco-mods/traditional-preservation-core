@@ -438,8 +438,8 @@ of all:
 
 | Wrapped vanilla function | Where | Why |
 |---|---|---|
-| `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, Yeast, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
-| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; Fish, Vinegar, Yeast, template) | Each station's own input rules |
+| `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
+| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; Fish, Vinegar, template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
 | `ISWidgetCraftLogicControl.startCraft` | core `SlotRules`: `UI.slotRules` with `recipeRefusal` (Fish & Meat), `UI.craftRefusal` (Vinegar) | Craft refuses stored inputs the selected recipe can't take; Craft on a vessel that can't run says why, and a second press doesn't queue another run |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `Placement` (one wrap for every rule): `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish, the Smokehouse), `UI.keepDoorsFree` (every TP station), `UI.offAppliances` (Dairy's crock) | Outdoor stations can't be carried indoors (or into a room); a station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door (the build menu asks `TraditionalPreservationCore.doorFits`, `OnIsValid`); table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square; its build ghost asks only on a solid square, so the build recipe asks `TraditionalPreservationCore.offAppliances`) |
@@ -630,11 +630,12 @@ at its old place before writing the new one.
 **Which kind of station? (the station rule)**
 Three kinds, by what the station holds:
 - **Pieces put on a station, each on its own clock: a piece record in the station's movableData** (Fish & Meat's
-  Drying Frame, Hanging Beam, Gantry and the Smokehouse; the tub keeps its batch the same way). Hang or put on from the
+  Drying Frame, Hanging Beam, Gantry and the Smokehouse, Yeast's Fermenting Shelf; the tub keeps its batch the same
+  way). Hang or put on from the
   right-click menu (`PiecesUI`: One / All / a count) or the Info window's drop square (`dropZone`), take off from both;
   each piece its own row in the Info window's `pieceList`. The World steps the record; a station holding anything stays
   where it is (`UI.keepInPlace`). This is where every workstation is going (ROADMAP section 12).
-- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Yeast's Shelf, Vinegar's
+- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Vinegar's
   Floor and Vessel, Salt's Vat, until each moves to a piece record). It gives slots, the vanilla window, Take All, a
   bar and each run's save and load. The timer is always set from Lua (`OnStart` / `OnUpdate`, below). It is read by
   **an info block in the crafting window** (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a

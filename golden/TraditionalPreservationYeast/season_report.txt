@@ -1,18 +1,18 @@
 Days for one culture (120 hours at full speed), started on the first of the month
 | Month | Outdoors | Indoors | Indoors, grid on | Aired room | Basement | Indoors, then basement | By a fire, under a roof | By a fire, in the open |
 |---|---|---|---|---|---|---|---|---|
-| Jan | 77.46 | 79.21 | 5.00 | 83.54 | 23.71 | 24.29 | 10.71 | 19.96 |
-| Feb | 54.17 | 51.54 | 5.00 | 54.75 | 25.29 | 25.79 | 6.75 | 12.54 |
+| Jan | 77.46 | 79.21 | 5.00 | 83.54 | 23.71 | 24.33 | 10.71 | 19.96 |
+| Feb | 54.17 | 51.54 | 5.00 | 54.75 | 25.29 | 25.83 | 6.75 | 12.54 |
 | Mar | 28.67 | 27.04 | 5.00 | 28.17 | 24.29 | 24.50 | 6.25 | 9.54 |
-| Apr | 16.46 | 14.50 | 5.00 | 15.17 | 19.37 | 19.21 | 5.17 | 6.29 |
-| May | 8.50 | 8.08 | 5.00 | 8.50 | 15.50 | 15.00 | 5.04 | 5.37 |
-| Jun | 5.46 | 5.04 | 5.00 | 5.04 | 11.37 | 10.75 | 5.04 | 5.04 |
+| Apr | 16.46 | 14.50 | 5.00 | 15.17 | 19.37 | 19.17 | 5.17 | 6.29 |
+| May | 8.50 | 8.08 | 5.00 | 8.50 | 15.50 | 14.96 | 5.04 | 5.37 |
+| Jun | 5.46 | 5.04 | 5.00 | 5.04 | 11.37 | 10.67 | 5.04 | 5.04 |
 | Jul | 5.58 | 5.08 | 5.00 | 5.25 | 8.63 | 8.29 | 5.00 | 5.00 |
 | Aug | 6.58 | 5.13 | 5.00 | 5.50 | 7.50 | 7.25 | 5.00 | 5.00 |
-| Sep | 6.58 | 6.04 | 5.00 | 6.21 | 7.79 | 7.67 | 5.00 | 5.08 |
+| Sep | 6.58 | 6.04 | 5.00 | 6.21 | 7.79 | 7.63 | 5.00 | 5.08 |
 | Oct | 12.79 | 10.13 | 5.00 | 12.04 | 8.88 | 8.88 | 5.08 | 5.63 |
 | Nov | 95.58 | 67.33 | 5.00 | 106.12 | 12.08 | 12.17 | 6.25 | 8.42 |
-| Dec | 91.58 | 97.04 | 5.00 | 101.96 | 16.83 | 17.37 | 10.46 | 20.50 |
+| Dec | 91.58 | 97.04 | 5.00 | 101.96 | 16.83 | 17.42 | 10.46 | 20.50 |
 Fireside indoors (28 C), any month: 5.00 days
 Embers indoors (24 C), any month: 5.00 days
 
@@ -69,62 +69,62 @@ Jan Open      0.000000 paused -10.973869 0.000000 Open
 Jan Sheltered 0.000000 paused -8.160956 0.000000 Sheltered
 Jan AiredRoom 0.000000 paused -7.882467 0.000000 AiredRoom
 Jan Basement  0.045492 505.159453 5.668557 0.226742 Basement
-Jan Moved     0.022710 517.216233 5.668557 0.226742 Basement
+Jan Moved     0.020815 518.219273 5.668557 0.226742 Basement
 Feb Open      0.013122 paused -4.538787 0.000000 Open
 Feb Sheltered 0.000000 paused -0.649759 0.000000 Sheltered
 Feb AiredRoom 0.000000 paused -0.408588 0.000000 AiredRoom
 Feb Basement  0.041153 582.712355 4.872933 0.197459 Basement
-Feb Moved     0.021395 594.719883 4.872933 0.197459 Basement
+Feb Moved     0.019749 595.720244 4.872933 0.197459 Basement
 Mar Open      0.012888 paused -5.415864 0.000000 Open
 Mar Sheltered 0.021658 1042.650407 0.629934 0.112599 Sheltered
 Mar AiredRoom 0.006417 1189.376485 0.012288 0.100246 AiredRoom
 Mar Basement  0.039259 587.165220 4.817416 0.196348 Basement
-Mar Moved     0.030917 592.263651 4.817416 0.196348 Basement
+Mar Moved     0.030148 592.733673 4.817416 0.196348 Basement
 Apr Open      0.087262 538.975980 5.080399 0.203216 Open
 Apr Sheltered 0.071296 304.695021 9.143934 0.365757 Sheltered
 Apr AiredRoom 0.068729 294.910186 9.473441 0.378938 AiredRoom
 Apr Basement  0.049270 479.759289 5.945045 0.237802 Basement
-Apr Moved     0.058308 475.198489 5.945045 0.237802 Basement
+Apr Moved     0.059147 474.774802 5.945045 0.237802 Basement
 May Open      0.082307 593.450820 4.278200 0.185564 Open
 May Sheltered 0.130968 170.068002 12.842520 0.613189 Sheltered
 May AiredRoom 0.104599 223.818636 11.067570 0.480068 AiredRoom
 May Basement  0.063041 369.808784 7.600896 0.304036 Basement
-May Moved     0.096160 356.736897 7.600896 0.304036 Basement
+May Moved     0.098808 355.691862 7.600896 0.304036 Basement
 Jun Open      0.207318 95.121847 18.597001 1.000000 Open
 Jun Sheltered 0.208333 95.000000 22.018169 1.000000 Sheltered
 Jun AiredRoom 0.208333 95.000000 22.374974 1.000000 AiredRoom
 Jun Basement  0.084337 268.916512 10.114680 0.408601 Basement
-Jun Moved     0.144051 251.379456 10.114680 0.408601 Basement
+Jun Moved     0.149011 249.922761 10.114680 0.408601 Basement
 Jul Open      0.150067 190.868005 11.791451 0.534359 Open
 Jul Sheltered 0.199948 96.689415 17.905784 0.992934 Sheltered
 Jul AiredRoom 0.188431 107.426778 16.754064 0.906555 AiredRoom
 Jul Basement  0.113385 187.112477 12.248118 0.568609 Basement
-Jul Moved     0.153169 178.716351 12.248118 0.568609 Basement
+Jul Moved     0.156779 177.954610 12.248118 0.568609 Basement
 Aug Open      0.158367 172.557180 12.470532 0.585290 Open
 Aug Sheltered 0.200000 96.000000 20.452285 1.000000 Sheltered
 Aug AiredRoom 0.200000 96.000000 18.539677 1.000000 AiredRoom
 Aug Basement  0.133510 155.609184 13.576068 0.668205 Basement
-Aug Moved     0.164019 150.130212 13.576068 0.668205 Basement
+Aug Moved     0.166789 149.632659 13.576068 0.668205 Basement
 Sep Open      0.086792 424.379747 6.455593 0.258224 Open
 Sep Sheltered 0.165031 127.100134 15.177668 0.788325 Sheltered
 Sep AiredRoom 0.136161 168.916921 12.849043 0.613678 AiredRoom
 Sep Basement  0.130031 160.807281 13.322682 0.649201 Basement
-Sep Moved     0.147863 157.511254 13.322682 0.649201 Basement
+Sep Moved     0.149243 157.256132 13.322682 0.649201 Basement
 Oct Open      0.144978 209.104424 11.209025 0.490677 Open
 Oct Sheltered 0.119566 165.295735 13.188929 0.639170 Sheltered
 Oct AiredRoom 0.097340 171.366475 13.094546 0.632091 AiredRoom
 Oct Basement  0.115887 183.604786 12.371150 0.577836 Basement
-Oct Moved     0.115180 183.751695 12.371150 0.577836 Basement
+Oct Moved     0.115244 183.738406 12.371150 0.577836 Basement
 Nov Open      0.056680 660.645409 3.567258 0.171345 Open
 Nov Sheltered 0.075072 295.286245 9.396930 0.375877 Sheltered
 Nov AiredRoom 0.064342 342.105766 8.204991 0.328200 AiredRoom
 Nov Basement  0.088000 249.818017 10.507716 0.438079 Basement
-Nov Moved     0.081848 251.503227 10.507716 0.438079 Basement
+Nov Moved     0.081249 251.667437 10.507716 0.438079 Basement
 Dec Open      0.000000 paused -11.305742 0.000000 Open
 Dec Sheltered 0.000000 paused -2.626016 0.000000 Sheltered
 Dec AiredRoom 0.000000 paused -4.453977 0.000000 AiredRoom
 Dec Basement  0.065098 346.700100 8.089718 0.323589 Basement
-Dec Moved     0.035166 357.799924 8.089718 0.323589 Basement
+Dec Moved     0.032453 358.806051 8.089718 0.323589 Basement
 
 Ledger at the end
 cultureAiredRoom   7628.225669247

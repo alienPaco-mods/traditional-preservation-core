@@ -34,7 +34,7 @@ With the fire lit the cauldron heats towards 95 C and steams at 85 C: about 1.5 
 
 [h2]The Smokehouse[/h2]
 
-A plank shed on four tiles, two by two, under a low pitched roof, its pair of doors under the gable and a metal vent above them (Woodwork 3: 14 planks, 20 nails, hammer kept). Open air or under an open roof, never in a room; 6 stacks. Right-click it or a Stone Hearth beside it to [b]Connect the Stone Hearth[/b] with a clay pipe (2 Clay Pipe Segments, 1 Clay, a Mason's Trowel kept) or a stone trench (3 Flat Stones, 2 Clay, a shovel kept). You can still cook in the Stone Hearth and fit the cauldron while it smokes. What hangs inside and what the smoke does to it is each mod's: Fish & Meat smokes fish, meat and sausage there.
+A plank shed on four tiles, two by two, under a low pitched roof, its pair of doors under the gable and a metal vent above them (Woodwork 5: 14 planks, 20 nails, 2 large hooks, hammer kept). Open air or under an open roof, never in a room. Right-click it or a Stone Hearth beside it to [b]Connect the Stone Hearth[/b] with a clay pipe (2 Clay Pipe Segments, 1 Clay, a Mason's Trowel kept) or a stone trench (3 Flat Stones, 2 Clay, a shovel kept). You can still cook in the Stone Hearth and fit the cauldron while it smokes. What hangs inside and what the smoke does to it is each mod's: Fish & Meat smokes fish, meat and sausage there, hung from the shed's right-click menu, each piece on its own clock.
 
 The tile in front of the Stone Hearth's and the Smokehouse's doors must stay clear: neither builds or goes down with something in front of it. A picked-up Stone Hearth turns to either facing as you put it down.
 

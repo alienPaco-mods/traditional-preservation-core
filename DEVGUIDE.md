@@ -170,7 +170,7 @@ that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fl
 line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../ItemFluid.lua` (fluid that turns, goes off, burns or stays in a pot or saucepan: the cauldron's rules for an item; `ItemFluidUI.addPieces` puts pieces in as a fluid), `.../OnHeat.lua` (food kept
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../DryingCloth.lua` (the Drying Cloth: lots of what mods register, drying by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
-`.../SmokehouseStacks.lua`, a stack's fire counters),
+`.../SmokehouseStacks.lua`, a hanging piece's fire counters),
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
@@ -204,9 +204,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
    (`UI.topInfo`, vanilla's place for such rows). A left click stays vanilla's, as for any furniture (a container's loot
    window; vanilla gives no workstation a left click). A station holding many pieces lists them with `self:pieceList(y, label,
    rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
-   along first, or by process: rows grouped by their `group`, which every row has), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
+   along first) and a row of tabs (All and one for each process present, with its count, wrapping onto more lines; none
+   with a single process: a row names its `tab`, ordered by `tabOrder`; each window keeps its own tab, back to All when
+   that tab empties), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
    hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
-   sorts it again only then. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
+   lays it out again only then, or when the tab changes. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
    `self:dropZone(y, idleText, judge, drop)` (`DropZone.lua`): an always-shown square that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
@@ -305,11 +307,12 @@ local Weather = require "TraditionalPreservationCore/Weather"
      another mod's item: Fish & Meat's Potted Meat takes Dairy's Clarified Butter this way.
      `Recipes.teach(magazineType, recipeName, tag)` and `Recipes.researchable(itemType, recipeName, tag)`: a mod's
      recipe from a vanilla magazine and by research; each says *Could not find* in the console when a name is wrong.
-   - The Smokehouse (`Smokehouse`): a mod's smoking recipes carry the tag `Smokehouse`; a stack's OnStart calls
-     `Smokehouse.startCounters(modData, owner, hotSmokeHoursNeeded)`, and the mod's World tracks `Tiles.CHAMBERS` and steps only
-     the stacks it owns (`Smokehouse.owns`) with `Smokehouse.fireStep(modData, Smokehouse.fireOf(tile), coolShare)`.
-     Its `UI.slotRules` passes `owns(entity, item)`, so in the shared shed it judges only its own items. Core's README
-     ("The Smokehouse") has the details; Fish & Meat is the worked example.
+   - The Smokehouse (`Smokehouse`): no crafting window; a mod keeps its own record of what hangs on the shed's record
+     tile (`Smokehouse.recordTile`), with its own menu and Info window. A piece's counters start with
+     `Smokehouse.startCounters(state, owner, hotSmokeHoursNeeded)`; the mod's World tracks `Tiles.CHAMBERS` and steps its
+     record from the record tile alone with `Smokehouse.fireStep(state, Smokehouse.fireOf(tile), coolShare)`, and adds
+     its finished pieces to the door look (`Smokehouse.countsFinished`). Core's README ("The Smokehouse") has the
+     details; Fish & Meat is the worked example.
    - `Station.near(square, radius, test)` and `Station.nearAt(x, y, z, radius, test)`: what stands round a square,
      nearest first. Never write the double loop over squares again (`Fire.near` is it at the fire's reach).
      `Station.squareAt(square, dx, dy)`: the square beside one, on its level. `Station.eachPlayer(fn)`: every player
@@ -592,8 +595,8 @@ doorway), never the other objects on a square. It is kept cheap on purpose: a
 room's answer holds for the ten-minute reading, a room is read at most 150 squares from the station, and at most one
 scan runs in 20 real milliseconds (a room due inside that keeps its last answer). `TPC.windows()` times one.
 Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse
-(*In the Smokehouse*, `Smokehouse.PLACE`) the stacks carry the Smokehouse's word, set by the station's session state
-(`sessionState.place`), and its temperature is an open roof's (`Weather.STATION_PLACES`). The still air and the rain
+(*In the Smokehouse*, `Smokehouse.PLACE`) the pieces carry the Smokehouse's word, set by the mod when it steps them
+(Fish & Meat's `F.rackPlace`), and its temperature is an open roof's (`Weather.STATION_PLACES`). The still air and the rain
 kept off are the mod's own rates (Fish & Meat's Shed). The ledger keeps no totals for it.
 **One place, one temperature:** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
@@ -626,11 +629,16 @@ at its old place before writing the new one.
 
 **Which kind of station? (the station rule)**
 Three kinds, by what the station holds:
+- **Pieces put on a station, each on its own clock: a piece record in the station's movableData** (Fish & Meat's
+  Drying Frame, Hanging Beam, Gantry and the Smokehouse; the tub keeps its batch the same way). Hang or put on from the
+  right-click menu (`PiecesUI`: One / All / a count) or the Info window's drop square (`dropZone`), take off from both;
+  each piece its own row in the Info window's `pieceList`. The World steps the record; a station holding anything stays
+  where it is (`UI.keepInPlace`). This is where every workstation is going (ROADMAP section 12).
 - **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Yeast's Shelf, Vinegar's
-  Floor, Salt's Vat, Fish & Meat's Tub; `DryingCraftLogic` for a frame of stacks: the Frame, Beams, Gantry and
-  Smokehouse). It gives slots, the vanilla window, Take All, a bar and each run's save and load. The timer is always
-  set from Lua (`OnStart` / `OnUpdate`, below). It is read by **an info block in the crafting window**
-  (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a hover popup on each running batch.
+  Floor and Vessel, Salt's Vat, until each moves to a piece record). It gives slots, the vanilla window, Take All, a
+  bar and each run's save and load. The timer is always set from Lua (`OnStart` / `OnUpdate`, below). It is read by
+  **an info block in the crafting window** (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a
+  hover popup on each running batch.
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
   timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
   trusted with fluid amounts in a station, a cask is one pool with no batch, and the
@@ -658,7 +666,7 @@ options at load with `recipe:Load()`, so the window's Duration matches the real 
 
 **Why layer attached sprites instead of using SpriteOverlayConfig?**
 SpriteOverlayConfig shows one overlay, for the first batch only. A shelf with five cultures or a frame with eight
-stacks needs one sprite per batch, each at its own stage, and a station waiting to start or holding a finished batch
+spots needs one sprite per batch or spot, each at its own stage, and a station waiting to start or holding a finished batch
 needs a look too. So the tracker reads the station and lays its own sprites with `addAttachedAnimSpriteByName`, only
 redrawing when a signature of the state changes.
 
@@ -666,14 +674,14 @@ redrawing when a signature of the state changes.
 Vanilla's progress popup goes by the recipe's time and its own temperature curve, so it shows the wrong time left
 for a weather timer. Ours shows progress, real time left at today's rate, the temperature, the place and the rate.
 Vanilla's slots take any item and only limit by free slots, so a wrong item leaves Craft greyed with no reason, and a
-station that limits by weight or by stacks can't be expressed. Our slot rules check before the item goes in, and the
+station that limits by weight or by count can't be expressed. Our slot rules check before the item goes in, and the
 same check sets the slot's green border, so it never promises what adding then refuses. It is one core function,
 `UI.slotRules`, whose add loop is a copy of vanilla's: compare that one copy with vanilla after a game update.
 A rule that depends on the **selected recipe** goes in `recipeRefusal(slot, item)` (slot.recipe is the recipe's
 short name, read from the station's `CraftLogic:getCurrentRecipe()`, which the window sets when a recipe is selected): the border turns red and a drop says
 why, and because the recipe can change after loading, Craft refuses to start while a stored input fails it. Vanilla
 alone would start the recipe on the inputs its OnTest passes and leave the rest in the slots, with Craft enabled.
-Fish & Meat's tub uses it: Corn Salted Meat refuses a Leg of Pork.
+No station uses it now.
 
 **Why is the core one required mod instead of a copy in each mod?**
 A copy in each mod would let a player subscribe to one with no dependency (PZ loads only one file per Lua path, so

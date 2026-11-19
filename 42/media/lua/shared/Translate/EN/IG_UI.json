@@ -118,7 +118,7 @@
   "IGUI_TraditionalPreservationCore_ClothInfoLotsValue": "%1 of %2",
   "IGUI_TraditionalPreservationCore_ListFurthest": "Furthest along",
   "IGUI_TraditionalPreservationCore_ListLeast": "Least along",
-  "IGUI_TraditionalPreservationCore_ListProcess": "By process",
+  "IGUI_TraditionalPreservationCore_ListAll": "All",
   "IGUI_TraditionalPreservationCore_ClothNoteAir":"Things dry by moving air: in the open, under a roof, in a room with a window open, or by a fire. In a shut room they wait. Times left assume the temperature holds as it is now.",
   "IGUI_TraditionalPreservationCore_ClothNoteEmpty": "Nothing on the cloth. Right-click it to lay something on it."
 }

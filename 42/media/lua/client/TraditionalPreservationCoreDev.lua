@@ -39,7 +39,7 @@ function TPC.help()
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
     say(string.format("TPC.cloth()          each Drying Cloth within %d tiles: place, and each lot's kind, count, state, progress and hours left", CLOTH_RADIUS))
     say(string.format("TPC.dryCloth(hours)  every wet lot on the Drying Cloths within %d tiles dries this many hours at full speed (default 24)", CLOTH_RADIUS))
-    say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, hover popups")
+    say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, tabs, hover popups")
 end
 
 -- What building each of the core's stations takes ("stoneCauldron" is stone and cauldron together, below).
@@ -391,7 +391,7 @@ function TPC.dryCloth(hours)
 end
 
 -- A sample window for Core's scrolling list (PieceList), before any station uses it. The pieces are made up: a
--- name, a share and a popup each; every third has a line under its bar, every fifth is done. The window's class is
+-- name, a share, a tab (its process) and a popup each; every third has a line under its bar, every fifth is done. The window's class is
 -- made on the first call (the info window code is the client's, loaded after this file).
 local SAMPLE_PIECES = { { "Bluegill", "Base.Bluegill", "Salt Dried" }, { "Yellow Perch", "Base.YellowPerch", "Salt Dried" },
     { "Beef (Salted)", "Base.Steak", "Charque" }, { "Pork (Salted)", "Base.PorkChop", "Cold Smoked" },
@@ -409,13 +409,12 @@ local function sampleRows(UI, count)
         local share = i % 5 == 0 and 1 or ((i * 37) % 97) / 100
         local text = share >= 1 and "Done"
             or UI.say("IGUI_TraditionalPreservationCore_ClothLeft", UI.percent(share), UI.durationText((1 - share) * 120))
-        rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text, group = piece[3],
+        rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text, tab = piece[3],
             colour = share >= 1 and SAMPLE_DONE or (i % 4 == 0 and SAMPLE_SLOW or nil),
             note = i % 3 == 0 and string.format("Cold smoke %.1f of 72 h", share * 72) or nil,
             popup = function(tooltip)
                 UI.drawTooltip(tooltip, function(layout)
                     UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoPlace", "Sample")
-                    UI.addLine(layout, "IGUI_TraditionalPreservationCore_ListProcess", piece[3])
                     UI.addLine(layout, "EC_CraftLogic_Progress", UI.percent(share))
                     UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoLots", "piece " .. i)
                 end)

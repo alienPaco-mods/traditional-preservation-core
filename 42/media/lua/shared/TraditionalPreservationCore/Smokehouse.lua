@@ -5,7 +5,8 @@
 -- (Fire.connect, id ID), so Core's Connect / Disconnect build it: the link lives on the Stone Hearth alone (its kit name and
 -- side under ID in tpFire), the chamber tile it joins is the square on that side. It blocks only its own slot: the
 -- Cauldron fits while it is joined. Each chamber tile is checked on its own.
--- What hangs inside is each mod's, counted by SmokehouseStacks (startCounters, fireStep, ...), passed on here.
+-- What hangs inside is each mod's own record on the shed's record tile (Smokehouse.recordTile); the fire's counters
+-- for it are SmokehouseStacks' (startCounters, fireStep, ...), passed on here.
 local Fire = require "TraditionalPreservationCore/Fire"
 local StoneHearth = require "TraditionalPreservationCore/StoneHearth"
 local FireConnect = require "TraditionalPreservationCore/FireConnect"
@@ -29,10 +30,6 @@ Smokehouse.ID = "smokehouse"
 Smokehouse.CONNECT_TICKS = 400
 Smokehouse.DISCONNECT_TICKS = 200
 Smokehouse.CONNECT_XP = 5
-
--- The recipe tag the chamber lists; a mod's smoking recipes carry it.
-Smokehouse.RECIPES = "Smokehouse"
-Smokehouse.STACKS = Tiles.CHAMBER_STACKS
 
 -- The two ways to join them, in menu order: the connection's kits (Fire.connect). Items are { full type, count };
 -- the tool (an ItemTag's name) stays.
@@ -131,15 +128,12 @@ function Smokehouse.entrySprite(kitName, face, part, dx, dy)
 end
 
 -- What hangs by the door while finished things wait in the shed (a country ham, then a smoked chicken, then a smoked
--- rabbit; Tiles.CHAMBER_PIECE_COLUMNS says which front tile each is on): one for every two finished stacks in its
--- crafting slots, and one for each finished piece a mod keeps in its own record (Smokehouse.finishedPieces). The
--- overlays of this tile, in order, or none.
-Smokehouse.STACKS_A_PIECE = 2
-function Smokehouse.pieceSprites(face, part, col, finishedStacks, finishedPieces)
+-- rabbit; Tiles.CHAMBER_PIECE_COLUMNS says which front tile each is on): one for each finished piece the mods keep in
+-- their records (Smokehouse.finishedPieces), up to three. The overlays of this tile, in order, or none.
+function Smokehouse.pieceSprites(face, part, col, finishedPieces)
     local sprites = {}
     if part ~= 1 then return sprites end
-    local count = math.min(#Tiles.CHAMBER_PIECE_COLUMNS,
-        math.ceil((finishedStacks or 0) / Smokehouse.STACKS_A_PIECE) + (finishedPieces or 0))
+    local count = math.min(#Tiles.CHAMBER_PIECE_COLUMNS, finishedPieces or 0)
     for k = 1, count do
         if Tiles.CHAMBER_PIECE_COLUMNS[k] == col then
             table.insert(sprites, Tiles.CHAMBER_PIECES + face * #Tiles.CHAMBER_PIECE_COLUMNS + k - 1)
@@ -254,15 +248,6 @@ function Smokehouse.finishedPieces(tile)
     local record, count = Smokehouse.recordTile(tile), 0
     for _, fn in ipairs(finishedCounts) do count = count + (fn(record) or 0) end
     return count
-end
-
--- The tile of a chamber that holds its slots (the engine's master tile), from either; the tile itself if neither
--- has them yet.
-function Smokehouse.slotTile(tile)
-    for _, found in ipairs(Smokehouse.chamberTiles(tile)) do
-        if found[1]:getComponent(ComponentType.DryingCraftLogic) then return found[1] end
-    end
-    return tile
 end
 
 -- stoneHearthsBy's entry for a Stone Hearth one step (sx, sy) from a chamber tile.

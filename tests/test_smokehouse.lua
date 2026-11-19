@@ -37,7 +37,6 @@ check("both front tiles keep their front free, the back ones have no door", Door
     and Doors.facingOf(name(Tiles.CHAMBER + 3)) == "S" and Doors.facingOf(name(Tiles.CHAMBER + 5)) == "E"
     and Doors.facingOf(name(Tiles.CHAMBER + 7)) == "E" and Doors.facingOf(name(Tiles.CHAMBER)) == nil
     and Doors.facingOf(name(Tiles.CHAMBER + 2)) == nil)
-check("the shed takes 6 stacks", Smokehouse.STACKS == 6)
 
 -- The steps between its tiles: facing S the door's end is south and the side in view east.
 local dx, dy = Smokehouse.stepTo(0, 0, 0, 1, 1)
@@ -65,22 +64,16 @@ check("trench, facing E, back tile", Smokehouse.entrySprite("Stones", 1, 0, 0, 1
 check("nothing on hidden sides", Smokehouse.entrySprite("Pipe", 0, 0, -1, 0) == nil and Smokehouse.entrySprite("Pipe", 0, 0, 0, -1) == nil)
 check("nothing when the flue isn't laid", Smokehouse.entrySprite(nil, 0, 0, 1, 0) == nil)
 
--- What hangs by the door: a piece for every two finished stacks, the ham on the front-left tile, the chicken and the
--- rabbit on the front-right one.
+-- What hangs by the door: a look for each finished piece in the mods' records, the ham on the front-left tile, the
+-- chicken and the rabbit on the front-right one.
 local P = Tiles.CHAMBER_PIECES
 local function pieces(f, p, c, n) return table.concat(Smokehouse.pieceSprites(f, p, c, n), ",") end
-check("one or two stacks: the ham, front-left", pieces(0, 1, 0, 1) == tostring(P) and pieces(0, 1, 0, 2) == tostring(P)
-    and pieces(0, 1, 1, 2) == "")
-check("three or four: the chicken too, front-right", pieces(0, 1, 1, 3) == tostring(P + 1) and pieces(0, 1, 1, 4) == tostring(P + 1))
-check("five or six: the rabbit after it", pieces(0, 1, 1, 5) == (P + 1) .. "," .. (P + 2) and pieces(0, 1, 0, 6) == tostring(P))
-check("never more than three", pieces(0, 1, 1, 12) == (P + 1) .. "," .. (P + 2))
-local function piecesToo(f, p, c, stacks, done) return table.concat(Smokehouse.pieceSprites(f, p, c, stacks, done), ",") end
-check("a finished piece in a mod's own record shows one look each: one, the ham", piecesToo(0, 1, 0, 0, 1) == tostring(P)
-    and piecesToo(0, 1, 1, 0, 1) == "")
-check("three pieces, all three; stacks and pieces add up", piecesToo(0, 1, 1, 0, 3) == (P + 1) .. "," .. (P + 2)
-    and piecesToo(0, 1, 1, 2, 1) == tostring(P + 1) and piecesToo(0, 1, 1, 0, 9) == (P + 1) .. "," .. (P + 2))
-check("facing E, its own three", pieces(1, 1, 0, 6) == tostring(P + 3) and pieces(1, 1, 1, 6) == (P + 4) .. "," .. (P + 5))
-check("nothing on the back row, nor with nothing finished", pieces(0, 0, 0, 6) == "" and pieces(0, 1, 0, 0) == ""
+check("one piece: the ham, front-left", pieces(0, 1, 0, 1) == tostring(P) and pieces(0, 1, 1, 1) == "")
+check("two: the chicken too, front-right", pieces(0, 1, 1, 2) == tostring(P + 1) and pieces(0, 1, 0, 2) == tostring(P))
+check("three: the rabbit after it", pieces(0, 1, 1, 3) == (P + 1) .. "," .. (P + 2))
+check("never more than three", pieces(0, 1, 1, 9) == (P + 1) .. "," .. (P + 2) and pieces(0, 1, 0, 9) == tostring(P))
+check("facing E, its own three", pieces(1, 1, 0, 3) == tostring(P + 3) and pieces(1, 1, 1, 3) == (P + 4) .. "," .. (P + 5))
+check("nothing on the back row, nor with nothing finished", pieces(0, 0, 0, 3) == "" and pieces(0, 1, 0, 0) == ""
     and pieces(0, 1, 0, nil) == "")
 check("the vent's smoke, stoked and banked, over both front tiles", Smokehouse.smokeSprite(0, 1, 0, "Lit") == Tiles.CHAMBER_SMOKE
     and Smokehouse.smokeSprite(0, 1, 1, "Lit") == Tiles.CHAMBER_SMOKE + 1 and Smokehouse.smokeSprite(0, 1, 0, "Banked") == Tiles.CHAMBER_SMOKE + 2

@@ -6,32 +6,14 @@ module TraditionalPreservationCore
         {
             xuiSkin = default,
             entityStyle = ES_SmokehouseChamber,
-            uiEnabled = true,
+            uiEnabled = false,
         }
-        component Resources
-        {
-            group craft_inputs
-            {
-                Item@Input@25,
-            }
-            group craft_outputs
-            {
-                Item@Output@200@StackAny,
-            }
-        }
-        /* A closed shed of planks, moved from Fish & Meat to TP Core 2026-11-13 so every mod can smoke in it: each
-           mod's recipes carry the Smokehouse tag, and each steps its own stacks (Smokehouse.lua). Inside it has
-           an open roof's air, out of rain and wind (Smokehouse.PLACE). Four tiles, two by two (2026-11-19), the slots on the
-           engine's master tile. Facing S a row is the shed's back or door end and x the column (east the side in
-           view); facing E a row is a column (south the side in view) and x runs back to door. */
-        component DryingCraftLogic
-        {
-            Recipes = Smokehouse,
-            StartMode = Manual,
-            inputGroup = craft_inputs,
-            outputGroup = craft_outputs,
-            actionAnim = Untie_High,
-        }
+        /* A closed shed of planks, moved from Fish & Meat to TP Core 2026-11-13 so every mod can smoke in it. No
+           window: what hangs inside is each mod's own record on the back left tile (Smokehouse.recordTile), hung and
+           taken from the right-click menu and its Info window (Fish & Meat's Smokehouse Info). Inside it has an open
+           roof's air, out of rain and wind (Smokehouse.PLACE). Four tiles, two by two (2026-11-19). Facing S a row is
+           the shed's back or door end and x the column (east the side in view); facing E a row is a column (south the
+           side in view) and x runs back to door. */
         component SpriteConfig
         {
             isThumpable = false,

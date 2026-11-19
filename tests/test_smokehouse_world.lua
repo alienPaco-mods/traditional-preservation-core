@@ -1,4 +1,4 @@
--- Checks the Smokehouse's World outside the game: the recipe tag, its four tiles, the pieces by the door, the vent's
+-- Checks the Smokehouse's World outside the game: its four tiles, the record tile, the pieces by the door, the vent's
 -- smoke and the flue's entry.
 -- Run from TraditionalPreservationCore: luajit tests/test_smokehouse_world.lua
 local H = dofile("tests/harness.lua")
@@ -8,9 +8,6 @@ H.installClock(100)
 H.installModData()
 H.installEvents()
 function isClient() return false end
-ComponentType = { Resources = "Resources", DryingCraftLogic = "DryingCraftLogic" }
-ResourceIO = { Output = "Output" }
-ResourceType = { Item = "Item" }
 ArrayList = { new = function() return list({}) end }
 local loaders = {}
 MapObjects = { OnLoadWithSprite = function(name, handler) loaders[name] = handler end }
@@ -37,39 +34,27 @@ local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 dofile("42/media/lua/server/TraditionalPreservationCore/SmokehouseWorld.lua")
 local World = Smokehouse.World
 
--- A chamber tile on its square; slots (true) gives it the slots, with finished items in its outputs: one a stackId in
--- finished (false for an item with none).
-local function chamber(x, y, index, slots, finished)
+-- A chamber tile on its square.
+local function chamber(x, y, index)
     local object = { square = square(x, y), sprites = {}, clears = 0 }
     table.insert(object.square.objects, object)
-    local logic = slots and { tag = "DryingFrame" }
-    if logic then
-        function logic:getRecipeTagQuery() return self.tag end
-        function logic:setRecipeTagQuery(tag) self.tag = tag end
-        function logic:getOutputsGroupName() return "out" end
-    end
-    local items = {}
-    for _, stackId in ipairs(finished or {}) do
-        local modData = { stackId = stackId or nil }
-        table.insert(items, { getModData = function() return modData end })
-    end
-    local resources = slots and {
-        getResourcesFromGroup = function() return list({ { storedSize = function() return #items end,
-            getStoredItems = function() return list(items) end } }) end,
-    }
-    function object:getComponent(kind) return kind == "Resources" and resources or kind == "DryingCraftLogic" and logic or nil end
     function object:getSprite() return { getName = function() return Tiles.PREFIX .. index end } end
     function object:getSquare() return self.square end
     function object:clearAttachedAnimSprite() self.sprites = {} self.clears = self.clears + 1 end
     function object:addAttachedAnimSpriteByName(name) table.insert(self.sprites, name) end
-    return object, logic
+    return object
 end
 
--- A shed facing S with its back-left tile at x, y (the slots there): { backLeft, frontLeft, backRight, frontRight }.
+-- What a mod's record says is finished in each shed, by its record tile (Smokehouse.countsFinished).
+local finishedIn = {}
+
+-- A shed facing S with its back-left tile (the record tile) at x, y: { backLeft, frontLeft, backRight, frontRight },
+-- finished pieces waiting in it.
 local function shed(x, y, finished)
-    local backLeft, logic = chamber(x, y, Tiles.CHAMBER, true, finished)
-    return { backLeft = backLeft, frontLeft = chamber(x, y + 1, Tiles.CHAMBER + 1, false),
-        backRight = chamber(x + 1, y, Tiles.CHAMBER + 2, false), frontRight = chamber(x + 1, y + 1, Tiles.CHAMBER + 3, false), logic = logic }
+    local backLeft = chamber(x, y, Tiles.CHAMBER)
+    finishedIn[backLeft] = finished
+    return { backLeft = backLeft, frontLeft = chamber(x, y + 1, Tiles.CHAMBER + 1),
+        backRight = chamber(x + 1, y, Tiles.CHAMBER + 2), frontRight = chamber(x + 1, y + 1, Tiles.CHAMBER + 3) }
 end
 local function refreshAll(s)
     for _, key in ipairs({ "backLeft", "frontLeft", "backRight", "frontRight" }) do World.refresh(s[key]) end
@@ -81,35 +66,32 @@ check("the map loader knows all eight chamber tiles", loaders[Tiles.CHAMBERS[1]]
 
 local empty = shed(10, 10)
 refreshAll(empty)
-check("one built before its recipe tag gets it", empty.logic.tag == Smokehouse.RECIPES)
 check("an empty shed shows nothing", shows(empty.backLeft) == "" and shows(empty.frontLeft) == "" and shows(empty.frontRight) == "")
-check("any tile finds the slots", Smokehouse.slotTile(empty.frontRight) == empty.backLeft and Smokehouse.slotTile(empty.backLeft) == empty.backLeft)
 check("any tile finds all four", #Smokehouse.chamberTiles(empty.frontRight) == 4 and #Smokehouse.chamberTiles(empty.backLeft) == 4)
 check("the record tile is the back left one, from any tile", Smokehouse.recordTile(empty.frontRight) == empty.backLeft
     and Smokehouse.recordTile(empty.backRight) == empty.backLeft and Smokehouse.recordTile(empty.backLeft) == empty.backLeft)
-local askedWith, finishedNow = nil, 2
-Smokehouse.countsFinished(function(record) askedWith = record return finishedNow end)
+local askedWith
+Smokehouse.countsFinished(function(record) askedWith = record return finishedIn[record] end)
+finishedIn[empty.backLeft] = 2
 check("a mod's count of finished pieces is asked of the record tile", Smokehouse.finishedPieces(empty.frontLeft) == 2
     and askedWith == empty.backLeft)
-finishedNow = 0
+finishedIn[empty.backLeft] = nil
 check("a count is a function", not pcall(Smokehouse.countsFinished, 3))
 
 -- Two sheds side by side: neither takes the other's tiles.
 local beside = shed(12, 10)
 check("a shed next door keeps its own tiles", #Smokehouse.chamberTiles(empty.backRight) == 4 and #Smokehouse.chamberTiles(beside.backLeft) == 4
-    and Smokehouse.slotTile(beside.frontLeft) == beside.backLeft and Smokehouse.slotTile(empty.backRight) == empty.backLeft)
+    and Smokehouse.recordTile(beside.frontLeft) == beside.backLeft and Smokehouse.recordTile(empty.backRight) == empty.backLeft)
 
-local two = shed(20, 20, { 1, 1, 1, 2 })
-refreshAll(two)
-check("two finished stacks hang the ham by the door, front-left", shows(two.frontLeft) == sprite(Tiles.CHAMBER_PIECES)
-    and shows(two.frontRight) == "" and shows(two.backLeft) == "")
-local five = shed(24, 20, { 1, 2, 3, 4, 5 })
+local one = shed(20, 20, 1)
+refreshAll(one)
+check("one finished piece hangs the ham by the door, front-left", shows(one.frontLeft) == sprite(Tiles.CHAMBER_PIECES)
+    and shows(one.frontRight) == "" and shows(one.backLeft) == "")
+local five = shed(24, 20, 5)
 refreshAll(five)
-check("five: the ham, and the chicken and the rabbit front-right", shows(five.frontLeft) == sprite(Tiles.CHAMBER_PIECES)
+check("five: the ham, and the chicken and the rabbit front-right, no more", shows(five.frontLeft) == sprite(Tiles.CHAMBER_PIECES)
     and shows(five.frontRight) == sprite(Tiles.CHAMBER_PIECES + 1) .. " " .. sprite(Tiles.CHAMBER_PIECES + 2))
-local plain = shed(28, 20, { false, false, false })
-refreshAll(plain)
-check("pieces without a stackId count as one stack", shows(plain.frontLeft) == sprite(Tiles.CHAMBER_PIECES) and shows(plain.frontRight) == "")
+local two = shed(28, 20)
 
 -- A Stone Hearth on the side in view (east, facing S) of the back-right tile, its flue a clay pipe into it.
 local stoneHearth = { square = square(12, 30), modData = {}, lit = false }

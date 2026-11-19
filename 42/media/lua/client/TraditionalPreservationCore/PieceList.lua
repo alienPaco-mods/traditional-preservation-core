@@ -1,15 +1,19 @@
 -- Traditional Preservation core: the scrolling list of an info window, one row a piece (what hangs on a rack, sits
--- on a shelf or lies on a malting floor). A header row names it and holds the sort switch (furthest along first,
--- least along first, or by process: grouped by their process's name, furthest along within each); under it up to ROWS_SHOWN rows, then a scroll bar. Each row is an icon, a name, a bar with
--- its text and, if given, a line under the bar (the Smokehouse's smoke count). Hovering a row shows its popup, drawn
--- like a crafting window's slot popup (ISToolTipItemSlot): the row's popup(tooltip) fills it, as UI.drawTooltip does.
+-- on a shelf or lies on a malting floor). A header row names it and holds the sort switch (furthest along first, or
+-- least along first); under it a row of tabs, All and one for each process on the station with its count ("Salt Fish
+-- (4)"), on as many lines as they need, shown only when there are two processes or more; under them up to ROWS_SHOWN
+-- rows of the tab open, then a
+-- scroll bar. Each row is an icon, a name, a bar with its text and, if given, a line under the bar (the Smokehouse's
+-- smoke count). Hovering a row shows its popup, drawn like a crafting window's slot popup (ISToolTipItemSlot): the
+-- row's popup(tooltip) fills it, as UI.drawTooltip does.
 -- A window doesn't make one itself: InfoWindow:pieceList(y, label, rows) draws it in the window's flow.
 -- rows is a list of { icon (Texture or nil), name, share (0 to 1), colour { r, g, b }, text (in the bar),
--- note (text under the bar, or nil), order (sort key, share if nil), group (the process's name, for the by-process
--- sort: every piece has one), popup (function(tooltip), or nil) }. A window
--- builds a new rows table in refresh; the list sorts it again only when the table changes.
+-- note (text under the bar, or nil), order (sort key, share if nil), tab (its process's tab name, or nil: All only),
+-- tabOrder (the tabs' order, lowest first; the first row's order among equals), popup (function(tooltip), or nil) }.
+-- A window builds a new rows table in refresh; the list lays it out again only when the table or the tab changes.
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISComboBox"
+require "ISUI/ISButton"
 require "Entity/ISUI/Components/Crafting/ISToolTipItemSlot"
 
 local PieceList = ISScrollingListBox:derive("TraditionalPreservationCorePieceList")
@@ -19,27 +23,29 @@ PieceList.ICON = 16
 PieceList.ROW_PAD = 3       -- above and below a row's line
 PieceList.GAP = 4           -- between icon, name and bar
 PieceList.SORT_WIDTH = 120
+PieceList.TAB_PAD = 6       -- either side of a tab's title
+PieceList.TAB_GAP = 2       -- between tabs
+PieceList.TAB_OPEN = { r = 0.25, g = 0.4, b = 0.25, a = 1 }  -- the open tab's background
+PieceList.TAB_SHUT = { r = 0, g = 0, b = 0, a = 1 }
 PieceList.FIT_CACHE = 64    -- names kept cut to width before the cache starts over
 PieceList.BACKGROUND = { r = 0, g = 0, b = 0, a = 0.4 }
 PieceList.BORDER = { r = 0.4, g = 0.4, b = 0.4, a = 0.8 }
 PieceList.FILL = { 0.35, 0.7, 0.35 } -- a bar with no colour of its own
 
 -- The switch's sorts, in its order. One choice for every list, kept while the game runs.
-PieceList.SORTS = { "furthest", "least", "process" }
+PieceList.SORTS = { "furthest", "least" }
 local SORT_TEXTS = { furthest = "IGUI_TraditionalPreservationCore_ListFurthest",
-    least = "IGUI_TraditionalPreservationCore_ListLeast", process = "IGUI_TraditionalPreservationCore_ListProcess" }
+    least = "IGUI_TraditionalPreservationCore_ListLeast" }
 local sortBy = "furthest"
 
--- rows sorted by sort (one of SORTS): furthest along first, least along first, or by process (groups by name,
--- furthest along within a group); ties in the order given. Returns a new list; rows is left as it is.
+-- rows sorted by sort (one of SORTS): furthest along first, or least along first; ties in the order given. Returns
+-- a new list; rows is left as it is.
 function PieceList.sorted(rows, sort)
     local keyed = {}
     for index, row in ipairs(rows) do
-        assert(type(row.group) == "string", "PieceList: a row's group (its process) is needed: " .. tostring(row.name))
-        keyed[index] = { row = row, key = row.order or row.share or 0, group = row.group, index = index }
+        keyed[index] = { row = row, key = row.order or row.share or 0, index = index }
     end
     table.sort(keyed, function(a, b)
-        if sort == "process" and a.group ~= b.group then return a.group < b.group end
         if a.key ~= b.key then
             if sort == "least" then return a.key < b.key end
             return a.key > b.key
@@ -49,6 +55,63 @@ function PieceList.sorted(rows, sort)
     local sorted = {}
     for index, entry in ipairs(keyed) do sorted[index] = entry.row end
     return sorted
+end
+
+-- The tabs for rows: { { name, count } }, All first (name nil, every row), then each tab the rows name, by tabOrder
+-- (lowest first), equals in the order their first row comes. Only All when fewer than two tabs are named.
+function PieceList.tabs(rows)
+    local found, counts = {}, {}
+    for index, row in ipairs(rows) do
+        if row.tab then
+            if not counts[row.tab] then
+                counts[row.tab] = 0
+                table.insert(found, { name = row.tab, order = row.tabOrder or 0, first = index })
+            end
+            counts[row.tab] = counts[row.tab] + 1
+        end
+    end
+    table.sort(found, function(a, b)
+        if a.order ~= b.order then return a.order < b.order end
+        return a.first < b.first
+    end)
+    local tabs = { { name = nil, count = #rows } }
+    if #found < 2 then return tabs end
+    for _, tab in ipairs(found) do table.insert(tabs, { name = tab.name, count = counts[tab.name] }) end
+    return tabs
+end
+
+-- The rows on a tab (nil: All, every row), in the order given.
+function PieceList.onTab(rows, tab)
+    if tab == nil then return rows end
+    local shown = {}
+    for _, row in ipairs(rows) do
+        if row.tab == tab then table.insert(shown, row) end
+    end
+    return shown
+end
+
+-- A tab's title: its name (All for nil) and its count.
+function PieceList.tabTitle(tab)
+    return (tab.name or getText("IGUI_TraditionalPreservationCore_ListAll")) .. " (" .. tostring(tab.count) .. ")"
+end
+
+-- The tabs laid out in width: each as wide as its title and padding, left to right, onto a new line when the next
+-- doesn't fit (a title wider than the whole line is cut with "..."). Returns { { x, line (0 first), width, title } }
+-- and the count of lines.
+function PieceList.tabLayout(owner, tabs, width)
+    local measure, placed, x, line = getTextManager(), {}, 0, 0
+    for index, tab in ipairs(tabs) do
+        local title = PieceList.tabTitle(tab)
+        local tabWidth = measure:MeasureStringX(UIFont.Small, title) + PieceList.TAB_PAD * 2
+        if tabWidth > width then
+            title = PieceList.fit(owner, title, width - PieceList.TAB_PAD * 2)
+            tabWidth = width
+        end
+        if x > 0 and x + tabWidth > width then x, line = 0, line + 1 end
+        placed[index] = { x = x, line = line, width = tabWidth, title = title }
+        x = x + tabWidth + PieceList.TAB_GAP
+    end
+    return placed, line + 1
 end
 
 -- text cut to width with "...", kept in owner until the cache fills.
@@ -103,15 +166,22 @@ function PieceList:new(x, y, width, colours)
     return o
 end
 
--- Lays out sorted rows as the list's items; called when the window's rows or the switch change.
+-- Lays out the open tab's rows, sorted, as the list's items; called when the window's rows, the tab or the switch
+-- change. A tab whose last piece went shows All.
 function PieceList:setRows(rows)
-    self.rows, self.sortBy = rows, sortBy
+    local tabs, open = PieceList.tabs(rows), nil
+    for _, tab in ipairs(tabs) do
+        if tab.name ~= nil and tab.name == self.tab then open = tab.name end
+    end
+    self.tab = open
+    self.rows, self.sortBy, self.tabShown, self.tabList = rows, sortBy, open, tabs
+    local shown = PieceList.onTab(rows, open)
     self:clear()
-    for _, row in ipairs(PieceList.sorted(rows, sortBy)) do
+    for _, row in ipairs(PieceList.sorted(shown, sortBy)) do
         local item = self:addItem(row.name, row)
         item.height = PieceList.rowHeight(row)
     end
-    self:setHeight(PieceList.heightFor(rows))
+    self:setHeight(PieceList.heightFor(shown))
 end
 
 -- Rows aren't picked: a click does nothing.
@@ -206,6 +276,50 @@ local function onSort(list, combo)
     if list.rows then list:setRows(list.rows) end
 end
 
+-- A tab clicked: this list shows it (the window's own choice; a new window opens on All).
+local function onTab(button)
+    local list = button.pieceList
+    list.tab = button.tabName
+    if list.rows then list:setRows(list.rows) end
+end
+
+-- Lays out the tab buttons at y on window, one a tab (made as needed, hidden when not needed); returns the y under
+-- them, or y with fewer than two tabs.
+local function drawTabs(window, colours, list, y)
+    local tabs = list.tabList or {}
+    local buttons = list.tabButtons
+    local shown = #tabs > 1 and #tabs or 0
+    local placed, lines = PieceList.tabLayout(list, tabs, list.width)
+    local height = lineHeight() + 4
+    for index = 1, math.max(shown, #buttons) do
+        local button = buttons[index]
+        if index <= shown then
+            local at = placed[index]
+            if not button then
+                button = ISButton:new(0, 0, at.width, height, "", nil, onTab)
+                button:initialise()
+                button:instantiate()
+                button.pieceList = list
+                button.target = button
+                window:addChild(button)
+                buttons[index] = button
+            end
+            button.tabName = tabs[index].name
+            local x, top = colours.padding + at.x, y + at.line * (height + PieceList.TAB_GAP)
+            if button.x ~= x then button:setX(x) end
+            if button.y ~= top then button:setY(top) end
+            if button.width ~= at.width then button:setWidth(at.width) end
+            if button.title ~= at.title then button:setTitle(at.title) end
+            button.backgroundColor = tabs[index].name == list.tab and PieceList.TAB_OPEN or PieceList.TAB_SHUT
+            if not button:getIsVisible() and list:getIsVisible() then button:setVisible(true) end
+        elseif button and button:getIsVisible() then
+            button:setVisible(false)
+        end
+    end
+    if shown == 0 then return y end
+    return y + lines * height + (lines - 1) * PieceList.TAB_GAP + colours.gap
+end
+
 -- The list and its switch on window, made on the first call. Returns the list.
 function PieceList.of(window, colours)
     local list = window.pieceListUI
@@ -220,6 +334,7 @@ function PieceList.of(window, colours)
     for _, name in ipairs(PieceList.SORTS) do sort:addOption(getText(SORT_TEXTS[name])) end
     window:addChild(sort)
     list.sort = sort
+    list.tabButtons = {}
     window.pieceListUI = list
     return list
 end
@@ -236,17 +351,21 @@ function PieceList.draw(window, colours, y, label, rows)
         if name == sortBy then sort.selected = index end
     end
     y = y + header + colours.gap
+    if list.rows ~= rows or list.sortBy ~= sortBy or list.tabShown ~= list.tab then list:setRows(rows) end
+    y = drawTabs(window, colours, list, y)
     if list.y ~= y then list:setY(y) end
-    if list.rows ~= rows or list.sortBy ~= sortBy then list:setRows(rows) end
     return y + list.height + colours.gap
 end
 
--- Hides or shows the list and its switch (a collapsed window).
+-- Hides or shows the list, its switch and its tabs (a collapsed window); the next draw shows the tabs it needs.
 function PieceList.show(window, visible)
     local list = window.pieceListUI
     if not list or list:getIsVisible() == visible then return end
     list:setVisible(visible)
     list.sort:setVisible(visible)
+    for _, button in ipairs(list.tabButtons) do
+        if not visible then button:setVisible(false) end
+    end
 end
 
 return PieceList

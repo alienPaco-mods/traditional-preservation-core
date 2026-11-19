@@ -1,5 +1,18 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.31
+- **Tabs in the piece list** (ROADMAP section 12; user, session 55): `InfoWindow:pieceList` shows a row of tabs under
+  its header, All and one for each process on the station with its count ("Salt Fish (4)"), wrapping onto more lines
+  as needed; none with a single process. A row names its tab (`tab`, ordered by `tabOrder`); each window opens on All
+  and keeps its own tab, back to All when that tab's last piece goes. The By process sort is gone (the switch keeps
+  Furthest along and Least along); rows no longer need `group`. `TPC.pieceList()` shows the tabs.
+
+## 0.1.30
+- **The Smokehouse is off CraftLogic** (ROADMAP section 12, S4): no crafting window (UiConfig `uiEnabled = false`), no
+  slots or recipe tag; what hangs inside is each mod's own record on the back left tile. The door look counts finished
+  pieces only (`Smokehouse.pieceSprites(face, part, col, finishedPieces)`); `Smokehouse.slotTile`,
+  `Smokehouse.RECIPES`, `Smokehouse.STACKS` and `STACKS_A_PIECE` are gone. The build tooltip says pieces.
+
 ## 0.1.29
 - **For the Smokehouse's menu** (ROADMAP section 12, S3): `Smokehouse.redraw(tile)` redraws every tile of the shed
   now (was the flue's own local), so a mod taking a finished piece off updates the door look at once.

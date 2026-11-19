@@ -271,6 +271,7 @@ local function addFireMenu(context, playerObj, fire)
     end
     local infoOption = menu:addOption(getText(look.infoText), playerObj, FireWindow.open, fire)
     infoOption.iconTexture = getTexture(look.icon)
+    UI.topInfo(context, getText(look.infoText), getTexture(look.icon), playerObj, FireWindow.open, fire)
     addFireOption(menu, playerObj, fire)
     if Fire.isBare(fire) then
         for _, each in ipairs(Fire.attachments()) do

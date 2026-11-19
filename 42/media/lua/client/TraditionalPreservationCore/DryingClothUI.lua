@@ -122,6 +122,7 @@ local function addClothMenu(context, playerObj, station)
     UI.tooltip(status, table.concat(lines, " <LINE> "))
     local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_ClothInfo"), playerObj, ClothWindow.open, station)
     info.iconTexture = getTexture(CLOTH_ICON)
+    UI.topInfo(context, getText("ContextMenu_TraditionalPreservationCore_ClothInfo"), getTexture(CLOTH_ICON), playerObj, ClothWindow.open, station)
     addLayRows(menu, playerObj, station, clothView.record)
     addTakeRows(menu, playerObj, station, clothView)
 end

@@ -9,7 +9,8 @@
 -- The drawing (drawRow, drawBar, noteLines, drawNoteLines) is shared with StationInfo's block in vanilla's crafting
 -- window: each takes the element to draw on and its layout { padding, labelWidth, barHeight }.
 -- A station holding many pieces lists them with pieceList (PieceList.lua, required by the first window that draws
--- one): a scrolling list, one row a piece.
+-- one): a scrolling list, one row a piece. dropZone (DropZone.lua, the same way) is a square that takes a selection
+-- dragged from the inventory or a loot window.
 require "ISUI/ISCollapsableWindow"
 local Station = require "TraditionalPreservationCore/Station"
 
@@ -75,6 +76,7 @@ function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
     if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
+    if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
         self.ticks = 0
@@ -205,6 +207,12 @@ end
 -- header says, a new table each refresh. Returns the y under the list.
 function InfoWindow:pieceList(y, label, rows)
     return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, getText(label), rows)
+end
+
+-- The drop square (DropZone.lua's header): idleText (finished text) at rest, judge(items) while a selection is
+-- dragged over it, drop(take) on release. Returns the y under it.
+function InfoWindow:dropZone(y, idleText, judge, drop)
+    return require("TraditionalPreservationCore/DropZone").draw(self, InfoWindow.PADDING, InfoWindow.BAR_GAP, y, idleText, judge, drop)
 end
 
 -- The notes, after which the window fits its height to them.

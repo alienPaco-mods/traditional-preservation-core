@@ -200,12 +200,17 @@ local Weather = require "TraditionalPreservationCore/Weather"
    mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. A window opens from the station's
-   right-click menu only (an Info row): a left click stays vanilla's, as for any furniture (a container's loot
+   right-click menu only: an Info row in its submenu and the same row at the bottom of the main menu
+   (`UI.topInfo`, vanilla's place for such rows). A left click stays vanilla's, as for any furniture (a container's loot
    window; vanilla gives no workstation a left click). A station holding many pieces lists them with `self:pieceList(y, label,
    rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
    along first, or by process: rows grouped by their `group`, which every row has), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
    hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
-   sorts it again only then. `TPC.pieceList(n)` opens a sample.
+   sorts it again only then. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
+   `self:dropZone(y, idleText, judge, drop)` (`DropZone.lua`): an always-shown square that takes a selection
+   dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
+   `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
+   shown green or red while held over it, `drop(take)` queues the hand jobs, and `refused` shows over the player.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

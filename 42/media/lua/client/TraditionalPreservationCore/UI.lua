@@ -198,6 +198,14 @@ function UI.findItems(playerObj, test)
     return found
 end
 
+-- A station's Info as a row of the main menu too (at its bottom), as well as the Info row in the station's submenu:
+-- every station's info is one click from the right-click menu. open(playerObj, station) opens it.
+function UI.topInfo(context, label, icon, playerObj, open, station)
+    local option = context:addOption(label, playerObj, open, station)
+    option.iconTexture = icon
+    return option
+end
+
 -- A menu option's hover. text is finished text, not a key.
 function UI.tooltip(option, text)
     local tooltip = ISWorldObjectContextMenu.addToolTip()

@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.24
+- **A drop square for info windows** (`DropZone.lua`, `InfoWindow:dropZone`; user, session 53, mock
+  `art/rack_drop_mock.png`): an always-shown square under a station's list that takes a selection dragged from the
+  inventory or a loot window. Held over it, it turns green with what would happen (and "some items will be
+  rejected" when not all would go) or red with why not; on release the station takes what it takes, and the rest's
+  reason shows over the player. `test_drop_zone.lua` new.
+- **Info in the main menu too** (user, session 53): every station's Info row is also at the bottom of the main right-click menu, besides its submenu (TP Core's `UI.topInfo`). The Stone Hearth (Cauldron) and the Drying Cloth have it.
+
 ## 0.1.23
 - **Info windows open from the right-click menu only** (user, session 53): a left click on a station is vanilla's again, as for every vanilla workstation (a container opens its loot window). `InfoWindow.clickOpens` and its wrap of `ISObjectClickHandler.doClickSpecificObject` are gone; the Stone Hearth's left click opens only its loot window, the Drying Cloth's nothing. Docs and TESTING 9b, 9c, 27j updated.
 

@@ -92,8 +92,14 @@ context = menu()
 local vanilla = context:addOption("Stone Oven")
 context:addSubMenu(vanilla, menu())
 sub = open(withCauldron(), context)
-check("the cauldron's options go into vanilla's submenu, not a second one", #context.options == 1 and sub == vanilla.subOption
-    and #sub.options >= 3)
+local function inSubmenu(row)
+    for _, option in ipairs(sub.options) do
+        if option.name == row.name and option.onSelect == row.onSelect then return true end
+    end
+    return false
+end
+check("the cauldron's options go into vanilla's submenu, not a second one; its Info at the main menu's bottom too",
+    #context.options == 2 and sub == vanilla.subOption and #sub.options >= 3 and inSubmenu(context.options[2]))
 
 -- The fire
 local lit = withCauldron({}, true)

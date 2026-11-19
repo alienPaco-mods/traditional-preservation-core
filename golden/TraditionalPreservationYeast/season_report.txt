@@ -83,8 +83,6 @@ cultureBasement    6104.559220476
 cultureBasementRate 0.613867470
 cultureCovered     7267.364099429
 cultureCoveredRate 0.760157614
-cultureEnclosed    7206.686475815
-cultureEnclosedRate 0.512840314
 cultureLoft        8113.113263157
 cultureLoftRate    0.928165495
 cultureOpen        7206.686475815

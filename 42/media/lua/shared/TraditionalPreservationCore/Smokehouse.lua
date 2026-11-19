@@ -12,9 +12,17 @@ local FireConnect = require "TraditionalPreservationCore/FireConnect"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 local Station = require "TraditionalPreservationCore/Station"
+local Weather = require "TraditionalPreservationCore/Weather"
 local squareAt = Station.squareAt
 
 local Smokehouse = {}
+
+-- Inside the chamber: a station, not a place. Its word (UI.placeName: "In the Smokehouse") is what a mod's stacks
+-- carry, and the shed has an open roof's air, the season's mean (Weather.STATION_PLACES); the still air, out of the
+-- rain and wind, is each mod's to count. Save value: never rename it.
+Smokehouse.PLACE = "Smokehouse"
+Smokehouse.AIR = "Covered"
+Weather.STATION_PLACES[Smokehouse.PLACE] = Smokehouse.AIR
 
 -- The connection's id: its save key in tpFire, never renamed.
 Smokehouse.ID = "smokehouse"

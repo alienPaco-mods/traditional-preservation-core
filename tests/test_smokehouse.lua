@@ -11,7 +11,14 @@ local Fire = require "TraditionalPreservationCore/Fire"
 local Doors = require "TraditionalPreservationCore/Doors"
 local Tiles = require "TraditionalPreservationCore/Tiles"
 
+local Weather = require "TraditionalPreservationCore/Weather"
+
 local function name(index) return Tiles.PREFIX .. index end
+
+check("inside the Smokehouse is no place of Weather's, and has an open roof's air",
+    not table.concat(Weather.PLACES, " "):find(Smokehouse.PLACE)
+    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 8 }, Smokehouse.PLACE)
+        == Weather.placeTemperature({ temperature = 2, seasonTemperature = 8 }, "Covered"))
 
 -- Sprite names: each facing's four tiles, column by column (0 the hidden long side, 1 the one in view), back row first.
 local face, part, col = Smokehouse.tileOfName(name(Tiles.CHAMBER))

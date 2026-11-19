@@ -10,7 +10,7 @@ The shared mod of the Traditional Preservation series. Every Traditional Preserv
 [*][b]The Forged Cauldron[/b]: 60 L of forged iron hung by a chain over the Stone Hearth's hole, for heating any fluid
 [*][b]The Smokehouse[/b]: a plank shed on four tiles, joined to a Stone Hearth by a clay pipe or a stone trench, where the TP mods smoke their food
 [*]One weather record for the whole series, so every station keeps working while you are away
-[*]Eight kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, in a shed, by a fire and by banked embers
+[*]Seven kinds of place a station can stand in: open air, under an open roof, indoors, a loft, a basement, by a fire and by banked embers
 [*]The popups and info windows that show a station's progress, real time left, temperature and working rate
 [*]A [b]Season[/b] menu for foods the other mods let you season afterwards, as a stew (Fish & Meat's sausages): garlic, onion, pepper or herbs, each a little nicer to eat
 [/list]
@@ -44,7 +44,7 @@ The tile in front of the Stone Hearth's and the Smokehouse's doors must stay cle
 [*][b]Under an open roof[/b] (a porch, an open shed) and [b]indoors[/b] (a room): the last 10 days' average outdoors, a room 2 C warmer in the cold months. A room is 22 C while the power grid is on.
 [*][b]In a loft[/b] (the top storey: a room upstairs with no room over it): as indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on.
 [*][b]In a basement[/b]: follows the ground, a month behind the season and two fifths as far: about 5 C from January to March, 13 C from July to September.
-[*][b]In a shed[/b] (inside the Smokehouse, a closed plank shed out of doors): the day's weather, as the open air, out of the rain and wind; the power grid doesn't warm it.
+[*][b]In the Smokehouse[/b] is not a place of its own: inside it the air is as under an open roof, only still and out of the rain.
 [/list]
 Yeast, Vinegar and Dairy also count [b]by a fire[/b]: any lit fireplace, antique stove, campfire or Stone Hearth within 2 tiles holds 28 C indoors, and a banked Stone Hearth's embers 24 C. Outside, the air carries the heat off: under an open roof a fire adds 15 C to the 10-day average (embers 10), in the open 10 C to the day's weather (embers 5), never past 28 and 24.
 

@@ -16,10 +16,9 @@ local Weather = {}
 -- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
 -- in winter (about 5 C to 13). A loft (a room above the ground floor with no room over it: the top storey, under the roof) is the basement's mirror: a room in the cold
 -- months, and under the sun on the roof LOFT_LIFT of the season's distance above LOFT_ANCHOR warmer (about 24 C in
--- a 21 C July). Enclosed is a closed shed in the outside air (the Smokehouse): out of the rain and wind but not a room,
--- and with no thermal mass to speak of, so it goes by the day as the open air does, and the grid doesn't warm it. No
--- square says it: a station claims it (in its session state: Fish & Meat's World), so Weather.placeOf never returns it.
-Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement", "Enclosed" }
+-- a 21 C July). Every place is a square's: the Smokehouse is a station, not a place, and its air is Covered's
+-- (Smokehouse.PLACE).
+Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement" }
 Weather.SEASON_HOURS = 240
 Weather.GROUND_HOURS = 720
 Weather.BASEMENT_ANCHOR = 10
@@ -39,6 +38,9 @@ Weather.ROOM_LIFT_NONE = 18
 -- adds them: place -> { celsius, under, lift }. A fire indoors (no under) holds celsius whatever the weather; one
 -- under an open roof or in the open warms that place's air by lift, never past celsius.
 Weather.FIRE_PLACES = {}
+-- Inside a station that is a building of its own (the Smokehouse): its word -> the place whose air it has. A
+-- station adds itself; the ledger keeps no totals for it.
+Weather.STATION_PLACES = {}
 -- Where something stands when nothing says: a room. (Fire.DEFAULT_PLACE_WITHOUT_FIRE and FluidAgeing.DEFAULT_PLACE are this.)
 Weather.DEFAULT_PLACE = "Sheltered"
 -- Where a station's run or stack counts before its World first says where the station stands (a few seconds): the
@@ -131,11 +133,10 @@ function Weather.loftTemperature(seasonTemperature)
 end
 
 -- Each place in Weather.PLACES by the ledger's readings: day (the last), season (its mean) and the ledger, for the
--- grid and the ground. The open air and a shed in it (Enclosed) go by the day's.
+-- grid and the ground. The open air goes by the day's.
 local function byDay(day) return day end
 local PLACE_RULES = {
     Open = byDay,
-    Enclosed = byDay,
     Covered = function(_, season) return season end,
     Sheltered = function(_, season, ledger)
         if ledger.gridOn then return Weather.GRID_ROOM_C end
@@ -152,6 +153,7 @@ for _, place in ipairs(Weather.PLACES) do assert(PLACE_RULES[place], "Weather: n
 
 -- The temperature a place has now, from the ledger's last reading. A place Weather doesn't know goes by the day.
 function Weather.placeTemperature(ledger, place)
+    place = Weather.STATION_PLACES[place] or place
     local fire = Weather.FIRE_PLACES[place]
     if fire then
         if not fire.placeWithoutFire then return fire.celsius end

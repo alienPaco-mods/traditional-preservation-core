@@ -556,7 +556,7 @@ however long it was away. That costs one small table per mod, never grows with t
 catch-up simulation. The reading itself and the season's means are kept once, in TP Core's ModData, and copied into
 each mod's ledger: a mod added to a save in July then agrees with the others about the cellar at once.
 
-**Why six places (Open, Covered, Sheltered, Loft, Basement, Enclosed), and why a 240-hour season mean?**
+**Why five places (Open, Covered, Sheltered, Loft, Basement), and why a 240-hour season mean?**
 They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
 day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
 (a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
@@ -571,11 +571,11 @@ A loft is the basement's mirror: the top storey, a room at z >= 1 whose square a
 no room (so a middle storey of a tall building and a bungalow's ground floor stay Sheltered). It reads the season's
 mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the sun on the roof, and 22 C while the
 grid is on.
-Enclosed (the player's word *In a shed*) is a closed shed in the outside air: out of the rain and
-wind, but a box of planks with no thermal mass, so it reads the day's temperature as Open does, and the grid doesn't
-warm it. No square can tell it from a room, so `Weather.placeOf` never returns it: a station claims it in its session
-state (`sessionState.place`). Only Fish & Meat's Smokehouse does; the Yeast, Vinegar and Dairy season reports show no
-column for it.
+Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse
+(*In the Smokehouse*, `Smokehouse.PLACE`) the stacks carry the Smokehouse's word, set by the station's session state
+(`sessionState.place`), and its temperature is an open roof's (`Weather.STATION_PLACES`): a closed shed lags the
+weather at least as much as an open one. The still air and the rain kept off are the mod's own rates (Fish & Meat's
+Shed). The ledger keeps no totals for it.
 **One place, one temperature:** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
 (its curve, its hours), never the temperature it is given.

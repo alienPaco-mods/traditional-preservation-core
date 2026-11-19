@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.14
+- **Five places: Enclosed is gone** (2026-11-19). It was only ever the inside of the Smokehouse, and it read the day's
+  temperature while an open shed (Covered) reads the season's: a closed shed lags the weather at least as much.
+  `Weather.PLACES` is Open, Covered, Sheltered, Loft and Basement, every one a square's. Inside the Smokehouse is a
+  station's word, not a place: `Smokehouse.PLACE` ("Smokehouse", *In the Smokehouse*), its air Covered's
+  (`Smokehouse.AIR`) through the new `Weather.STATION_PLACES`, which `Weather.placeTemperature` reads. The ledgers keep
+  no totals for it (an old save's `...Enclosed` totals are left unused). The place word `PlaceEnclosed` ("In a shed")
+  is `PlaceSmokehouse` ("In the Smokehouse"). Golden results: Dairy's and Yeast's season reports lose the shed.
+
 ## 0.1.13
 - **The Smokehouse is 2 x 2** (2026-11-19, a new look only: the same 6 stacks, recipe, places and rules). A plank
   shed on four tiles under a low pitched roof, its ridge from the door end to the back; the door end a gable with a

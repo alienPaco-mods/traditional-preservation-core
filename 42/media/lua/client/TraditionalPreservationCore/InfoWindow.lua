@@ -30,6 +30,7 @@ InfoWindow.LABEL_WIDTH = 120    -- PieceList's bars start here
 InfoWindow.LABEL_GAP = 16       -- a label to its value
 InfoWindow.SECTION_GAP = 12     -- above a block's header
 InfoWindow.HEADER_GAP = 4       -- a header to its first row
+InfoWindow.HEADER_LEAD, InfoWindow.HEADER_SPACE = 8, 6   -- the hairline before a header's name, and either side of it
 InfoWindow.BAR_HEIGHT = 18
 InfoWindow.BAR_TEXT_PAD = 6     -- a bar's text to its ends; longer text goes under the bar
 InfoWindow.REFRESH_TICKS = 30
@@ -44,12 +45,14 @@ InfoWindow.LABEL_COLOUR = { 0.7, 0.7, 0.7 }
 InfoWindow.VALUE_COLOUR = { 1, 1, 1 }
 InfoWindow.NOTE_COLOUR = { 0.8, 0.8, 0.65 }
 InfoWindow.BAR_BACK, InfoWindow.BAR_BORDER = { 0.1, 0.1, 0.1 }, { 0.4, 0.4, 0.4 }
+InfoWindow.DROP_NO_TEXT = { 0.9, 0.43, 0.35 }   -- a drag hint that takes nothing
 -- A block's header and its hairline.
 InfoWindow.HEADER_COLOUR, InfoWindow.HAIRLINE = { 0.55, 0.55, 0.55 }, { 0.3, 0.3, 0.3 }
 -- Bold text (a holding's name) is Small drawn twice, a pixel apart (user: SdfBold zoomed down looked shadowed).
 -- A lone holding's lore note: the game's serif italic (SdfOldItalic) at Small's height, a rule at its left.
 InfoWindow.LORE_COLOUR, InfoWindow.LORE_RULE = { 0.8, 0.8, 0.65 }, { 0.47, 0.43, 0.31 }
-InfoWindow.LORE_GAP, InfoWindow.LORE_PAD = 12, 12   -- the holding to the rule, the rule to the text
+InfoWindow.LORE_GAP, InfoWindow.LORE_PAD = 12, 12   -- the holdings to the rule, the rule to the text
+InfoWindow.LORE_MIN = 140       -- the least room for the lore beside the holdings: the window widens to give it
 
 local LAYOUT = { padding = InfoWindow.PADDING, labelWidth = InfoWindow.LABEL_WIDTH, barHeight = InfoWindow.BAR_HEIGHT }
 -- What PieceList draws with: its bars start under the rows' values.
@@ -98,6 +101,7 @@ function InfoWindow:update()
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
     if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
+    if self.dropTargetsUI then require("TraditionalPreservationCore/DropZone").showTargets(self, math.huge) end
     for _, button in ipairs(self.buttonsUI or {}) do
         if button:getIsVisible() == self.isCollapsed then button:setVisible(not self.isCollapsed) end
     end
@@ -302,16 +306,18 @@ function InfoWindow:band(word, text, colour, dark, entry)
     return self.bandBottom
 end
 
--- A block's header at y (label a translation key): its name in small grey capitals and a hairline to the window's
--- edge, a gap above it unless it is the window's first. Returns the y of the block's first row.
+-- A block's header at y (label a translation key): its name in small grey capitals on a hairline, a short lead before
+-- it and the rest to the window's edge (user), a gap above it unless it is the window's first. Returns the y of the block's first row.
 function InfoWindow:section(y, label)
     if y > self:top() then y = y + InfoWindow.SECTION_GAP end
     local text = string.upper(getText(label))
     local lineHeight = InfoWindow.lineHeight()
-    drawText(self, text, InfoWindow.PADDING, y, InfoWindow.HEADER_COLOUR)
-    local lineX = InfoWindow.PADDING + getTextManager():MeasureStringX(UIFont.Small, text) + 6
-    local hair = InfoWindow.HAIRLINE
-    self:drawRect(lineX, y + math.floor(lineHeight / 2), self.width - InfoWindow.PADDING - lineX, 1, 1, hair[1], hair[2], hair[3])
+    local hair, lineY = InfoWindow.HAIRLINE, y + math.floor(lineHeight / 2)
+    self:drawRect(InfoWindow.PADDING, lineY, InfoWindow.HEADER_LEAD, 1, 1, hair[1], hair[2], hair[3])
+    local textX = InfoWindow.PADDING + InfoWindow.HEADER_LEAD + InfoWindow.HEADER_SPACE
+    drawText(self, text, textX, y, InfoWindow.HEADER_COLOUR)
+    local lineX = textX + getTextManager():MeasureStringX(UIFont.Small, text) + InfoWindow.HEADER_SPACE
+    self:drawRect(lineX, lineY, self.width - InfoWindow.PADDING - lineX, 1, 1, hair[1], hair[2], hair[3])
     return y + lineHeight + InfoWindow.HEADER_GAP
 end
 
@@ -352,19 +358,69 @@ local HOLDS_LOOK = { value = InfoWindow.VALUE_COLOUR, note = InfoWindow.NOTE_COL
     boldWidth = InfoWindow.boldWidth }
 
 -- What the station holds, left to right (Holds.lua's header has the holdings); the window widens to fit them, up to
--- MAX_WIDTH. A lone holding with lore (finished text: a line of real-world history) stands at the left with the
--- note beside it. Returns the y under them.
-function InfoWindow:holds(y, holdings, lore)
-    if lore and #holdings == 1 then return self:holdsWithLore(y, holdings, lore) end
-    local under, needed = require("TraditionalPreservationCore/Holds").draw(self, HOLDS_LOOK, InfoWindow.PADDING, y, holdings)
-    self:fitWidth(needed + InfoWindow.PADDING * 2)
-    return under + InfoWindow.BAR_GAP
+-- MAX_WIDTH. lore (finished text: a line of real-world history, or nil) goes beside them, wrapped in the room to
+-- their right; the window widens to give it LORE_MIN (user: a long fluid name left it out), and only past MAX_WIDTH
+-- is it left out. Returns the y under them.
+-- What is dragged over the index'th holding's drop target, or nil.
+local function judgedOver(window, index)
+    local target = window.dropTargetsUI and window.dropTargetsUI[index]
+    return target and target.inUse and target:judgedNow() or nil
 end
 
-function InfoWindow:holdsWithLore(y, holdings, lore)
+-- A holding with drop (Holds' header) gets a drop target over its tank and heat bar; what a drag over it would do is
+-- written by the mouse, as vanilla's own drag hints are.
+local function placeTargets(window, holdings, units)
+    local any = window.dropTargetsUI ~= nil
+    for _, holding in ipairs(holdings) do any = any or holding.drop ~= nil end
+    if not any then return end
+    local DropZone = require "TraditionalPreservationCore/DropZone"
+    local margin = require("TraditionalPreservationCore/Holds").DROP_MARGIN
+    for _, target in pairs(window.dropTargetsUI or {}) do target.inUse = false end
+    for index, holding in ipairs(holdings) do
+        local unit, drop = units[index], holding.drop
+        if drop and unit then
+            local target = DropZone.placeTarget(window, index, unit.x - margin, unit.y - margin, unit.width + margin * 2,
+                unit.height + margin * 2, drop.judge, drop.drop)
+            target.inUse = true
+        end
+    end
+    DropZone.showTargets(window, #holdings)
+end
+
+local function drawDropHint(window, holdings)
+    for index in ipairs(holdings) do
+        local judged = judgedOver(window, index)
+        if judged then
+            local lineHeight = InfoWindow.lineHeight()
+            local lines = {}
+            for _, line in ipairs(judged.lines or {}) do table.insert(lines, line) end
+            if judged.refused and #judged.take > 0 then table.insert(lines, judged.refused) end
+            local width = 0
+            for _, line in ipairs(lines) do width = math.max(width, getTextManager():MeasureStringX(UIFont.Small, line)) end
+            local x, y = window:getMouseX() + 16, window:getMouseY() + 16
+            local colour = #judged.take == 0 and InfoWindow.DROP_NO_TEXT or InfoWindow.VALUE_COLOUR
+            window:drawRect(x, y, width + 12, #lines * lineHeight + 6, 0.9, 0, 0, 0)
+            window:drawRectBorder(x, y, width + 12, #lines * lineHeight + 6, 1, colour[1], colour[2], colour[3])
+            for row, line in ipairs(lines) do drawText(window, line, x + 6, y + 3 + (row - 1) * lineHeight, colour) end
+        end
+    end
+end
+
+function InfoWindow:holds(y, holdings, lore)
     local Holds = require "TraditionalPreservationCore/Holds"
-    local under, column = Holds.draw(self, HOLDS_LOOK, InfoWindow.PADDING, y, holdings)
-    local ruleX = InfoWindow.PADDING + column + InfoWindow.LORE_GAP
+    HOLDS_LOOK.judged = function(index) return judgedOver(self, index) end
+    local under, needed, units = Holds.draw(self, HOLDS_LOOK, InfoWindow.PADDING, y, holdings)
+    placeTargets(self, holdings, units)
+    local ruleX = InfoWindow.PADDING + needed + InfoWindow.LORE_GAP
+    if lore then
+        self:fitWidth(ruleX + InfoWindow.LORE_PAD + InfoWindow.LORE_MIN + InfoWindow.PADDING)
+    else
+        self:fitWidth(needed + InfoWindow.PADDING * 2)
+    end
+    if not lore or self.width - InfoWindow.PADDING - ruleX - InfoWindow.LORE_PAD < InfoWindow.LORE_MIN then
+        drawDropHint(self, holdings)
+        return under + InfoWindow.BAR_GAP
+    end
     local textX = ruleX + InfoWindow.LORE_PAD
     local lineHeight = InfoWindow.lineHeight()
     local textY = y + 4
@@ -375,6 +431,7 @@ function InfoWindow:holdsWithLore(y, holdings, lore)
     end
     local rule = InfoWindow.LORE_RULE
     self:drawRect(ruleX, y, 2, math.max(textY + 4, y + Holds.HEIGHT) - y, 1, rule[1], rule[2], rule[3])
+    drawDropHint(self, holdings)
     return math.max(under, textY + 4) + InfoWindow.BAR_GAP
 end
 

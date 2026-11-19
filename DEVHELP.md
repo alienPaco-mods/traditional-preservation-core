@@ -26,8 +26,8 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `TPC.dryCloth(hours)` | Every wet lot on the Drying Cloths within 3 tiles dries this many hours at full speed (24 if left out), and the cloths redraw. Dead and dry lots are left alone. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
 
-**Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Stone Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
+**Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch the Stone Hearth window count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 
 **Typical check of the hole:** `TPC.kit("stone")` and `TPC.kit("hole")`, build one, `TPC.fuel()`, light it: smoke rises out of the open hole. Put the pie in: the lid, and the smoke leaks round the door. Add the stew: the lidded pot.
 
-**Typical check of banking:** with the fire lit and `TPC.cauldron(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents show dull embers; Stone Hearth Info reads Banked, the fuel time triples, and the cauldron settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
+**Typical check of banking:** with the fire lit and `TPC.cauldron(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents show dull embers; the Stone Hearth window reads Banked, the fuel time triples, and the cauldron settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.

@@ -338,16 +338,14 @@ function FireUI.notes(fireView)
     return notes
 end
 
--- The heat of what sits on the fire as a thermometer holding: celsius (nil: nothing in it), state (its line under, or
--- nil), with a mark at the boil and, if steams, at steaming (CauldronFluid.HOT_C).
-function FireUI.heat(celsius, state, steams)
+-- The heat of what sits on the fire, for its tank's heat bar (Holds): celsius (nil: nothing in it), a tick at the
+-- boil and, if steams, at steaming (CauldronFluid.HOT_C).
+function FireUI.heatOf(celsius, steams)
     local marks = {}
     local hot, boil = CauldronFluid.HOT_C, CauldronFluid.BOIL_C
-    if steams then table.insert(marks, { hot, say("IGUI_TraditionalPreservationCore_MarkSteam", tostring(hot)) }) end
-    table.insert(marks, { boil, say("IGUI_TraditionalPreservationCore_MarkBoils", tostring(boil)) })
-    return { kind = "heat", name = getText("IGUI_TraditionalPreservationCore_InfoTemp"),
-        amount = celsius and say("IGUI_TraditionalPreservationCore_InfoDegrees", UI.degrees(celsius)) or "-",
-        state = state, celsius = celsius, marks = marks }
+    if steams then table.insert(marks, { hot, tostring(hot) }) end
+    table.insert(marks, { boil, tostring(boil) })
+    return { celsius = celsius, marks = marks }
 end
 
 FireWindow = InfoWindow:derive("TraditionalPreservationCoreFireWindow")
@@ -366,17 +364,18 @@ function FireWindow:refresh()
     local fire = self.station
     local attachment, part = Fire.attachmentOf(fire)
     local connection, joined = Fire.connectionOf(fire)
-    self.fireView = { part = part, attachment = attachment, fireModData = Fire.fireModDataNow(fire), connection = connection, joined = joined,
+    self.fireView = { fire = fire, playerObj = self.playerObj, part = part, attachment = attachment, fireModData = Fire.fireModDataNow(fire), connection = connection, joined = joined,
         lit = Fire.isBurning(fire), banked = Fire.isBanked(fire), fuelMin = fire:getFuelAmount(),
         burnHours = Fire.fuelHours(fire), help = Fire.isBare(fire) and Fire.kindOf(fire).display.help or nil,
-        lore = Fire.isBare(fire) and Fire.kindOf(fire).display.lore or nil }
+        lore = Fire.kindOf(fire).display.lore }
 end
 
 local FIRE_TEXTS = { banked = "IGUI_TraditionalPreservationCore_InfoFireBanked", lit = "IGUI_TraditionalPreservationCore_InfoFireLit",
     out = "IGUI_TraditionalPreservationCore_InfoFireOut" }
 -- The band under the title, by the fire: red lit, orange banked, grey out (user, session 62), and what it says.
 local FIRE_BANDS = {
-    lit = { colour = { 0.67, 0.22, 0.16 }, dark = { 0.27, 0.1, 0.08 }, text = "IGUI_TraditionalPreservationCore_BandLit" },
+    lit = { colour = { 0.67, 0.22, 0.16 }, dark = { 0.27, 0.1, 0.08 }, text = "IGUI_TraditionalPreservationCore_BandLit",
+        word = "IGUI_TraditionalPreservationCore_BandStoked" },   -- STOKED, not LIT (user)
     banked = { colour = { 0.92, 0.55, 0.16 }, dark = { 0.47, 0.24, 0.06 }, text = "IGUI_TraditionalPreservationCore_BandBanked" },
     out = { colour = { 0.51, 0.51, 0.51 }, dark = { 0.18, 0.18, 0.18 }, text = "IGUI_TraditionalPreservationCore_BandOut" },
 }
@@ -446,15 +445,13 @@ function FireWindow:render()
     local burnMin = math.floor(fireView.burnHours * 60)
     local time = say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60))
     local bandText = (state ~= "out" or fireView.fuelMin > 0) and say(band.text, time) or getText("IGUI_TraditionalPreservationCore_BandNoWood")
-    y = self:band(fireText, bandText, band.colour, band.dark, lightOrOut(self, fireView))
+    y = self:band(band.word and getText(band.word) or fireText, bandText, band.colour, band.dark, lightOrOut(self, fireView))
     -- What it holds: the wood, then what is fitted (its holds; an attachment with rows only draws them under).
     local holdings = { woodHolding(fireView, fireText) }
     local attachment = fireView.attachment
     if attachment and attachment.holds then attachment.holds(fireView, holdings) end
-    y = self:section(y, "IGUI_TraditionalPreservationCore_SectionHolds")
-    -- A bare fire holds only its wood: its kind's lore stands beside it.
-    local lore = #holdings == 1 and fireView.lore and getText(fireView.lore) or nil
-    y = self:holds(y, holdings, lore)
+    -- Its kind's lore beside the holdings, when there is room.
+    y = self:holds(y, holdings, fireView.lore and getText(fireView.lore) or nil)
     if attachment and attachment.rows then y = attachment.rows(self, y, fireView) end
     y = self:buttonRow(y + InfoWindow.BAR_GAP, fireButtons(self, fireView))
     self:drawNotes(y, FireUI.notes(fireView))

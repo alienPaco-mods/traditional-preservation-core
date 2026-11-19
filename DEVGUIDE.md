@@ -176,7 +176,7 @@ vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.p
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
 `ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list), `StationInfo.lua`,
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
-`SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and Cloth Info) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+`SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and the Drying Cloth window) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua`, `FluidAgeingWorld.lua`, `DryingClothWorld.lua` and `Loot.lua` (a mod's item into vanilla's loot lists). A mod that uses it says so in its mod.info:
 
 ```
@@ -199,15 +199,21 @@ local Weather = require "TraditionalPreservationCore/Weather"
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
-   window at a time across every mod); see its header and Dairy's Incubator Info. A window opens from the station's
-   right-click menu only: an Info row in its submenu and the same row at the bottom of the main menu
+   window at a time across every mod); see its header and Dairy's Yogurt Incubator window. A window opens from the station's
+   right-click menu only: a row "<the station's full name> Info" (as vanilla's Fireplace Info, Generator Info, Hutch
+   Info: a station with a submenu; the bare name would sit twice beside it) in its submenu and the same row at the
+   bottom of the main menu; the window's title is the bare name ("Fermentation Vessel")
    (`UI.topInfo`, vanilla's place for such rows). A left click stays vanilla's, as for any furniture (a container's loot
    window; vanilla gives no workstation a left click). A window reads in blocks, in this order, each under
    `self:section(y, label)` (a small grey header and a hairline): Place, Holds, Working, List, Buttons, the drop
    square, Notes; a block with nothing to show is left out. Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
    station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
-   real count when small, else five cells of a share), heat a thermometer with marks, an arrow and its rate between;
-   a lone holding takes a lore line (`self:holds(y, holdings, lore)`: real-world history, checked, a translation key).
+   real count when small, else five cells of a share), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`)
+   (`heat = { celsius, marks }`,
+   the text centred under the two), an arrow and its rate between; a lore line (`self:holds(y, holdings, lore)`:
+   real-world history, checked, a translation key) goes beside the holdings, the window widening to give it LORE_MIN of room (left out only past MAX_WIDTH). A tank with
+   `drop = { judge, drop }` is a drop target (`DropZone.placeTarget`): judge as the drop square's, plus `adds` (the
+   share the pour would fill, shown see-through); the cauldron tries each container on a copy of itself by its pour.
    Work is horizontal: bars (`self:bar`), 18 px, the text inside or under. Spacing is on a 4 px grid (padding 12);
    the label column is as wide as the longest label; a window is 400 wide unless its holdings need more (up to 680)
    and as tall as what it shows. The rules and mocks: ROADMAP NEXT 1 and `WIP/TPCore/art/all_info_mock.png`.
@@ -255,7 +261,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `CauldronFluid.turnsHot(from, to, hours)`, `CauldronFluid.goesOff(from, to)` + `CauldronFluid.offBy(cauldron, hour)` and
      `CauldronFluid.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
-     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in Stone Hearth Info (`fireView.part` is the
+     put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in the Stone Hearth window (`fireView.part` is the
      cauldron's modData; `FireUI.notes(fireView)` builds every Info note, so a test can read them).
    - **Attachments** (`Fire.attach{ id, name, fit, canRemove, look, sprite, overlay, heats, onFire, display, status, menu, rows, notes }`):
      what is fitted on a fire, one at a time; the Forged Cauldron (`Cauldron.lua`, `CauldronUI.lua`,

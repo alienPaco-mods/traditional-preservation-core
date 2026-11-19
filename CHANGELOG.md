@@ -1,5 +1,30 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.35
+- The Drying Cloth's window row reads "Drying Cloth Info" (was "Cloth Info"), its title "Drying Cloth"; DEVGUIDE: a
+  window row is "<the station's full name> Info", as vanilla's Fireplace Info, and its title the bare name.
+- An Info window's block header has a short hairline before its name as well as after (`-- HOLDS ------`).
+- A tank can show what has settled out at its foot (`settled = { share, colour }`): a layer under the fluid, at least
+  3 px tall so a little still shows; the fluid stands on it.
+- **Drag containers onto the cauldron to pour them in** (user, `art/pan_drag_mock.png` option 2): the cauldron's tank
+  and heat bar are a drop target in Stone Hearth Info. While a selection is dragged over it, it gets a white frame
+  (orange when it takes some, red when none), the pour shows see-through in the tank as vanilla's fluid bar shows what
+  is added, and a hint by the mouse says what it would pour or why not. Each container is tried on a copy of the
+  cauldron by the pour itself, so the drag takes and refuses just what Pour into the Cauldron would; on release the
+  player walks over once and pours each. A note says so while there is room. Any holding takes one: `drop = { judge,
+  drop }` on a tank (DropZone.placeTarget, a target that draws nothing itself).
+- The salt pan's tank no longer jiggles a pixel as the brine boils past saturation: the fluid's top is rounded once,
+  not the salt and the brine apart.
+- Stone Hearth Info's band reads STOKED (not LIT) for a fire burning at full.
+- Stone Hearth Info has no Holds header: the wood (and what is fitted) sits right under the band.
+- **A heated tank carries its heat as a thin bar beside it** (user): its top level with the tank's, a line short, its
+  temperature ("62°C") centred under it, ticks at 85 and 100; the name, litres, fluid and "steaming" / "steams in" are
+  centred under tank and bar as one (`heat = { celsius, marks }` on a tank, an `under` line). The cauldron's separate
+  thermometer column is gone; `FireUI.heat` became `FireUI.heatOf(celsius, steams)`.
+- **The lore goes beside the holdings**, not only beside a lone holding: the window widens to give it at least 140 px
+  (a long fluid name such as Cow's Milk (Scalded, Fresh) makes the cauldron's column wide), and only past 680 is it
+  left out. The Stone Hearth's curfew line now shows with the cauldron or the salt pan fitted too.
+
 ## 0.1.34
 - **UI pass, first part: the rules in Core's InfoWindow** (session 61's rules). Every Info window: padding 12 on a
   4 px grid, 400 wide (wider when what it holds needs it, up to 680), the label column as wide as its longest label,

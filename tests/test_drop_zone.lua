@@ -24,6 +24,8 @@ end
 function ISPanel:initialise() end
 function ISPanel:instantiate() end
 function ISPanel:setY(y) self.y = y end
+function ISPanel:setX(x) self.x = x end
+function ISPanel:setHeight(height) self.height = height end
 function ISPanel:setWidth(width) self.width = width end
 function ISPanel:setVisible(visible) self.visible = visible end
 function ISPanel:getIsVisible() return self.visible ~= false end
@@ -106,5 +108,27 @@ check("a plain click does nothing", dropped == nil and #halos == 2)
 
 DropZone.show(window, false)
 check("a collapsed window hides it", not zone:getIsVisible())
+
+-- A drop target over a drawn holding: placed where asked, judging as the square does, drawing nothing itself.
+local target = DropZone.placeTarget(window, 1, 40, 60, 70, 108, judge, drop)
+check("a target sits where asked, a child of the window", target.x == 40 and target.y == 60 and target.width == 70
+    and target.height == 108 and window.dropTargetsUI[1] == target)
+target.inUse = true
+ISMouseDrag.dragging = { items = { "fish", "apple" } }
+target.mouseOver = true
+local judgedNow = target:judgedNow()
+drawn, fills = {}, {}
+target:render()
+check("dragged over it, it judges, and draws nothing itself", judgedNow and #judgedNow.take == 1 and #drawn == 0 and #fills == 0)
+target.mouseOver = false
+check("not over it, no judgement", target:judgedNow() == nil)
+dropped = nil
+target:onMouseUp(5, 5)
+check("released over it, it takes what it takes", dropped and #dropped == 1)
+check("placed again, it is the same target", DropZone.placeTarget(window, 1, 44, 60, 70, 108, judge, drop) == target and target.x == 44)
+target.inUse = false
+DropZone.showTargets(window, 1)
+check("a target no holding uses is hidden", not target:getIsVisible())
+ISMouseDrag.dragging = nil
 
 H.done()

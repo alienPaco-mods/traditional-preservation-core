@@ -30,7 +30,7 @@ Forge it at a vanilla forge as the forged cooking pot is made: 2 Steel Sheets, 3
 [*][b]Empty the Cauldron[/b]: pour the whole lot away, rotten milk and all.
 [/list]
 
-With the fire lit the cauldron heats towards 95 C and steams at 85 C: about 1.5 hours for 10 L, about 2.75 for a full 60 L. Water alone is let boil: tainted water held at the boil for 10 minutes comes out clean (about 1.75 hours for 10 L, 3.25 for a full cauldron). Banked, it holds about 50 C. With the fire out it cools slowly, as the stone holds its heat. What it holds shows in its own colour, and Stone Hearth Info shows its contents, heat and when it will steam.
+With the fire lit the cauldron heats towards 95 C and steams at 85 C: about 1.5 hours for 10 L, about 2.75 for a full 60 L. Water alone is let boil: tainted water held at the boil for 10 minutes comes out clean (about 1.75 hours for 10 L, 3.25 for a full cauldron). Banked, it holds about 50 C. With the fire out it cools slowly, as the stone holds its heat. What it holds shows in its own colour, and the Stone Hearth window shows its contents, heat and when it will steam.
 
 [h2]The Smokehouse[/h2]
 

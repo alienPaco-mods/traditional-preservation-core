@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the cauldron's menu rows and its fire's Info rows (Stone Hearth Info), given to Fire.attach as any mod's
 -- attachment would give its own. The status row says what it holds; Pour into Cauldron takes a container of one fluid
 -- (or a blend), Fill from Cauldron and Empty Cauldron only when it holds something; mods' rows (CauldronUI.addMenu) go
--- between. The fire's Info holds it as a tank and a thermometer (when it steams under), then its notes and mods'
+-- between. The fire's Info holds it as a tank with its heat bar (when it steams under), then its notes and mods'
 -- (CauldronUI.addNotes).
 require "TimedActions/TPCauldronWork"
 local UI = require "TraditionalPreservationCore/UI"
@@ -134,16 +134,62 @@ local function steamText(fireView)
     return nil
 end
 
--- The cauldron as a tank (its fluid's colour, the iron's when empty) and its heat.
+-- Containers dragged onto the cauldron: each tried, in turn, on a copy of the cauldron by the pour itself
+-- (CauldronFluid.pourInto), so the drag takes and refuses just what pouring would: one fluid that goes with what is
+-- in, up to full. Returns DropZone's judgement and adds, the share of the cauldron the pour would fill.
+local function copyOf(record)
+    local copy = {}
+    for key, value in pairs(record) do copy[key] = type(value) == "table" and copyOf(value) or value end
+    return copy
+end
+
+local function pourJudge(cauldron, items)
+    local trial, take, refused = copyOf(cauldron), {}, nil
+    local before = mlOf(cauldron)
+    local now = getGameTime():getWorldAgeHours()
+    for _, item in ipairs(items) do
+        local container = item.getFluidContainer and item:getFluidContainer()
+        local parts = container and CauldronFluid.partsIn(container)
+        local why
+        if not container or container:isEmpty() then
+            why = getText("IGUI_TraditionalPreservationCore_CauldronDropTakes")
+        elseif not parts then
+            why = getText("IGUI_TraditionalPreservationCore_NotOneFluid")
+        else
+            local taken, reason = CauldronFluid.pourInto(trial, parts, container:getAmount() * CauldronFluid.ML_PER_L, CauldronFluid.ROOM_C, now)
+            if taken <= 0 then
+                why = reason == "Mixed" and say("IGUI_TraditionalPreservationCore_CauldronMixed", holds(trial))
+                    or getText("IGUI_TraditionalPreservationCore_CauldronFull")
+            end
+        end
+        if why then refused = refused or why else table.insert(take, item) end
+    end
+    local added = mlOf(trial) - before
+    local lines = { #take > 0 and say("IGUI_TraditionalPreservationCore_CauldronDropPour", litresText(added), tostring(#take))
+        or refused or getText("IGUI_TraditionalPreservationCore_CauldronDropTakes") }
+    return { take = take, lines = lines, refused = #take < #items and refused or nil, adds = added / CauldronFluid.CAULDRON_ML }
+end
+
+-- One pour a container, a walk to the fire first.
+local function pourDropped(playerObj, fire, take)
+    for _, item in ipairs(take) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
+    if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
+    for _, item in ipairs(take) do ISTimedActionQueue.add(TPCauldronWork:new(playerObj, fire, item, "pourIn")) end
+end
+
+-- The cauldron as a tank (its fluid's colour, the iron's when empty) with its heat bar; when it steams under.
+-- Containers dragged onto it pour in.
 local function cauldronHolds(fireView, holdings)
     local cauldron, ml = fireView.part, mlOf(fireView.part)
     table.insert(holdings, { kind = "tank", name = getText("IGUI_TraditionalPreservationCore_InfoCauldron"),
         amount = say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(CauldronFluid.CAULDRON_ML)),
         state = ml > 0 and holds(cauldron) or getText("IGUI_TraditionalPreservationCore_InfoNothing"),
-        share = ml / CauldronFluid.CAULDRON_ML, colour = CauldronFluid.liquidColour(cauldron) or IRON_COLOUR })
-    -- FireUI is required here, not at the top: it adds its menu handler when loaded, after this file's.
-    local heat = require("TraditionalPreservationCore/FireUI").heat
-    table.insert(holdings, heat(ml > 0 and cauldron.tempC or nil, ml > 0 and steamText(fireView) or nil, true))
+        share = ml / CauldronFluid.CAULDRON_ML, colour = CauldronFluid.liquidColour(cauldron) or IRON_COLOUR,
+        under = ml > 0 and steamText(fireView) or nil,
+        -- FireUI is required here, not at the top: it adds its menu handler when loaded, after this file's.
+        heat = require("TraditionalPreservationCore/FireUI").heatOf(ml > 0 and cauldron.tempC or nil, true),
+        drop = { judge = function(items) return pourJudge(cauldron, items) end,
+            drop = function(take) pourDropped(fireView.playerObj, fireView.fire, take) end } })
 end
 
 local MENUS, NOTES = {}, {}
@@ -197,6 +243,7 @@ local function cauldronNotes(fireView, notes)
         table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpOut"))
     end
     if fireView.banked then table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronHelpBanked")) end
+    if mlOf(fireView.part) < CauldronFluid.CAULDRON_ML then table.insert(notes, getText("IGUI_TraditionalPreservationCore_CauldronDragHint")) end
     for _, fn in ipairs(NOTES) do fn(fireView, notes) end
 end
 

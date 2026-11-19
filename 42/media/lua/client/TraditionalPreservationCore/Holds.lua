@@ -1,12 +1,19 @@
 -- Traditional Preservation core: an info window's Holds block, what a station holds drawn standing up, left to right
 -- in the order things move through it. A fluid is a tank (vanilla's fluid gradient over the fluid's colour, ticks at
 -- quarters, thin bands at the top for layers: a mother's skin); anything else held is a column of cells (wood, soil,
--- a rack's load, jars), a real count where it is small, else five cells of a share; heat
--- is a thermometer, its column coloured by its own heat, with marks (85 steam, 100 boils). Under each: its name in
--- bold, its amount, and a state line if it has one. A holding with an arrow draws one to the next, its text (a rate)
--- above it. A window doesn't draw one itself: InfoWindow:holds(y, holdings) draws it in the window's flow.
+-- a rack's load, jars), a real count where it is small, else five cells of a share; heat on its own is a
+-- thermometer, its column coloured by its own heat, with marks (85 steam, 100 boils). A tank that is heated (the
+-- cauldron, the salt pan) carries its heat as a thin bar beside it (user): its top level with the tank's, a line
+-- short of its foot, its temperature centred under it, ticks at its marks. Under each: its name in bold, its amount,
+-- a state line and a line under that if it has them, centred under the tank and its heat bar as one. A holding with
+-- an arrow draws one to the next, its text (a rate) above it. A window doesn't draw one itself: InfoWindow:holds(y,
+-- holdings) draws it in the window's flow.
 -- holdings is a list of
---   { kind = "tank", name, amount, state, stateColour, share (0 to 1), colour { r, g, b }, layers (bands, or nil) }
+--   { kind = "tank", name, amount, state, stateColour, under, share (0 to 1), colour { r, g, b }, layers (bands, or
+--     nil), heat = { celsius (nil: no reading), marks = { { celsius, text } } } or nil, settled = { share (0 to 1),
+--     colour } or nil: what has settled out at its foot under the fluid, the salt a boil leaves (user), drop =
+--     { judge(items), drop(take) } or nil: buckets dragged onto the tank pour in (InfoWindow:holds; judge returns
+--     DropZone's { take, lines, refused } and adds, the share of the tank the pour would fill) }
 --   { kind = "cells", name, amount, state, stateColour, cells (default 5),
 --     filled (cells full; default the share's), share, colour }
 --   { kind = "heat", name, amount, state, stateColour, celsius (nil: nothing to warm), top (the scale's top C,
@@ -29,6 +36,12 @@ Holds.COLUMN_PAD = 8         -- either side of a holding
 Holds.ARROW_MIN = 64
 Holds.ARROW_PAD = 8          -- an arrow's ends to the holdings
 Holds.TEXT_GAP = 4           -- the graphic to its name
+Holds.HEAT_BAR = 12          -- a tank's heat bar
+Holds.HEAT_GAP = 6           -- the tank to its heat's room
+Holds.SETTLED_MIN = 3        -- a settled layer's least height, so a little still shows
+Holds.DROP_MARGIN = 6        -- a drop frame round its holding
+Holds.PREVIEW_ALPHA = 0.45   -- a pour shown in the tank before it is made, see-through as vanilla's fluid bar
+Holds.DROP_OK, Holds.DROP_SOME, Holds.DROP_NO = { 1, 1, 1 }, { 0.92, 0.6, 0.25 }, { 0.86, 0.35, 0.27 }
 Holds.BACK = { 0, 0, 0 }
 Holds.BORDER = { 0.6, 0.6, 0.6 }
 Holds.EMPTY_CELL = { 0.12, 0.12, 0.12 }
@@ -96,7 +109,32 @@ function Holds.markSides(marks, top, height)
 end
 
 -- The graphic's width: a thermometer's leaves room for its marks' text on both sides, so the glass stays centred.
+-- A tank's heat: the room its temperature takes (the bar centred in it), and how far its ticks' text reaches past
+-- the bar's centre.
+local function heatRoom(holding)
+    local room = math.max(Holds.HEAT_BAR, measure(getText("IGUI_TraditionalPreservationCore_HeatDegrees", "100")))
+    local marks = 0
+    for _, mark in ipairs(holding.heat.marks or {}) do marks = math.max(marks, measure(mark[2])) end
+    local reach = Holds.HEAT_BAR / 2 + (marks > 0 and Holds.TICK + Holds.MARK_GAP + marks or 0)
+    return room, math.max(room / 2, reach)
+end
+
+-- The width the text centres under: a tank and its heat's room, else the graphic.
+local function unitWidth(holding)
+    if holding.kind == "tank" and holding.heat then
+        local room = heatRoom(holding)
+        return Holds.TANK_WIDTH + Holds.HEAT_GAP + room
+    end
+    if holding.kind == "tank" then return Holds.TANK_WIDTH end
+    if holding.kind == "cells" then return Holds.CELL_WIDTH end
+    return nil
+end
+
 local function graphicWidth(holding)
+    if holding.kind == "tank" and holding.heat then
+        local room, reach = heatRoom(holding)
+        return Holds.TANK_WIDTH + Holds.HEAT_GAP + room / 2 + reach
+    end
     if holding.kind == "tank" then return Holds.TANK_WIDTH end
     if holding.kind == "cells" then return Holds.CELL_WIDTH end
     local text = 0
@@ -108,24 +146,36 @@ end
 local function textLines(holding)
     local lines = { holding.amount or "" }
     if holding.state then table.insert(lines, holding.state) end
+    if holding.under then table.insert(lines, holding.under) end
     return lines
 end
 
+-- A holding's text centre from its column's left, and its column's width: the text centres under the unit (a tank
+-- and its heat bar as one), the graphic runs on to its right.
+local function extents(holding, boldWidth)
+    local text = boldWidth(holding.name or "")
+    for _, line in ipairs(textLines(holding)) do text = math.max(text, measure(line)) end
+    local graphic = graphicWidth(holding)
+    local unit = unitWidth(holding) or graphic
+    local left = math.max(unit / 2, text / 2)
+    local right = math.max(graphic - unit / 2, text / 2)
+    return Holds.COLUMN_PAD + left, left + right + Holds.COLUMN_PAD * 2
+end
+
 -- Each holding's column width and each arrow's, packed from the left (user: centred looks off; spare room stays at
--- the right). Returns columns, arrows (by the holding the arrow leaves) and the width they need.
+-- the right). Returns columns, arrows (by the holding the arrow leaves), the width they need and each column's text
+-- centre from its left.
 function Holds.layout(holdings, boldWidth)
-    local columns, arrows, needed = {}, {}, 0
+    local columns, arrows, needed, centres = {}, {}, 0, {}
     for index, holding in ipairs(holdings) do
-        local widest = math.max(graphicWidth(holding), boldWidth(holding.name or ""))
-        for _, line in ipairs(textLines(holding)) do widest = math.max(widest, measure(line)) end
-        columns[index] = widest + Holds.COLUMN_PAD * 2
+        centres[index], columns[index] = extents(holding, boldWidth)
         needed = needed + columns[index]
         if holding.arrow and index < #holdings then
             arrows[index] = math.max(Holds.ARROW_MIN, measure(holding.arrow) + Holds.ARROW_PAD * 2)
             needed = needed + arrows[index]
         end
     end
-    return columns, arrows, needed
+    return columns, arrows, needed, centres
 end
 
 -- The height of the block for these holdings: the graphic, then the most text lines any of them has.
@@ -149,18 +199,35 @@ local function disc(ui, x, y, size, colour)
     end
 end
 
-local function drawTank(ui, holding, x, y)
+local function drawTank(ui, holding, x, y, adds)
     local width, height = Holds.TANK_WIDTH, Holds.HEIGHT
     gradient = gradient or getTexture("media/ui/Fluids/fluid_gradient.png")
     fill(ui, x, y, width, height, Holds.BACK)
+    local inside = height - 4
+    -- What has settled lies at the foot; the fluid stands on it, up to the top.
+    local settled, foot = holding.settled, 0
+    if settled and (settled.share or 0) > 0 then
+        foot = math.max(Holds.SETTLED_MIN, math.floor(inside * math.min(settled.share, 1) + 0.5))
+        fill(ui, x + 2, y + height - 2 - foot, width - 4, foot, settled.colour)
+    end
+    -- The fluid's top is rounded on its own, so it holds still while the fluid turns into what settles (the salt pan:
+    -- each litre boiled off past saturation leaves a litre of Brine's salt), not the two rounded apart (user: jitter).
     local share = math.max(0, math.min(holding.share or 0, 1))
-    local level = math.floor((height - 4) * share + 0.5)
+    local settledShare = settled and math.min(settled.share or 0, 1) or 0
+    local top = math.max(foot, math.min(math.floor(inside * (settledShare + share) + 0.5), inside))
+    local level = top - foot
+    -- A pour dragged over it: what it would add, see-through over the fluid's top.
+    if adds and adds > 0 then
+        local added = math.min(math.floor(inside * adds + 0.5), inside - top)
+        local tint = holding.colour or Holds.TANK_COLOUR
+        if added > 0 then ui:drawRect(x + 2, y + height - 2 - top - added, width - 4, added, Holds.PREVIEW_ALPHA, tint[1], tint[2], tint[3]) end
+    end
     local colour = holding.colour or Holds.TANK_COLOUR
     if level > 0 then
-        fill(ui, x + 2, y + height - 2 - level, width - 4, level, colour)
+        fill(ui, x + 2, y + height - 2 - foot - level, width - 4, level, colour)
         -- Layers: thin lighter bands at the top of the fluid, one each.
         for band = 1, math.min(holding.layers or 0, math.floor(level / 3)) do
-            ui:drawRect(x + 2, y + height - 2 - level + (band - 1) * 3, width - 4, 1, 0.8,
+            ui:drawRect(x + 2, y + height - 2 - foot - level + (band - 1) * 3, width - 4, 1, 0.8,
                 math.min(1, colour[1] + 0.35), math.min(1, colour[2] + 0.3), math.min(1, colour[3] + 0.25))
         end
     end
@@ -170,6 +237,29 @@ local function drawTank(ui, holding, x, y)
         fill(ui, x + width - 2 - Holds.TICK, tickY, Holds.TICK, 1, Holds.BORDER)
     end
     ui:drawRectBorder(x, y, width, height, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
+end
+
+-- A tank's heat bar, the room for it from x: the bar centred in it from y, a line short of the tank's foot, filled
+-- by its heat in its heat's colour; ticks and their text to its right; the temperature centred under it.
+local function drawHeatBar(ui, heat, x, y)
+    local room = heatRoom({ heat = heat })
+    local centre = x + room / 2
+    local line = lineHeight()
+    local barX, barHeight = centre - Holds.HEAT_BAR / 2, Holds.HEIGHT - line - 2
+    fill(ui, barX, y, Holds.HEAT_BAR, barHeight, Holds.BACK)
+    if heat.celsius then
+        local share = math.max(0, math.min(heat.celsius / 100, 1))
+        local level = math.floor((barHeight - 4) * share + 0.5)
+        if level > 0 then fill(ui, barX + 2, y + barHeight - 2 - level, Holds.HEAT_BAR - 4, level, Holds.heatColour(heat.celsius)) end
+    end
+    ui:drawRectBorder(barX, y, Holds.HEAT_BAR, barHeight, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
+    for _, mark in ipairs(heat.marks or {}) do
+        local markY = y + 2 + (barHeight - 4) * (1 - math.max(0, math.min(mark[1] / 100, 1)))
+        fill(ui, barX + Holds.HEAT_BAR, markY, Holds.TICK, 1, Holds.GLASS)
+        ui:drawText(mark[2], barX + Holds.HEAT_BAR + Holds.TICK + Holds.MARK_GAP, markY - line / 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    end
+    local degrees = heat.celsius and getText("IGUI_TraditionalPreservationCore_HeatDegrees", tostring(math.floor(heat.celsius + 0.5))) or "-"
+    ui:drawTextCentre(degrees, centre, y + Holds.HEIGHT - line, 1, 1, 1, 1, UIFont.Small)
 end
 
 local function drawCells(ui, holding, x, y)
@@ -234,24 +324,40 @@ local function drawArrow(ui, text, x, width, y)
     end
 end
 
+-- The frame round a holding something is dragged over: white when it takes it all, orange some, red none.
+local function drawDropFrame(ui, judged, x, y, width)
+    local colour = #judged.take == 0 and Holds.DROP_NO or judged.refused and Holds.DROP_SOME or Holds.DROP_OK
+    local margin = Holds.DROP_MARGIN
+    ui:drawRectBorder(x - margin, y - margin, width + margin * 2, Holds.HEIGHT + margin * 2, 1, colour[1], colour[2], colour[3])
+    ui:drawRectBorder(x - margin + 1, y - margin + 1, width + margin * 2 - 2, Holds.HEIGHT + margin * 2 - 2, 1, colour[1], colour[2], colour[3])
+end
+
 -- Draws holdings from x at y on ui, packed from the left, with look { value, note (colours), bold (function(ui, text, x, y,
--- colour) drawing centred bold text), boldWidth (function(text)) }. Returns the y under it and the width needed.
+-- colour) drawing centred bold text), boldWidth (function(text)), judged (function(index): what is dragged over that
+-- holding's drop target, or nil) }. Returns the y under it, the width needed and each holding's unit { x, y, width,
+-- height } (the tank and its heat bar; a drop target goes over it).
 function Holds.draw(ui, look, x, y, holdings)
-    local columns, arrows, needed = Holds.layout(holdings, look.boldWidth)
+    local columns, arrows, needed, centres = Holds.layout(holdings, look.boldWidth)
+    local units = {}
     local line = lineHeight()
     local textTop = y + Holds.HEIGHT + Holds.TEXT_GAP
     for index, holding in ipairs(holdings) do
         local columnWidth = columns[index]
         local graphic = graphicWidth(holding)
-        local graphicX = x + (columnWidth - graphic) / 2
+        local centre = x + centres[index]
+        local unit = unitWidth(holding) or graphic
+        local graphicX = centre - unit / 2
+        units[index] = { x = graphicX, y = y, width = unit, height = Holds.HEIGHT }
+        local judged = look.judged and look.judged(index)
         if holding.kind == "tank" then
-            drawTank(ui, holding, graphicX, y)
+            drawTank(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.adds or nil)
+            if holding.heat then drawHeatBar(ui, holding.heat, graphicX + Holds.TANK_WIDTH + Holds.HEAT_GAP, y) end
         elseif holding.kind == "cells" then
             drawCells(ui, holding, graphicX, y)
         else
             drawHeat(ui, holding, graphicX, y, graphic)
         end
-        local centre = x + columnWidth / 2
+        if judged then drawDropFrame(ui, judged, graphicX, y, unit) end
         look.bold(ui, holding.name or "", centre, textTop, look.value)
         local value = look.value
         ui:drawTextCentre(holding.amount or "", centre, textTop + line, value[1], value[2], value[3], 1, UIFont.Small)
@@ -259,13 +365,17 @@ function Holds.draw(ui, look, x, y, holdings)
             local colour = holding.stateColour or look.note
             ui:drawTextCentre(holding.state, centre, textTop + line * 2, colour[1], colour[2], colour[3], 1, UIFont.Small)
         end
+        if holding.under then
+            local note = look.note
+            ui:drawTextCentre(holding.under, centre, textTop + line * (holding.state and 3 or 2), note[1], note[2], note[3], 1, UIFont.Small)
+        end
         x = x + columnWidth
         if arrows[index] then
             drawArrow(ui, holding.arrow, x, arrows[index], y)
             x = x + arrows[index]
         end
     end
-    return y + Holds.heightFor(holdings), needed
+    return y + Holds.heightFor(holdings), needed, units
 end
 
 return Holds

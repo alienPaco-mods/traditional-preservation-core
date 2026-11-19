@@ -79,7 +79,7 @@ local sub = open(withCauldron())
 check("a Stone Hearth gets its own menu when vanilla has made none", sub ~= nil)
 check("the first line is the cauldron's status, greyed", sub.options[1].name == getText("IGUI_TraditionalPreservationCore_CauldronEmpty")
     and sub.options[1].isDisabled == true)
-check("Hearth Info is on it", named(sub, "ContextMenu_TraditionalPreservationCore_StoneHearthCauldronInfo") ~= nil)
+check("the hearth's window row is on it", named(sub, "ContextMenu_TraditionalPreservationCore_StoneHearthCauldronInfo") ~= nil)
 local pour = named(sub, "ContextMenu_TraditionalPreservationCore_PourIntoCauldron")
 check("pouring is greyed with nothing to pour", pour.isDisabled == true and pour.subOption == nil
     and pour.toolTip.description == getText("IGUI_TraditionalPreservationCore_NoFluidItem"))
@@ -498,11 +498,43 @@ CauldronUI.addNotes(function(info, notes) table.insert(notes, "A mod's note on "
 FireUI.addNotes(function(_, notes) table.insert(notes, "The fire's note") end)
 local cauldronAttachment = Fire.attachment(Cauldron.ID)
 local notes = FireUI.notes({ attachment = cauldronAttachment, part = { ml = 1000, fluid = "Water" }, lit = false, banked = false })
-check("a fitted one: the cauldron's notes, then a mod's, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_CauldronHelpOut")
-    and notes[2] == "A mod's note on Water" and notes[3] == "The fire's note" and #notes == 3)
+check("a fitted one: the cauldron's notes (the drag hint while it has room), then a mod's, then the fire's",
+    notes[1] == getText("IGUI_TraditionalPreservationCore_CauldronHelpOut")
+    and notes[2] == getText("IGUI_TraditionalPreservationCore_CauldronDragHint")
+    and notes[3] == "A mod's note on Water" and notes[4] == "The fire's note" and #notes == 4)
 notes = FireUI.notes({ help = StoneHearth.kind.display.help, lit = true, banked = false, connection = duct, joined = { kitName = "Pipe" } })
 check("a bare one: its help first, no cauldron notes, then the fire's", notes[1] == getText("IGUI_TraditionalPreservationCore_StoneHearthHelpLit")
     and notes[2] == "The fire's note" and #notes == 2)
+
+-- Containers dragged onto the cauldron in Stone Hearth Info: the drag takes what pouring would.
+local function dragged(cauldron, items)
+    local aHearth = withCauldron(cauldron)
+    local holdings = {}
+    Fire.attachment(Cauldron.ID).holds({ part = aHearth:getModData()[Fire.KEY][Cauldron.ID], fire = aHearth,
+        playerObj = character, lit = false, banked = false, burnHours = 0 }, holdings)
+    return holdings[1].drop, aHearth
+end
+local water, milk = H.vessel("Bucket", "Water", 10, 10), H.vessel("Pot", "CowMilk", 5, 5)
+local drop = dragged({}, { water, water })
+local judged = drop.judge({ water, H.vessel("Bucket", "Water", 10, 10) })
+check("two buckets of water into an empty cauldron: both, 20 L of 60", #judged.take == 2 and judged.refused == nil
+    and math.abs(judged.adds - 20 / 60) < 1e-6)
+judged = drop.judge({ water, milk })
+check("water then milk: the milk is refused, as pouring would", #judged.take == 1 and judged.take[1] == water
+    and judged.refused ~= nil)
+judged = drop.judge({ H.vessel("Mixed", "Mix", 4, 4) })
+check("a mix is refused with the menu's reason", #judged.take == 0
+    and judged.lines[1] == getText("IGUI_TraditionalPreservationCore_NotOneFluid"))
+local full = dragged({ ml = 55000, fluid = "Water", tempC = 20, parts = { Water = 55000 } })
+judged = full.judge({ water, H.vessel("Bucket", "Water", 10, 10) })
+check("near full: the first fills it, the next is refused as full", #judged.take == 1
+    and judged.refused == getText("IGUI_TraditionalPreservationCore_CauldronFull") and math.abs(judged.adds - 5 / 60) < 1e-6)
+local queuedBefore, walksBefore = #ui.queued, ui.walks
+local aDrop, aHearth = dragged({}, {})
+aDrop.drop({ water, H.vessel("Bucket", "Water", 10, 10) })
+check("dropped: one walk, then one pour each", ui.walks == walksBefore + 1 and #ui.queued == queuedBefore + 2
+    and ui.queued[queuedBefore + 1].Type == "TPCauldronWork" and ui.queued[queuedBefore + 1].mode == "pourIn"
+    and ui.queued[queuedBefore + 2].fire == aHearth)
 
 check("no text would make the game's formatter warn" .. (H.textWarnings[1] and " (" .. table.concat(H.textWarnings, "; ") .. ")" or ""),
     #H.textWarnings == 0)

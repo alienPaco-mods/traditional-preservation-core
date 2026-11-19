@@ -75,7 +75,7 @@ Right-click it. Its **Stone Hearth** submenu has:
 
 | Option | What it does |
 |---|---|
-| **Stone Hearth Info** | A small window: a coloured band for the fire, the wood, what is fitted, Bank and Stoke buttons, a note |
+| The **Stone Hearth Info** window | A small window: a coloured band for the fire, the wood, what is fitted, Bank and Stoke buttons, a note |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
 | With Salt: **Fit Salt Pan** | Beds a 30 L salt pan in clay over the hole, to boil brine down (Salt's guide). One thing fitted at a time: the cauldron or the pan |
@@ -107,14 +107,15 @@ Fitted, the Stone Hearth still cooks and warms as before. Its submenu, now **Sto
 | **Empty the Cauldron** | Pours away everything in it at once: for rotten milk, or a fluid you're done with. Longer the more there is |
 | **Remove Cauldron** | Above |
 
-**Stone Hearth Info** then shows:
+The **Stone Hearth Info** window then shows:
 
 | Part | Reads |
 |---|---|
-| The band under the title | Red when lit ("burns 5 h 49 min, full heat"), orange when banked (embers and how long), grey when out (the wood in it); at its right a small button: a lighter for **Light the Fire** (the game's own light menu: matches, lighter, kindling), an extinguisher for **Put Out the Fire** |
+| The band under the title | Red when stoked ("STOKED burns 5 h 49 min, full heat"), orange when banked (embers and how long), grey when out (the wood in it); at its right a small button: a lighter for **Light the Fire** (the game's own light menu: matches, lighter, kindling), an extinguisher for **Put Out the Fire** |
 | Wood | Five cells (all five are 12 hours of wood), the time it will burn, and lit, banked or out |
-| Cauldron | A tank in the colour of what it holds, the litres of 60, and the fluid (each fluid of a blend) |
-| Heat | A thermometer with marks at 85 (steam) and 100 (boils), its temperature, and "steaming" or "steams in 1.2 hours" |
+| Cauldron | A tank in the colour of what it holds, with a thin heat bar beside it (ticks at 85, steam, and 100, the boil; its temperature under it); under both, the litres of 60, the fluid (each fluid of a blend), and "steaming" or "steams in 1.2 hours" |
+| Beside them | A line of the hearth's history (the window widens to fit it) |
+| Drag onto the cauldron | Drag containers from your inventory onto the cauldron to pour them in: it lights up white and shows the pour see-through, or red with the reason (a mix, another fluid, full) |
 | Bank the Fire, Stoke the Fire | Buttons: the one that can't work now is greyed, its hover says why |
 
 The window updates while it's open, and closes when you walk more than 6 squares away. What the cauldron holds shows in its mouth, in the fluid's own colour.
@@ -125,7 +126,7 @@ The window updates while it's open, and closes when you walk more than 6 squares
 - **Heat mixes by volume.** Cold poured onto hot cools the lot.
 - **Lit:** it heats towards 95 C. Milk and the rest are kept off the boil.
 - **Water boils.** Water on its own comes to a rolling boil at 100 C. Tainted water held there for **10 minutes** comes out clean: a whole cauldron of rain-barrel water made safe at once. If the fire goes out or you pour more in, the 10 minutes start over.
-- **At 85 C it steams.** You see it in the cauldron, and in Stone Hearth Info, and you hear it: a gentle simmer at the Stone Hearth for as long as it stays that hot.
+- **At 85 C it steams.** You see it in the cauldron, and in the Stone Hearth window, and you hear it: a gentle simmer at the Stone Hearth for as long as it stays that hot.
 - **Fire out:** it cools towards the temperature of the place the Stone Hearth stands in. Slowly: the stone holds its heat.
 - **More takes longer**, both ways.
 
@@ -187,13 +188,13 @@ A plank shed on four tiles, two by two, under a low pitched roof of boards, buil
 
 Right-click the Stone Hearth or the shed: **Connect the Stone Hearth**, about half a minute, 5 Masonry XP. Each way shows what it takes, the tool and anything you're missing. Not at the shed's door end, not with the Stone Hearth's door towards it, and not while the fire burns; one Stone Hearth a shed, and one thing joined to a Stone Hearth. **Disconnect the Stone Hearth** gives the pipe segments or stones back; the clay is lost. Neither can be picked up while they are joined.
 
-Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth's hole is covered (its lid, or the pot when stove food is in), and its smoke goes up the flue instead of out of the hole or round the door. Stone Hearth Info says *Flue: joined to the Smokehouse (clay pipe)*. While finished pieces wait inside, something hangs by the door: a country ham for the first, a smoked chicken beside it for the second, a smoked rabbit too for the third and more. While the joined Stone Hearth burns, smoke comes out of the vent, a plume when stoked and a thin wisp when banked. You can still cook in the Stone Hearth while it smokes, and still fit the cauldron.
+Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth's hole is covered (its lid, or the pot when stove food is in), and its smoke goes up the flue instead of out of the hole or round the door. The Stone Hearth window says *Flue: joined to the Smokehouse (clay pipe)*. While finished pieces wait inside, something hangs by the door: a country ham for the first, a smoked chicken beside it for the second, a smoked rabbit too for the third and more. While the joined Stone Hearth burns, smoke comes out of the vent, a plume when stoked and a thin wisp when banked. You can still cook in the Stone Hearth while it smokes, and still fit the cauldron.
 
 > *Margin note:* the low firebox outside the wall is how a Bosnian *pušnica* is fed today: the fire stays outside, where it can be tended and kept small, and only its smoke goes in to the meat. A long trench cools the smoke on the way. Older smokehouses, and the "black kitchens" of the Alps and Slovenia, simply hung the meat over the house's own open hearth.
 
 ### The Drying Cloth
 
-A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and **Cloth Info**: the place, its temperature and a bar for each lot.
+A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: the place, its temperature and a bar for each lot.
 
 | | |
 |---|---|
@@ -341,7 +342,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Pour into the Cauldron is greyed out | The cauldron is full, or you have no container with a fluid in it |
 | A container shows in red | It holds a mixture, or a fluid that doesn't go with what's in the cauldron. It takes one fluid at a time (clean and tainted water are the exception: together they are tainted water) |
 | Fill from the Cauldron is greyed out | You need an empty container, or one holding the same fluid with room left |
-| Nothing under Heat, and it isn't steaming | The fire is out or banked (a banked fire holds 50 C: stoke it), or its fuel won't last until the cauldron steams: add wood |
+| No "steaming" or "steams in" line under the cauldron | The fire is out or banked (a banked fire holds 50 C: stoke it), or its fuel won't last until the cauldron steams: add wood |
 | No Bank the Fire option | The fire isn't lit |
 | No Light Fire option on a Stone Hearth that looks out | It's banked: Stoke the Fire, or Put out Fire first |
 | Can't pick the Stone Hearth up | It's burning, a cauldron is fitted, or it's joined to a Smokehouse |
@@ -378,11 +379,11 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.dryCloth(hours)` | Every wet lot on the Drying Cloths within 3 tiles dries this many hours at full speed (24 if left out). |
 | `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 
-**Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch Stone Hearth Info count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
+**Typical check of the cauldron:** `TPC.kit()`, build a Stone Hearth, Fit Cauldron (or `TPC.fit()`), `TPC.cauldron(10)`, `TPC.fuel()`, light it from vanilla's menu, and watch the Stone Hearth window count down to the steam (about 1.5 hours). `TPC.hot()` skips the wait.
 
 **Typical check of the hole:** `TPC.kit("stone")` and `TPC.kit("hole")`, build one, `TPC.fuel()`, light it: smoke rises out of the open hole. Put the pie in: the lid, and the smoke leaks round the door. Add the stew: the lidded pot.
 
-**Typical check of banking:** with the fire lit and `TPC.cauldron(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents show dull embers; Stone Hearth Info reads Banked, the fuel time triples, and the cauldron settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
+**Typical check of banking:** with the fire lit and `TPC.cauldron(10, 90)`, Bank the Fire. Vanilla's flames go out and the door's vents show dull embers; the Stone Hearth window reads Banked, the fuel time triples, and the cauldron settles towards 50 C. `TPC.warmth()` shows the air warm only within 2 tiles.
 
 ---
 

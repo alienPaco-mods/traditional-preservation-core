@@ -131,6 +131,65 @@ for _, text in ipairs(drawn) do if text:find("^Curfew") or text:find("hearth ove
 check("one holding with lore: the holding and the note beside it, wrapped", seen and lines == 2
     and y >= Holds.heightFor({ wood }) + InfoWindow.BAR_GAP)
 window:holds(0, { { kind = "heat", name = "Heat", amount = "-" } })
+
+-- A heated tank: its heat bar beside it, the temperature under the bar, the text centred under the two as one.
+H.installGetText({ IGUI_TraditionalPreservationCore_HeatDegrees = "%1 C" })
+local cauldron = { kind = "tank", name = "Cauldron", amount = "24 / 60 L", state = "Water", under = "steaming", share = 0.4,
+    heat = { celsius = 92, marks = { { 85, "85" }, { 100, "100" } } } }
+columns, arrows, needed, centres = Holds.layout({ cauldron }, boldWidth)
+-- The tank 34, its heat's room "100 C" 30 after a gap of 6: the unit 70, centred at 35; the ticks reach 6 + 5 + 4 +
+-- "100" 18 = 33 past the bar's centre (at 34 + 6 + 15 = 55), so the graphic runs to 88; "24 / 60 L" is 54.
+check("the text centres under tank and heat bar as one", centres[1] == 8 + 35 and columns[1] == 35 + (88 - 35) + 16)
+drawn = {}
+y = window:holds(0, { wood, cauldron }, lore)
+seen = {}
+for _, text in ipairs(drawn) do seen[text] = true end
+check("its temperature, ticks and the line under are drawn", seen["92 C"] and seen["85"] and seen["100"] and seen.steaming)
+check("four text lines under it", y >= Holds.HEIGHT + Holds.TEXT_GAP + 40)
+local loreDrawn = false
+for _, text in ipairs(drawn) do if text:find("^Curfew") then loreDrawn = true end end
+check("with room to their right the lore goes beside two holdings", loreDrawn)
+window.width = InfoWindow.WIDTH
+drawn = {}
+window:holds(0, { wood, cauldron, wood }, lore)
+loreDrawn = false
+for _, text in ipairs(drawn) do if text:find("^Curfew") then loreDrawn = true end end
+check("short of LORE_MIN of room the window widens to give it", loreDrawn and window.width > InfoWindow.WIDTH
+    and window.width <= InfoWindow.MAX_WIDTH)
+window.width = InfoWindow.WIDTH
+drawn = {}
+window:holds(0, { wood, cauldron, wood, cauldron, wood, cauldron }, lore)
+loreDrawn = false
+for _, text in ipairs(drawn) do if text:find("^Curfew") then loreDrawn = true end end
+check("past MAX_WIDTH it is left out", not loreDrawn and window.width == InfoWindow.MAX_WIDTH)
+
+-- A settled layer: at the tank's foot under the fluid, at least SETTLED_MIN tall.
+local rects = {}
+window.drawRect = function(_, x, y, w, h, a, r, g, b) table.insert(rects, { y = y, h = h, r = r, g = g, b = b }) end
+window:holds(0, { { kind = "tank", name = "Salt Pan", amount = "0 / 30 L", share = 0, colour = { 0, 0, 1 },
+    settled = { share = 0.001, colour = { 0.9, 0.9, 0.9 } } } })
+local layer
+for _, rect in ipairs(rects) do if rect.r == 0.9 and rect.g == 0.9 then layer = rect end end
+check("a little salt still shows as a thin layer at the foot", layer and layer.h == Holds.SETTLED_MIN
+    and layer.y + layer.h == Holds.HEIGHT - 2)
+rects = {}
+window:holds(0, { { kind = "tank", name = "Salt Pan", amount = "15 / 30 L", share = 0.5, colour = { 0, 0, 1 },
+    settled = { share = 0.25, colour = { 0.9, 0.9, 0.9 } } } })
+local brine
+for _, rect in ipairs(rects) do if rect.b == 1 and rect.r == 0 then brine = rect end end
+check("the brine stands on the salt", brine and brine.y + brine.h == Holds.HEIGHT - 2 - 23)
+-- Past saturation each litre boiled off leaves a litre of salt: the brine's top holds still, step after step.
+local tops = {}
+for step = 0, 40 do
+    local ml = 18 - step * 0.37
+    rects = {}
+    window:holds(0, { { kind = "tank", name = "Salt Pan", amount = "", share = ml / 30, colour = { 0, 0, 1 },
+        settled = { share = (18 - ml) / 30, colour = { 0.9, 0.9, 0.9 } } } })
+    for _, rect in ipairs(rects) do if rect.b == 1 and rect.r == 0 then tops[rect.y] = true end end
+end
+local count = 0
+for _ in pairs(tops) do count = count + 1 end
+check("the brine's top holds still as it turns to salt", count == 1)
 check("a thermometer with nothing to warm draws", true)
 
 H.done()

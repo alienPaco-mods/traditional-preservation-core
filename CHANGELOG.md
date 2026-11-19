@@ -1,5 +1,15 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.32
+- **One and All on a vessel's recipe row** (user, for Yeast's pots of Potato Water and Hop Tea): `RecipeUI.oneOrAll({
+  recipe, fluid, litres })` turns vanilla's right-click Craft row for a recipe that takes `litres` of `fluid` from the
+  clicked vessel into a submenu, **One** (vanilla's own craft) and **All (n)**, n the crafts the vessel's fluid covers,
+  capped by what the rest in reach allows (vanilla's craft count). All makes them one after the other from that
+  vessel, each started as vanilla's row starts one, and stops when the next can't be made. With one craft's worth the
+  row is left as vanilla's. The crafting window's own count is unchanged. test_recipe_menu.
+- **DEVGUIDE: "How a recipe takes a fluid"** (series recipe audit, 2026-11-19): the three ways the series writes a
+  fluid input, the receiving jar, clean or tainted water, `CanBeDoneFromFloor`, and the game's jar names.
+
 ## 0.1.31
 - **Tabs in the piece list** (ROADMAP section 12; user, session 55): `InfoWindow:pieceList` shows a row of tabs under
   its header, All and one for each process on the station with its count ("Salt Fish (4)"), wrapping onto more lines

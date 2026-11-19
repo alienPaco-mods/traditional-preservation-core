@@ -167,7 +167,7 @@ every mod's translation files for a literal `%`.
 This folder is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP mod requires. Its Lua is
 `42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
-line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../ItemFluid.lua` (fluid that turns, goes off, burns or stays in a pot or saucepan: the cauldron's rules for an item; `ItemFluidUI.addPieces` puts pieces in as a fluid), `.../OnHeat.lua` (food kept
+line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../ItemFluid.lua` (fluid that turns, goes off, burns or stays in a pot or saucepan: the cauldron's rules for an item; `ItemFluidUI.addPieces` puts pieces in as a fluid; `RecipeUI.oneOrAll` gives a vessel's recipe row One and All), `.../OnHeat.lua` (food kept
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../DryingCloth.lua` (the Drying Cloth: lots of what mods register, drying by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a hanging piece's fire counters),
@@ -339,6 +339,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `PiecesUI.oldestFirst`) and All (n). The cauldron's rules are `CauldronFluid.pieceRoom`, `putPieces`, its menu
      `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, fluidRows, help, noRoom, refusal })`; a pot's are
      `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
+   - A recipe made several times from one vessel (Yeast's cultures from a pot of Potato Water or Hop Tea):
+     **`RecipeUI.oneOrAll({ recipe, fluid, litres })`** turns vanilla's Craft row on the vessel's right-click menu
+     into One and All (n), n what the vessel's fluid covers and the rest in reach allows; All crafts one after the
+     other from that vessel.
    - `PlaceKeeping.new(keepingRules)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
      `keepingRules.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
      freezer stopped, by a fire or banked embers as the stations: `FluidAgeing.placeOfItem` asks `Fire.placeOf` of
@@ -458,7 +462,7 @@ of all:
 | `ISWidgetInput.updateValues` | core `ChargeUI` (Fish & Meat's filler) | A charged line (`Charge`) shows its real amount (*n/12 Uses*, *n/12*) with the consumed icon; other lines pass straight through |
 | `ISGatherBloodFromAnimal.updateBucket` | core `FluidAgeingWorld` (for Fish & Meat's blood) | A container with no blood starts a new record; fresh blood gathered onto treated blood makes it untreated |
 | `ISDrinkFluidAction.updateEat` | core `Drink` only; cures: Dairy `...Kefir` | Fresh kefir eases food sickness, 10 a litre drunk, on the shared `foodSickness` cooldown |
-| `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Clay Jar or Clay Pot back; a crock's first portion opens it |
+| `ISEatFoodAction.complete`, `serverStop` | core `Portions` only; handlers: Dairy `...Yoghurt`, Fish & Meat `...Potted` | A Jar of Yogurt or a Crock of Potted Meat eaten from is relabelled with its portions and weight, and the last bite gives the empty jar, Ceramic Jar or Ceramic Pot back; a crock's first portion opens it |
 | `ISCampingMenu.doLightFireOption` | core `FireUI` | A banked Stone Hearth's vanilla fire is out: Put out Fire (unbank) instead of Light Fire, in the right-click and controller menus |
 | `ISLootWindowObjectControlHandler_LightFireOption.shouldBeVisible`, `ISLootWindowObjectControlHandler_PutOut.shouldBeVisible`, `.perform` | core `FireLootControls` | The same in the loot window's buttons |
 | `ISItemSlotRemoveAction.complete` | Salt `...Brine` | Brine taken out of the vat turns back into fluid in its bucket |
@@ -493,6 +497,25 @@ overlays, stages, styles, hangers.
 4. `pzart.py` also holds everything two builders share: the pack and .tiles writers, sprite extraction, icons,
    layers, noise, weathering, staves and hoops. Change it only with a byte-identical check: rebuild every mod in a
    scratch copy before and after (FuelBarrel too) and compare every output file.
+
+## How a recipe takes a fluid
+
+The series writes a recipe's fluid one of three ways (ENGINE_NOTES, "Crafting hooks" and "Fat as a fluid"); a new
+recipe picks one of these before anything else:
+
+1. **From any container, the container kept**: `item 1 [*],` then `-fluid n [Fluid],`. Any pot, jar, bottle or
+   bucket holding it is offered, on its right-click menu and in the crafting window, and stays. Strain Lard, Soak
+   Fish, Yeast's cultures and Feed Culture.
+2. **A pot that becomes a new item**: `item 1 [Base.Pot;Base.PotForged] mode:destroy mappers[potType]` then
+   `-fluid 1.5 ...`: a full pot, mapped to the mod's pot item. Fish & Meat's stocks and sausage pots.
+3. **A pot whose fluid turns in place**: `item 1 [Base.Pot;Base.PotForged] mode:keep` then `-fluid 1.5 [Water]`, an
+   OnCreate that refills the pot with the new fluid (inputs are used before OnCreate). Yeast's Steep Hops.
+
+Also: a jar that receives the result is its own line, `flags[IsEmpty] mode:destroy`, first among the jars (an
+OnCreate finds the culture's jar as the first used up). `[Water]` is clean water only; `categories[Water]` takes
+tainted, for what is boiled afterwards. Every `InHandCraft` recipe but Packing has `CanBeDoneFromFloor`, so heavy
+inputs aren't carried into the inventory first. Use the game's item names in text: Jar, Ceramic Jar, Glazed Ceramic
+Jar, Ceramic Pot.
 
 ## Rules that keep saves and the game happy
 

@@ -201,8 +201,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
    window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
    makes a click on the station open it. A station holding many pieces lists them with `self:pieceList(y, label,
-   rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, or least
-   along first), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
+   rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
+   along first, or by process: rows grouped by their `group`, which every row has), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
    hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
    sorts it again only then. `TPC.pieceList(n)` opens a sample.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:

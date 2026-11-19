@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.22
+- **The list sorts by process too**: the switch's third choice, *By process*, groups the rows by their process
+  (a row's `group`, by name; every row needs one), furthest along within each. `TPC.pieceList` gives its sample
+  pieces processes.
+
 ## 0.1.21
 - **A scrolling list for info windows** (`PieceList.lua`, `InfoWindow:pieceList`), the first step of moving the
   CraftLogic workstations onto info windows: one row a piece (icon, name, a bar with its text, an optional line under

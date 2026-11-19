@@ -4,7 +4,7 @@ local H = dofile((os.getenv("TPCORE") or ".") .. "/tests/harness.lua")
 local check = H.check
 H.useModPaths()
 H.installGetText({ T_Hanging = "On the frame", IGUI_TraditionalPreservationCore_ListFurthest = "Furthest along",
-    IGUI_TraditionalPreservationCore_ListLeast = "Least along" })
+    IGUI_TraditionalPreservationCore_ListLeast = "Least along", IGUI_TraditionalPreservationCore_ListProcess = "By process" })
 
 local realRequire = require
 require = function(name)
@@ -63,20 +63,24 @@ local PieceList = require "TraditionalPreservationCore/PieceList"
 
 -- The sort: furthest along first, ties in the order given; least along first reverses it, ties still in order.
 local rows = {
-    { name = "Bluegill", share = 0.2 },
-    { name = "Yellow Perch", share = 1 },
-    { name = "Beef (Salted)", share = 0.55, order = 0.55 },
-    { name = "Pork (Salted)", share = 0.2 },
+    { name = "Bluegill", share = 0.2, group = "Salt Dried" },
+    { name = "Yellow Perch", share = 1, group = "Salt Dried" },
+    { name = "Beef (Salted)", share = 0.55, order = 0.55, group = "Charque" },
+    { name = "Pork (Salted)", share = 0.2, group = "Cold Smoked" },
 }
 local function names(list)
     local out = {}
     for _, row in ipairs(list) do table.insert(out, row.name) end
     return table.concat(out, ", ")
 end
-check("furthest along first, ties as given", names(PieceList.sorted(rows, false)) == "Yellow Perch, Beef (Salted), Bluegill, Pork (Salted)")
-check("least along first, ties still as given", names(PieceList.sorted(rows, true)) == "Bluegill, Pork (Salted), Beef (Salted), Yellow Perch")
+check("furthest along first, ties as given", names(PieceList.sorted(rows, "furthest")) == "Yellow Perch, Beef (Salted), Bluegill, Pork (Salted)")
+check("least along first, ties still as given", names(PieceList.sorted(rows, "least")) == "Bluegill, Pork (Salted), Beef (Salted), Yellow Perch")
+check("by process: groups by name, furthest along within",
+    names(PieceList.sorted(rows, "process")) == "Beef (Salted), Pork (Salted), Yellow Perch, Bluegill")
+check("a row without a process is refused", not pcall(PieceList.sorted, { { name = "x", share = 0 } }, "furthest"))
 check("the window's rows are left as they were", rows[1].name == "Bluegill" and rows[2].name == "Yellow Perch")
-check("order goes before share", names(PieceList.sorted({ { name = "a", share = 1, order = 0 }, { name = "b", share = 0 } }, false)) == "a, b")
+check("order goes before share", names(PieceList.sorted({ { name = "a", share = 1, order = 0, group = "g" },
+    { name = "b", share = 0, group = "g" } }, "furthest")) == "a, b")
 
 -- Names cut to width: 60 wide holds 10 letters.
 local owner = { fitCount = 0 }
@@ -104,7 +108,8 @@ local list = window.pieceListUI
 check("the list and its switch are the window's children", list and #window.children == 2 and window.children[2] == list.sort)
 check("the header is drawn, the switch beside it at the right", drawn[1].text == "On the frame" and drawn[1].y == 52
     and list.sort.y == 50 and list.sort.x == 360 - 10 - PieceList.SORT_WIDTH)
-check("the switch offers both sorts, furthest first", #list.sort.options == 2 and list.sort.selected == 1)
+check("the switch offers three sorts, furthest first", #list.sort.options == 3 and list.sort.options[3] == "By process"
+    and list.sort.selected == 1)
 check("the list sits under the header, inside the padding", list.y == 50 + 14 + 4 and list.x == 10 and list.width == 340)
 check("its rows are sorted, its height theirs", names(list.rows) == names(rows) and list.items[1].text == "Yellow Perch"
     and list.height == 4 * 22 + 2)
@@ -114,7 +119,7 @@ check("the next y is under the list", nextY == list.y + list.height + 4)
 list.items[1].marked = true
 PieceList.draw(window, look, 50, "On the frame", rows)
 check("the same rows aren't laid out again", list.items[1].marked == true and #window.children == 2)
-local fresh = { { name = "Pike", share = 0.9, note = "Cold smoke 30 of 72 h" } }
+local fresh = { { name = "Pike", share = 0.9, note = "Cold smoke 30 of 72 h", group = "Hot Smoked" } }
 PieceList.draw(window, look, 50, "On the frame", fresh)
 check("new rows are", #list.items == 1 and list.items[1].text == "Pike" and list.height == 32 + 2)
 
@@ -127,6 +132,9 @@ local other = element({ width = 360, children = {} })
 other.addChild, other.drawText = window.addChild, window.drawText
 PieceList.draw(other, look, 10, "On the frame", rows)
 check("another window's list keeps the choice", other.pieceListUI.sort.selected == 2 and other.pieceListUI.items[1].text == "Bluegill")
+list.sort.selected = 3
+list.sort.onChange(list.sort.target, list.sort)
+check("the switch sorts by process", list.items[1].text == "Beef (Salted)" and list.items[4].text == "Bluegill")
 list.sort.selected = 1
 list.sort.onChange(list.sort.target, list.sort)
 check("and back", list.items[1].text == "Yellow Perch")

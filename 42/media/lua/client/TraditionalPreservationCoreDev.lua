@@ -393,9 +393,10 @@ end
 -- A sample window for Core's scrolling list (PieceList), before any station uses it. The pieces are made up: a
 -- name, a share and a popup each; every third has a line under its bar, every fifth is done. The window's class is
 -- made on the first call (the info window code is the client's, loaded after this file).
-local SAMPLE_PIECES = { { "Bluegill", "Base.Bluegill" }, { "Yellow Perch", "Base.YellowPerch" },
-    { "Beef (Salted)", "Base.Steak" }, { "Pork (Salted)", "Base.PorkChop" }, { "Blood Sausage", "Base.Sausage" },
-    { "Chicken (Corned)", "Base.Chicken" }, { "Salmon, a long name to cut", "Base.Salmon" } }
+local SAMPLE_PIECES = { { "Bluegill", "Base.Bluegill", "Salt Dried" }, { "Yellow Perch", "Base.YellowPerch", "Salt Dried" },
+    { "Beef (Salted)", "Base.Steak", "Charque" }, { "Pork (Salted)", "Base.PorkChop", "Cold Smoked" },
+    { "Blood Sausage", "Base.Sausage", "Cold Smoked" }, { "Chicken (Corned)", "Base.Chicken", "Hot Smoked" },
+    { "Salmon, a long name to cut", "Base.Salmon", "Salt Dried" } }
 local SAMPLE_DONE, SAMPLE_SLOW = { 0.35, 0.7, 0.35 }, { 0.8, 0.6, 0.25 }
 local SAMPLE_COUNT = 14
 local SampleWindow
@@ -408,12 +409,13 @@ local function sampleRows(UI, count)
         local share = i % 5 == 0 and 1 or ((i * 37) % 97) / 100
         local text = share >= 1 and "Done"
             or UI.say("IGUI_TraditionalPreservationCore_ClothLeft", UI.percent(share), UI.durationText((1 - share) * 120))
-        rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text,
+        rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text, group = piece[3],
             colour = share >= 1 and SAMPLE_DONE or (i % 4 == 0 and SAMPLE_SLOW or nil),
             note = i % 3 == 0 and string.format("Cold smoke %.1f of 72 h", share * 72) or nil,
             popup = function(tooltip)
                 UI.drawTooltip(tooltip, function(layout)
                     UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoPlace", "Sample")
+                    UI.addLine(layout, "IGUI_TraditionalPreservationCore_ListProcess", piece[3])
                     UI.addLine(layout, "EC_CraftLogic_Progress", UI.percent(share))
                     UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoLots", "piece " .. i)
                 end)

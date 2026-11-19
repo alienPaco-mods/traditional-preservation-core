@@ -1,11 +1,12 @@
 -- Traditional Preservation core: the scrolling list of an info window, one row a piece (what hangs on a rack, sits
--- on a shelf or lies on a malting floor). A header row names it and holds the sort switch (furthest along first, or
--- least along first); under it up to ROWS_SHOWN rows, then a scroll bar. Each row is an icon, a name, a bar with
+-- on a shelf or lies on a malting floor). A header row names it and holds the sort switch (furthest along first,
+-- least along first, or by process: grouped by their process's name, furthest along within each); under it up to ROWS_SHOWN rows, then a scroll bar. Each row is an icon, a name, a bar with
 -- its text and, if given, a line under the bar (the Smokehouse's smoke count). Hovering a row shows its popup, drawn
 -- like a crafting window's slot popup (ISToolTipItemSlot): the row's popup(tooltip) fills it, as UI.drawTooltip does.
 -- A window doesn't make one itself: InfoWindow:pieceList(y, label, rows) draws it in the window's flow.
 -- rows is a list of { icon (Texture or nil), name, share (0 to 1), colour { r, g, b }, text (in the bar),
--- note (text under the bar, or nil), order (sort key, share if nil), popup (function(tooltip), or nil) }. A window
+-- note (text under the bar, or nil), order (sort key, share if nil), group (the process's name, for the by-process
+-- sort: every piece has one), popup (function(tooltip), or nil) }. A window
 -- builds a new rows table in refresh; the list sorts it again only when the table changes.
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISComboBox"
@@ -23,17 +24,24 @@ PieceList.BACKGROUND = { r = 0, g = 0, b = 0, a = 0.4 }
 PieceList.BORDER = { r = 0.4, g = 0.4, b = 0.4, a = 0.8 }
 PieceList.FILL = { 0.35, 0.7, 0.35 } -- a bar with no colour of its own
 
--- Whether the switch shows least along first; one choice for every list, kept while the game runs.
-local leastFirst = false
+-- The switch's sorts, in its order. One choice for every list, kept while the game runs.
+PieceList.SORTS = { "furthest", "least", "process" }
+local SORT_TEXTS = { furthest = "IGUI_TraditionalPreservationCore_ListFurthest",
+    least = "IGUI_TraditionalPreservationCore_ListLeast", process = "IGUI_TraditionalPreservationCore_ListProcess" }
+local sortBy = "furthest"
 
--- rows sorted for the switch: furthest along first (least along first with leastFirst), ties in the order given.
--- Returns a new list; rows is left as it is.
-function PieceList.sorted(rows, ascending)
+-- rows sorted by sort (one of SORTS): furthest along first, least along first, or by process (groups by name,
+-- furthest along within a group); ties in the order given. Returns a new list; rows is left as it is.
+function PieceList.sorted(rows, sort)
     local keyed = {}
-    for index, row in ipairs(rows) do keyed[index] = { row = row, key = row.order or row.share or 0, index = index } end
+    for index, row in ipairs(rows) do
+        assert(type(row.group) == "string", "PieceList: a row's group (its process) is needed: " .. tostring(row.name))
+        keyed[index] = { row = row, key = row.order or row.share or 0, group = row.group, index = index }
+    end
     table.sort(keyed, function(a, b)
+        if sort == "process" and a.group ~= b.group then return a.group < b.group end
         if a.key ~= b.key then
-            if ascending then return a.key < b.key end
+            if sort == "least" then return a.key < b.key end
             return a.key > b.key
         end
         return a.index < b.index
@@ -97,9 +105,9 @@ end
 
 -- Lays out sorted rows as the list's items; called when the window's rows or the switch change.
 function PieceList:setRows(rows)
-    self.rows, self.leastFirst = rows, leastFirst
+    self.rows, self.sortBy = rows, sortBy
     self:clear()
-    for _, row in ipairs(PieceList.sorted(rows, leastFirst)) do
+    for _, row in ipairs(PieceList.sorted(rows, sortBy)) do
         local item = self:addItem(row.name, row)
         item.height = PieceList.rowHeight(row)
     end
@@ -194,7 +202,7 @@ end
 
 -- The sort switch's choice, for every list.
 local function onSort(list, combo)
-    leastFirst = combo.selected == 2
+    sortBy = PieceList.SORTS[combo.selected] or "furthest"
     if list.rows then list:setRows(list.rows) end
 end
 
@@ -209,9 +217,7 @@ function PieceList.of(window, colours)
     window:addChild(list)
     local sort = ISComboBox:new(window.width - padding - PieceList.SORT_WIDTH, 0, PieceList.SORT_WIDTH, lineHeight() + 4, list, onSort)
     sort:initialise()
-    sort:addOption(getText("IGUI_TraditionalPreservationCore_ListFurthest"))
-    sort:addOption(getText("IGUI_TraditionalPreservationCore_ListLeast"))
-    sort.selected = leastFirst and 2 or 1
+    for _, name in ipairs(PieceList.SORTS) do sort:addOption(getText(SORT_TEXTS[name])) end
     window:addChild(sort)
     list.sort = sort
     window.pieceListUI = list
@@ -226,10 +232,12 @@ function PieceList.draw(window, colours, y, label, rows)
     local labelColour = colours.label
     window:drawText(label, colours.padding, y + (header - lineHeight()) / 2, labelColour[1], labelColour[2], labelColour[3], 1, UIFont.Small)
     if sort.y ~= y then sort:setY(y) end
-    sort.selected = leastFirst and 2 or 1
+    for index, name in ipairs(PieceList.SORTS) do
+        if name == sortBy then sort.selected = index end
+    end
     y = y + header + colours.gap
     if list.y ~= y then list:setY(y) end
-    if list.rows ~= rows or list.leastFirst ~= leastFirst then list:setRows(rows) end
+    if list.rows ~= rows or list.sortBy ~= sortBy then list:setRows(rows) end
     return y + list.height + colours.gap
 end
 

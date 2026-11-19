@@ -240,7 +240,7 @@ While you're away, the fire counts only for as long as its fuel would have laste
 
 Every station in the series works by the temperature of **where it stands**. The weather is noted every 10 in-game minutes for the whole world, so a station you left a month ago has had exactly the weather it should have had when you come back.
 
-**The station tells you.** A station's own window (Yeast's shelf, Vinegar's floor and vessel, Salt's vat) lists its place, the temperature there and how fast it is working (Salt's vat, which minds no weather, the brine it will give), with a bar and the time left for each batch. A station without a crafting window (a Stone Hearth, Vinegar's cask, Dairy's incubator and crock, Fish & Meat's racks, tub and Smokehouse) has an Info window instead: right-click it and pick Info. Where many pieces hang, Info lists one row a piece, with a tab for each kind when there are several. Hover a running batch or a piece for the real time left at today's weather.
+**The station tells you.** Salt's vat has its own crafting window, which lists its place and the brine it will give, with a bar and the time left. Every other station (a Stone Hearth, Yeast's shelf, Vinegar's floor, vessel and cask, Dairy's incubator and crock, Fish & Meat's racks, tub and Smokehouse) has an Info window instead: right-click it and pick Info. It lists the place, the temperature there and how fast it is working. Where many pieces hang, Info lists one row a piece, with a tab for each kind when there are several. Hover a running batch or a piece for the real time left at today's weather.
 
 | Place | When | Temperature |
 |---|---|---|

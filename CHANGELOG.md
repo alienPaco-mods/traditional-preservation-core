@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.33
+- **`UI.confirm(playerObj, text, onYes)`**: a yes or no box before a menu row that loses something for good (vanilla's
+  `ISModalDialog`, as for killing an animal; a controller's focus moves to it). First use: Vinegar's Pour Away the Batch.
+- DEVGUIDE: the station rule and the wrap table without the Fermentation Vessel's crafting window (Vinegar 0.2.42).
+- Guide: every station but Salt's Leaching Vat has an Info window now.
+
 ## 0.1.32
 - **One and All on a vessel's recipe row** (user, for Yeast's pots of Potato Water and Hop Tea): `RecipeUI.oneOrAll({
   recipe, fluid, litres })` turns vanilla's right-click Craft row for a recipe that takes `litres` of `fluid` from the

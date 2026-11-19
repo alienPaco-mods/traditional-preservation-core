@@ -214,6 +214,25 @@ function UI.walkTo(playerObj, station)
     return square ~= nil and luautils.walkAdj(playerObj, square, true)
 end
 
+-- Asks yes or no before something that can't be undone, as vanilla asks before killing an animal (ISModalDialog,
+-- with a controller's focus moved to it). text is finished text; onYes() runs on Yes only.
+local function onConfirm(_, button)
+    if button.internal == "YES" and button.parent.onYes then button.parent.onYes() end
+end
+
+function UI.confirm(playerObj, text, onYes)
+    local modal = ISModalDialog:new(0, 0, 350, 150, text, true, nil, onConfirm)
+    modal:initialise()
+    modal:addToUIManager()
+    modal.onYes = onYes
+    local player = playerObj:getPlayerNum()
+    if JoypadState.players[player + 1] then
+        modal.prevFocus = JoypadState.players[player + 1].focus
+        setJoypadFocus(player, modal)
+    end
+    return modal
+end
+
 -- A menu option's hover. text is finished text, not a key.
 function UI.tooltip(option, text)
     local tooltip = ISWorldObjectContextMenu.addToolTip()

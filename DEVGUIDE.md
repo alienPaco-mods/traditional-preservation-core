@@ -322,7 +322,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `UI.selectedItems(items, wanted)` and `UI.firstSelected(items, wanted)`: an inventory context menu's selected
      items, each once (a collapsed stack lists its first item twice), or the first wanted one, a stack by its first
      item. `UI.disable(option, text)` greys an option with its reason; **`UI.refuse(option, text)`** shows a submenu
-     row in red with its reason (`notAvailable`), still there to read.
+     row in red with its reason (`notAvailable`), still there to read. **`UI.confirm(playerObj, text, onYes)`** asks
+     yes or no first (vanilla's `ISModalDialog`, as for killing an animal) before a row that loses something for good
+     (Vinegar's Pour Away the Batch).
    - `Action`: a timed action's time (`duration`, `pourDuration`) and a kit's parts: `hasTool(character, tag)`,
      `kitItems(character, needs)` (the items, all from the main inventory, or nil), `takeItems`, `giveItems(character,
      needs)`, `addXp(character, { perk, amount })`. Fit and Connect at the Stone Hearth use them.
@@ -442,19 +444,16 @@ of all:
 
 | Wrapped vanilla function | Where | Why |
 |---|---|---|
-| `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (Fish, Vinegar, template through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
-| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; Fish, Vinegar, template) | Each station's own input rules |
+| `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (the template, through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
+| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; the template) | Each station's own input rules |
 | `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
-| `ISWidgetCraftLogicControl.startCraft` | core `SlotRules`: `UI.slotRules` with `recipeRefusal` (Fish & Meat), `UI.craftRefusal` (Vinegar) | Craft refuses stored inputs the selected recipe can't take; Craft on a vessel that can't run says why, and a second press doesn't queue another run |
+| `ISWidgetCraftLogicControl.startCraft` | core `SlotRules`: `UI.slotRules` with `recipeRefusal` (Fish & Meat), `UI.craftRefusal` (no user now) | Craft refuses stored inputs the selected recipe can't take; Craft on a vessel that can't run says why, and a second press doesn't queue another run |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `Placement` (one wrap for every rule): `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish, the Smokehouse), `UI.keepDoorsFree` (every TP station), `UI.offAppliances` (Dairy's crock) | Outdoor stations can't be carried indoors (or into a room); a station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door (the build menu asks `TraditionalPreservationCore.doorFits`, `OnIsValid`); table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square; its build ghost asks only on a solid square, so the build recipe asks `TraditionalPreservationCore.offAppliances`) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles`, Fish & Meat `...Stock` | Empty shakers and the right bottles come back; a boiled bone smashes into boiled pieces (without giving vanilla's Smash Bone an OnCreate, which would replace another mod's) |
-| `ISCraftLogicPanel.createChildren` | Vinegar `...UI` | Fluid tank columns in the vessel's window |
-| `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth, the kraut barrel, the Salting Tub, Dairy's pot and crock) | A station holding liquid, a running batch, a hose or anything kept in its movableData can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why. No station moves mid-process: each process has its time and place |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
-| `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
 | `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, core `PlaceKeepingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); kept food moved counts its time where it was (core, Dairy's butter); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
@@ -653,13 +652,13 @@ at its old place before writing the new one.
 **Which kind of station? (the station rule)**
 Three kinds, by what the station holds:
 - **Pieces put on a station, each on its own clock: a piece record in the station's movableData** (Fish & Meat's
-  Drying Frame, Hanging Beam, Gantry and the Smokehouse, Yeast's Fermenting Shelf; the tub keeps its batch the same
-  way). Hang or put on from the
+  Drying Frame, Hanging Beam, Gantry and the Smokehouse, Yeast's Fermenting Shelf, Vinegar's Malting Floor; the tub
+  keeps its batch the same way, and Vinegar's Fermentation Vessel its tanks and batch). Hang or put on from the
   right-click menu (`PiecesUI`: One / All / a count) or the Info window's drop square (`dropZone`), take off from both;
   each piece its own row in the Info window's `pieceList`. The World steps the record; a station holding anything stays
   where it is (`UI.keepInPlace`). This is where every workstation is going (ROADMAP section 12).
-- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Vinegar's
-  Floor and Vessel, Salt's Vat, until each moves to a piece record). It gives slots, the vanilla window, Take All, a
+- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Salt's Vat, until it moves
+  to a piece record). It gives slots, the vanilla window, Take All, a
   bar and each run's save and load. The timer is always set from Lua (`OnStart` / `OnUpdate`, below). It is read by
   **an info block in the crafting window** (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a
   hover popup on each running batch.
@@ -671,8 +670,7 @@ Three kinds, by what the station holds:
 - **Storage that only changes how a finished item keeps or ripens: a container or the item's own clock**, no run at
   all (the Stockfish Pallet and Bale, the Crock of Potted Meat, maturing and ageing). It is read by the item's name
   and tooltip, and a right-click line where the place matters (the Pallet's speed).
-Vinegar's Fermentation Vessel is the one hybrid: a `CraftLogic` run of a marker item while Lua moves the wort. A
-new station picks its kind by this rule and is read the way its kind is.
+A new station picks its kind by this rule and is read the way its kind is.
 
 **Where a station may stand**: **no TP station stands in front of a door** (the Stone Hearth's mouth,
 a Smokehouse's door, any `Doors.register`ed one). Its entity script's `SpriteConfig` has an `OnIsValid`:

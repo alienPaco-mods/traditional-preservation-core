@@ -163,7 +163,6 @@ Every TP wrap calls the function it replaced, and goes in once all mods have loa
 | `ISMilkAnimal.milk`, `ISGatherBloodFromAnimal.updateBucket` | A fresh age for new milk and blood |
 | `ISAddItemInRecipe.complete`, `checkName` | Fish & Meat's ingredient icons and stock dish names |
 | `ISToolTipInv.render` | Brine strength in a bucket's tooltip |
-| `ISItemSlotRemoveAction.complete` | Brine taken out of Salt's vat |
 | `ISCraftLogicPanel.ItemSlotAddItems`, `createChildren`; `ISItemSlot.defaultVerifyItem`, `onMouseUp`; `ISWidgetCraftLogicControl.startCraft`; `ISWidgetCraftLogicInputControl.createChildren`, `updateOutputItems`; `ISWidgetCraftLogicOutputProgress.updateProgressItems`, `createDynamicChildren`, `calculateLayout`; `ISWidgetInput.updateValues` | The TP stations' crafting windows: slot rules, popups, info blocks, tanks |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `getInfoPanelFlagsPerTile`, `canPlaceMoveable` | Where stations may stand, and which can't be picked up |
 | `ISWorldMenuElements.ContextEntity` | Station icons in the right-click menu |

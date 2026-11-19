@@ -653,15 +653,13 @@ at its old place before writing the new one.
 Three kinds, by what the station holds:
 - **Pieces put on a station, each on its own clock: a piece record in the station's movableData** (Fish & Meat's
   Drying Frame, Hanging Beam, Gantry and the Smokehouse, Yeast's Fermenting Shelf, Vinegar's Malting Floor; the tub
-  keeps its batch the same way, and Vinegar's Fermentation Vessel its tanks and batch). Hang or put on from the
+  keeps its batch the same way, Vinegar's Fermentation Vessel its tanks and batch, and Salt's Leaching Vat its one
+  charge). Hang or put on from the
   right-click menu (`PiecesUI`: One / All / a count) or the Info window's drop square (`dropZone`), take off from both;
   each piece its own row in the Info window's `pieceList`. The World steps the record; a station holding anything stays
-  where it is (`UI.keepInPlace`). This is where every workstation is going (ROADMAP section 12).
-- **Counted items in, items out, in batches that may overlap: a `CraftLogic` station** (Salt's Vat, until it moves
-  to a piece record). It gives slots, the vanilla window, Take All, a
-  bar and each run's save and load. The timer is always set from Lua (`OnStart` / `OnUpdate`, below). It is read by
-  **an info block in the crafting window** (`StationInfo.block`: place, temperature, working rate, a bar a batch) and a
-  hover popup on each running batch.
+  where it is (`UI.keepInPlace`). Every TP workstation is one of these.
+- **Not a `CraftLogic` station.** No TP workstation uses vanilla's crafting window. Core's crafting-window pieces
+  (`StationInfo`, `SlotRules` and their wraps) have no user left.
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
   timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
   trusted with fluid amounts in a station, a cask is one pool with no batch, and the

@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the base of every station's info window (Stone Hearth Info, Dairy's Incubator and Crock
 -- Info). Rows of label and value, filled bars and wrapped notes, kept up to date while open. It closes when the player
 -- walks off or the station is gone. One info window at a time, whatever the mod: opening another closes the last.
--- InfoWindow.clickOpens makes a click on the station open it.
+-- A window opens from its station's right-click menu only: a left click stays vanilla's (a container's loot window).
 -- A window derives this, sets its title in new, keeps what it shows in refresh (a view named for its station:
 -- fireView, potView, caskView) and draws it in render:
 --     local MyWindow = InfoWindow:derive("MyModWindow")
@@ -12,7 +12,6 @@
 -- one): a scrolling list, one row a piece.
 require "ISUI/ISCollapsableWindow"
 local Station = require "TraditionalPreservationCore/Station"
-local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local InfoWindow = ISCollapsableWindow:derive("TraditionalPreservationCoreInfoWindow")
 
@@ -212,39 +211,6 @@ end
 function InfoWindow:drawNotes(y, notes)
     local height = InfoWindow.drawNoteLines(self, LAYOUT, y, notes) + InfoWindow.PADDING
     if self.height ~= height then self:setHeight(height) end
-end
-
--- Clicking a station opens its info window, as clicking a door opens it. test(isoObject) says whether the object is
--- the mod's station, and open(playerObj, isoObject) opens the window. Not while paused, aiming or out of reach:
--- vanilla's own checks for a click. Wraps ISObjectClickHandler.doClickSpecificObject once for every mod, through
--- Wrap (late, guarded: it is in vanilla's server folder, which loads after this one).
-local clicks = {}
-
-local function canClick(isoObject, playerObj)
-    return playerObj and not playerObj:isAiming()
-        and not (UIManager.getSpeedControls() and UIManager.getSpeedControls():getCurrentGameSpeed() == 0)
-        and InfoWindow.inReach(playerObj, isoObject)
-end
-
-local function wrapClickHandler()
-    Wrap.method("ISObjectClickHandler", "doClickSpecificObject", function(vanillaClickObject, isoObject, playerNum, playerObj)
-        if isoObject then
-            for _, click in ipairs(clicks) do
-                if click.test(isoObject) then
-                    if not canClick(isoObject, playerObj) then break end
-                    click.open(playerObj, isoObject)
-                    return true
-                end
-            end
-        end
-        return vanillaClickObject(isoObject, playerNum, playerObj)
-    end)
-end
-
-function InfoWindow.clickOpens(test, open)
-    assert(type(test) == "function" and type(open) == "function", "InfoWindow.clickOpens: test and open (functions) needed")
-    if #clicks == 0 then wrapClickHandler() end
-    table.insert(clicks, { test = test, open = open })
 end
 
 return InfoWindow

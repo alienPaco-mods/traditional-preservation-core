@@ -373,9 +373,4 @@ end
 
 -- Clicking a fire opens its Info, as clicking a TP station opens its window (its firebox is still in the loot window
 -- beside it).
-InfoWindow.clickOpens(Fire.isFire, function(playerObj, fire)
-    if Fire.World then Fire.World.track(fire) end
-    FireWindow.open(playerObj, fire)
-end)
-
 return FireUI

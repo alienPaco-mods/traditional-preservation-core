@@ -199,8 +199,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
-   window at a time across every mod); see its header and Dairy's Incubator Info. `InfoWindow.clickOpens(test, open)`
-   makes a click on the station open it. A station holding many pieces lists them with `self:pieceList(y, label,
+   window at a time across every mod); see its header and Dairy's Incubator Info. A window opens from the station's
+   right-click menu only (an Info row): a left click stays vanilla's, as for any furniture (a container's loot
+   window; vanilla gives no workstation a left click). A station holding many pieces lists them with `self:pieceList(y, label,
    rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
    along first, or by process: rows grouped by their `group`, which every row has), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
    hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
@@ -439,7 +440,6 @@ of all:
 | `ISWidgetCraftLogicInputControl.updateOutputItems` | Vinegar `...UI` | Hides the marker item in the vessel's output preview |
 | `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth, the kraut barrel, the Salting Tub, Dairy's pot and crock) | A station holding liquid, a running batch, a hose or anything kept in its movableData can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why. No station moves mid-process: each process has its time and place |
-| `ISObjectClickHandler.doClickSpecificObject` | core `InfoWindow.clickOpens` (Vinegar, Dairy, the Stone Hearth) | Clicking a cask, a Stone Hearth, an incubator or a crock opens its info window |
 | `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISWorldMenuElements.ContextEntity` | Vinegar `...UI` | Station icons in the right-click menu |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
@@ -628,8 +628,8 @@ Three kinds, by what the station holds:
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
   timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
   trusted with fluid amounts in a station, a cask is one pool with no batch, and the
-  incubator's milk cools from what it was. It is read by **an Info window on click** (`InfoWindow.clickOpens`) and
-  its right-click line.
+  incubator's milk cools from what it was. It is read by **an Info window** (its menu's Info row) and its right-click
+  line.
 - **Storage that only changes how a finished item keeps or ripens: a container or the item's own clock**, no run at
   all (the Stockfish Pallet and Bale, the Crock of Potted Meat, maturing and ageing). It is read by the item's name
   and tooltip, and a right-click line where the place matters (the Pallet's speed).

@@ -163,11 +163,6 @@ function ClothWindow:render()
     self:drawNotes(y, notes)
 end
 
-InfoWindow.clickOpens(DryingCloth.isCloth, function(playerObj, station)
-    clothNow(station)
-    ClothWindow.open(playerObj, station)
-end)
-
 local function onFillContextMenu(playerNum, context, worldobjects, test)
     local seen = {}
     for _, isoObject in ipairs(worldobjects) do

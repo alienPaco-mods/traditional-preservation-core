@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.23
+- **Info windows open from the right-click menu only** (user, session 53): a left click on a station is vanilla's again, as for every vanilla workstation (a container opens its loot window). `InfoWindow.clickOpens` and its wrap of `ISObjectClickHandler.doClickSpecificObject` are gone; the Stone Hearth's left click opens only its loot window, the Drying Cloth's nothing. Docs and TESTING 9b, 9c, 27j updated.
+
 ## 0.1.22
 - **The list sorts by process too**: the switch's third choice, *By process*, groups the rows by their process
   (a row's `group`, by name; every row needs one), furthest along within each. `TPC.pieceList` gives its sample

@@ -143,7 +143,6 @@ local Station = require "TraditionalPreservationCore/Station"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
 check("a tracker needs its sprites and its refresh", not pcall(Station.tracker, {})
     and not pcall(Station.tracker, { sprites = {} }) and not pcall(Station.tracker, { refresh = function() end }))
-check("a provider and a click's test and open are functions", not pcall(StationInfo.add, {})
-    and not pcall(InfoWindow.clickOpens, nil, function() end))
+check("a provider is a function", not pcall(StationInfo.add, {}))
 
 H.done()

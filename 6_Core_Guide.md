@@ -75,7 +75,7 @@ Right-click it. Its **Stone Hearth** submenu has:
 
 | Option | What it does |
 |---|---|
-| **Stone Hearth Info** | A small window: the fire, the fuel, a note. **Clicking the Stone Hearth opens it too** |
+| **Stone Hearth Info** | A small window: the fire, the fuel, a note |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
 | With Salt: **Fit Salt Pan** | Beds a 30 L salt pan in clay over the hole, to boil brine down (Salt's guide). One thing fitted at a time: the cauldron or the pan |
@@ -194,7 +194,7 @@ Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth'
 
 ### The Drying Cloth
 
-A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and **Cloth Info** (or just click it): the place, its temperature and a bar for each lot.
+A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and **Cloth Info**: the place, its temperature and a bar for each lot.
 
 | | |
 |---|---|

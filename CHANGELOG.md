@@ -1,5 +1,8 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.27
+- **Items move into the inventory before the walk** (user, session 53; vanilla's order, and more natural): the Drying Cloth and the cauldron's rows (`PiecesUI.queue` takes a walk step, run after the move) move what they need from a crate or a bag first, then walk, then act, so a crate left behind can't cancel the queue. `UI.walkTo` walks keeping the queue (vanilla's `walkAdj` and `WalkToEntity` clear it first, which dropped the moves). The test harness's walk now clears the queue as vanilla's does, and counts it (`ui.cleared`).
+
 ## 0.1.26
 - **A row of buttons for info windows** (`InfoWindow:buttonRow`): buttons across the window sharing its width, each
   `{ title, enabled, tooltip, onClick }`, kept and set anew each draw. `test_button_row.lua` new.

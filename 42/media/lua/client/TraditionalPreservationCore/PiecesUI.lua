@@ -15,9 +15,11 @@ function PiecesUI.oldestFirst(pieces, hoursLeft)
     return pieces
 end
 
--- Brings the chosen pieces to hand and queues them into into (Cauldron.piecesInto, ItemFluid.piecesInto).
-function PiecesUI.queue(playerObj, into, asFluid, chosen)
+-- Moves the chosen pieces into the inventory, then walks (walk(), if given; false stops) and queues them into into
+-- (Cauldron.piecesInto, ItemFluid.piecesInto): vanilla's order.
+function PiecesUI.queue(playerObj, into, asFluid, chosen, walk)
     for _, item in ipairs(chosen) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
+    if walk and not walk() then return end
     ISTimedActionQueue.add(TPPutPieces:new(playerObj, into, asFluid, chosen))
 end
 

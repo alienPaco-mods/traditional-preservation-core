@@ -273,7 +273,7 @@ end
 --   .walks    times the player was sent over   .vanillaPickUp  what vanilla says to picking a tile up (set it)
 -- An object is instanceof its .class field.
 function H.installMenus()
-    local ui = { carried = {}, queued = {}, moved = {}, probes = 0, walks = 0, vanillaPickUp = true }
+    local ui = { carried = {}, queued = {}, moved = {}, probes = 0, walks = 0, cleared = 0, vanillaPickUp = true }
     H.ui = ui
     ISBaseTimedAction, ISCollapsableWindow = H.class("ISBaseTimedAction"), H.class("ISCollapsableWindow")
     function instanceof(object, name) return type(object) == "table" and object.class == name end
@@ -286,9 +286,15 @@ function H.installMenus()
         addToolTip = function() return {} end,
         setTest = function() ui.probes = ui.probes + 1 return true end,
     }
-    local function walk() ui.walks = ui.walks + 1 return true end
-    luautils = { walkAdj = walk }
-    ISEntityUI = { WalkToEntity = walk }
+    -- As vanilla's: a walk clears what is queued unless told to keep it (luautils.walkAdj's keepActions);
+    -- ISEntityUI.WalkToEntity never keeps it.
+    local function walkAdj(_, _, keepActions)
+        if not keepActions then ui.queued, ui.cleared = {}, ui.cleared + 1 end
+        ui.walks = ui.walks + 1
+        return true
+    end
+    luautils = { walkAdj = walkAdj }
+    ISEntityUI = { WalkToEntity = function(player, entity) return walkAdj(player, entity, false) end }
     ISTimedActionQueue = { add = function(action) table.insert(ui.queued, action) end }
     ISInventoryPaneContextMenu = {
         getContainers = function() return H.list({ { getItems = function() return H.list(ui.carried) end } }) end,

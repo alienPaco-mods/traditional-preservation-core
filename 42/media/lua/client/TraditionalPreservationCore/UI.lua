@@ -206,6 +206,14 @@ function UI.topInfo(context, label, icon, playerObj, open, station)
     return option
 end
 
+-- Walks next to a station keeping what is already queued (luautils.walkAdj with keepActions): vanilla's walk
+-- helpers clear the queue first unless told not to (ISEntityUI.WalkToEntity always does), which would drop the
+-- moves into the inventory queued before it. False if there is no way there.
+function UI.walkTo(playerObj, station)
+    local square = station:getSquare()
+    return square ~= nil and luautils.walkAdj(playerObj, square, true)
+end
+
 -- A menu option's hover. text is finished text, not a key.
 function UI.tooltip(option, text)
     local tooltip = ISWorldObjectContextMenu.addToolTip()

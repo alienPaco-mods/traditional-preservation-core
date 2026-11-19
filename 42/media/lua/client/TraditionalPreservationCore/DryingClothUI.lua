@@ -41,9 +41,10 @@ local function view(station)
     return { record = record, place = place, temperature = temperature, lots = lots }
 end
 
+-- The pieces into the inventory first, then the walk, then the action: vanilla's order.
 local function queue(playerObj, station, mode, items, lots)
-    if not ISEntityUI.WalkToEntity(playerObj, station) then return end
     for _, item in ipairs(items or {}) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
+    if not UI.walkTo(playerObj, station) then return end
     ISTimedActionQueue.add(TPDryingCloth:new(playerObj, station, mode, items, lots))
 end
 

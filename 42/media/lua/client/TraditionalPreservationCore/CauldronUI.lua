@@ -25,8 +25,8 @@ local function mlOf(cauldron)
 end
 
 local function onCauldronAction(playerObj, fire, item, mode)
-    if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
     if item then ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
+    if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
     ISTimedActionQueue.add(TPCauldronWork:new(playerObj, fire, item, mode))
 end
 
@@ -180,8 +180,8 @@ function CauldronUI.addPieces(piecesMenu)
                 room = CauldronFluid.pieceRoom(cauldron, carriedRow.fluidRow.fluid, piecesMenu.pieceMl),
                 pieces = PiecesUI.oldestFirst(carriedRow.pieces, piecesMenu.hoursLeft),
                 refusal = refusal, help = piecesMenu.help, noRoom = piecesMenu.noRoom }, function(chosen)
-                if not luautils.walkAdj(playerObj, fire:getSquare(), true) then return end
-                PiecesUI.queue(playerObj, Cauldron.piecesInto(fire), asFluid, chosen)
+                PiecesUI.queue(playerObj, Cauldron.piecesInto(fire), asFluid, chosen,
+                    function() return luautils.walkAdj(playerObj, fire:getSquare(), true) end)
             end)
             row.itemForTexture = carriedRow.pieces[1]
         end

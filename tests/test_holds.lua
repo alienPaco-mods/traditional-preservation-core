@@ -100,8 +100,8 @@ check("a header right under the band has no gap above it", window:section(first,
 -- With a button: icon only, square at the band's right, the title heading its hover.
 ISButton = {}
 function ISButton:new(x, y, width, height, title, target, onclick)
-    return setmetatable({ x = x, y = y, width = width, height = height, title = title, target = target, onclick = onclick },
-        { __index = ISButton })
+    return setmetatable({ x = x, y = y, width = width, height = height, title = title, target = target, onclick = onclick,
+        textureColor = { r = 1, g = 1, b = 1, a = 1 } }, { __index = ISButton })
 end
 for _, name in ipairs({ "initialise", "instantiate" }) do ISButton[name] = function() end end
 function ISButton:setX(x) self.x = x end

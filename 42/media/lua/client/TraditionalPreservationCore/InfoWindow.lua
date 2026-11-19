@@ -24,9 +24,10 @@ local InfoWindow = ISCollapsableWindow:derive("TraditionalPreservationCoreInfoWi
 
 InfoWindow.WIDTH = 400
 InfoWindow.MAX_WIDTH = 680
+InfoWindow.WIDTHS_FILE = "TraditionalPreservationWindowWidths.txt"   -- in ~/Zomboid/Lua: the player's, not the save's
 InfoWindow.REACH = 6
 InfoWindow.PADDING = 12
-InfoWindow.LABEL_WIDTH = 120    -- PieceList's bars start here
+InfoWindow.LABEL_WIDTH = 120
 InfoWindow.LABEL_GAP = 16       -- a label to its value
 InfoWindow.SECTION_GAP = 12     -- above a block's header
 InfoWindow.HEADER_GAP = 4       -- a header to its first row
@@ -56,7 +57,7 @@ InfoWindow.LORE_MIN = 140       -- the least room for the lore beside the holdin
 
 local LAYOUT = { padding = InfoWindow.PADDING, labelWidth = InfoWindow.LABEL_WIDTH, barHeight = InfoWindow.BAR_HEIGHT }
 -- What PieceList draws with: its bars start under the rows' values.
-local LIST_LOOK = { padding = InfoWindow.PADDING, gap = InfoWindow.BAR_GAP, barX = InfoWindow.LABEL_WIDTH,
+local LIST_LOOK = { padding = InfoWindow.PADDING, gap = InfoWindow.BAR_GAP, barTextPad = InfoWindow.BAR_TEXT_PAD,
     barHeight = InfoWindow.BAR_HEIGHT, label = InfoWindow.LABEL_COLOUR, value = InfoWindow.VALUE_COLOUR,
     note = InfoWindow.NOTE_COLOUR, barBack = InfoWindow.BAR_BACK, barBorder = InfoWindow.BAR_BORDER }
 
@@ -96,6 +97,8 @@ end
 function InfoWindow:refresh()
 end
 
+local keepWidth -- below, with the resize
+
 function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
@@ -107,6 +110,7 @@ function InfoWindow:update()
     end
     local bandButton = self.bandButtonUI
     if bandButton and bandButton:getIsVisible() == self.isCollapsed then bandButton:setVisible(not self.isCollapsed) end
+    if self.widthResizes then keepWidth(self) end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
         self.ticks = 0
@@ -435,15 +439,75 @@ function InfoWindow:holds(y, holdings, lore)
     return math.max(under, textY + 4) + InfoWindow.BAR_GAP
 end
 
--- Widens the window to width, up to MAX_WIDTH; it never narrows while open.
+-- Widens the window to width, up to MAX_WIDTH; it never narrows while open, and a resize doesn't take it narrower.
 function InfoWindow:fitWidth(width)
     width = math.min(math.ceil(width), InfoWindow.MAX_WIDTH)
+    if width > (self.minimumWidth or 0) then self.minimumWidth = width end
     if width > self.width then self:setWidth(width) end
 end
 
+-- Widths a player gave the windows that resize, by widthKey: read from WIDTHS_FILE once, one "key=width" a line.
+local savedWidths
+local function widths()
+    if savedWidths then return savedWidths end
+    savedWidths = {}
+    local reader = getFileReader(InfoWindow.WIDTHS_FILE, false)
+    if not reader then return savedWidths end
+    local line = reader:readLine()
+    while line do
+        local key, width = string.match(line, "^(.-)=(%d+)$")
+        if key then savedWidths[key] = tonumber(width) end
+        line = reader:readLine()
+    end
+    reader:close()
+    return savedWidths
+end
+
+local function saveWidths()
+    local writer = getFileWriter(InfoWindow.WIDTHS_FILE, true, false)
+    if not writer then return end
+    for key, width in pairs(widths()) do writer:write(key .. "=" .. tostring(width) .. "\n") end
+    writer:close()
+end
+
+-- The resize widget's drag: the width only, between the window's least (WIDTH, or wider for what it holds) and
+-- MAX_WIDTH; the height stays the window's own.
+local function resizeToWidth(window, width)
+    width = math.max(window.minimumWidth or InfoWindow.WIDTH, math.min(math.floor(width), InfoWindow.MAX_WIDTH))
+    if width ~= window.width then
+        window:setWidth(width)
+        window.widthToSave = true
+    end
+end
+
+-- A window with a list resizes in width only (vanilla's resize widget at its corner; the bottom edge's is hidden),
+-- from WIDTH to MAX_WIDTH, opening at the width last given a window of the same widthKey (its station type; the
+-- window's class unless it sets one). Made on the first call.
+function InfoWindow:resizeWidth()
+    if self.widthResizes then return end
+    self.widthResizes = true
+    self.minimumWidth = math.max(self.minimumWidth or 0, InfoWindow.WIDTH)
+    self:setResizable(true)
+    if self.resizeWidget2 then self.resizeWidget2:setVisible(false) end
+    self.resizeWidget.resizeFunction = resizeToWidth
+    local saved = widths()[self.widthKey or self.Type]
+    if saved then resizeToWidth(self, saved) end
+    self.widthToSave = false
+end
+
+-- The width given by a drag, kept once the drag ends.
+function keepWidth(window)
+    if not window.widthToSave or window.resizeWidget.resizing then return end
+    window.widthToSave = false
+    widths()[window.widthKey or window.Type] = window.width
+    saveWidths()
+end
+
 -- The pieces, one row each, under a header (label is a translation key) with the sort switch; rows as PieceList's
--- header says, a new table each refresh. Returns the y under the list.
+-- header says, a new table each refresh. The window resizes in width from then on (resizeWidth). Returns the y under
+-- the list.
 function InfoWindow:pieceList(y, label, rows)
+    self:resizeWidth()
     return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, getText(label), rows)
 end
 
@@ -479,6 +543,21 @@ function InfoWindow.buttonLayout(widths, room, gap)
     return placed, #widths > 0 and line + 1 or 0
 end
 
+-- Vanilla's ISButton draws its icon (drawTextureScaled) and image at full alpha, enabled or not: a disabled button's
+-- are drawn at DISABLED_ICON_ALPHA, the title where it always is.
+InfoWindow.DISABLED_ICON_ALPHA = 0.35
+
+local function dimmedTexture(button, texture, x, y, width, height, alpha, r, g, b)
+    if texture == button.iconTexture then alpha = InfoWindow.DISABLED_ICON_ALPHA end
+    ISUIElement.drawTextureScaled(button, texture, x, y, width, height, alpha, r, g, b)
+end
+
+local function renderButton(button)
+    if not button.enable then button.drawTextureScaled = dimmedTexture end
+    ISButton.render(button)
+    button.drawTextureScaled = nil
+end
+
 -- A button on window for entry, made when button is nil, placed at x, top and set from entry. Returns it.
 function placeButton(window, button, entry, x, top, width, height)
     if not button then
@@ -486,6 +565,7 @@ function placeButton(window, button, entry, x, top, width, height)
         button:initialise()
         button:instantiate()
         button.joypadTextureWH = InfoWindow.BUTTON_ICON
+        button.render = renderButton
         window:addChild(button)
     end
     button.target = entry
@@ -495,6 +575,7 @@ function placeButton(window, button, entry, x, top, width, height)
     if button.height ~= height then button:setHeight(height) end
     if button.title ~= entry.title then button:setTitle(entry.title) end
     if button.enable ~= entry.enabled then button:setEnable(entry.enabled) end
+    button.textureColor.a = entry.enabled and 1 or InfoWindow.DISABLED_ICON_ALPHA
     local icon = entry.icon
     if type(icon) == "string" then icon = getTexture(icon) end
     button.iconTexture = icon

@@ -1,5 +1,16 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.36
+- Piece lists draw rows as in `art/all_info_mock.png`: a 32 px icon, the name in bold, a warning (new `warning` field)
+  right-aligned in amber, the bar the row's width under them, the line under the bar as before. A name is cut with
+  "..." only when the warning needs the room. Five rows show before the list scrolls (was eight).
+- The bars in a piece list no longer jitter: vanilla's `clear()` keeps the list's scroll height and `addItem` adds to
+  it, so each refresh drew one frame with a scroll bar and every bar narrower. The list resets it before refilling.
+- A window with a piece list resizes in width only, 400 to 680, from its corner, and opens at the width last given a
+  window of the same station type (kept in `~/Zomboid/Lua/TraditionalPreservationWindowWidths.txt`, not the save).
+- A disabled button draws its icon faded; vanilla draws it at full alpha.
+- `TPC.pieceList(n)`'s sample rows show warnings.
+
 ## 0.1.35
 - The Drying Cloth's window row reads "Drying Cloth Info" (was "Cloth Info"), its title "Drying Cloth"; DEVGUIDE: a
   window row is "<the station's full name> Info", as vanilla's Fireplace Info, and its title the bare name.

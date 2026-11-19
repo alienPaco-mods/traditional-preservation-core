@@ -20,9 +20,15 @@ local made = 0
 ISButton = {}
 function ISButton:new(x, y, width, height, title, target, onclick)
     made = made + 1
-    return setmetatable({ x = x, y = y, width = width, height = height, title = title, target = target, onclick = onclick },
-        { __index = ISButton })
+    return setmetatable({ x = x, y = y, width = width, height = height, title = title, target = target, onclick = onclick,
+        textureColor = { r = 1, g = 1, b = 1, a = 1 } }, { __index = ISButton })
 end
+-- As vanilla's: the icon drawn at full alpha, enabled or not; the stand-in logs the alpha it is drawn at.
+local drawnAlpha
+ISUIElement = {}
+function ISUIElement.drawTextureScaled(_, _, _, _, _, _, alpha) drawnAlpha = alpha end
+function ISButton:drawTextureScaled(...) return ISUIElement.drawTextureScaled(self, ...) end
+function ISButton:render() self:drawTextureScaled(self.iconTexture, 5, 4, 16, 16, 1, 1, 1, 1) end
 function ISButton:initialise() end
 function ISButton:instantiate() end
 function ISButton:setX(x) self.x = x end
@@ -72,5 +78,18 @@ check("a row too wide goes onto new lines", first.y == 200 and second.x == 12
 check("an icon widens its button and is set on it", second.width == first.width + InfoWindow.BUTTON_ICON + 5
     and second.iconTexture and second.iconTexture.name == "media/textures/Item_TPCauldron.png" and first.iconTexture == nil)
 check("the next y is under the last line", nextY == 200 + 3 * InfoWindow.BUTTON_HEIGHT + 2 * InfoWindow.BUTTON_GAP + InfoWindow.BAR_GAP)
+
+-- A disabled button's icon is greyed (drawn at DISABLED_ICON_ALPHA), an enabled one's at full; its image too.
+local window2 = setmetatable({ width = 400, children = {} }, { __index = InfoWindow })
+function window2:addChild(child) table.insert(self.children, child) end
+window2:buttonRow(10, { { title = "Take Done (0)", enabled = false, icon = "Icon_Crafted" },
+    { title = "Take All (3)", enabled = true, icon = "Icon_Returned" } })
+local off, on = window2.buttonsUI[1], window2.buttonsUI[2]
+off:render()
+local offAlpha = drawnAlpha
+on:render()
+check("a disabled button's icon is greyed, an enabled one's whole", offAlpha == InfoWindow.DISABLED_ICON_ALPHA and drawnAlpha == 1
+    and off.textureColor.a == InfoWindow.DISABLED_ICON_ALPHA and on.textureColor.a == 1)
+check("and the button draws as vanilla again after", rawget(off, "drawTextureScaled") == nil)
 
 H.done()

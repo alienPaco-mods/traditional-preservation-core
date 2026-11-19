@@ -39,7 +39,7 @@ function TPC.help()
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
     say(string.format("TPC.cloth()          each Drying Cloth within %d tiles: place, and each lot's kind, count, state, progress and hours left", CLOTH_RADIUS))
     say(string.format("TPC.dryCloth(hours)  every wet lot on the Drying Cloths within %d tiles dries this many hours at full speed (default 24)", CLOTH_RADIUS))
-    say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, tabs, hover popups")
+    say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, tabs, warnings, hover popups")
 end
 
 -- What building each of the core's stations takes ("stoneCauldron" is stone and cauldron together, below).
@@ -412,6 +412,7 @@ local function sampleRows(UI, count)
         rows[i] = { icon = script and script:getNormalTexture(), name = piece[1], share = share, text = text, tab = piece[3],
             colour = share >= 1 and SAMPLE_DONE or (i % 4 == 0 and SAMPLE_SLOW or nil),
             note = i % 3 == 0 and string.format("Cold smoke %.1f of 72 h", share * 72) or nil,
+            warning = i % 4 == 2 and "Wet: rain" or (i % 7 == 0 and "Stale in 3.5 d" or nil),
             popup = function(tooltip)
                 UI.drawTooltip(tooltip, function(layout)
                     UI.addLine(layout, "IGUI_TraditionalPreservationCore_ClothInfoPlace", "Sample")

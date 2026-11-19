@@ -221,16 +221,22 @@ local Weather = require "TraditionalPreservationCore/Weather"
    rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
    along first) and a row of tabs (All and one for each process present, with its count, wrapping onto more lines; none
    with a single process: a row names its `tab`, ordered by `tabOrder`; each window keeps its own tab, back to All when
-   that tab empties), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
-   hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
-   lays it out again only then, or when the tab changes. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
+   that tab empties), one row a piece (a 32 px icon, the name in bold, a `warning` right-aligned in amber, the bar the
+   row's width under them with its text, a line under the bar if given; a name is cut with "..." only when the warning
+   needs the room; five rows show, then it scrolls) and the row's popup on hover, drawn as a crafting slot's
+   (`UI.drawTooltip`). The window builds a new rows table in refresh; the list lays it out again only then, or when
+   the tab or the width changes. A window that draws a list resizes in width only, 400 to 680 (vanilla's corner
+   widget), and opens at the width last given a window of its `widthKey` (its station type: the window's class
+   unless it sets one; the racks set theirs per hanger), kept in `~/Zomboid/Lua/TraditionalPreservationWindowWidths.txt`,
+   the player's, not the save's. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
    `self:dropZone(y, idleText, judge, drop, icon)` (`DropZone.lua`): an always-shown 56 px square, an icon of what it takes beside its text, that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
    its border white (all taken), orange (some taken, `refused` set) or red (none) while held over it;
    `drop(take)` queues the hand jobs, and `refused` shows over the player. `self:buttonRow(y, buttons)` draws
    buttons (`{ title, icon, enabled, tooltip, onClick }`), each as wide as its text (12 px each side, gap 8), wrapping
-   onto a new line; a count goes in brackets in the title ("Take All (5)"), and a disabled one says why in its tooltip.
+   onto a new line; a count goes in brackets in the title ("Take All (5)"), and a disabled one says why in its tooltip
+   and draws its icon faded (vanilla draws it at full alpha).
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

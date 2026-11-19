@@ -11,7 +11,8 @@ require = function(name)
     if name:find("^TraditionalPreservationCore/") then return realRequire(name) end
 end
 
--- Engine stand-ins: every character is 6 wide and a line 10 high, so a plain row is 16 + 3 + 3 = 22 high.
+-- Engine stand-ins: every character is 6 wide and a line 10 high, so a plain row is the 32 px icon (taller than
+-- the name's line, 4 and an 18 px bar) and 4 above and below: 40 high.
 UIFont = { Small = "small" }
 function getTextManager()
     return { getFontHeight = function() return 10 end, MeasureStringX = function(_, _, text) return #text * 6 end }
@@ -37,10 +38,13 @@ ISScrollingListBox = element({ Type = "ISScrollingListBox" })
 function ISScrollingListBox.new(class, x, y, width, height)
     return setmetatable({ x = x, y = y, width = width, height = height, items = {} }, { __index = class })
 end
+-- As vanilla's: clear keeps the scroll height and addItem adds to it.
 function ISScrollingListBox:clear() self.items = {} end
+function ISScrollingListBox:setScrollHeight(height) self.scrollHeight = height end
 function ISScrollingListBox:addItem(name, item)
     local entry = { text = name, item = item, index = #self.items + 1 }
     table.insert(self.items, entry)
+    self.scrollHeight = (self.scrollHeight or 0) + 40
     return entry
 end
 function ISScrollingListBox:isMouseOver() return self.mouseOver == true end
@@ -114,22 +118,25 @@ check("a title wider than the line is cut", lines == 1 and placed[1].width == 10
 local owner = { fitCount = 0 }
 check("a name that fits is as it is", PieceList.fit(owner, "Bluegill", 60) == "Bluegill")
 check("a long one is cut with dots", PieceList.fit(owner, "Bluegill (cold)", 60) == "Bluegil...")
-check("and kept for the next frame", owner.fitCache["Bluegill (cold)"] == "Bluegil..." and owner.fitCount == 2)
+check("and kept for the next frame", owner.fitCache["60|Bluegill (cold)"] == "Bluegil..." and owner.fitCount == 2)
+check("the same text at another width is fitted again", PieceList.fit(owner, "Bluegill (cold)", 90) == "Bluegill (cold)"
+    and owner.fitCount == 3)
 
--- Heights: a plain row 22, one with a note 32; at least one row, at most eight plain rows, and the border's 2.
-check("a plain row and one with a note", PieceList.rowHeight({}) == 22 and PieceList.rowHeight({ note = "x" }) == 32)
-check("an empty list is one row high", PieceList.heightFor({}) == 24)
+-- Heights: a plain row 40, one with a note 50; at least one row, at most five plain rows, and the border's 2.
+check("a plain row and one with a note", PieceList.rowHeight({}) == 40 and PieceList.rowHeight({ note = "x" }) == 50)
+check("a bar tall enough makes the row taller than the icon", PieceList.rowHeight({}, 24) == 10 + 4 + 24 + 8)
+check("an empty list is one row high", PieceList.heightFor({}) == 42)
 local many = {}
 for i = 1, 20 do many[i] = { name = "Fish " .. i, share = i / 20 } end
-check("twenty rows show eight and scroll", PieceList.heightFor(many) == 8 * 22 + 2)
-check("three rows, one with a note, are as high as they are", PieceList.heightFor({ {}, {}, { note = "x" } }) == 22 + 22 + 32 + 2)
+check("twenty rows show five and scroll", PieceList.heightFor(many) == 5 * 40 + 2)
+check("three rows, one with a note, are as high as they are", PieceList.heightFor({ {}, {}, { note = "x" } }) == 40 + 40 + 50 + 2)
 
 -- In a window: the header at y, the switch beside it, the list under it.
 local window = element({ width = 360, children = {} })
 function window:addChild(child) table.insert(self.children, child) end
 local drawn = {}
 function window:drawText(text, x, y) table.insert(drawn, { text = text, x = x, y = y }) end
-local look = { padding = 10, gap = 4, barX = 120, barHeight = 12, label = { 1, 1, 1 }, value = { 1, 1, 1 },
+local look = { padding = 10, gap = 4, barTextPad = 6, barHeight = 12, label = { 1, 1, 1 }, value = { 1, 1, 1 },
     note = { 1, 1, 1 }, barBack = { 0, 0, 0 }, barBorder = { 0, 0, 0 } }
 local nextY = PieceList.draw(window, look, 50, "On the frame", rows)
 local list = window.pieceListUI
@@ -146,7 +153,8 @@ check("four tabs take two lines of 340 (the fourth wraps); the list sits under t
     list.tabButtons[4].x == 10 and list.tabButtons[4].y == 68 + 14 + PieceList.TAB_GAP
     and list.y == 68 + 14 * 2 + PieceList.TAB_GAP + 4 and list.x == 10 and list.width == 340)
 check("its rows are sorted, its height theirs", names(list.rows) == names(rows) and list.items[1].text == "Yellow Perch"
-    and list.height == 4 * 22 + 2)
+    and list.height == 4 * 40 + 2)
+check("laid out again, the scroll height counts the new rows only (the jitter)", list.scrollHeight == 4 * 40)
 check("the next y is under the list", nextY == list.y + list.height + 4)
 
 -- The same rows table again (every frame between refreshes) lays nothing out; a new one does.
@@ -158,7 +166,7 @@ check("the same rows aren't laid out again", list.items[1].marked == true and #w
 list.tabButtons[2]:click()
 PieceList.draw(window, look, 50, "On the frame", rows)
 check("a tab shows its rows, sorted", names(list.items[1] and { list.items[1].item, list.items[2].item } or {}) == "Yellow Perch, Bluegill"
-    and #list.items == 2 and list.height == 2 * 22 + 2 and list.tabButtons[2].backgroundColor == PieceList.TAB_OPEN
+    and #list.items == 2 and list.height == 2 * 40 + 2 and list.tabButtons[2].backgroundColor == PieceList.TAB_OPEN
     and list.tabButtons[1].backgroundColor == PieceList.TAB_SHUT)
 local fewer = { rows[1], rows[3], rows[4] }
 PieceList.draw(window, look, 50, "On the frame", fewer)
@@ -166,7 +174,7 @@ check("new rows keep the tab open while it has pieces", list.tab == "Salt Fish" 
 local fresh = { { name = "Pike", share = 0.9, note = "Cold smoke 30 of 72 h", tab = "Salt Fish" } }
 PieceList.draw(window, look, 50, "On the frame", fresh)
 check("one process: no tabs, every row, the list under the header", #list.items == 1 and list.items[1].text == "Pike"
-    and list.height == 32 + 2 and not list.tabButtons[1]:getIsVisible() and not list.tabButtons[4]:getIsVisible()
+    and list.height == 50 + 2 and not list.tabButtons[1]:getIsVisible() and not list.tabButtons[4]:getIsVisible()
     and list.y == 50 + 14 + 4)
 check("and the tab it had is All again", list.tab == nil)
 PieceList.draw(window, look, 50, "On the frame", { rows[3], rows[4] })
@@ -219,5 +227,41 @@ PieceList.show(window, true)
 PieceList.draw(window, look, 50, "On the frame", rows)
 check("opened again: shown, the tabs at the next draw", list:getIsVisible() and list.sort:getIsVisible()
     and list.tabButtons[1]:getIsVisible())
+
+-- A resized window: the list fills its width, the switch keeps to its right.
+window.width = 500
+PieceList.draw(window, look, 50, "On the frame", rows)
+check("a wider window widens the list and moves the switch", list.width == 480
+    and list.sort.x == 500 - 10 - PieceList.SORT_WIDTH)
+window.width = 360
+PieceList.draw(window, look, 50, "On the frame", rows)
+
+-- A row drawn: the name bold (twice, a pixel apart) at 48, the warning right-aligned 20 short of the edge, the bar
+-- from 48 to there; the name is cut only when the warning needs the room.
+local function drawRow(row, width)
+    local canvas = setmetatable({ width = width, height = 200, colours = look, texts = {}, rects = {}, fitCount = 0,
+        mouseoverselected = 0 }, { __index = list })
+    function canvas:getYScroll() return 0 end
+    function canvas:isMouseOver() return false end
+    function canvas:drawText(text, x, y) table.insert(self.texts, { text = text, x = x, y = y }) end
+    function canvas:drawTextCentre(text, x, y) table.insert(self.texts, { text = text, x = x, y = y, centre = true }) end
+    function canvas:drawRect(x, y, w, h) table.insert(self.rects, { x = x, y = y, w = w, h = h }) end
+    function canvas:drawRectBorder() end
+    function canvas:drawTextureScaledAspect(_, x, y, w, h) self.icon = { x = x, y = y, w = w, h = h } end
+    local bottom = canvas:doDrawItem(0, { item = row, height = 40, index = 1 })
+    return canvas, bottom
+end
+local drawnRow, bottom = drawRow({ name = "Pork (Corned)", warning = "Wet: rain", share = 0.2, text = "20%, 6 d", icon = "pork" }, 300)
+local texts = drawnRow.texts
+check("the warning sits right, 20 short of the edge", texts[1].text == "Wet: rain" and texts[1].x == 300 - 20 - 9 * 6)
+check("the name is bold at 48, whole when it fits", texts[2].text == "Pork (Corned)" and texts[2].x == 48
+    and texts[3].text == "Pork (Corned)" and texts[3].x == 49)
+check("the bar runs from 48 to the warning's edge, under the name", drawnRow.rects[1].x == 48 and drawnRow.rects[1].w == 300 - 20 - 48
+    and drawnRow.rects[1].y == 4 + 10 + 4 and drawnRow.rects[2].w == (300 - 20 - 48) * 0.2)
+check("the icon is 32 px at 6", drawnRow.icon.x == 6 and drawnRow.icon.w == 32 and bottom == 40)
+local cut = drawRow({ name = "Leg of Pork (Country Cured)", warning = "Stale in 3.5 d", share = 0.5 }, 300).texts
+check("a long name gives way to the warning", cut[2].text:sub(-3) == "..." and 48 + #cut[2].text * 6 + 1 <= 300 - 20 - 14 * 6 - 12)
+local whole = drawRow({ name = "Leg of Pork (Country Cured)", share = 0.5 }, 300).texts
+check("without a warning it is whole", whole[1].text == "Leg of Pork (Country Cured)")
 
 H.done()

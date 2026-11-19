@@ -18,10 +18,10 @@ local squareAt = Station.squareAt
 local Smokehouse = {}
 
 -- Inside the chamber: a station, not a place. Its word (UI.placeName: "In the Smokehouse") is what a mod's stacks
--- carry, and the shed has an open roof's air, the season's mean (Weather.STATION_PLACES); the still air, out of the
--- rain and wind, is each mod's to count. Save value: never rename it.
+-- carry, and the shed has an aired room's air, the day's mean (Weather.STATION_PLACES; never the grid's 22 C); the
+-- still air, out of the rain and wind, is each mod's to count. Save value: never rename it.
 Smokehouse.PLACE = "Smokehouse"
-Smokehouse.AIR = "Covered"
+Smokehouse.AIR = "AiredRoom"
 Weather.STATION_PLACES[Smokehouse.PLACE] = Smokehouse.AIR
 
 -- The connection's id: its save key in tpFire, never renamed.

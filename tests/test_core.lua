@@ -4,6 +4,7 @@ local check, near = H.check, H.near
 
 package.path = "42/media/lua/shared/?.lua;" .. package.path
 local Weather = require "TraditionalPreservationCore/Weather"
+local Windows = require "TraditionalPreservationCore/Windows"
 local Station = dofile("42/media/lua/shared/TraditionalPreservationCore/Station.lua")
 
 -- Weather
@@ -27,59 +28,161 @@ check("a batch paused there has no time left", Weather.batchStatus(5, 10, { temp
 check("a running batch's recipe hours are its script time", Weather.recipeHours({ getRecipe = function()
     return { getTime = function() return 5 * 3600 end } end }) == 5)
 local ledger = { temperature = 30, seasonTemperature = 12 }
-check("place: open goes by the day", Weather.placeTemperature(ledger, "Open") == 30)
-check("place: a room by the season, a little warmer in a cool one", near(Weather.placeTemperature(ledger, "Sheltered"), 13.5))
-check("room: 2 C warmer from a 10 C season down, nothing from 18 C up", Weather.roomTemperature(-5) == -3
-    and Weather.roomTemperature(10) == 12 and near(Weather.roomTemperature(14), 15) and Weather.roomTemperature(18) == 18
-    and Weather.roomTemperature(25) == 25)
-check("place: an open roof by the season too", Weather.placeTemperature(ledger, "Covered") == 12)
+check("place: open goes by the hour", Weather.placeTemperature(ledger, "Open") == 30)
+check("place: an open roof by the hour too", Weather.placeTemperature(ledger, "Covered") == 30)
+check("place: a shut room with no three-day mean yet by the season, a little warmer in a cool one",
+    near(Weather.placeTemperature(ledger, "Sheltered"), 13.5))
+check("place: a shut room by the three-day mean", near(Weather.placeTemperature({ temperature = 30, seasonTemperature = 12,
+    threeDayTemperature = 4 }, "Sheltered"), 6))
+check("room: 2 C warmer from a 10 C mean down, nothing at 18 C", Weather.roomTemperature(-5) == -3
+    and Weather.roomTemperature(10) == 12 and near(Weather.roomTemperature(14), 15) and Weather.roomTemperature(18) == 18)
+check("room: stuffy in summer, up to 2 C from a 21 C mean", near(Weather.roomTemperature(19.5), 20.5)
+    and Weather.roomTemperature(21) == 23 and Weather.roomTemperature(25) == 27)
+check("aired room: 1 C warmer from a 10 C mean down, nothing from 18 C, never stuffy",
+    Weather.airedRoomTemperature(-5) == -4 and near(Weather.airedRoomTemperature(14), 14.5)
+    and Weather.airedRoomTemperature(25) == 25)
+check("place: an aired room by the day's mean, by the hour with none yet",
+    Weather.placeTemperature({ temperature = 30, seasonTemperature = 12, dayTemperature = 0 }, "AiredRoom") == 1
+    and Weather.placeTemperature(ledger, "AiredRoom") == 30)
 check("place: a basement with no ground mean yet swings two fifths as far as the season", near(Weather.placeTemperature(ledger, "Basement"), 10.8))
 check("place: a basement goes by the ground once there is one", near(Weather.placeTemperature({ temperature = 30, seasonTemperature = 12,
     groundTemperature = 20 }, "Basement"), 14))
 check("basement: about 5 C at the ground's coldest (March), 13 at its warmest (August)", near(Weather.basementTemperature(-2.6), 4.96)
     and near(Weather.basementTemperature(18.6), 13.44))
-check("place: a room is 22 C while the grid is on, an open roof and a basement are not",
-    Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Sheltered") == Weather.GRID_ROOM_C
-    and Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Covered") == -5
-    and Weather.placeTemperature({ temperature = 0, seasonTemperature = -5, gridOn = true }, "Basement") < 10)
+local gridOn = { temperature = 0, seasonTemperature = -5, gridOn = true }
+check("place: both rooms are 22 C while the grid is on, an open roof and a basement are not",
+    Weather.placeTemperature(gridOn, "Sheltered") == Weather.GRID_ROOM_C
+    and Weather.placeTemperature(gridOn, "AiredRoom") == Weather.GRID_ROOM_C
+    and Weather.placeTemperature(gridOn, "Covered") == 0 and Weather.placeTemperature(gridOn, "Basement") < 10)
 check("basement: the anchor holds still", Weather.basementTemperature(Weather.BASEMENT_ANCHOR) == Weather.BASEMENT_ANCHOR)
+Weather.STATION_PLACES.TestShed = "AiredRoom"
+check("a station's inside goes by the air it names (the Smokehouse: an aired room's), never the grid's",
+    Weather.placeTemperature({ temperature = 2, seasonTemperature = 8, dayTemperature = 12, gridOn = true }, "TestShed") == 12.75)
+Weather.STATION_PLACES.TestShed = nil
+
+-- Squares: a small world of them, in rooms or not, with windows on their north and west edges.
+H.installClock(0)
+function instanceof(object, name) return type(object) == "table" and object.class == name end
+local world = {}
+getCell = function() return { getGridSquare = function(_, x, y, z) return world[x .. "," .. y .. "," .. z] end } end
+local function square(x, y, z, roomId, region)
+    local sq = { objects = {} }
+    function sq:getX() return x end
+    function sq:getY() return y end
+    function sq:getZ() return z end
+    function sq:isOutside() return roomId == nil and region == nil end
+    function sq:isInARoom() return roomId ~= nil or region ~= nil end
+    function sq:getRoomID() return roomId or -1 end
+    function sq:getIsoWorldRegion()
+        return region and { isPlayerRoom = function() return true end, getID = function() return region end } or nil
+    end
+    function sq:getObjects()
+        local list = sq.objects
+        return { size = function() return #list end, get = function(_, index) return list[index + 1] end }
+    end
+    world[x .. "," .. y .. "," .. z] = sq
+    return sq
+end
+-- A 3 x 3 room (id 7) at 0..2, 0..2 on level z, with the outside round it; a neighbouring room (id 8) to the east at x 3.
+local function house(z, room, region)
+    for x = -1, 4 do
+        for y = -1, 3 do
+            local inside = x >= 0 and x <= 2 and y >= 0 and y <= 2
+            local next = x == 3 and y >= 0 and y <= 2
+            square(x, y, z, inside and room or (next and 8 or nil), inside and region or nil)
+        end
+    end
+end
+local function window(state)
+    local w = { class = "IsoWindow", north = state.north or false }
+    function w:isNorth() return self.north end
+    function w:IsOpen() return state.open or false end
+    function w:isSmashed() return state.smashed or false end
+    function w:isGlassRemoved() return state.glassRemoved or false end
+    function w:isBarricaded() return state.barricaded or false end
+    return w
+end
+local function frame(state)
+    local f = { class = "IsoWindowFrame" }
+    function f:isNorth() return state.north or false end
+    function f:hasWindow() return state.hasWindow or false end
+    function f:isBarricaded() return state.barricaded or false end
+    return f
+end
+local function on(isoObject, x, y, z)
+    Windows.forget()
+    world[x .. "," .. y .. "," .. z].objects = { isoObject }
+    return isoObject
+end
+local function standing(x, y, z) return { getSquare = function() return world[x .. "," .. y .. "," .. z] end } end
+house(0, 7)
+check("placeOf: a room with every window shut is sheltered", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+on(window({ open = true }), 0, 1, 0)
+check("placeOf: an open window on the room's west wall airs it, wherever the station stands in the room",
+    Weather.placeOf(standing(1, 1, 0)) == "AiredRoom" and Weather.placeOf(standing(2, 2, 0)) == "AiredRoom")
+on(window({ open = true, barricaded = true }), 0, 1, 0)
+check("placeOf: a barricaded one doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+on(window({ smashed = true }), 0, 1, 0)
+check("placeOf: a smashed window airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+on(window({ glassRemoved = true }), 0, 1, 0)
+check("placeOf: so does one with its glass taken out", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+on(window({}), 0, 1, 0)
+check("placeOf: a shut window doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+on(window({ open = true, north = true }), 1, 0, 0)
+check("placeOf: an open window on the north wall", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+world["1,0,0"].objects = {}
+on(window({ open = true, north = true }), 1, 3, 0)
+check("placeOf: on the south wall (the square south of the room holds it)", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+world["1,3,0"].objects = {}
+on(frame({}), 0, 2, 0)
+check("placeOf: an empty window frame airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+on(frame({ barricaded = true }), 0, 2, 0)
+check("placeOf: not once boarded", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+on(frame({ hasWindow = true }), 0, 2, 0)
+check("placeOf: a frame with a window in it goes by the window", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["0,2,0"].objects = {}
+on(window({ open = true }), 3, 1, 0)
+check("placeOf: an open window into the next room doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["3,1,0"].objects = {}
+on(window({ open = true, north = true }), 1, 0, 0)
+Weather.placeOf(standing(1, 1, 0))
+H.setHours(1 / 12)
+world["1,0,0"].objects[1] = window({ north = true })
+check("placeOf: a room's answer holds for the reading", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+H.setHours(1 / 6)
+check("a window shut counts from the next reading", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+Weather.placeOf(standing(3, 1, 0))
+local both = Windows.keptCount()
+H.setHours(2 / 6)
+Weather.placeOf(standing(1, 1, 0))
+check("a new reading keeps only the rooms looked at since", both == 2 and Windows.keptCount() == 1)
+house(1, nil, 42)
+local built = { class = "IsoThumpable" }
+function built:isWindow() return true end
+function built:isWindowN() return false end
+function built:isWindowW() return true end
+function built:IsOpen() return true end
+function built:isBarricaded() return false end
+on(built, 0, 1, 1)
+check("placeOf: a room a player built (a world region), upstairs, with its built window open", Weather.placeOf(standing(1, 1, 1)) == "AiredRoom")
+function built:IsOpen() return false end
+Windows.forget()
+check("placeOf: shut, sheltered", Weather.placeOf(standing(1, 1, 1)) == "Sheltered")
 
 local function object(z, outside)
-    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return outside end,
-        isInARoom = function() return not outside end } end }
+    return { getSquare = function() return square(9, 9, z, not outside and 99 or nil) end }
 end
 check("placeOf: below ground", Weather.placeOf(object(-1, false)) == "Basement")
 check("placeOf: in a room", Weather.placeOf(object(0, false)) == "Sheltered")
 check("placeOf: outdoors", Weather.placeOf(object(1, true)) == "Open")
-local function storey(z, roomAbove)
-    local above = roomAbove ~= nil and { isInARoom = function() return roomAbove end } or nil
-    return { getSquare = function() return { getZ = function() return z end, isOutside = function() return false end,
-        isInARoom = function() return true end, getSquareAbove = function() return above end } end }
-end
-check("placeOf: the top storey is a loft, under a roof's square or under nothing", Weather.placeOf(storey(1, false)) == "Loft"
-    and Weather.placeOf(storey(3)) == "Loft")
-check("placeOf: a storey with a room over it is a room", Weather.placeOf(storey(1, true)) == "Sheltered")
-check("placeOf: the ground floor is a room, whatever is over it", Weather.placeOf(storey(0, false)) == "Sheltered"
-    and Weather.placeOf(storey(0, true)) == "Sheltered")
-check("a loft is a room's temperature in the cold months", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4 }, "Loft") == 6
-    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 10 }, "Loft") == 12)
-check("and warmer under the roof in summer", math.abs(Weather.placeTemperature({ temperature = 25, seasonTemperature = 20 }, "Loft") - 23) < 1e-9)
-Weather.STATION_PLACES.TestShed = "Covered"
-check("a station's inside goes by the air it names (the Smokehouse: an open roof's)",
-    Weather.placeTemperature({ temperature = 2, seasonTemperature = 8, gridOn = true }, "TestShed") == 8)
-Weather.STATION_PLACES.TestShed = nil
-check("a loft is 22 C while the grid is on", Weather.placeTemperature({ temperature = 2, seasonTemperature = 4, gridOn = true }, "Loft") == Weather.GRID_ROOM_C)
 -- A player under a floor with no walls: the player's own isOutside() says yes (not in a room), the square says no.
 local player = object(0, false)
 function player:isOutside() return true end
 check("placeOf: asks the square, not a player", Weather.placeOf(player) == "Sheltered")
 check("placeOf: nothing to stand on is open", Weather.placeOf({ getSquare = function() return nil end }) == "Open")
-local function roofed(inRoom)
-    return { getSquare = function() return { getZ = function() return 0 end, isOutside = function() return false end,
-        isInARoom = function() return inRoom end } end }
-end
-check("placeOf: a porch is covered", Weather.placeOf(roofed(false)) == "Covered")
-check("placeOf: a room is sheltered", Weather.placeOf(roofed(true)) == "Sheltered")
+local porch = square(20, 20, 0)
+function porch:isOutside() return false end
+check("placeOf: a porch is covered", Weather.placeOf({ getSquare = function() return porch end }) == "Covered")
 
 local kinds = { [""] = function(celsius) return celsius >= 10 and 1 or 0.5 end }
 ledger = Weather.newLedger(0, kinds)
@@ -88,7 +191,8 @@ check("ledger: zero totals for every place", ledger.Open == 0 and ledger.Covered
 check("advance: nothing when no time has passed", Weather.advance(ledger, 0, 20, kinds) == nil)
 check("advance: returns its hours", Weather.advance(ledger, 2, 5, kinds) == 2)
 check("advance: open counts the day", ledger.Open == 1 and ledger.OpenRate == 0.5)
-check("advance: a room and an open roof count the season", ledger.Sheltered == 1 and ledger.Covered == 1)
+check("advance: an open roof counts the hour, a room its means", ledger.Covered == 1 and ledger.Sheltered == 1
+    and ledger.AiredRoom == 1 and near(ledger.threeDayTemperature, 5) and near(ledger.dayTemperature, 5))
 check("advance: the first record is the season", near(ledger.seasonTemperature, 5))
 Weather.advance(ledger, 2 + Weather.SEASON_HOURS * 2, 25, kinds)
 check("season: a gap longer than a season replaces it", near(ledger.seasonTemperature, 25))

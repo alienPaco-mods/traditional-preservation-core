@@ -19,7 +19,7 @@ local function say(text) print("[TPC] " .. text) end
 function TPC.help()
     say("TPC.weather()        the series' weather: temperature now, the season's mean, and each place's temperature")
     say("TPC.here()           which place you're standing in, and its temperature")
-    say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
+    say("TPC.setWeather(c, season, ground) pretend the weather: the day's temperature (the engine's override), the season's mean and the rooms' (default c) and the ground's (default: left alone). The mods read it at the next ten game minutes. TPC.setWeather() ends it")
     say("TPC.speed(x)         game speed: the clock x times as fast (vanilla's buttons are 1, 5, 20, 40 and set it back); no x shows it")
     say("TPC.kit(kind)        what a station takes to build: \"stoneCauldron\" (the default: the Stone Hearth and Fit Cauldron's kit), \"stone\" (the Stone Hearth, Masonry 2), \"cauldron\" (Fit Cauldron: the Forged Cauldron, 2 metal pipes, a heavy chain, a large hook and pliers), \"forge\" (Forge the cauldron at a forge, Blacksmith 4, and the magazine that teaches it), \"smokehouse\" (Woodwork 3), \"flue\" (both flue kits and their tools) or \"hole\" (a stove food, an oven food and a pot to fill, for the hole's looks). TPC.kit(\"?\") lists them")
     say(string.format("TPC.cauldronInfo()   the nearest Stone Hearth with the Cauldron within %d tiles: fire (lit, banked or out), fuel, the cauldron, when it steams", Fire.FIRE_RADIUS))
@@ -117,14 +117,16 @@ function TPC.setWeather(celsius, season, ground)
     local temperature = getClimateManager():getClimateFloat(ClimateManager.FLOAT_TEMPERATURE)
     if not celsius then
         temperature:setEnableAdmin(false)
-        return say("Weather override off: the day's temperature is the game's again, and the season's mean follows it over about ten days.")
+        return say("Weather override off: the day's temperature is the game's again; the rooms follow it over one to three days, the season's mean over about ten.")
     end
     temperature:setEnableAdmin(true)
     temperature:setAdminValue(celsius)
     local weatherModData = Weather.weatherModData()
     weatherModData.seasonTemperature = season or celsius
+    -- A shut room's and an aired room's means start there too, as if the weather had held.
+    weatherModData.threeDayTemperature, weatherModData.dayTemperature = season or celsius, season or celsius
     if ground then weatherModData.groundTemperature = ground end
-    say(string.format("Weather set: %.1f C now, season %.1f C, ground %.1f C. The mods read it at the next ten game minutes (run the clock); TPC.weather() shows it then.",
+    say(string.format("Weather set: %.1f C now, season and rooms %.1f C, ground %.1f C. The mods read it at the next ten game minutes (run the clock); TPC.weather() shows it then.",
         celsius, weatherModData.seasonTemperature, weatherModData.groundTemperature or weatherModData.seasonTemperature))
 end
 

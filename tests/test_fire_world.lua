@@ -42,8 +42,8 @@ local World = require "TraditionalPreservationCore/FireWorld"
 local Smokehouse = require "TraditionalPreservationCore/Smokehouse"
 getSprite = function(name) return { getName = function() return name end } end
 
-local square = { getX = function() return 5 end, getY = function() return 6 end, getZ = function() return 0 end,
-    isOutside = function() return false end, isInARoom = function() return true end }
+local square = H.shutRoom({ getX = function() return 5 end, getY = function() return 6 end, getZ = function() return 0 end,
+    isOutside = function() return false end, isInARoom = function() return true end })
 cell.squares["5,6,0"] = square
 -- Built when the fire box held 10: the save keeps a container's capacity.
 local container = { custom = 0, processed = 0, capacity = 10, getItems = function() return H.list({}) end }

@@ -179,13 +179,21 @@ function H.installGetText(texts)
     end
 end
 
+-- Gives a fake square what Core's window check asks of a room (Windows.roomKey): in no map room nor built one, so a
+-- square in a room reads as a shut room. Returns the square.
+function H.shutRoom(square)
+    square.getRoomID = function() return -1 end
+    square.getIsoWorldRegion = function() return nil end
+    return square
+end
+
 -- A player for a Dev console or a menu: stands at at.x, at.y, at.z (in a room unless at.outside) and keeps the
 -- full types it was given in .given.
 function H.player(at)
     at = at or {}
     local x, y, z = at.x or 0, at.y or 0, at.z or 0
-    local square = { getX = function() return x end, getY = function() return y end, getZ = function() return z end,
-        isOutside = function() return at.outside == true end, isInARoom = function() return at.outside ~= true end }
+    local square = H.shutRoom({ getX = function() return x end, getY = function() return y end, getZ = function() return z end,
+        isOutside = function() return at.outside == true end, isInARoom = function() return at.outside ~= true end })
     local player = { given = {} }
     -- What AddItem gives back takes the setters a console calls on a new item.
     local function given(fullType)

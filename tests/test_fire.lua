@@ -392,11 +392,13 @@ check("a fire keeps its warmth whatever the weather", Weather.placeTemperature(l
     and Weather.placeTemperature(ledger, "Open") == -10)
 check("banked embers are a cooler place by a fire", Weather.placeTemperature(ledger, Fire.EMBERS) == Fire.EMBERS_C
     and Fire.EMBERS_C < Fire.FIRE_C and Fire.isFirePlace(Fire.EMBERS) and not Fire.isFirePlace("Open"))
-check("a fire in a January field warms the day's air by 10, under an open roof the season's by 15",
-    Weather.placeTemperature(ledger, "FiresideOpen") == 0 and Weather.placeTemperature(ledger, "FiresideCovered") == 10
-    and Fire.isFirePlace("FiresideOpen") and Fire.isFirePlace("EmbersCovered"))
-check("banked embers outside add 5 in the open, 10 under a roof", Weather.placeTemperature(ledger, "EmbersOpen") == -5
-    and Weather.placeTemperature(ledger, "EmbersCovered") == 5)
+check("a fire in a January field warms the air by 10, under an open roof and in an aired room by 15",
+    Weather.placeTemperature(ledger, "FiresideOpen") == 0 and Weather.placeTemperature(ledger, "FiresideCovered") == 5
+    and near(Weather.placeTemperature(ledger, "FiresideAiredRoom"), 6) and Fire.isFirePlace("FiresideOpen")
+    and Fire.isFirePlace("EmbersCovered") and Fire.isFirePlace("EmbersAiredRoom"))
+check("banked embers outside add 5 in the open, 10 under a roof and in an aired room",
+    Weather.placeTemperature(ledger, "EmbersOpen") == -5 and Weather.placeTemperature(ledger, "EmbersCovered") == 0
+    and near(Weather.placeTemperature(ledger, "EmbersAiredRoom"), 1))
 local summer = { temperature = 25, seasonTemperature = 22 }
 check("never warmer than by a fire indoors", Weather.placeTemperature(summer, "FiresideOpen") == Fire.FIRE_C
     and Weather.placeTemperature(summer, "EmbersCovered") == Fire.EMBERS_C)
@@ -404,7 +406,7 @@ check("fireC: indoors needs no ledger, outside does", Fire.fireC(Fire.PLACE) == 
     and Fire.fireC("FiresideOpen") == nil and Fire.fireC("FiresideOpen", ledger) == 0 and Fire.fireC("Open", ledger) == nil)
 check("firePlace: the fire's own place outside, plain indoors", Fire.firePlace(Fire.PLACE, "Open") == "FiresideOpen"
     and Fire.firePlace(Fire.EMBERS, "Covered") == "EmbersCovered" and Fire.firePlace(Fire.PLACE, "Basement") == Fire.PLACE
-    and Fire.firePlace(Fire.PLACE, "Loft") == Fire.PLACE)
+    and Fire.firePlace(Fire.PLACE, "Sheltered") == Fire.PLACE and Fire.firePlace(Fire.EMBERS, "AiredRoom") == "EmbersAiredRoom")
 local stationModData = {}
 Fire.noteFire(stationModData, nil, nil, 5)
 check("no fire, no notes", stationModData.fireUntil == nil and stationModData.placeWithoutFire == nil)

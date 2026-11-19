@@ -199,18 +199,19 @@ A fire warms what stands beside it. Yeast's shelf, Vinegar's floor, vessel and c
 
 | Place | What makes it | Temperature |
 |---|---|---|
-| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Stone Hearth, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** indoors |
-| **By banked embers** | A banked Stone Hearth within 2 tiles, with no full fire in reach | **24 C** indoors |
+| **By a fire** | Any lit fire within 2 tiles, on the same floor: a Stone Hearth, a fireplace, an antique stove, a brazier or a campfire. Never an electric or gas stove | **28 C** in a shut room |
+| **By banked embers** | A banked Stone Hearth within 2 tiles, with no full fire in reach | **24 C** in a shut room |
 
-**Indoors** (a room, a loft, a basement) the walls keep the fire's heat in, whatever the weather. **Outside** the air carries it off, so a fire there only warms the air it stands in, never past the indoor heat:
+**In a shut room** (or a basement) the walls keep the fire's heat in, whatever the weather. **With a window open, or outside,** the air carries it off, so a fire there only warms the air it stands in, never past the shut room's heat:
 
 | Where the fire stands | Lit | Banked |
 |---|---|---|
-| Indoors | 28 C | 24 C |
-| Under an open roof | the 10-day average **+15 C**, up to 28 | the 10-day average **+10 C**, up to 24 |
-| In the open | the day's weather **+10 C**, up to 28 | the day's weather **+5 C**, up to 24 |
+| A shut room | 28 C | 24 C |
+| An aired room | the room's air **+15 C**, up to 28 | the room's air **+10 C**, up to 24 |
+| Under an open roof | the air **+15 C**, up to 28 | the air **+10 C**, up to 24 |
+| In the open | the air **+10 C**, up to 28 | the air **+5 C**, up to 24 |
 
-So a campfire in a January field (−4 C) holds a station at about 6 C, a porch fire about 11 C: a culture by either still works, only slower. In summer every fire reaches its full heat. The station's window says which: *By a fire*, *By a fire, under a roof*, *By a fire, in the open*.
+So a campfire in a January field (−4 C) holds a station at about 6 C, a porch fire about 11 C, a fire in a room with its window open about 12 C: a culture by any of them still works, only slower. In summer every fire reaches its full heat. The station's window says which: *By a fire*, *By a fire, aired room*, *By a fire, under a roof*, *By a fire, in the open*.
 
 > *Margin note:* a fire heats by radiation, and only on the side that faces it. Indoors the walls and the air between them warm up and stay warm; out of doors the wind takes the warm air as fast as the fire makes it. A shepherd by his fire on a winter night is warm in front and frosted at the back.
 
@@ -226,29 +227,33 @@ Every station in the series works by the temperature of **where it stands**. The
 
 | Place | When | Temperature |
 |---|---|---|
-| **Open air** | Nothing overhead | The day's weather, hour by hour |
-| **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The average outdoor temperature of the last 10 days |
-| **Indoors** | A room: walls and a whole roof, built by you or found | The average outdoor temperature of the last 10 days, **2 C warmer in the cold months** (in full when that average is 10 C or below, less as it nears 18 C, none above); **22 C while the power grid is on** |
-| **Loft** | The top storey: a room upstairs with no room over it | As indoors, plus three tenths of whatever the 10-day average is above 10 C: the sun on the roof (about 24 C in a 21 C July, no warmer than a room from October to April); 22 C while the power grid is on |
+| **Open air** | Nothing overhead | The weather, hour by hour |
+| **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The same: a roof keeps off rain and sun, not the cold |
+| **Indoors** (a shut room) | A room (walls and a whole roof, built by you or found) with every window to the outside shut or boarded | The average of the last **3 days**, **2 C warmer in the cold months** and **up to 2 C warmer in summer** (stuffy: the sun through the glass, nowhere for the heat to go); **22 C while the power grid is on** |
+| **Aired room** | A room with a window to the outside open, smashed, with its glass taken out or an empty frame, and not boarded | The day's average, at most 1 C warmer in winter, never stuffy; 22 C while the power grid is on. Anything drying by air dries here as on a porch |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 | *In the Smokehouse* | Not a place of its own: what hangs inside the Smokehouse | As under an open roof, but out of the rain and wind; the power grid doesn't warm it |
 
+**Drying wants moving air.** Salt fish, charque, hams, stockfish, onions and garlic, kefir grains on a cloth: all of them dry in the open, on a porch or in an aired room, and stand still in a shut room until you open a window. Barrels, tubs, crocks, shelves and crates only mind the temperature.
+
 > *Margin note:* four walls with no roof are still open air. A shed you build with walls and a whole roof is a room, as vanilla sees it; one open on a side is under an open roof. Inside the Smokehouse the air is an open shed's, only still: what hangs there dries slower than on a porch, out of the wind, and never gets rained on.
 
-> *Margin note:* why ten days? Walls follow the season, not the afternoon. One warm day in January does nothing, but spring still arrives within a fortnight. An unheated house is nearly as cold as the season: in Kentucky's January that is still below freezing. It keeps a couple of degrees over the air in winter (its mass, the people in it, the sun through the glass), but no more: a house with no fire freezes the water in its pipes. Vanilla's rooms start from the outdoor temperature with the grid off.
+> *Margin note:* the ground floor of most houses is boarded up, so the room with its window open is usually upstairs. A window takes up to 10 minutes to count once you open or shut it.
+
+> *Margin note:* why three days? Walls follow the weather slowly. One warm afternoon in January does nothing to a shut room, but a week of thaw does. An unheated house is nearly as cold as the weather: in Kentucky's January that is still below freezing. It keeps a couple of degrees over the air in winter (its mass, the people in it, the sun through the glass), and in summer it gets stuffy. Open a window and it follows the air within a degree. Vanilla's rooms start from the outdoor temperature with the grid off.
 
 > *Margin note:* a cellar runs a month behind the weather. It is coldest in March and warmest in August, so it is cool in spring when the house is warming and mild in autumn when the house is cold. In a new game the basement takes about a month to settle: half a degree warm in the first July.
 
-| Month | Under an open roof (the 10-day average) | Indoors | Loft | Basement |
+| Month | Outdoors and under a roof | Aired room | Shut room | Basement |
 |---|---|---|---|---|
-| January | −4 C | −2 C | −2 C | 5 C |
-| March | 1 C | 3 C | 3 C | 5 C |
-| April | 6 C | 8 C | 8 C | 7 C |
-| May | 13 C | 14 C | 15 C | 9 C |
-| July | 21 C | 21 C | 24 C | 13 C |
-| September | 15 C | 16 C | 17 C | 13 C |
-| October | 9 C | 11 C | 11 C | 12 C |
-| November | 3 C | 5 C | 5 C | 9 C |
+| January | −5 C | −3 C | −2 C | 5 C |
+| March | 3 C | 4 C | 4 C | 5 C |
+| April | 9 C | 9 C | 10 C | 7 C |
+| May | 16 C | 16 C | 16 C | 9 C |
+| July | 21 C | 21 C | 22 C | 13 C |
+| September | 15 C | 15 C | 16 C | 13 C |
+| October | 7 C | 8 C | 10 C | 12 C |
+| November | −1 C | 1 C | 2 C | 9 C |
 
 *(The game's own sampled year, which runs colder than real Kentucky.)*
 
@@ -261,7 +266,7 @@ Each mod has its own idea of a good temperature, and its own **Temperature sensi
 | Normal | As written in each guide |
 | Harsh | Half as much again |
 
-Once the grid is off, a winter batch wants a fire beside it (chapter 7).
+Once the grid is off, an autumn or winter batch wants a fire beside it (chapter 7).
 
 ---
 
@@ -269,7 +274,7 @@ Once the grid is off, a winter batch wants a fire beside it (chapter 7).
 
 In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and keeps its age for it wherever it sits: a bucket, a bottle, the Forged Cauldron.
 
-- **It ages by its place**, like a station: open air, under an open roof, indoors, in a loft or in a basement. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
+- **It ages by its place**, like a station: open air, under an open roof, a shut room, an aired room or a basement. A **powered fridge** counts as 4 C, and a **powered freezer** stops it.
 - **Pouring never makes it young.** Mix two lots and the older age wins.
 - **In the cauldron it ages too**, and a cauldron that has steamed for the mod's hold (Dairy: 20 minutes) scalds it.
 - **Some can be cured.** A mod may let you stir something in to keep a fluid longer. Right-click the container: its own submenu (*Bucket*, beside the game's options) has the cure, one line for each thing you can use, saying how much of it you have; its note says what it takes, and a greyed line says why not. Cured fluid poured into cured stays cured; fresh poured in makes the lot fresh again.

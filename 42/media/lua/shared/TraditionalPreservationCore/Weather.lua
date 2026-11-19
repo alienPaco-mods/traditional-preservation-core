@@ -8,38 +8,47 @@
 -- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
 -- A craft recipe's bar and clock (startRun, showProgress, setRecipeHours, recipeHours, startClock, showClock,
 -- batchStatus) are CraftClock's; Weather passes them on, so callers name Weather only.
+local Windows = require "TraditionalPreservationCore/Windows"
+
 local Weather = {}
 
--- Outdoors goes by the day; a room (Sheltered) and an open roof (Covered: a porch, an open shed) by the season,
--- the mean of the last ten days or so, as an unheated house or shed would; a room a little warmer in winter (ROOM_LIFT). A basement follows the ground: the
--- season's mean over a further GROUND_HOURS (a month behind, so a cellar is coldest in March and warmest in August),
--- and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the ground round it keeps it cool in summer and above frost
--- in winter (about 5 C to 13). A loft (a room above the ground floor with no room over it: the top storey, under the roof) is the basement's mirror: a room in the cold
--- months, and under the sun on the roof LOFT_LIFT of the season's distance above LOFT_ANCHOR warmer (about 24 C in
--- a 21 C July). Every place is a square's: the Smokehouse is a station, not a place, and its air is Covered's
--- (Smokehouse.PLACE).
-Weather.PLACES = { "Open", "Covered", "Sheltered", "Loft", "Basement" }
+-- Outdoors and under an open roof (Covered: a porch, an open shed) go by the hour's air: a roof keeps off rain and
+-- sun, which are each process's own rules, not the air's. A shut room (Sheltered: every window shut or barricaded)
+-- lags the weather by its walls, the mean of the last three days (ROOM_HOURS), a few degrees warmer in winter
+-- (ROOM_LIFT) and stuffy in summer (ROOM_SUMMER_LIFT). An aired room (a window open, smashed, without its glass or an
+-- empty frame; Windows.aired) follows the day's mean (AIRED_HOURS), at most AIRED_LIFT warmer in winter. A basement
+-- follows the ground: the season's mean (SEASON_HOURS, about ten days) over a further GROUND_HOURS (a month behind,
+-- so a cellar is coldest in March and warmest in August), and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the
+-- ground round it keeps it cool in summer and above frost in winter (about 5 C to 13). Every place is a square's:
+-- the Smokehouse is a station, not a place, and its air is an aired room's (Smokehouse.PLACE).
+-- Save values: a station's noted place and the ledger's totals are named by these. Never rename them.
+Weather.PLACES = { "Open", "Covered", "Sheltered", "AiredRoom", "Basement" }
 Weather.SEASON_HOURS = 240
 Weather.GROUND_HOURS = 720
+Weather.ROOM_HOURS = 72
+Weather.AIRED_HOURS = 24
 Weather.BASEMENT_ANCHOR = 10
 Weather.BASEMENT_SWING = 0.4
-Weather.LOFT_ANCHOR = 10
-Weather.LOFT_LIFT = 0.3
--- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a room and a
--- loft do here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
+-- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a shut room and
+-- an aired one do here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
 Weather.GRID_ROOM_C = 22
--- An unheated room is a little warmer than the season's air in the cold months: the house's own mass, the people in
--- it, the sun through its windows. ROOM_LIFT in full at a season of ROOM_LIFT_FULL or below, none from
--- ROOM_LIFT_NONE (a room in summer is the season's). A room (Sheltered) and a loft; never while the grid is on.
+-- An unheated room is a little warmer than the air in the cold months: the house's own mass, the people in it, the
+-- sun through its windows. ROOM_LIFT in full at a mean of ROOM_LIFT_FULL or below, none from ROOM_LIFT_NONE. An
+-- aired room keeps AIRED_LIFT of it. Never while the grid is on.
 Weather.ROOM_LIFT = 2
+Weather.AIRED_LIFT = 1
 Weather.ROOM_LIFT_FULL = 10
 Weather.ROOM_LIFT_NONE = 18
+-- A shut room in summer is hot and stuffy: the sun through the glass and on the roof, nowhere for the heat to go.
+-- None at a mean of ROOM_LIFT_NONE, ROOM_SUMMER_LIFT in full from ROOM_SUMMER_FULL. An open window lets it out.
+Weather.ROOM_SUMMER_LIFT = 2
+Weather.ROOM_SUMMER_FULL = 21
 -- Places by a fire, which the ledger keeps no totals for: work there counts by the clock (Fire.catchUp). Fire
 -- adds them: place -> { celsius, under, lift }. A fire indoors (no under) holds celsius whatever the weather; one
 -- under an open roof or in the open warms that place's air by lift, never past celsius.
 Weather.FIRE_PLACES = {}
--- Inside a station that is a building of its own (the Smokehouse): its word -> the place whose air it has. A
--- station adds itself; the ledger keeps no totals for it.
+-- Inside a station that is a building of its own (the Smokehouse): its word -> the place whose air it has, never
+-- warmed by the grid (a shed is no room). A station adds itself; the ledger keeps no totals for it.
 Weather.STATION_PLACES = {}
 -- Where something stands when nothing says: a room. (Fire.DEFAULT_PLACE_WITHOUT_FIRE and FluidAgeing.DEFAULT_PLACE are this.)
 Weather.DEFAULT_PLACE = "Sheltered"
@@ -48,7 +57,6 @@ Weather.DEFAULT_PLACE = "Sheltered"
 Weather.NEW_RUN_PLACE = "Open"
 
 local NO_SQUARE_PLACE = "Open"   -- placeOf for an isoObject on no square
-local UPSTAIRS_Z = 1             -- the first floor above the ground, where a loft can be
 local HOURS_PER_DAY = 24
 local SETTLE_ROUNDS = 3          -- settledMeans: the year twice to settle, the third read
 
@@ -95,21 +103,18 @@ function Weather.rate(curve, celsius, sensitivity, minRate, freezeC)
     return Weather.scaled(Weather.curve(curve, celsius), sensitivity, minRate or 0)
 end
 
--- Below ground is a basement, in a room sheltered, under a roof that isn't a room covered (a porch, an open shed),
--- anything else open. Asks the square, not the object: a player's isOutside() only means "not in a room", while
--- the square's exterior flag also clears under a floor with no walls round it, as a station's isOutside() and the
--- game's rain both see. A player-built shed with walls and a whole roof is a room.
+-- Below ground is a basement, in a room an aired room or a shut one (sheltered) by its windows, under a roof that
+-- isn't a room covered (a porch, an open shed), anything else open. Asks the square, not the object: a player's
+-- isOutside() only means "not in a room", while the square's exterior flag also clears under a floor with no walls
+-- round it, as a station's isOutside() and the game's rain both see. A player-built shed with walls and a whole roof
+-- is a room.
 function Weather.placeOf(isoObject)
     local square = isoObject and isoObject:getSquare()
     if not square then return NO_SQUARE_PLACE end
     if square:getZ() < 0 then return "Basement" end
     if not square:isOutside() then
         if not square:isInARoom() then return "Covered" end
-        -- A loft is the top storey: upstairs, with no room on the square above (a roof's square is in none).
-        if square:getZ() >= UPSTAIRS_Z then
-            local above = square:getSquareAbove()
-            if not (above and above:isInARoom()) then return "Loft" end
-        end
+        if Windows.aired(square) then return "AiredRoom" end
         return "Sheltered"
     end
     return "Open"
@@ -120,31 +125,36 @@ function Weather.basementTemperature(groundTemperature)
     return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (groundTemperature - Weather.BASEMENT_ANCHOR)
 end
 
--- An unheated room by the season's mean, with its winter lift (ROOM_LIFT).
-function Weather.roomTemperature(seasonTemperature)
-    local share = Weather.curve({ { Weather.ROOM_LIFT_FULL, 1 }, { Weather.ROOM_LIFT_NONE, 0 } }, seasonTemperature)
-    return seasonTemperature + Weather.ROOM_LIFT * share
+-- How much of the winter lift a room has at a mean temperature: 1 in the cold, 0 from ROOM_LIFT_NONE.
+local function winterShare(celsius)
+    return Weather.curve({ { Weather.ROOM_LIFT_FULL, 1 }, { Weather.ROOM_LIFT_NONE, 0 } }, celsius)
 end
 
--- A loft by the season's mean: a room's, plus LOFT_LIFT of what the season is above LOFT_ANCHOR.
-function Weather.loftTemperature(seasonTemperature)
-    return Weather.roomTemperature(seasonTemperature)
-        + Weather.LOFT_LIFT * math.max(seasonTemperature - Weather.LOFT_ANCHOR, 0)
+-- An unheated shut room by the three-day mean: its winter lift (ROOM_LIFT) or its summer one (ROOM_SUMMER_LIFT).
+function Weather.roomTemperature(threeDayTemperature)
+    local summer = Weather.curve({ { Weather.ROOM_LIFT_NONE, 0 }, { Weather.ROOM_SUMMER_FULL, 1 } }, threeDayTemperature)
+    return threeDayTemperature + Weather.ROOM_LIFT * winterShare(threeDayTemperature) + Weather.ROOM_SUMMER_LIFT * summer
+end
+
+-- An unheated aired room by the day's mean, with AIRED_LIFT of a winter lift.
+function Weather.airedRoomTemperature(dayTemperature)
+    return dayTemperature + Weather.AIRED_LIFT * winterShare(dayTemperature)
 end
 
 -- Each place in Weather.PLACES by the ledger's readings: day (the last), season (its mean) and the ledger, for the
--- grid and the ground. The open air goes by the day's.
+-- grid, the room's means and the ground; offGrid for a station's own building, which the grid doesn't warm. The open air and an open roof go by the hour's. A ledger from before the
+-- room's means (or a test's) goes by the season in a shut room and by the hour in an aired one.
 local function byDay(day) return day end
 local PLACE_RULES = {
     Open = byDay,
-    Covered = function(_, season) return season end,
-    Sheltered = function(_, season, ledger)
-        if ledger.gridOn then return Weather.GRID_ROOM_C end
-        return Weather.roomTemperature(season)
+    Covered = byDay,
+    Sheltered = function(_, season, ledger, offGrid)
+        if ledger.gridOn and not offGrid then return Weather.GRID_ROOM_C end
+        return Weather.roomTemperature(ledger.threeDayTemperature or season)
     end,
-    Loft = function(_, season, ledger)
-        if ledger.gridOn then return Weather.GRID_ROOM_C end
-        return Weather.loftTemperature(season)
+    AiredRoom = function(day, _, ledger, offGrid)
+        if ledger.gridOn and not offGrid then return Weather.GRID_ROOM_C end
+        return Weather.airedRoomTemperature(ledger.dayTemperature or day)
     end,
     -- A ledger from before the ground's mean (or a test's) goes by the season.
     Basement = function(_, season, ledger) return Weather.basementTemperature(ledger.groundTemperature or season) end,
@@ -153,14 +163,15 @@ for _, place in ipairs(Weather.PLACES) do assert(PLACE_RULES[place], "Weather: n
 
 -- The temperature a place has now, from the ledger's last reading. A place Weather doesn't know goes by the day.
 function Weather.placeTemperature(ledger, place)
-    place = Weather.STATION_PLACES[place] or place
+    local stationAir = Weather.STATION_PLACES[place]
+    place = stationAir or place
     local fire = Weather.FIRE_PLACES[place]
     if fire then
         if not fire.placeWithoutFire then return fire.celsius end
         return math.min(Weather.placeTemperature(ledger, fire.placeWithoutFire) + fire.lift, fire.celsius)
     end
     local temperature = ledger.temperature or 0
-    return (PLACE_RULES[place] or byDay)(temperature, ledger.seasonTemperature or temperature, ledger)
+    return (PLACE_RULES[place] or byDay)(temperature, ledger.seasonTemperature or temperature, ledger, stationAir ~= nil)
 end
 
 -- Moves means[field] towards reading as a running mean over length hours (SEASON_HOURS if not given).
@@ -169,11 +180,17 @@ local function seasonMean(means, field, reading, hours, length)
     means[field] = (means[field] or reading) * (1 - share) + reading * share
 end
 
--- Moves the season's mean towards temperature, and the ground's (GROUND_HOURS behind) towards the season's.
+-- Moves the season's mean, a shut room's (ROOM_HOURS) and an aired room's (AIRED_HOURS) towards temperature, and the
+-- ground's (GROUND_HOURS behind) towards the season's.
 local function addSeason(means, temperature, hours)
     seasonMean(means, "seasonTemperature", temperature, hours)
+    seasonMean(means, "threeDayTemperature", temperature, hours, Weather.ROOM_HOURS)
+    seasonMean(means, "dayTemperature", temperature, hours, Weather.AIRED_HOURS)
     seasonMean(means, "groundTemperature", means.seasonTemperature, hours, Weather.GROUND_HOURS)
 end
+
+-- The running means a ledger copies from the series' weather.
+local MEANS = { "seasonTemperature", "threeDayTemperature", "dayTemperature", "groundTemperature" }
 
 -- For tools: a year of daily means in calendar order (each with .month and .mean), settled as a long-running save
 -- has them: the year goes round twice first, so January follows December. Returns at(month, offset), the season's
@@ -194,7 +211,8 @@ function Weather.settledMeans(year)
     end
 end
 
--- The series' weather: { lastHour, temperature, seasonTemperature, seasonHumidity, groundTemperature, gridOn }, in the core's global ModData.
+-- The series' weather: { lastHour, temperature, seasonTemperature, threeDayTemperature, dayTemperature,
+-- seasonHumidity, groundTemperature, gridOn }, in the core's global ModData.
 -- Save key: never rename it.
 Weather.SHARED_KEY = "TraditionalPreservationCore"
 
@@ -232,13 +250,12 @@ function Weather.useWeatherModData(weatherModData)
     sharedWeather = weatherModData
 end
 
--- A ledger's season temperature, with the grid's state and the ground's: the series' own where there is one, else
--- running means of the ledger's own.
+-- A ledger's season temperature, with the grid's state, the rooms' means and the ground's: the series' own where
+-- there is one, else running means of the ledger's own.
 function Weather.seasonTemperature(ledger, temperature, hours)
     if sharedWeather then ledger.gridOn = sharedWeather.gridOn end
     if sharedWeather and sharedWeather.seasonTemperature ~= nil then
-        ledger.seasonTemperature = sharedWeather.seasonTemperature
-        ledger.groundTemperature = sharedWeather.groundTemperature
+        for _, field in ipairs(MEANS) do ledger[field] = sharedWeather[field] end
     else
         addSeason(ledger, temperature, hours)
     end
@@ -299,8 +316,9 @@ function Weather.getLedger(key, newLedger)
         local weatherModData = Weather.weatherModData()
         if ledgerModData.ledger.temperature == nil then
             ledgerModData.ledger.temperature = weatherModData.temperature
-            ledgerModData.ledger.seasonTemperature = ledgerModData.ledger.seasonTemperature or weatherModData.seasonTemperature
-            ledgerModData.ledger.groundTemperature = ledgerModData.ledger.groundTemperature or weatherModData.groundTemperature
+            for _, field in ipairs(MEANS) do
+                ledgerModData.ledger[field] = ledgerModData.ledger[field] or weatherModData[field]
+            end
         end
     end
     return ledgerModData.ledger

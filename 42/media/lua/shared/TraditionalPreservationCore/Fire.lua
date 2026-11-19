@@ -53,9 +53,10 @@ Fire.BANKED_LIGHT = { 0.6, 0.25, 0.1 }
 Fire.BANKED_FIREBOX = 1.8        -- the firebox's heat (vanilla's container temperature): it cooks, a third as fast
 Fire.MINUTES_PER_HOUR = 60       -- vanilla's fuel is minutes
 
--- What a fire adds to the air under an open roof (the season's) and in the open (the day's), lit and banked.
-Fire.FIRE_LIFT = { Covered = 15, Open = 10 }
-Fire.EMBERS_LIFT = { Covered = 10, Open = 5 }
+-- What a fire adds to the air in an aired room and under an open roof, and in the open (the wind takes more), lit
+-- and banked. A shut room holds the fire's own heat (FIRE_C, EMBERS_C).
+Fire.FIRE_LIFT = { AiredRoom = 15, Covered = 15, Open = 10 }
+Fire.EMBERS_LIFT = { AiredRoom = 10, Covered = 10, Open = 5 }
 
 -- Save values: a station's noted place. Never rename them.
 for _, fire in ipairs({ { Fire.PLACE, Fire.FIRE_C, Fire.FIRE_LIFT }, { Fire.EMBERS, Fire.EMBERS_C, Fire.EMBERS_LIFT } }) do

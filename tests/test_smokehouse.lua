@@ -15,10 +15,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
 
 local function name(index) return Tiles.PREFIX .. index end
 
-check("inside the Smokehouse is no place of Weather's, and has an open roof's air",
+local shedAir = { temperature = 2, seasonTemperature = 8, dayTemperature = 5 }
+check("inside the Smokehouse is no place of Weather's, and has an aired room's air, not the grid's",
     not table.concat(Weather.PLACES, " "):find(Smokehouse.PLACE)
-    and Weather.placeTemperature({ temperature = 2, seasonTemperature = 8 }, Smokehouse.PLACE)
-        == Weather.placeTemperature({ temperature = 2, seasonTemperature = 8 }, "Covered"))
+    and Weather.placeTemperature(shedAir, Smokehouse.PLACE) == Weather.placeTemperature(shedAir, "AiredRoom")
+    and Weather.placeTemperature({ temperature = 2, dayTemperature = 5, gridOn = true }, Smokehouse.PLACE) == 6)
 
 -- Sprite names: each facing's four tiles, column by column (0 the hidden long side, 1 the one in view), back row first.
 local face, part, col = Smokehouse.tileOfName(name(Tiles.CHAMBER))

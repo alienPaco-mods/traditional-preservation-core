@@ -50,7 +50,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
   **10 minutes** turns to clean water (`CauldronFluid.BOIL_C`, `WATER_FIRE_C`, `BOIL_HOURS`, `BOILED`; the time at the boil is
   `boiled` in the cauldron's state and starts over when the fire goes out or more is poured in). Being let boil, water
   also steams sooner than milk.
-- **Fire out:** it cools towards the temperature of the place the Stone Hearth stands in (open air, an open roof, indoors, a loft or a basement), slowly, as the stone holds heat.
+- **Fire out:** it cools towards the temperature of the place the Stone Hearth stands in (open air, an open roof, a shut room, an aired room or a basement), slowly, as the stone holds heat.
 - **Banked fire:** it settles at 50 C.
 - More fluid heats and cools more slowly (by the cube root of the volume; a splash counts as a litre).
 
@@ -77,17 +77,17 @@ Fluid filled from the cauldron leaves at the cauldron's heat. Vanilla cools a ca
 
 ### By a fire
 
-Two places beyond the six of `Weather.PLACES`, which a mod must ask for (`Fire.placeOf`; Yeast, Vinegar and Dairy do):
+Two places beyond the five of `Weather.PLACES`, which a mod must ask for (`Fire.placeOf`; Yeast, Vinegar and Dairy do):
 
 - **By a fire, 28 C:** any lit fire within 2 tiles on the same floor. A Stone Hearth, a fireplace, an antique stove, a brazier or a campfire counts; an electric or gas stove never does.
 - **By banked embers, 24 C:** a banked Stone Hearth within 2 tiles, when no full fire is in reach.
 
-Those are a fire indoors (a room, a loft, a basement). Outside the air carries the heat off, so a fire warms the place it stands in by a lift, never past its indoor heat (`Fire.FIRE_LIFT`, `Fire.EMBERS_LIFT`; places `FiresideCovered`, `FiresideOpen`, `EmbersCovered`, `EmbersOpen`, `Fire.firePlace`):
+Those are a fire indoors (a shut room, a basement). With a window open, or outside, the air carries the heat off, so a fire warms the place it stands in by a lift, never past its indoor heat (`Fire.FIRE_LIFT`, `Fire.EMBERS_LIFT`; places `FiresideAiredRoom`, `FiresideCovered`, `FiresideOpen`, `EmbersAiredRoom`, `EmbersCovered`, `EmbersOpen`, `Fire.firePlace`):
 
-| Fire | Indoors | Under an open roof | In the open |
-|---|---|---|---|
-| Lit | 28 C | 10-day average + 15, up to 28 | the day's + 10, up to 28 |
-| Banked | 24 C | 10-day average + 10, up to 24 | the day's + 5, up to 24 |
+| Fire | Shut room | Aired room | Under an open roof | In the open |
+|---|---|---|---|---|
+| Lit | 28 C | the room's + 15, up to 28 | the air's + 15, up to 28 | the air's + 10, up to 28 |
+| Banked | 24 C | the room's + 10, up to 24 | the air's + 10, up to 24 | the air's + 5, up to 24 |
 
 A station seen by a fire notes how long the fuel will last. While its area is unloaded the fire counts until then, and after that the place under it does.
 
@@ -113,13 +113,13 @@ Every TP station works by the temperature of the place it stands in, from one we
 
 | Place | When | Temperature |
 |---|---|---|
-| **Open air** | Nothing overhead | The day's weather |
-| **Under an open roof** (Covered) | A roof or floor overhead, not a room: a porch, an open shed | The average outdoor temperature of the last 10 days |
-| **Indoors** (Sheltered) | A room: a map building's, or a space you built with walls all round and every square roofed | The same, **2 C warmer in the cold months**: in full at a season of 10 C or below, none from 18 C (`Weather.roomTemperature`, `ROOM_LIFT`); **22 C while the power grid is on**, as vanilla's rooms are |
-| **Loft** | The top storey: a room at floor 1 or higher whose square above is in no room (`square:getSquareAbove()`) | A room's, `+ 0.3 x max(season - 10, 0)` (`Weather.loftTemperature`, `LOFT_ANCHOR`, `LOFT_LIFT`); 22 C while the grid is on |
+| **Open air** | Nothing overhead | The hour's weather |
+| **Under an open roof** (Covered) | A roof or floor overhead, not a room: a porch, an open shed | The same: a roof keeps off rain and sun, not the cold |
+| **Indoors** (Sheltered, a shut room) | A room (a map building's, or a space you built with walls all round and every square roofed) with every window to the outside shut or barricaded | The average of the last 3 days (`threeDayTemperature`, `Weather.ROOM_HOURS`), **2 C warmer in the cold months** (in full from 10 C down, none from 18 C; `ROOM_LIFT`) and **stuffy in summer**, up to 2 C warmer from 18 C to 21 C (`ROOM_SUMMER_LIFT`); **22 C while the power grid is on**, as vanilla's rooms are |
+| **Aired room** (AiredRoom) | A room with a window to the outside open, smashed, without its glass or an empty frame, and not barricaded (`Windows.aired`: read square by square, as `IsoRoom:getWindows()` stays empty; a room's answer holds for the ten-minute reading) | The day's average (`dayTemperature`, `AIRED_HOURS`), at most 1 C warmer in winter (`AIRED_LIFT`), never stuffy; 22 C while the grid is on. Anything that dries by air dries here as under a roof; in a shut room it waits |
 | **Basement** | Any level below ground | `10 + 0.4 x (ground - 10)`, the ground being the 10-day average's own 30-day mean (`Weather.GROUND_HOURS`, a month behind): about 5 C January to March, 9 in May, 13 July to September, 9 in November |
 | **In the Smokehouse** | Not a place: inside the Smokehouse chamber, a station's word (`Smokehouse.PLACE`) its stacks carry, never from a square. Still air, out of the rain and wind (each mod counts that) | An open roof's (`Smokehouse.AIR`, through `Weather.STATION_PLACES`) |
-| **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Stone Hearth) | 28 C / 24 C indoors, for as long as the fuel lasts; outside the air's plus a lift |
+| **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Stone Hearth) | 28 C / 24 C in a shut room, for as long as the fuel lasts; with a window open or outside the air's plus a lift |
 
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Fire.placeOf`); Fish & Meat dries by its own rates.
 

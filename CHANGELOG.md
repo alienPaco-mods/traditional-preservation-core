@@ -1,5 +1,30 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.15
+- **The aired room and new place temperatures** (2026-11-19, ROADMAP section 10, simulated in every mod's season tool
+  first). Five places: Open, Covered, Sheltered (a shut room), **AiredRoom** (*Aired room*, new) and Basement; **the
+  loft is gone**, its summer heat too. An aired room is a room with a window to the outside open, smashed, without its
+  glass or an empty frame, and not barricaded: the new `Windows.lua` walks the room's squares (a map room by its room
+  id, a built one by its world region) and reads the windows on its outside walls, because `IsoRoom:getWindows()` is
+  never filled (ENGINE_NOTES). A room's answer holds for the ten-minute reading, then is read again.
+- **Temperatures:** under an open roof is the hour's air, as outdoors (it was the ten-day season mean, which made a
+  porch 3 C warmer than outdoors in January and warmer in August). A shut room follows a three-day mean
+  (`threeDayTemperature`, `Weather.ROOM_HOURS` 72), +2 C from a 10 C mean down to none at 18 C as before, and now
+  **stuffy in summer**: up to +2 C from 18 C to 21 C (`ROOM_SUMMER_LIFT`, `ROOM_SUMMER_FULL`). An aired room follows a
+  one-day mean (`dayTemperature`, `AIRED_HOURS` 24), at most +1 C in winter (`AIRED_LIFT`). Both are 22 C on the grid.
+  The basement is unchanged. Month means, Jan: open -4.6, aired -3.4, shut -1.8; Jul 20.9 / 20.9 / 21.9 (+2 at 21 C).
+- **The Smokehouse has an aired room's air** (`Smokehouse.AIR` = AiredRoom: the day's mean, up to 1 C over in winter),
+  never warmed by the grid (`Weather.STATION_PLACES` reads its air off the grid). It borrowed the open roof's, which
+  now follows the hour; a plank shed with a vent damps the afternoon peaks, as 0.1.14 meant.
+- Windows: a room's answer is kept for the ten-minute reading only (every room's answers start over each reading).
+- By a fire in an aired room: its air +15 C lit, +10 banked (`Fire.FIRE_LIFT`, `EMBERS_LIFT`), as under a roof;
+  *By a fire, aired room*, *By banked embers, aired room*. A shut room by a fire is still 28 / 24 C.
+- Autumn indoors is harder (a shut room no longer coasts on summer for ten days): a fire indoors is the answer.
+- Ledgers copy the new means from the series' weather; a save from before reads the season in a shut room and the hour
+  in an aired one until its first reading. Old `...Loft` totals are left unused.
+- Tests: `H.shutRoom(square)` in the harness gives a fake square what the window check asks. Golden results: Fish &
+  Meat, Dairy, Yeast, Vinegar and Fruits and Vegetables.
+
 ## 0.1.14
 - **Five places: Enclosed is gone** (2026-11-19). It was only ever the inside of the Smokehouse, and it read the day's
   temperature while an open shed (Covered) reads the season's: a closed shed lags the weather at least as much.

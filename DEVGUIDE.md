@@ -556,48 +556,54 @@ however long it was away. That costs one small table per mod, never grows with t
 catch-up simulation. The reading itself and the season's means are kept once, in TP Core's ModData, and copied into
 each mod's ledger: a mod added to a save in July then agrees with the others about the cellar at once.
 
-**Why five places (Open, Covered, Sheltered, Loft, Basement), and why a 240-hour season mean?**
-They are what a survivor can actually choose, and each behaves the way a real cellar or shed does. Open goes by the
-day's weather. A roof doesn't follow the hour: walls follow the season, so Covered (a roof, not a room) and Sheltered
-(a room) are the mean of the last ten days or so, as an unheated house is; vanilla's own unpowered rooms start from
-the outdoor temperature. While the grid is on a room is 22 C (`Weather.GRID_ROOM_C`, vanilla's figure; the ledger
-copies `gridOn` from the series' weather). A basement swings two fifths as far as the ground from 10 C
-(`basementTemperature`); the ground is the season mean's own 30-day mean (`GROUND_HOURS`, `groundTemperature` in the
-series' weather and copied into each ledger by `Weather.seasonTemperature`), so a cellar is coldest in March and warmest in August.
-Season tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. Ten days is long enough that one warm afternoon in January does
-nothing, and short enough that spring arrives within a fortnight. A room is not a heated house: most players don't
-keep one heated.
-A loft is the basement's mirror: the top storey, a room at z >= 1 whose square above is in
-no room (so a middle storey of a tall building and a bungalow's ground floor stay Sheltered). It reads the season's
-mean plus `LOFT_LIFT` (0.3) of what the season is above `LOFT_ANCHOR` (10 C), the sun on the roof, and 22 C while the
-grid is on.
+**Why five places (Open, Covered, Sheltered, AiredRoom, Basement), and how warm is each?**
+They are what a survivor can actually choose, and each behaves the way a real porch, room or cellar does. **Open** and
+**Covered** (a roof, not a room: a porch, an open shed) go by the hour's air: a roof keeps off rain and sun, which are
+each process's own rules (rain on open frames, hot sun on fresh salt fish), not the air's. The game's temperature is
+shade air already. A **shut room** (Sheltered: in a room, every window to the outside shut or barricaded) lags the
+weather by its walls: the mean of the last three days (`ROOM_HOURS`, `threeDayTemperature`), +2 C in the cold from a
+10 C mean down (`ROOM_LIFT`, none from 18 C: the house's mass, the people, the sun through the glass) and stuffy in
+summer, up to +2 C from 18 C to 21 C (`ROOM_SUMMER_LIFT`). An **aired room** (AiredRoom, *Aired room*: a window to the
+outside open, smashed, without its glass or an empty frame, and not barricaded; `Windows.aired`) follows the day's
+mean (`AIRED_HOURS`, `dayTemperature`), at most +1 C in winter (`AIRED_LIFT`): within a degree of outside, never
+stuffy. In PZ the ground floor is boarded up, so the aired room is usually upstairs. While the grid is on both rooms
+are 22 C (`Weather.GRID_ROOM_C`, vanilla's figure; a generator doesn't count, as in vanilla). A **basement** swings two
+fifths as far as the ground from 10 C (`basementTemperature`); the ground is the season mean's (`SEASON_HOURS`, about
+ten days) own 30-day mean (`GROUND_HOURS`, `groundTemperature`), so a cellar is coldest in March and warmest in August.
+Every mean is kept once in the series' weather and copied into each ledger by `Weather.seasonTemperature`. Season
+tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. A room is not a
+heated house: most players don't keep one heated, so autumn indoors is slow and a fire is the answer.
+`Windows.lua` walks the room's squares (a map room by `getRoomID()`, a built one by its world region) because
+`IsoRoom:getWindows()` is never filled; a room's answer holds for the ten-minute reading.
 Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse
 (*In the Smokehouse*, `Smokehouse.PLACE`) the stacks carry the Smokehouse's word, set by the station's session state
-(`sessionState.place`), and its temperature is an open roof's (`Weather.STATION_PLACES`): a closed shed lags the
-weather at least as much as an open one. The still air and the rain kept off are the mod's own rates (Fish & Meat's
-Shed). The ledger keeps no totals for it.
+(`sessionState.place`), and its temperature is an open roof's (`Weather.STATION_PLACES`). The still air and the rain
+kept off are the mod's own rates (Fish & Meat's Shed). The ledger keeps no totals for it.
 **One place, one temperature:** a station or a stored item reads a place's temperature from
 `Weather.placeTemperature` and nowhere else. If a process comes out wrong there, change the process's own numbers
 (its curve, its hours), never the temperature it is given.
-**Exceptions:** an exception to that rule must rest on **realism**, and must **keep every process's
-path open** (no process shut out of the year by the place model; stockfish keeps its winter in the open and a longer
-season under a roof). Write each one down here with its reason. The ones there are (all Fish & Meat's):
-- **Dry curing is spared the muggy-season spoiling** that salt fish and charque take by their place: country hams
-  were aged through the summer heat on purpose.
-- **Salt fish's and charque's muggy spoiling reads the ten-day mean**, not the day's temperature, in the open air
-  and in the Smokehouse (`F.TOTALS.saltSpoil` reads the season's `saltSpoil` for both): mould and rancid fat come of
-  days of damp warmth, not of one hot afternoon. By the day's temperature July's muggy hours would go from 78 to
-  about 220 and a stack hung all July would lose near half its keeping, where it loses a sixth.
+**One air rule:** anything that dries by air (salt fish, charque, dry curing, stockfish, onions and garlic, kefir grains
+on a cloth) dries under a roof and in an aired room and stands still in a shut room until a window opens. Barrels,
+tubs, crocks, shelves, vessels and crates mind the temperature only.
+**Exceptions:** an exception to those rules must rest on **realism**, and must **keep every process's path open** (no
+process shut out of the year by the place model; stockfish keeps its winter in the open). Write each one down here
+with its reason. The ones there are:
+- **A basement keeps its own still-air rates** (Fish & Meat: salt fish and charque at the still-air share, dry curing
+  at two thirds): a cellar with its vent and its cold is where hams were cured.
+- **Dry curing is spared the muggy-season spoiling** that salt fish and charque take in still air: country hams were
+  aged through the summer heat on purpose.
+- **Muggy spoiling needs still air, and the Smokehouse's reads the ten-day mean**: salt fish and charque spoil in a
+  muggy season only in the Smokehouse, a shut room and a basement (moving air keeps the skin dry); in the Smokehouse
+  by the season's mean, as mould and rancid fat come of days of damp warmth, not one hot afternoon.
 - **Unsalted fish's warm rot is weighted by its wetness squared** (a process number, not a temperature: a dried skin
-  protects the flesh), which keeps open-air stockfish possible from November to February while it reads the day's
+  protects the flesh), which keeps open-air stockfish possible in January and February while it reads the hour's
   temperature as the open air must.
-More places (north wall, near the stove) would ask the player to learn rules the game can't show them. Covered
-and Sheltered read the same temperature but for a room's winter lift (`Weather.roomTemperature`: +2 C at a season of
-10 C or below, none from 18) off the grid (a room is 22 C on it; a generator does not count, as in
-vanilla); Fish & Meat tells them apart for its drying rates (moving air and shade).
-By a fire and by banked embers are `Weather.FIRE_PLACES` that Stone Hearth registers, indoors at a fixed 28 / 24 C, and
-under an open roof or in the open (`FiresideCovered`, `FiresideOpen`, `EmbersCovered`, `EmbersOpen`) at that place's air
-plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat. The ledger keeps
+- **A lit fire draws air through a shut room** for onions and garlic (Fruits and Vegetables' dry cure); banked embers
+  don't.
+More places (north wall, near the stove) would ask the player to learn rules the game can't show them.
+By a fire and by banked embers are `Weather.FIRE_PLACES` that Stone Hearth registers, in a shut room at a fixed 28 / 24
+C, and in an aired room, under an open roof or in the open (`FiresideAiredRoom`, `FiresideCovered`, `FiresideOpen`,
+`Embers...`) at that place's air plus `Fire.FIRE_LIFT` / `EMBERS_LIFT`, capped at the indoor heat. The ledger keeps
 no totals for them, so `Fire.catchUp` counts them by the clock until the fuel noted by `Fire.noteFire` runs out, then gives the
 place under the fire its share of the gap by time. A station's World calls `Fire.notePlace`, which catches a run up
 at its old place before writing the new one.

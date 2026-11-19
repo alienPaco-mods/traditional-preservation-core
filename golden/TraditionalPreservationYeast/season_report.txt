@@ -1,96 +1,98 @@
 Days for one culture (120 hours at full speed), started on the first of the month
-| Month | Outdoors | Indoors | Indoors, grid on | Loft | Basement | Indoors, then basement | By a fire, under a roof | By a fire, in the open |
+| Month | Outdoors | Indoors | Indoors, grid on | Aired room | Basement | Indoors, then basement | By a fire, under a roof | By a fire, in the open |
 |---|---|---|---|---|---|---|---|---|
-| Jan | 77.46 | 91.00 | 5.00 | 91.00 | 23.71 | 24.29 | 10.62 | 19.96 |
-| Feb | 54.17 | 61.00 | 5.00 | 61.00 | 25.29 | 25.79 | 8.46 | 12.54 |
-| Mar | 28.67 | 32.00 | 5.00 | 32.00 | 24.29 | 24.71 | 7.54 | 9.54 |
-| Apr | 16.46 | 16.87 | 5.00 | 16.87 | 19.37 | 19.33 | 5.04 | 6.29 |
-| May | 8.50 | 9.37 | 5.00 | 9.25 | 15.50 | 15.21 | 5.04 | 5.37 |
-| Jun | 5.46 | 5.08 | 5.00 | 5.04 | 11.37 | 10.79 | 5.04 | 5.04 |
-| Jul | 5.58 | 5.00 | 5.00 | 5.00 | 8.63 | 8.29 | 5.00 | 5.00 |
-| Aug | 6.58 | 5.00 | 5.00 | 5.00 | 7.50 | 7.25 | 5.00 | 5.00 |
-| Sep | 6.58 | 5.63 | 5.00 | 5.00 | 7.79 | 7.58 | 5.00 | 5.08 |
-| Oct | 12.79 | 7.71 | 5.00 | 7.13 | 8.88 | 8.75 | 5.00 | 5.63 |
-| Nov | 95.58 | 20.71 | 5.00 | 20.71 | 12.08 | 12.17 | 5.00 | 8.42 |
-| Dec | 91.58 | 106.46 | 5.00 | 106.46 | 16.83 | 17.21 | 8.21 | 20.50 |
+| Jan | 77.46 | 79.21 | 5.00 | 83.54 | 23.71 | 24.29 | 10.71 | 19.96 |
+| Feb | 54.17 | 51.54 | 5.00 | 54.75 | 25.29 | 25.79 | 6.75 | 12.54 |
+| Mar | 28.67 | 27.04 | 5.00 | 28.17 | 24.29 | 24.50 | 6.25 | 9.54 |
+| Apr | 16.46 | 14.50 | 5.00 | 15.17 | 19.37 | 19.21 | 5.17 | 6.29 |
+| May | 8.50 | 8.08 | 5.00 | 8.50 | 15.50 | 15.00 | 5.04 | 5.37 |
+| Jun | 5.46 | 5.04 | 5.00 | 5.04 | 11.37 | 10.75 | 5.04 | 5.04 |
+| Jul | 5.58 | 5.08 | 5.00 | 5.25 | 8.63 | 8.29 | 5.00 | 5.00 |
+| Aug | 6.58 | 5.13 | 5.00 | 5.50 | 7.50 | 7.25 | 5.00 | 5.00 |
+| Sep | 6.58 | 6.04 | 5.00 | 6.21 | 7.79 | 7.67 | 5.00 | 5.08 |
+| Oct | 12.79 | 10.13 | 5.00 | 12.04 | 8.88 | 8.88 | 5.08 | 5.63 |
+| Nov | 95.58 | 67.33 | 5.00 | 106.12 | 12.08 | 12.17 | 6.25 | 8.42 |
+| Dec | 91.58 | 97.04 | 5.00 | 101.96 | 16.83 | 17.37 | 10.46 | 20.50 |
 Fireside indoors (28 C), any month: 5.00 days
 Embers indoors (24 C), any month: 5.00 days
 
 Popup after one day: progress, hours left, temperature, rate
 Jan Open      0.000000 paused -10.973869 0.000000 Open
-Jan Sheltered 0.000000 paused -1.618294 0.000000 Sheltered
-Jan Loft      0.000000 paused -1.618294 0.000000 Loft
+Jan Sheltered 0.000000 paused -8.160956 0.000000 Sheltered
+Jan AiredRoom 0.000000 paused -7.882467 0.000000 AiredRoom
 Jan Basement  0.045492 505.159453 5.668557 0.226742 Basement
 Jan Moved     0.022710 517.216233 5.668557 0.226742 Basement
 Feb Open      0.013122 paused -4.538787 0.000000 Open
-Feb Sheltered 0.000000 paused -1.273351 0.000000 Sheltered
-Feb Loft      0.000000 paused -1.273351 0.000000 Loft
+Feb Sheltered 0.000000 paused -0.649759 0.000000 Sheltered
+Feb AiredRoom 0.000000 paused -0.408588 0.000000 AiredRoom
 Feb Basement  0.041153 582.712355 4.872933 0.197459 Basement
 Feb Moved     0.021395 594.719883 4.872933 0.197459 Basement
 Mar Open      0.012888 paused -5.415864 0.000000 Open
-Mar Sheltered 0.000000 paused -0.486072 0.000000 Sheltered
-Mar Loft      0.000000 paused -0.486072 0.000000 Loft
+Mar Sheltered 0.021658 1042.650407 0.629934 0.112599 Sheltered
+Mar AiredRoom 0.006417 1189.376485 0.012288 0.100246 AiredRoom
 Mar Basement  0.039259 587.165220 4.817416 0.196348 Basement
-Mar Moved     0.021268 598.160916 4.817416 0.196348 Basement
+Mar Moved     0.030917 592.263651 4.817416 0.196348 Basement
 Apr Open      0.087262 538.975980 5.080399 0.203216 Open
-Apr Sheltered 0.053627 421.986802 6.727978 0.269119 Sheltered
-Apr Loft      0.053627 421.986802 6.727978 0.269119 Loft
+Apr Sheltered 0.071296 304.695021 9.143934 0.365757 Sheltered
+Apr AiredRoom 0.068729 294.910186 9.473441 0.378938 AiredRoom
 Apr Basement  0.049270 479.759289 5.945045 0.237802 Basement
-Apr Moved     0.050723 479.026078 5.945045 0.237802 Basement
+Apr Moved     0.058308 475.198489 5.945045 0.237802 Basement
 May Open      0.082307 593.450820 4.278200 0.185564 Open
-May Sheltered 0.101227 220.955846 11.174923 0.488119 Sheltered
-May Loft      0.101227 220.955846 11.174923 0.488119 Loft
+May Sheltered 0.130968 170.068002 12.842520 0.613189 Sheltered
+May AiredRoom 0.104599 223.818636 11.067570 0.480068 AiredRoom
 May Basement  0.063041 369.808784 7.600896 0.304036 Basement
-May Moved     0.081171 362.652721 7.600896 0.304036 Basement
+May Moved     0.096160 356.736897 7.600896 0.304036 Basement
 Jun Open      0.207318 95.121847 18.597001 1.000000 Open
-Jun Sheltered 0.201305 97.420794 17.784109 0.983808 Sheltered
-Jun Loft      0.208333 95.000000 20.097753 1.000000 Loft
+Jun Sheltered 0.208333 95.000000 22.018169 1.000000 Sheltered
+Jun AiredRoom 0.208333 95.000000 22.374974 1.000000 AiredRoom
 Jun Basement  0.084337 268.916512 10.114680 0.408601 Basement
-Jun Moved     0.139628 252.678322 10.114680 0.408601 Basement
+Jun Moved     0.144051 251.379456 10.114680 0.408601 Basement
 Jul Open      0.150067 190.868005 11.791451 0.534359 Open
-Jul Sheltered 0.200000 96.000000 18.870109 1.000000 Sheltered
-Jul Loft      0.200000 96.000000 21.531142 1.000000 Loft
+Jul Sheltered 0.199948 96.689415 17.905784 0.992934 Sheltered
+Jul AiredRoom 0.188431 107.426778 16.754064 0.906555 AiredRoom
 Jul Basement  0.113385 187.112477 12.248118 0.568609 Basement
 Jul Moved     0.153169 178.716351 12.248118 0.568609 Basement
 Aug Open      0.158367 172.557180 12.470532 0.585290 Open
-Aug Sheltered 0.200000 96.000000 20.131486 1.000000 Sheltered
-Aug Loft      0.200000 96.000000 23.170932 1.000000 Loft
+Aug Sheltered 0.200000 96.000000 20.452285 1.000000 Sheltered
+Aug AiredRoom 0.200000 96.000000 18.539677 1.000000 AiredRoom
 Aug Basement  0.133510 155.609184 13.576068 0.668205 Basement
 Aug Moved     0.164019 150.130212 13.576068 0.668205 Basement
 Sep Open      0.086792 424.379747 6.455593 0.258224 Open
-Sep Sheltered 0.183166 108.920801 16.665608 0.899921 Sheltered
-Sep Loft      0.200000 96.000000 18.531852 1.000000 Loft
+Sep Sheltered 0.165031 127.100134 15.177668 0.788325 Sheltered
+Sep AiredRoom 0.136161 168.916921 12.849043 0.613678 AiredRoom
 Sep Basement  0.130031 160.807281 13.322682 0.649201 Basement
-Sep Moved     0.155120 156.169698 13.322682 0.649201 Basement
+Sep Moved     0.147863 157.511254 13.322682 0.649201 Basement
 Oct Open      0.144978 209.104424 11.209025 0.490677 Open
-Oct Sheltered 0.140266 145.476136 14.122340 0.709176 Sheltered
-Oct Loft      0.152372 131.611467 14.971276 0.772846 Loft
+Oct Sheltered 0.119566 165.295735 13.188929 0.639170 Sheltered
+Oct AiredRoom 0.097340 171.366475 13.094546 0.632091 AiredRoom
 Oct Basement  0.115887 183.604786 12.371150 0.577836 Basement
-Oct Moved     0.126551 181.390349 12.371150 0.577836 Basement
+Oct Moved     0.115180 183.751695 12.371150 0.577836 Basement
 Nov Open      0.056680 660.645409 3.567258 0.171345 Open
-Nov Sheltered 0.075496 293.843630 9.438735 0.377549 Sheltered
-Nov Loft      0.075496 293.843630 9.438735 0.377549 Loft
+Nov Sheltered 0.075072 295.286245 9.396930 0.375877 Sheltered
+Nov AiredRoom 0.064342 342.105766 8.204991 0.328200 AiredRoom
 Nov Basement  0.088000 249.818017 10.507716 0.438079 Basement
-Nov Moved     0.082143 251.422481 10.507716 0.438079 Basement
+Nov Moved     0.081848 251.503227 10.507716 0.438079 Basement
 Dec Open      0.000000 paused -11.305742 0.000000 Open
-Dec Sheltered 0.020385 paused -0.018355 0.000000 Sheltered
-Dec Loft      0.020385 paused -0.018355 0.000000 Loft
+Dec Sheltered 0.000000 paused -2.626016 0.000000 Sheltered
+Dec AiredRoom 0.000000 paused -4.453977 0.000000 AiredRoom
 Dec Basement  0.065098 346.700100 8.089718 0.323589 Basement
-Dec Moved     0.044910 354.186715 8.089718 0.323589 Basement
+Dec Moved     0.035166 357.799924 8.089718 0.323589 Basement
 
 Ledger at the end
+cultureAiredRoom   7628.225669247
+cultureAiredRoomRate 0.756751917
 cultureBasement    6104.559220476
 cultureBasementRate 0.613867470
-cultureCovered     7267.364099429
-cultureCoveredRate 0.760157614
-cultureLoft        8113.113263157
-cultureLoftRate    0.928165495
+cultureCovered     7206.686475815
+cultureCoveredRate 0.512840314
 cultureOpen        7206.686475815
 cultureOpenRate    0.512840314
-cultureSheltered   7845.616771033
-cultureShelteredRate 0.820118211
+cultureSheltered   7966.134820421
+cultureShelteredRate 0.771350447
+dayTemperature     14.293362543
 groundTemperature  17.128915669
 lastHour           15119.999999981
 seasonTemperature  14.802101524
 temperature        11.504537521
+threeDayTemperature 13.935119064
 exit=0

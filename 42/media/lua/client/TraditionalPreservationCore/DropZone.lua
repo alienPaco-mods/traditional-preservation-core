@@ -1,6 +1,7 @@
 -- Traditional Preservation core: an info window's drop square. A selection dragged from the inventory or a loot
 -- window (vanilla's ISMouseDrag, read as vanilla's crafting slots read it: ISInventoryPane.getActualItems) is judged
--- while it is held over the square, which turns green with what would happen or red with why not, and on release the
+-- while it is held over the square, which turns green when it takes everything, orange when it takes some and refuses
+-- the rest, red when it takes nothing, with what would happen or why not, and on release the
 -- station takes what it takes. At rest it says what it takes. A window doesn't make one itself:
 -- InfoWindow:dropZone(y, idleText, judge, drop) draws it in the window's flow.
 --   judge(items)  returns { take = the items it would take, lines = text lines to show, refused = why the others
@@ -15,6 +16,7 @@ DropZone.TEXT_MARGIN = 6
 DropZone.DASH, DropZone.GAP, DropZone.EDGE = 6, 4, 2
 DropZone.IDLE_EDGE = { 0.47, 0.47, 0.47 }
 DropZone.OK_EDGE, DropZone.OK_FILL = { 0.4, 0.78, 0.4 }, { 0.24, 0.55, 0.24, 0.2 }
+DropZone.SOME_EDGE, DropZone.SOME_FILL = { 0.92, 0.6, 0.25 }, { 0.65, 0.4, 0.15, 0.2 }
 DropZone.NO_EDGE, DropZone.NO_FILL = { 0.86, 0.35, 0.27 }, { 0.63, 0.24, 0.2, 0.2 }
 DropZone.IDLE_TEXT, DropZone.OK_TEXT, DropZone.NO_TEXT = { 0.7, 0.7, 0.7 }, { 1, 1, 1 }, { 0.9, 0.43, 0.35 }
 
@@ -62,11 +64,16 @@ function DropZone:render()
     local judged = self:isMouseOver() and self:judgement() or nil
     local edge, textColour, lines = DropZone.IDLE_EDGE, DropZone.IDLE_TEXT, { self.idleText }
     if judged then
-        local ok = #judged.take > 0
-        local fill = ok and DropZone.OK_FILL or DropZone.NO_FILL
+        -- Green: all of it; orange: some, the rest refused; red: none.
+        local fill
+        if #judged.take == 0 then
+            fill, edge, textColour = DropZone.NO_FILL, DropZone.NO_EDGE, DropZone.NO_TEXT
+        elseif judged.refused then
+            fill, edge, textColour = DropZone.SOME_FILL, DropZone.SOME_EDGE, DropZone.OK_TEXT
+        else
+            fill, edge, textColour = DropZone.OK_FILL, DropZone.OK_EDGE, DropZone.OK_TEXT
+        end
         self:drawRect(0, 0, self.width, self.height, fill[4], fill[1], fill[2], fill[3])
-        edge = ok and DropZone.OK_EDGE or DropZone.NO_EDGE
-        textColour = ok and DropZone.OK_TEXT or DropZone.NO_TEXT
         lines = judged.lines
     end
     local w, h = self.width - DropZone.EDGE, self.height - DropZone.EDGE

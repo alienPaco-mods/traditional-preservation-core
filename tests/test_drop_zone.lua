@@ -27,8 +27,8 @@ function ISPanel:setY(y) self.y = y end
 function ISPanel:setVisible(visible) self.visible = visible end
 function ISPanel:getIsVisible() return self.visible ~= false end
 function ISPanel:isMouseOver() return self.mouseOver == true end
-local drawn = {}
-function ISPanel:drawRect() end
+local drawn, fills = {}, {}
+function ISPanel:drawRect(_, _, _, _, _, r, g, b) table.insert(fills, { r, g, b }) end
 function ISPanel:drawTextCentre(text) table.insert(drawn, text) end
 ISMouseDrag = {}
 ISInventoryPane = { getActualItems = function(dragging) return dragging.items end }
@@ -71,6 +71,22 @@ drawn = {}
 zone:render()
 zone:render()
 check("held over it, the drag is judged once, and its lines shown", judged == 1 and drawn[1] == "2 of 3" and drawn[2] == "2 of 3")
+local function shown(colour)
+    for _, fill in ipairs(fills) do
+        if fill[1] == colour[1] and fill[2] == colour[2] and fill[3] == colour[3] then return true end
+    end
+    return false
+end
+check("some taken, some refused: orange", shown(DropZone.SOME_FILL) and not shown(DropZone.OK_FILL))
+ISMouseDrag.dragging = { items = { "fish" } }
+zone.mouseOver, fills = true, {}
+zone:render()
+check("all taken: green", shown(DropZone.OK_FILL) and not shown(DropZone.SOME_FILL))
+ISMouseDrag.dragging = { items = { "apple" } }
+fills = {}
+zone:render()
+check("none taken: red", shown(DropZone.NO_FILL))
+ISMouseDrag.dragging = { items = { "fish", "fish", "apple" } }
 zone.mouseOver = false
 drawn = {}
 zone:render()

@@ -1,5 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.25
+- **The drop square has three colours** (user, session 53): green when it takes everything dragged, orange when it
+  takes some and refuses the rest, red when it takes nothing. `test_drop_zone` checks each.
+
 ## 0.1.24
 - **A drop square for info windows** (`DropZone.lua`, `InfoWindow:dropZone`; user, session 53, mock
   `art/rack_drop_mock.png`): an always-shown square under a station's list that takes a selection dragged from the

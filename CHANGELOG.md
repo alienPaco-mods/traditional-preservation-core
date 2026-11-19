@@ -1,5 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.29
+- **For the Smokehouse's menu** (ROADMAP section 12, S3): `Smokehouse.redraw(tile)` redraws every tile of the shed
+  now (was the flue's own local), so a mod taking a finished piece off updates the door look at once.
+
 ## 0.1.28
 - **The Smokehouse's build** (ROADMAP section 12, item 5): Woodwork 5 and 2 Large Hooks with the 14 planks and 20
   nails (was Woodwork 3), between the Hanging Beam's 4 and the Gantry's 6; `TPC.kit("smokehouse")` gives the hooks.

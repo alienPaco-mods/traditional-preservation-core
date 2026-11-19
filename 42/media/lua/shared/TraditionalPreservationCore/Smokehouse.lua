@@ -333,10 +333,12 @@ function Smokehouse.connectCandidate(tile)
     return candidates[1]
 end
 
-local function redrawChamber(tile)
+-- Redraws every tile of the shed now (the flue laid, a finished piece taken), without waiting for the next tick.
+function Smokehouse.redraw(tile)
     if not (tile and Smokehouse.World) then return end
     for _, chamberTile in ipairs(Smokehouse.chamberTiles(tile)) do Smokehouse.World.refresh(chamberTile[1]) end
 end
+local redrawChamber = Smokehouse.redraw
 
 -- The flue as a Stone Hearth connection: Core's Connect / Disconnect build it; its menu texts, icon and notes are
 -- SmokehouseUI's.

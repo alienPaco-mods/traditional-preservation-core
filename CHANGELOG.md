@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.19
+- **An empty doorway airs a room** (2026-11-19, from the long save: a door broken off read shut): a door frame on an
+  outside wall (the DoorWallN / DoorWallW flag on the square that owns the wall) with no door in it lets air in. A shut
+  door in the frame still shuts it. One more call, only on an outside wall with no window or door letting air in.
+- **`TPC.windows()` updates the room's answer** (2026-11-19, from the long save: `TPC.windows()` said shut while
+  `TPC.here()` still said aired). A room's answer is kept for the ten-minute reading, so a door shut a moment ago still
+  read open; the fresh scan now replaces the kept answer, and `TPC.here()` and the stations agree with it at once.
+
 ## 0.1.18
 - **An open outside door airs a room too** (2026-11-19, user): a door open to the outside, and not barricaded, counts as
   an open window does (`getDoorTo`, one more call on an outside wall with no window letting air in). A map door or a

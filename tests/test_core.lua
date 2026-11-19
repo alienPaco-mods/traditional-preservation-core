@@ -79,8 +79,10 @@ local function onWall(a, b, isKind)
     end
     return nil
 end
+IsoFlagType = { DoorWallN = "DoorWallN", DoorWallW = "DoorWallW" }
 local function square(x, y, z, roomId, region)
-    local sq = { objects = {} }
+    local sq = { objects = {}, flags = {} }
+    function sq:has(flag) return sq.flags[flag] == true end
     function sq:getX() return x end
     function sq:getY() return y end
     function sq:getZ() return z end
@@ -193,6 +195,21 @@ function builtDoor:isBarricaded() return false end
 on(builtDoor, 1, 0, 0)
 check("placeOf: an open built door to the outside airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
 world["1,0,0"].objects = {}
+Windows.forget()
+world["0,1,0"].flags.DoorWallW = true
+check("placeOf: an empty doorway (its door broken off) on the west wall airs it", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+on(door({}), 0, 1, 0)
+check("placeOf: with a shut door in it, it doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["0,1,0"].objects, world["0,1,0"].flags = {}, {}
+Windows.forget()
+world["1,3,0"].flags.DoorWallN = true
+check("placeOf: an empty doorway on the south wall (the square south of the room owns it)",
+    Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+world["1,3,0"].flags = {}
+Windows.forget()
+world["3,1,0"].flags.DoorWallW = true
+check("placeOf: an empty doorway into the next room doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+world["3,1,0"].flags = {}
 world["3,1,0"].objects = {}
 on(window({ open = true, north = true }), 1, 0, 0)
 Weather.placeOf(standing(1, 1, 0))
@@ -224,6 +241,13 @@ check("a second room inside the budget waits: no answer before (shut), and a roo
 clockMs = clockMs + Windows.SCAN_GAP_MS
 check("once the budget allows, it is read again", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 getTimestampMs = nil
+world["1,0,0"].objects = { window({ open = true, north = true }) }
+Windows.forget()
+H.setHours(5 / 6)
+Weather.placeOf(standing(1, 1, 0))
+world["1,0,0"].objects = { window({ north = true }) }
+check("measure: a fresh scan replaces the room's kept answer at once", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom"
+    and Windows.measure(world["1,1,0"]).aired == false and Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 local measured = Windows.measure(world["1,1,0"])
 check("measure: a fresh scan of the room, its squares, outside walls (12 less the 3 to the room next door) and calls",
     measured.aired == false and measured.squares == 9 and measured.walls == 9 and measured.calls > 0 and Windows.measure(world["-1,-1,0"]) == nil)

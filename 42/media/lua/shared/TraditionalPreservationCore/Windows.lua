@@ -1,6 +1,6 @@
 -- Traditional Preservation core: whether a room lets air in, for Weather's aired room. A window open, smashed or
--- without its glass, an empty frame, or a door open, and not barricaded, on any wall between the room and the outside
--- air, on the room's own level (a door to another room doesn't count: the scan asks only walls to the outside). A room is a map room (its squares share a room id) or one a player built (its squares share a
+-- without its glass, an empty frame, a door open or an empty doorway (its door broken off), and not barricaded, on any
+-- wall between the room and the outside air, on the room's own level (a door to another room doesn't count: the scan asks only walls to the outside). A room is a map room (its squares share a room id) or one a player built (its squares share a
 -- world region, IsoWorldRegion:isPlayerRoom): found by walking from the station's square through squares of the same
 -- room. Read square by square because a map room's own list stays empty (42.22.2: IsoRoom:getWindows() is never
 -- filled, IsoRoom.windows is only cleared). Each outside wall is asked through the game's own lookups (getWindowTo,
@@ -51,9 +51,11 @@ local function letsAirIn(isoObject)
     return false
 end
 
--- Whether the wall between square and its neighbour lets air in: a window there, else an empty frame, else a built
--- window, else a door. A neighbour out of the loaded world is read as a wall with no window.
-local function edgeAired(square, neighbour)
+-- Whether the wall between square and its neighbour (a step away) lets air in: a window there, else an empty frame,
+-- else a built window, else a door, else an empty doorway: a door frame (the wall's DoorWallN or DoorWallW flag, on
+-- the square that owns the wall: walls stand on a square's north and west edges) with no door in it. A neighbour out
+-- of the loaded world is read as a wall with no window.
+local function edgeAired(square, neighbour, step)
     if not neighbour then return false end
     calls = calls + 1
     local window = square:getWindowTo(neighbour)
@@ -66,7 +68,10 @@ local function edgeAired(square, neighbour)
     if built and letsAirIn(built) then return true end
     calls = calls + 1
     local door = square:getDoorTo(neighbour)
-    return door ~= nil and letsAirIn(door)
+    if door then return letsAirIn(door) end
+    local owner = (step[1] == 1 or step[2] == 1) and neighbour or square
+    calls = calls + 1
+    return owner:has(step[2] ~= 0 and IsoFlagType.DoorWallN or IsoFlagType.DoorWallW)
 end
 
 local function at(x, y) return x .. "," .. y end
@@ -96,7 +101,7 @@ local function scan(square, key)
                 if neighbour then calls = calls + 1 end
                 if not (neighbour and neighbour:isInARoom()) then
                     walls = walls + 1
-                    if edgeAired(current[1], neighbour) then return true, head - 1, walls end
+                    if edgeAired(current[1], neighbour, step) then return true, head - 1, walls end
                 end
             end
         end
@@ -131,13 +136,15 @@ function Windows.aired(square)
     return answers[key]
 end
 
--- For TPC.windows(): one fresh scan of square's room, not kept. nil for a square in no room, else
--- { aired, squares (read), walls (outside walls asked), calls (engine calls, about) }.
+-- For TPC.windows(): one fresh scan of square's room, kept as the room's answer for this reading (so TPC.here() and
+-- the stations agree with it at once). nil for a square in no room, else { aired, squares (read), walls (outside
+-- walls asked), calls (engine calls, about) }.
 function Windows.measure(square)
     calls = 0
     local key = Windows.roomKey(square)
     if not key then return nil end
     local aired, squares, walls = scan(square, key)
+    if answersReading == math.floor(getGameTime():getWorldAgeHours() / READING_HOURS) then answers[key] = aired end
     return { aired = aired, squares = squares, walls = walls, calls = calls }
 end
 

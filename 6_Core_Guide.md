@@ -230,7 +230,7 @@ Every station in the series works by the temperature of **where it stands**. The
 | **Open air** | Nothing overhead | The weather, hour by hour |
 | **Under an open roof** | A roof or a floor overhead, but not a room: a porch, a lean-to, an open shed | The same: a roof keeps off rain and sun, not the cold |
 | **Indoors** (a shut room) | A room (walls and a whole roof, built by you or found) with every window to the outside shut or boarded | The average of the last **3 days**, **2 C warmer in the cold months** and **up to 2 C warmer in summer** (stuffy: the sun through the glass, nowhere for the heat to go); **22 C while the power grid is on** |
-| **Aired room** | A room with a window to the outside open, smashed, with its glass taken out or an empty frame, or a door to the outside left open, and not boarded | The day's average, at most 1 C warmer in winter, never stuffy; 22 C while the power grid is on. Anything drying by air dries here as on a porch |
+| **Aired room** | A room with a window to the outside open, smashed, with its glass taken out or an empty frame, a door to the outside left open, or a doorway whose door was broken off, and not boarded | The day's average, at most 1 C warmer in winter, never stuffy; 22 C while the power grid is on. Anything drying by air dries here as on a porch |
 | **Basement** | Any level below ground | Follows the ground: the 10-day average, a month behind, and only two fifths as far from 10 C: about **5 C from January to March, 9 C in May, 13 C from July to September** |
 | *In the Smokehouse* | Not a place of its own: what hangs inside the Smokehouse | As under an open roof, but out of the rain and wind; the power grid doesn't warm it |
 

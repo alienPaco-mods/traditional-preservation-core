@@ -564,7 +564,8 @@ shade air already. A **shut room** (Sheltered: in a room, every window to the ou
 weather by its walls: the mean of the last three days (`ROOM_HOURS`, `threeDayTemperature`), +2 C in the cold from a
 10 C mean down (`ROOM_LIFT`, none from 18 C: the house's mass, the people, the sun through the glass) and stuffy in
 summer, up to +2 C from 18 C to 21 C (`ROOM_SUMMER_LIFT`). An **aired room** (AiredRoom, *Aired room*: a window to the
-outside open, smashed, without its glass or an empty frame, or a door to the outside open, and not barricaded;
+outside open, smashed, without its glass or an empty frame, a door to the outside open or an empty doorway, and not
+barricaded;
 `Windows.aired`) follows the day's
 mean (`AIRED_HOURS`, `dayTemperature`), at most +1 C in winter (`AIRED_LIFT`): within a degree of outside, never
 stuffy. In PZ the ground floor is boarded up, so the aired room is usually upstairs. While the grid is on both rooms
@@ -576,7 +577,8 @@ tools start from `Weather.settledMeans` (the sampled year gone round twice), not
 heated house: most players don't keep one heated, so autumn indoors is slow and a fire is the answer.
 `Windows.lua` walks the room's squares (a map room by `getRoomID()`, a built one by its world region) because
 `IsoRoom:getWindows()` is never filled, and asks each outside wall through the game's own lookups (`getWindowTo`,
-`getWindowFrameTo`, `getWindowThumpableTo`, `getDoorTo`), never the other objects on a square. It is kept cheap on purpose: a
+`getWindowFrameTo`, `getWindowThumpableTo`, `getDoorTo`, then the wall's DoorWallN / DoorWallW flag for an empty
+doorway), never the other objects on a square. It is kept cheap on purpose: a
 room's answer holds for the ten-minute reading, a room is read at most 150 squares from the station, and at most one
 scan runs in 20 real milliseconds (a room due inside that keeps its last answer). `TPC.windows()` times one.
 Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse

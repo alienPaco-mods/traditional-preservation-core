@@ -202,18 +202,29 @@ local Weather = require "TraditionalPreservationCore/Weather"
    window at a time across every mod); see its header and Dairy's Incubator Info. A window opens from the station's
    right-click menu only: an Info row in its submenu and the same row at the bottom of the main menu
    (`UI.topInfo`, vanilla's place for such rows). A left click stays vanilla's, as for any furniture (a container's loot
-   window; vanilla gives no workstation a left click). A station holding many pieces lists them with `self:pieceList(y, label,
+   window; vanilla gives no workstation a left click). A window reads in blocks, in this order, each under
+   `self:section(y, label)` (a small grey header and a hairline): Place, Holds, Working, List, Buttons, the drop
+   square, Notes; a block with nothing to show is left out. Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
+   station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
+   real count when small, else five cells of a share), heat a thermometer with marks, an arrow and its rate between;
+   a lone holding takes a lore line (`self:holds(y, holdings, lore)`: real-world history, checked, a translation key).
+   Work is horizontal: bars (`self:bar`), 18 px, the text inside or under. Spacing is on a 4 px grid (padding 12);
+   the label column is as wide as the longest label; a window is 400 wide unless its holdings need more (up to 680)
+   and as tall as what it shows. The rules and mocks: ROADMAP NEXT 1 and `WIP/TPCore/art/all_info_mock.png`.
+   A station holding many pieces lists them with `self:pieceList(y, label,
    rows)` (`PieceList.lua`): a scrolling list under a header with a sort switch (furthest along first, least
    along first) and a row of tabs (All and one for each process present, with its count, wrapping onto more lines; none
    with a single process: a row names its `tab`, ordered by `tabOrder`; each window keeps its own tab, back to All when
    that tab empties), one row a piece (icon, name, a bar and its text, a line under it if given) and the row's popup on
    hover, drawn as a crafting slot's (`UI.drawTooltip`). The window builds a new rows table in refresh; the list
    lays it out again only then, or when the tab changes. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
-   `self:dropZone(y, idleText, judge, drop)` (`DropZone.lua`): an always-shown square that takes a selection
+   `self:dropZone(y, idleText, judge, drop, icon)` (`DropZone.lua`): an always-shown 56 px square, an icon of what it takes beside its text, that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
-   shown green (all taken), orange (some taken, `refused` set) or red (none) while held over it,
-   and `self:buttonRow(y, buttons)` a row of buttons (`{ title, enabled, tooltip, onClick }`, sharing the width), `drop(take)` queues the hand jobs, and `refused` shows over the player.
+   its border white (all taken), orange (some taken, `refused` set) or red (none) while held over it;
+   `drop(take)` queues the hand jobs, and `refused` shows over the player. `self:buttonRow(y, buttons)` draws
+   buttons (`{ title, icon, enabled, tooltip, onClick }`), each as wide as its text (12 px each side, gap 8), wrapping
+   onto a new line; a count goes in brackets in the title ("Take All (5)"), and a disabled one says why in its tooltip.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

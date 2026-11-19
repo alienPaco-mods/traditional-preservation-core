@@ -75,7 +75,7 @@ Right-click it. Its **Stone Hearth** submenu has:
 
 | Option | What it does |
 |---|---|
-| **Stone Hearth Info** | A small window: the fire, the fuel, a note |
+| **Stone Hearth Info** | A small window: a coloured band for the fire, the wood, what is fitted, Bank and Stoke buttons, a note |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
 | With Salt: **Fit Salt Pan** | Beds a 30 L salt pan in clay over the hole, to boil brine down (Salt's guide). One thing fitted at a time: the cauldron or the pan |
@@ -109,14 +109,13 @@ Fitted, the Stone Hearth still cooks and warms as before. Its submenu, now **Sto
 
 **Stone Hearth Info** then shows:
 
-| Line | Reads |
+| Part | Reads |
 |---|---|
-| Fire | Lit, Banked or Out |
-| Fuel | A bar (full is 12 hours of wood) and the time it will burn |
-| Cauldron | A bar in the colour of what it holds, and the litres, of 60 |
-| Holds | The fluid, or each fluid of a blend |
-| Heat | Its temperature |
-| Steaming | "Yes", "in 1.2 hours", "Not yet (85 C)" or "Not while banked" |
+| The band under the title | Red when lit ("burns 5 h 49 min, full heat"), orange when banked (embers and how long), grey when out (the wood in it); at its right a small button: a lighter for **Light the Fire** (the game's own light menu: matches, lighter, kindling), an extinguisher for **Put Out the Fire** |
+| Wood | Five cells (all five are 12 hours of wood), the time it will burn, and lit, banked or out |
+| Cauldron | A tank in the colour of what it holds, the litres of 60, and the fluid (each fluid of a blend) |
+| Heat | A thermometer with marks at 85 (steam) and 100 (boils), its temperature, and "steaming" or "steams in 1.2 hours" |
+| Bank the Fire, Stoke the Fire | Buttons: the one that can't work now is greyed, its hover says why |
 
 The window updates while it's open, and closes when you walk more than 6 squares away. What the cauldron holds shows in its mouth, in the fluid's own colour.
 
@@ -342,8 +341,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | Pour into the Cauldron is greyed out | The cauldron is full, or you have no container with a fluid in it |
 | A container shows in red | It holds a mixture, or a fluid that doesn't go with what's in the cauldron. It takes one fluid at a time (clean and tainted water are the exception: together they are tainted water) |
 | Fill from the Cauldron is greyed out | You need an empty container, or one holding the same fluid with room left |
-| Steaming says "Not yet (85 C)" | The fire is out, or its fuel won't last until the cauldron steams. Add wood |
-| Steaming says "Not while banked" | A banked fire holds 50 C. Stoke it |
+| Nothing under Heat, and it isn't steaming | The fire is out or banked (a banked fire holds 50 C: stoke it), or its fuel won't last until the cauldron steams: add wood |
 | No Bank the Fire option | The fire isn't lit |
 | No Light Fire option on a Stone Hearth that looks out | It's banked: Stoke the Fire, or Put out Fire first |
 | Can't pick the Stone Hearth up | It's burning, a cauldron is fitted, or it's joined to a Smokehouse |

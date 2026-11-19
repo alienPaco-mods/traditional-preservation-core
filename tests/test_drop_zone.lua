@@ -24,6 +24,7 @@ end
 function ISPanel:initialise() end
 function ISPanel:instantiate() end
 function ISPanel:setY(y) self.y = y end
+function ISPanel:setWidth(width) self.width = width end
 function ISPanel:setVisible(visible) self.visible = visible end
 function ISPanel:getIsVisible() return self.visible ~= false end
 function ISPanel:isMouseOver() return self.mouseOver == true end
@@ -55,8 +56,8 @@ local function drop(take) dropped = take end
 
 local nextY = window:dropZone(200, "Drag fish here", judge, drop)
 local zone = window.dropZoneUI
-check("the square is the window's child, inside the padding, at y", zone and #window.children == 1 and zone.x == 10
-    and zone.width == 340 and zone.y == 200)
+check("the square is the window's child, inside the padding, at y", zone and #window.children == 1 and zone.x == 12
+    and zone.width == 336 and zone.y == 200)
 check("the next y is under it", nextY == 200 + DropZone.HEIGHT + InfoWindow.BAR_GAP)
 window:dropZone(240, "Drag fish here", judge, drop)
 check("drawn again it moves, it isn't made again", #window.children == 1 and zone.y == 240)

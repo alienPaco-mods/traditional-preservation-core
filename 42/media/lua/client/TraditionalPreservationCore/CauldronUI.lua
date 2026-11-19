@@ -1,7 +1,8 @@
 -- Traditional Preservation core: the cauldron's menu rows and its fire's Info rows (Stone Hearth Info), given to Fire.attach as any mod's
 -- attachment would give its own. The status row says what it holds; Pour into Cauldron takes a container of one fluid
 -- (or a blend), Fill from Cauldron and Empty Cauldron only when it holds something; mods' rows (CauldronUI.addMenu) go
--- between. The fire's Info shows its litres, fluid, heat and when it steams, then its notes and mods' (CauldronUI.addNotes).
+-- between. The fire's Info holds it as a tank and a thermometer (when it steams under), then its notes and mods'
+-- (CauldronUI.addNotes).
 require "TimedActions/TPCauldronWork"
 local UI = require "TraditionalPreservationCore/UI"
 local Fire = require "TraditionalPreservationCore/Fire"
@@ -123,25 +124,26 @@ local function addEmptyOption(menu, playerObj, fire, cauldron)
 end
 
 -- Steaming already, or when it will be while the fire burns on.
+-- Under the heat: steaming, or in how long while a lit fire burns on; nothing banked or out of reach.
 local function steamText(fireView)
     local cauldron = fireView.part
-    if CauldronFluid.isHot(cauldron) then return getText("IGUI_TraditionalPreservationCore_InfoHotYes") end
-    if fireView.banked then return getText("IGUI_TraditionalPreservationCore_InfoHotBanked") end
+    if CauldronFluid.isHot(cauldron) then return getText("IGUI_TraditionalPreservationCore_HeatSteaming") end
+    if fireView.banked then return nil end
     local hotIn = fireView.lit and CauldronFluid.hoursToHot(cauldron)
-    if hotIn and hotIn <= fireView.burnHours then return say("IGUI_TraditionalPreservationCore_InfoHotIn", hoursText(hotIn)) end
-    return getText("IGUI_TraditionalPreservationCore_InfoHotNo")
+    if hotIn and hotIn <= fireView.burnHours then return say("IGUI_TraditionalPreservationCore_HeatSteamsIn", hoursText(hotIn)) end
+    return nil
 end
 
-local function cauldronRows(window, y, fireView)
+-- The cauldron as a tank (its fluid's colour, the iron's when empty) and its heat.
+local function cauldronHolds(fireView, holdings)
     local cauldron, ml = fireView.part, mlOf(fireView.part)
-    y = window:bar(y, "IGUI_TraditionalPreservationCore_InfoCauldron", ml / CauldronFluid.CAULDRON_ML, CauldronFluid.liquidColour(cauldron) or IRON_COLOUR,
-        say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(CauldronFluid.CAULDRON_ML)))
-    y = window:row(y, "IGUI_TraditionalPreservationCore_InfoFluid",
-        ml > 0 and holds(cauldron) or getText("IGUI_TraditionalPreservationCore_InfoNothing"))
-    y = window:row(y, "IGUI_TraditionalPreservationCore_InfoTemp",
-        ml > 0 and say("IGUI_TraditionalPreservationCore_InfoDegrees", degrees(cauldron.tempC)) or "-")
-    if ml > 0 then y = window:row(y, "IGUI_TraditionalPreservationCore_InfoHot", steamText(fireView)) end
-    return y
+    table.insert(holdings, { kind = "tank", name = getText("IGUI_TraditionalPreservationCore_InfoCauldron"),
+        amount = say("IGUI_TraditionalPreservationCore_InfoLitres", litresText(ml), litresText(CauldronFluid.CAULDRON_ML)),
+        state = ml > 0 and holds(cauldron) or getText("IGUI_TraditionalPreservationCore_InfoNothing"),
+        share = ml / CauldronFluid.CAULDRON_ML, colour = CauldronFluid.liquidColour(cauldron) or IRON_COLOUR })
+    -- FireUI is required here, not at the top: it adds its menu handler when loaded, after this file's.
+    local heat = require("TraditionalPreservationCore/FireUI").heat
+    table.insert(holdings, heat(ml > 0 and cauldron.tempC or nil, ml > 0 and steamText(fireView) or nil, true))
 end
 
 local MENUS, NOTES = {}, {}
@@ -213,7 +215,7 @@ Fire.attach({
             addEmptyOption(menu, playerObj, fire, cauldron)
         end
     end,
-    rows = cauldronRows,
+    holds = cauldronHolds,
     notes = cauldronNotes,
 })
 

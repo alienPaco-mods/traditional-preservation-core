@@ -5,13 +5,17 @@
 -- attachment that has a fit (Fit Cauldron). Both have Connect for each connection with something beside the fire to
 -- join (Fire.connect: the Smokehouse's flue), or Disconnect for the one joined (FireUI.addConnect,
 -- FireUI.addDisconnect: the joined thing's own menu may offer them too). The fire's own rows
--- (FireUI.addMenu) and notes (FireUI.addNotes) show on both. A fire can't be picked up while
+-- (FireUI.addMenu) and notes (FireUI.addNotes) show on both. Its Info: a band under the title (the fire lit, banked
+-- or out, and how long it burns), what it holds (the wood, then what
+-- is fitted: Fire.attach's holds), Bank the Fire and Stoke the Fire as buttons, then the notes;
+-- the band holds Light the Fire (vanilla's light menu) or Put Out the Fire. A fire can't be picked up while
 -- it burns or while something is fitted or joined. Clicking one opens its Info too.
 require "TimedActions/TPFireTend"
 require "TimedActions/TPFireFit"
 require "TimedActions/TPFireConnect"
 local UI = require "TraditionalPreservationCore/UI"
 local Fire = require "TraditionalPreservationCore/Fire"
+local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
 local Wrap = require "TraditionalPreservationCore/Wrap"
 
@@ -19,8 +23,8 @@ local FireUI = {}
 
 local say, tooltipFor = UI.say, UI.tooltip
 local LINE = " <LINE> " -- a line break in a hover
-local FUEL_SCALE_MIN = 12 * 60 -- a full Fuel bar: 12 hours of burning
-local FUEL_COLOUR = { 0.75, 0.42, 0.18 }
+local FUEL_SCALE_MIN = 12 * 60 -- five full Wood cells: 12 hours of burning
+local LIGHT_ICON, OUT_ICON = "Item_Lighter", "Item_Extinguisher" -- the band's button: the game's own items
 local FIT_ICON = "media/textures/Item_TPCauldron.png"
 local TOOL_NAMES = { PLIERS = "IGUI_TraditionalPreservationCore_ToolPliers" }
 
@@ -334,6 +338,18 @@ function FireUI.notes(fireView)
     return notes
 end
 
+-- The heat of what sits on the fire as a thermometer holding: celsius (nil: nothing in it), state (its line under, or
+-- nil), with a mark at the boil and, if steams, at steaming (CauldronFluid.HOT_C).
+function FireUI.heat(celsius, state, steams)
+    local marks = {}
+    local hot, boil = CauldronFluid.HOT_C, CauldronFluid.BOIL_C
+    if steams then table.insert(marks, { hot, say("IGUI_TraditionalPreservationCore_MarkSteam", tostring(hot)) }) end
+    table.insert(marks, { boil, say("IGUI_TraditionalPreservationCore_MarkBoils", tostring(boil)) })
+    return { kind = "heat", name = getText("IGUI_TraditionalPreservationCore_InfoTemp"),
+        amount = celsius and say("IGUI_TraditionalPreservationCore_InfoDegrees", UI.degrees(celsius)) or "-",
+        state = state, celsius = celsius, marks = marks }
+end
+
 FireWindow = InfoWindow:derive("TraditionalPreservationCoreFireWindow")
 
 function FireWindow:new(playerObj, fire)
@@ -352,7 +368,69 @@ function FireWindow:refresh()
     local connection, joined = Fire.connectionOf(fire)
     self.fireView = { part = part, attachment = attachment, fireModData = Fire.fireModDataNow(fire), connection = connection, joined = joined,
         lit = Fire.isBurning(fire), banked = Fire.isBanked(fire), fuelMin = fire:getFuelAmount(),
-        burnHours = Fire.fuelHours(fire), help = Fire.isBare(fire) and Fire.kindOf(fire).display.help or nil }
+        burnHours = Fire.fuelHours(fire), help = Fire.isBare(fire) and Fire.kindOf(fire).display.help or nil,
+        lore = Fire.isBare(fire) and Fire.kindOf(fire).display.lore or nil }
+end
+
+local FIRE_TEXTS = { banked = "IGUI_TraditionalPreservationCore_InfoFireBanked", lit = "IGUI_TraditionalPreservationCore_InfoFireLit",
+    out = "IGUI_TraditionalPreservationCore_InfoFireOut" }
+-- The band under the title, by the fire: red lit, orange banked, grey out (user, session 62), and what it says.
+local FIRE_BANDS = {
+    lit = { colour = { 0.67, 0.22, 0.16 }, dark = { 0.27, 0.1, 0.08 }, text = "IGUI_TraditionalPreservationCore_BandLit" },
+    banked = { colour = { 0.92, 0.55, 0.16 }, dark = { 0.47, 0.24, 0.06 }, text = "IGUI_TraditionalPreservationCore_BandBanked" },
+    out = { colour = { 0.51, 0.51, 0.51 }, dark = { 0.18, 0.18, 0.18 }, text = "IGUI_TraditionalPreservationCore_BandOut" },
+}
+
+-- The wood as five cells of 12 hours, the time it burns on and how.
+local function woodHolding(fireView, fireText)
+    local burnMin = math.floor(fireView.burnHours * 60)
+    return { kind = "cells", name = getText("IGUI_TraditionalPreservationCore_InfoWood"),
+        share = fireView.fuelMin / FUEL_SCALE_MIN,
+        amount = say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)),
+        state = string.lower(fireText) }
+end
+
+-- Light the Fire opens vanilla's own light menu under the button (what to light it with, the fuel it needs), as
+-- vanilla's loot window Light button does for a fireplace.
+local function openLightMenu(window, fire, button)
+    local playerObj = window.playerObj
+    local x, y = window:getAbsoluteX() + button.x, window:getAbsoluteY() + button.y + button.height
+    local context = ISContextMenu.get(playerObj:getPlayerNum(), x, y)
+    ISCampingMenu.doLightFireOption(playerObj, context, nil, fire:hasFuel(), ISCampingMenu.getNearbyFuelInfo(playerObj),
+        fire, ISBBQLightFromPetrol, ISBBQLightFromLiterature, ISBBQLightFromKindle)
+end
+
+-- The band's button (the Lighter or the Extinguisher, icon only): Light the Fire on a fire that is out, Put Out the Fire on a lit or banked one (vanilla's
+-- extinguish for a lit one; a banked one's own, as the menu's Put out Fire).
+local function lightOrOut(window, fireView)
+    local fire, playerObj = window.station, window.playerObj
+    if fireView.lit or fireView.banked then
+        return { title = getText("ContextMenu_TraditionalPreservationCore_PutOutFire"), icon = OUT_ICON, enabled = true,
+            tooltip = getText("IGUI_TraditionalPreservationCore_PutOutHelp"), onClick = function()
+                if fireView.banked then return onFireAction(playerObj, fire, "out") end
+                ISBBQMenu.onExtinguish(nil, playerObj:getPlayerNum(), fire)
+            end }
+    end
+    return { title = getText("ContextMenu_TraditionalPreservationCore_LightFire"), icon = LIGHT_ICON, enabled = true,
+        tooltip = getText("IGUI_TraditionalPreservationCore_LightHelp"),
+        onClick = function(clicked) openLightMenu(window, fire, clicked) end }
+end
+
+-- Bank the Fire works on a burning fire, Stoke the Fire on a banked one; the other says why not.
+local function fireButtons(window, fireView)
+    local fire, playerObj = window.station, window.playerObj
+    local function button(mode, title, help, refusal)
+        local enabled = refusal == nil
+        return { title = getText(title), icon = FireUI.fireIcon(fire, mode), enabled = enabled,
+            tooltip = getText(enabled and help or refusal), onClick = function() onFireAction(playerObj, fire, mode) end }
+    end
+    local out = not fireView.lit and not fireView.banked
+    return {
+        button("bank", "ContextMenu_TraditionalPreservationCore_BankFire", "IGUI_TraditionalPreservationCore_BankHelp",
+            out and "IGUI_TraditionalPreservationCore_FireIsOut" or fireView.banked and "IGUI_TraditionalPreservationCore_BankedAlready" or nil),
+        button("stoke", "ContextMenu_TraditionalPreservationCore_StokeFire", "IGUI_TraditionalPreservationCore_StokeHelp",
+            out and "IGUI_TraditionalPreservationCore_FireIsOut" or not fireView.banked and "IGUI_TraditionalPreservationCore_BurningAlready" or nil),
+    }
 end
 
 function FireWindow:render()
@@ -361,14 +439,24 @@ function FireWindow:render()
     local fireView = self.fireView
     local y = self:top()
 
-    local fire = fireView.banked and "IGUI_TraditionalPreservationCore_InfoFireBanked"
-        or fireView.lit and "IGUI_TraditionalPreservationCore_InfoFireLit" or "IGUI_TraditionalPreservationCore_InfoFireOut"
-    y = self:row(y, "IGUI_TraditionalPreservationCore_InfoFire", getText(fire))
-    -- The bar is the wood; the time is how long it burns, three times as long banked.
+    local state = fireView.banked and "banked" or fireView.lit and "lit" or "out"
+    local fireText = getText(FIRE_TEXTS[state])
+    -- The band says it: lit or banked with the time it burns on, out with the wood in it, or none.
+    local band = FIRE_BANDS[state]
     local burnMin = math.floor(fireView.burnHours * 60)
-    y = self:bar(y, "IGUI_TraditionalPreservationCore_InfoFuel", fireView.fuelMin / FUEL_SCALE_MIN, FUEL_COLOUR,
-        say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)))
-    if fireView.attachment and fireView.attachment.rows then y = fireView.attachment.rows(self, y, fireView) end
+    local time = say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60))
+    local bandText = (state ~= "out" or fireView.fuelMin > 0) and say(band.text, time) or getText("IGUI_TraditionalPreservationCore_BandNoWood")
+    y = self:band(fireText, bandText, band.colour, band.dark, lightOrOut(self, fireView))
+    -- What it holds: the wood, then what is fitted (its holds; an attachment with rows only draws them under).
+    local holdings = { woodHolding(fireView, fireText) }
+    local attachment = fireView.attachment
+    if attachment and attachment.holds then attachment.holds(fireView, holdings) end
+    y = self:section(y, "IGUI_TraditionalPreservationCore_SectionHolds")
+    -- A bare fire holds only its wood: its kind's lore stands beside it.
+    local lore = #holdings == 1 and fireView.lore and getText(fireView.lore) or nil
+    y = self:holds(y, holdings, lore)
+    if attachment and attachment.rows then y = attachment.rows(self, y, fireView) end
+    y = self:buttonRow(y + InfoWindow.BAR_GAP, fireButtons(self, fireView))
     self:drawNotes(y, FireUI.notes(fireView))
 end
 

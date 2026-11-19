@@ -23,5 +23,7 @@
   "ContextMenu_TraditionalPreservationCore_ClothOneLot": "One Lot",
   "ContextMenu_TraditionalPreservationCore_ClothAllLots": "All (%1 lots)",
   "ContextMenu_TraditionalPreservationCore_ClothTakeDone": "Take Off the Finished Lots (%1)",
-  "ContextMenu_TraditionalPreservationCore_ClothTakeAll": "Take Everything Off"
+  "ContextMenu_TraditionalPreservationCore_ClothTakeAll": "Take Everything Off",
+  "ContextMenu_TraditionalPreservationCore_LightFire": "Light the Fire",
+  "ContextMenu_TraditionalPreservationCore_PutOutFire": "Put Out the Fire"
 }

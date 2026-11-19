@@ -210,7 +210,8 @@ StoneHearth.kind = Fire.kind({
         fire = { bank = "media/textures/Item_TPStoneHearthBanked.png", stoke = "media/textures/Item_TPStoneHearthLit.png" },
         help = { out = "IGUI_TraditionalPreservationCore_StoneHearthHelpOut",
             lit = "IGUI_TraditionalPreservationCore_StoneHearthHelpLit",
-            banked = "IGUI_TraditionalPreservationCore_StoneHearthHelpBanked" } },
+            banked = "IGUI_TraditionalPreservationCore_StoneHearthHelpBanked" },
+        lore = "IGUI_TraditionalPreservationCore_StoneHearthLore" },
     refusals = { joined = "IGUI_TraditionalPreservationCore_FlueStoneHearthJoined",
         door = "IGUI_TraditionalPreservationCore_FlueStoneHearthDoor" },
 })

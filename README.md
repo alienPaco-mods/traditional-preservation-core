@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.20)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.34)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -18,7 +18,7 @@ A knee-high block of grey dressed stone in courses under one overhanging slab, f
 
 **The hole** shows what is cooking (`StoneHearth.holeLook`, by the stove or oven flag of what is inside, `StoneHearth.cooksOn`): open, with smoke rising out of it while lit; a dark forged pot with its lid on for any stove food or container holding fluid; a sooted steel lid for oven food only (the smoke then leaks round the door). Joined to a connection that takes the smoke (the Smokehouse's flue) it is never open.
 
-**Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (fire and fuel, with a note), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** (and **Fit Salt Pan** with Salt) and, with a Smokehouse beside it, **Connect the Stone Hearth**.
+**Right-click it.** Vanilla's Stone Hearth submenu gains **Stone Hearth Info** (a band for the fire, red lit, orange banked, grey out, with a lighter or extinguisher button at its right; the wood as cells; Bank and Stoke buttons; a note), **Bank the Fire** / **Stoke the Fire** (the loot window has it too, a button beside vanilla's Put out Fire), **Fit Cauldron** (and **Fit Salt Pan** with Salt) and, with a Smokehouse beside it, **Connect the Stone Hearth**.
 
 **Two slots** (`Fire.attach`, `Fire.connect`): one thing fitted over the hole (the Forged Cauldron, or Salt's salt pan: a mod's attachment brings its own whole-hearth tiles through `StoneHearth.fittedTiles`) and one thing joined to its back or a flank (the Smokehouse's flue), each free of the other. A Stone Hearth can't be picked up while it burns (too hot), while something is fitted or while something is joined; the pick-up cursor says so.
 
@@ -38,7 +38,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 - **Empty the Cauldron** (when it holds anything): pours the whole lot away, its age record with it. The hover says how much of what.
 - **Remove Cauldron**.
 
-**Stone Hearth Info** then also shows the cauldron's litres as a bar in the colour of what it holds, what it holds, its heat, and under **Steaming** either "Yes", "in 1.2 hours", "Not yet (85 C)" or "Not while banked". It closes when you walk more than 6 squares away.
+**Stone Hearth Info** then also shows the cauldron as a tank in the colour of what it holds (its litres and fluid under it) and its heat as a thermometer marked at 85 (steam) and 100 (boils), with "steaming" or "steams in 1.2 hours" under it. It closes when you walk more than 6 squares away.
 
 ### The cauldron
 

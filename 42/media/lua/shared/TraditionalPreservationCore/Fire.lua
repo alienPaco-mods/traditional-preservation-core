@@ -173,7 +173,9 @@ end
 --                                         (Bank / Stoke's icons) }; the fire's kind's display if left out
 --   status(part)                          client: the menu's first row, text and icon
 --   menu(menu, playerObj, fire, part)     client: its rows, after Bank / Stoke
---   rows(window, y, info) -> y            client: its rows in the Info window; info.part is the part
+--   holds(fireView, holdings)             client: adds what it holds to the Info window's Holds (Holds.lua),
+--                                         after the wood; fireView.part is the part
+--   rows(window, y, info) -> y            client: rows of its own in the Info window, under Holds; info.part is the part
 --   notes(fireView, notes)                client: its Info notes (FireUI.notes has fireView)
 local ATTACHMENTS = Fire.registry("Fire.attach")
 
@@ -238,7 +240,8 @@ end
 --                                          up and put down: its modData doesn't go with it), or nil; optional
 --   display                                how it shows with nothing fitted: { icon, title, info, fire = { bank,
 --                                          stoke } } (Fire.attach's display), and help = { out, lit, banked }: its
---                                          Info's first note by its fire (text keys)
+--                                          Info's first note by its fire (text keys), and lore: a line of real-world
+--                                          history beside its wood in Info while bare (a text key, optional)
 --   refusals                               why Connect is refused, in its words: { joined (something already
 --                                          is), door (the target is on its door's side) } (text keys)
 --   fireboxCapacity                        optional: its fire box's capacity. The game saves a container's capacity

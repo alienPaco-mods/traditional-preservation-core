@@ -1,5 +1,27 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.34
+- **UI pass, first part: the rules in Core's InfoWindow** (session 61's rules). Every Info window: padding 12 on a
+  4 px grid, 400 wide (wider when what it holds needs it, up to 680), the label column as wide as its longest label,
+  bars 18 px with their text inside, or under the bar when it doesn't fit. New blocks: `section` (a small grey header
+  and a hairline), `band` (a coloured strip under the title for a state at a glance, an icon-only button at its
+  right) and `holds` (new `Holds.lua`: what a station holds standing up, packed from the left in flow order: fluids
+  as tanks with vanilla's fluid gradient, anything else as a column of cells the same size as a tank, heat as a
+  thermometer coloured by its heat with marks; an arrow with its rate between). A lone holding with lore
+  (`holds(y, holdings, lore)`) has a line of real-world history beside it, in the game's serif italic with a rule at
+  its left. Names under holdings are bold (Small drawn twice a pixel apart). Buttons are as wide as their text, take
+  an icon, and wrap onto a new line. The drop square is 56 px with an icon of what it takes, its border white when it
+  takes everything.
+- **Stone Hearth Info** is the first window on the new rules: a band under the title, red lit, orange banked, grey
+  out, with how long it burns, and at its right the game's Lighter for **Light the Fire** (vanilla's light menu
+  opens under it, as the loot window's Light does) or its Extinguisher for **Put Out the Fire**; then Holds (the wood
+  as five cells of 12 hours; with nothing fitted, the curfew bell's lore beside it; fitted, the cauldron as a tank and
+  its heat as a thermometer with 85 steam and 100 boils); then **Bank the Fire** and **Stoke the Fire** as buttons
+  (the one that can't work now says why); then the notes.
+- Internal: `Fire.attach` takes `holds(fireView, holdings)`; `FireUI.heat(celsius, state, steams)` makes the
+  thermometer for any attachment; a fire kind's display takes `lore`. Unused texts gone (the Fuel and Steaming rows').
+  New test `test_holds.lua`.
+
 ## 0.1.33
 - **`UI.confirm(playerObj, text, onYes)`**: a yes or no box before a menu row that loses something for good (vanilla's
   `ISModalDialog`, as for killing an animal; a controller's focus moves to it). First use: Vinegar's Pour Away the Batch.

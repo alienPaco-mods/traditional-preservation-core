@@ -1,9 +1,9 @@
 -- Traditional Preservation core: an info window's drop square. A selection dragged from the inventory or a loot
 -- window (vanilla's ISMouseDrag, read as vanilla's crafting slots read it: ISInventoryPane.getActualItems) is judged
--- while it is held over the square, which turns green when it takes everything, orange when it takes some and refuses
--- the rest, red when it takes nothing, with what would happen or why not, and on release the
--- station takes what it takes. At rest it says what it takes. A window doesn't make one itself:
--- InfoWindow:dropZone(y, idleText, judge, drop) draws it in the window's flow.
+-- while it is held over the square, whose border turns white when it takes everything, orange when it takes some and
+-- refuses the rest, red when it takes nothing, with what would happen or why not, and on release the
+-- station takes what it takes. At rest it says what it takes, beside an icon of it. A window doesn't make one itself:
+-- InfoWindow:dropZone(y, idleText, judge, drop, icon) draws it in the window's flow.
 --   judge(items)  returns { take = the items it would take, lines = text lines to show, refused = why the others
 --                 aren't taken (finished text) or nil }; called while dragging over the square and on release
 --   drop(take)    takes them (queues the hand jobs); what was refused shows over the player in red
@@ -11,11 +11,12 @@ require "ISUI/ISPanel"
 
 local DropZone = ISPanel:derive("TraditionalPreservationCoreDropZone")
 
-DropZone.HEIGHT = 60          -- three lines of text
+DropZone.HEIGHT = 56          -- three lines of text
 DropZone.TEXT_MARGIN = 6
+DropZone.ICON, DropZone.ICON_GAP = 16, 6
 DropZone.DASH, DropZone.GAP, DropZone.EDGE = 6, 4, 2
 DropZone.IDLE_EDGE = { 0.47, 0.47, 0.47 }
-DropZone.OK_EDGE, DropZone.OK_FILL = { 0.4, 0.78, 0.4 }, { 0.24, 0.55, 0.24, 0.2 }
+DropZone.OK_EDGE, DropZone.OK_FILL = { 1, 1, 1 }, { 0.24, 0.55, 0.24, 0.2 }
 DropZone.SOME_EDGE, DropZone.SOME_FILL = { 0.92, 0.6, 0.25 }, { 0.65, 0.4, 0.15, 0.2 }
 DropZone.NO_EDGE, DropZone.NO_FILL = { 0.86, 0.35, 0.27 }, { 0.63, 0.24, 0.2, 0.2 }
 DropZone.IDLE_TEXT, DropZone.OK_TEXT, DropZone.NO_TEXT = { 0.7, 0.7, 0.7 }, { 1, 1, 1 }, { 0.9, 0.43, 0.35 }
@@ -89,6 +90,16 @@ function DropZone:render()
     end
     local lineHeight = getTextManager():getFontHeight(UIFont.Small)
     local y = (self.height - #shown * lineHeight) / 2
+    -- At rest, one line: the icon before it, the two centred together.
+    local icon = not judged and #shown == 1 and self.icon
+    if type(icon) == "string" then icon = getTexture(icon) end
+    if icon then
+        local textWidth = getTextManager():MeasureStringX(UIFont.Small, shown[1])
+        local x = (self.width - textWidth - DropZone.ICON - DropZone.ICON_GAP) / 2
+        self:drawTextureScaledAspect(icon, x, (self.height - DropZone.ICON) / 2, DropZone.ICON, DropZone.ICON, 1, 1, 1, 1)
+        self:drawText(shown[1], x + DropZone.ICON + DropZone.ICON_GAP, y, textColour[1], textColour[2], textColour[3], 1, UIFont.Small)
+        return
+    end
     for _, line in ipairs(shown) do
         self:drawTextCentre(line, self.width / 2, y, textColour[1], textColour[2], textColour[3], 1, UIFont.Small)
         y = y + lineHeight
@@ -119,10 +130,11 @@ function DropZone.of(window, padding)
     return zone
 end
 
--- Places the square at y on window with these words and rules; returns the y under it.
-function DropZone.draw(window, padding, gap, y, idleText, judge, drop)
+-- Places the square at y on window with these words, rules and icon; returns the y under it.
+function DropZone.draw(window, padding, gap, y, idleText, judge, drop, icon)
     local zone = DropZone.of(window, padding)
-    zone.idleText, zone.judge, zone.drop = idleText, judge, drop
+    zone.idleText, zone.judge, zone.drop, zone.icon = idleText, judge, drop, icon
+    if zone.width ~= window.width - padding * 2 then zone:setWidth(window.width - padding * 2) end
     if zone.y ~= y then zone:setY(y) end
     return y + zone.height + gap
 end

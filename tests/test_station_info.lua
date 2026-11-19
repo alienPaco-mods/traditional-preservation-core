@@ -70,17 +70,17 @@ frame:createDynamicChildren()
 local panel = frame.tpInfo
 check("the mod's station gets a block, after vanilla's children", frame.vanillaChildren and panel and frame.children[1] == panel)
 
--- At 300 wide: padding 8, a row 12, a bar 14, a note of 3 lines (4 + 30), padding 8 = 76.
+-- At 300 wide: padding 8, a row 14 (12 and its gap), a bar 14, a note of 3 lines (4 + 30), padding 8 = 78.
 frame:calculateLayout(0, 0)
 check("the widget is wide enough for the block", frame.width == StationInfo.MIN_WIDTH)
-check("the block's height at that width", panel.height == 76)
-check("the widget grows by it, the block under vanilla's rows", frame.height == 80 + 76 and panel.y == 80 and panel.width == 300)
-frame:calculateLayout(300, 156)
-check("given its own height back it stays as it is", frame.height == 156 and panel.y == 80)
+check("the block's height at that width", panel.height == 78)
+check("the widget grows by it, the block under vanilla's rows", frame.height == 80 + 78 and panel.y == 80 and panel.width == 300)
+frame:calculateLayout(300, 158)
+check("given its own height back it stays as it is", frame.height == 158 and panel.y == 80)
 frame:calculateLayout(300, 200)
-check("given more, vanilla takes the rest", frame.height == 200 and panel.y == 124)
+check("given more, vanilla takes the rest", frame.height == 200 and panel.y == 122)
 frame:calculateLayout(600, 0)
-check("a wider window wraps the note less", panel.height == 56 and frame.height == 136)
+check("a wider window wraps the note less", panel.height == 58 and frame.height == 138)
 
 -- The block asks again twice a second, and has the window laid out again when its height changes.
 frame:calculateLayout(300, 0)
@@ -102,7 +102,7 @@ check("one that shrank gives the height back", frame.relaid[2] == -28)
 info.rows[2] = { "T_Wort", "5.0 of 20.0 L, sours in about 2d 18h, if the temperature holds" }
 check("a long row value wraps onto three lines", #require("TraditionalPreservationCore/InfoWindow").rowLines(panel, { padding = StationInfo.PADDING, labelWidth = StationInfo.LABEL_WIDTH },
     info.rows[2][2], 300) == 3
-    and panel:measure(300) == 8 + 12 + 32 + 4 + 30 + 8)
+    and panel:measure(300) == 8 + 14 + 34 + 4 + 30 + 8)
 info.rows[2] = nil
 
 -- The plain station's block (StationInfo.block), keys shown as they are.

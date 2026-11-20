@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.41
+- **The Smokehouse's band** (`SmokehouseUI.band`; the module now returns `SmokehouseUI`): its joined Stone Hearth's
+  fire as the hearth's own band, in its colours: Stoked (hot smoke and how long it burns), Banked (cold smoke on
+  embers), Out (no smoke, the wood in it), with the hearth's Light / Put Out button acting on the joined hearth;
+  grey No Fire with no button when none is joined. A mod may say the day is too warm for cold smoke
+  (`tooWarm`): banked then reads "too warm for cold smoke". Tested in `test_smokehouse_band`.
+- `FireUI.BANDS`, `FireUI.bandButton(window, fire)` and `FireUI.burnTime` are shared, so a window can show a fire
+  that isn't its own; Stone Hearth Info uses them unchanged.
+
 ## 0.1.40
 - **The Station block** (`InfoWindow:stationBlock`; user, session 66, `art/station_aligned_mock.png` H): the station's
   white outline icon, and at its right, in Small (Medium was too large in game), Place, **Season** (the series' season

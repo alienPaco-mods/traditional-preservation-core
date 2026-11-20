@@ -372,13 +372,20 @@ end
 
 local FIRE_TEXTS = { banked = "IGUI_TraditionalPreservationCore_InfoFireBanked", lit = "IGUI_TraditionalPreservationCore_InfoFireLit",
     out = "IGUI_TraditionalPreservationCore_InfoFireOut" }
--- The band under the title, by the fire: red lit, orange banked, grey out (user, session 62), and what it says.
-local FIRE_BANDS = {
+-- The band under the title, by the fire: red lit, orange banked, grey out (user, session 62), and what it says
+-- (the Smokehouse's band takes the colours too).
+FireUI.BANDS = {
     lit = { colour = { 0.67, 0.22, 0.16 }, dark = { 0.27, 0.1, 0.08 }, text = "IGUI_TraditionalPreservationCore_BandLit",
         word = "IGUI_TraditionalPreservationCore_BandStoked" },   -- STOKED, not LIT (user)
     banked = { colour = { 0.92, 0.55, 0.16 }, dark = { 0.47, 0.24, 0.06 }, text = "IGUI_TraditionalPreservationCore_BandBanked" },
     out = { colour = { 0.51, 0.51, 0.51 }, dark = { 0.18, 0.18, 0.18 }, text = "IGUI_TraditionalPreservationCore_BandOut" },
 }
+
+-- How long a fire burns on, "3 h 10 min" (its band's time).
+function FireUI.burnTime(burnHours)
+    local burnMin = math.floor(burnHours * 60)
+    return say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60))
+end
 
 -- The wood as five cells of 12 hours, the time it burns on and how.
 local function woodHolding(fireView, fireText)
@@ -400,13 +407,15 @@ local function openLightMenu(window, fire, button)
 end
 
 -- The band's button (the Lighter or the Extinguisher, icon only): Light the Fire on a fire that is out, Put Out the Fire on a lit or banked one (vanilla's
--- extinguish for a lit one; a banked one's own, as the menu's Put out Fire).
-local function lightOrOut(window, fireView)
-    local fire, playerObj = window.station, window.playerObj
-    if fireView.lit or fireView.banked then
+-- extinguish for a lit one; a banked one's own, as the menu's Put out Fire). fire is the window's own, or one it
+-- shows (the Smokehouse's joined Stone Hearth).
+function FireUI.bandButton(window, fire)
+    local playerObj = window.playerObj
+    local banked = Fire.isBanked(fire)
+    if banked or Fire.isBurning(fire) then
         return { title = getText("ContextMenu_TraditionalPreservationCore_PutOutFire"), icon = OUT_ICON, enabled = true,
             tooltip = getText("IGUI_TraditionalPreservationCore_PutOutHelp"), onClick = function()
-                if fireView.banked then return onFireAction(playerObj, fire, "out") end
+                if banked then return onFireAction(playerObj, fire, "out") end
                 ISBBQMenu.onExtinguish(nil, playerObj:getPlayerNum(), fire)
             end }
     end
@@ -441,11 +450,10 @@ function FireWindow:render()
     local state = fireView.banked and "banked" or fireView.lit and "lit" or "out"
     local fireText = getText(FIRE_TEXTS[state])
     -- The band says it: lit or banked with the time it burns on, out with the wood in it, or none.
-    local band = FIRE_BANDS[state]
-    local burnMin = math.floor(fireView.burnHours * 60)
-    local time = say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60))
+    local band = FireUI.BANDS[state]
+    local time = FireUI.burnTime(fireView.burnHours)
     local bandText = (state ~= "out" or fireView.fuelMin > 0) and say(band.text, time) or getText("IGUI_TraditionalPreservationCore_BandNoWood")
-    y = self:band(band.word and getText(band.word) or fireText, bandText, band.colour, band.dark, lightOrOut(self, fireView))
+    y = self:band(band.word and getText(band.word) or fireText, bandText, band.colour, band.dark, FireUI.bandButton(self, self.station))
     -- What it holds: the wood, then what is fitted (its holds; an attachment with rows only draws them under).
     local holdings = { woodHolding(fireView, fireText) }
     local attachment = fireView.attachment

@@ -81,4 +81,13 @@ for _, command in ipairs({ "cauldronInfo", "cauldron", "fuel", "hot" }) do
     check(command .. " says so when no Stone Hearth is near", run(command):find("No Stone Hearth", 1, true) ~= nil)
 end
 
+
+-- A fluid the game doesn't have, or the arguments out of order, are refused before anything is poured.
+local realFluid = Fluid
+Fluid = { Get = function(name) return name == "CowMilk" and {} or nil end }
+check("cauldron refuses a fluid the game doesn't have", run("cauldron", 20, 85, "Milk"):find("No fluid named Milk", 1, true) ~= nil)
+check("and arguments out of order", run("cauldron", "CowMilk", 20):find("numbers first", 1, true) ~= nil)
+check("a real fluid goes on to look for the hearth", run("cauldron", 20, 85, "CowMilk"):find("No Stone Hearth", 1, true) ~= nil)
+Fluid = realFluid
+
 H.done()

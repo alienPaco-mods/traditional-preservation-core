@@ -159,7 +159,7 @@ def pot(d, mouth_y=34):
            (106, mouth_y + 36), (88, mouth_y + 12), (84, mouth_y)])
 
 
-def yogurt_incubator():
+def culturing_pot():
     img, d = blank()
     pot(d, 40)
     ring(d, [38, 30, 90, 46])                                              # its lid
@@ -257,7 +257,7 @@ STATIONS = [
     ("DryingCloth", "Core", drying_cloth), ("StoneHearth", "Core", stone_hearth), ("Smokehouse", "Core", smokehouse),
     ("SaltingTub", "FishMeat", salting_tub), ("DryingFrame", "FishMeat", drying_frame),
     ("HangingBeam", "FishMeat", hanging_beam), ("Gantry", "FishMeat", gantry),
-    ("YogurtIncubator", "Dairy", yogurt_incubator), ("StarterCultureCrock", "Dairy", starter_crock),
+    ("CulturingPot", "Dairy", culturing_pot), ("StarterCultureCrock", "Dairy", starter_crock),
     ("KrautBarrel", "FruitVegetables", kraut_barrel), ("FermentingShelf", "Yeast", fermenting_shelf),
     ("LeachingVat", "Salt", leaching_vat), ("MaltingFloor", "Vinegar", malting_floor),
     ("FermentationVessel", "Vinegar", fermentation_vessel), ("OrleansVinegarCask", "Vinegar", vinegar_cask),

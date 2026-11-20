@@ -146,7 +146,8 @@ function DropZone.show(window, visible)
 end
 
 -- A drop target over something the window draws (a holding's tank, Holds): it judges and takes a drag as the square
--- does, but draws nothing itself; the window draws its frame from judgedNow(), over its own drawing.
+-- does, but draws nothing itself; the window draws its frame from judgedNow(), over its own drawing. A starter's slot
+-- also takes a click (click()) and a right click (menu(context) fills a menu at the mouse), and may take no drag.
 local DropTarget = DropZone:derive("TraditionalPreservationCoreDropTarget")
 
 function DropTarget:render()
@@ -154,12 +155,28 @@ end
 
 -- The judgement while a selection is dragged over it, else nil.
 function DropTarget:judgedNow()
-    if not self:getIsVisible() or not self:isMouseOver() then return nil end
+    if not self.judge or not self:getIsVisible() or not self:isMouseOver() then return nil end
     return self:judgement()
 end
 
--- Window's index'th target at x, y, width, height with these rules, made on the first call. Returns it.
-function DropZone.placeTarget(window, index, x, y, width, height, judge, drop)
+function DropTarget:onMouseUp(x, y)
+    if DropZone.dragged() then
+        if self.judge then DropZone.onMouseUp(self, x, y) end
+        return
+    end
+    if self.click then self.click() end
+end
+
+function DropTarget:onRightMouseUp(x, y)
+    if not self.menu or not self.window or not self.window.playerObj then return end
+    local context = ISContextMenu.get(self.window.playerObj:getPlayerNum(), self:getAbsoluteX() + x, self:getAbsoluteY() + y)
+    self.menu(context)
+    if #context.options == 0 then context:setVisible(false) end
+end
+
+-- Window's index'th target at x, y, width, height with these rules, made on the first call. Returns it. judge and drop
+-- may be nil (a slot that only takes clicks), click and menu too.
+function DropZone.placeTarget(window, index, x, y, width, height, judge, drop, click, menu)
     window.dropTargetsUI = window.dropTargetsUI or {}
     local target = window.dropTargetsUI[index]
     if not target then
@@ -169,7 +186,7 @@ function DropZone.placeTarget(window, index, x, y, width, height, judge, drop)
         window:addChild(target)
         window.dropTargetsUI[index] = target
     end
-    target.judge, target.drop = judge, drop
+    target.judge, target.drop, target.click, target.menu = judge, drop, click, menu
     if target.x ~= x then target:setX(x) end
     if target.y ~= y then target:setY(y) end
     if target.width ~= width then target:setWidth(width) end

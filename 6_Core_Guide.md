@@ -147,7 +147,7 @@ Water steams sooner than milk: nobody holds it back from the boil.
 
 > *Margin note:* six times the fluid doesn't take six times the wait. A bigger potful has less surface for its size, so the time grows with the cube root of the volume: a full 60 L cauldron takes less than twice as long as 10 L.
 
-What you fill from the cauldron leaves at the cauldron's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Yogurt Pot holds it for hours.
+What you fill from the cauldron leaves at the cauldron's heat. An ordinary container in your hands is back at room heat within seconds, as vanilla has it. Some mods keep the heat for you: Dairy's milk remembers it, and its Wrapped Clay Pot holds it for hours.
 
 **While you're away** the cauldron carries on: it heats for as long as the fuel it had would have lasted, then cools.
 

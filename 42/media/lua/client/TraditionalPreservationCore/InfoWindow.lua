@@ -507,20 +507,20 @@ local function judgedOver(window, index)
     return target and target.inUse and target:judgedNow() or nil
 end
 
--- A holding with drop (Holds' header) gets a drop target over its tank and heat bar; what a drag over it would do is
--- written by the mouse, as vanilla's own drag hints are.
+-- A holding with drop (Holds' header) gets a drop target over its tank and heat bar, a slot's over the slot (which
+-- also takes its click and menu); what a drag over it would do is written by the mouse, as vanilla's own drag hints are.
 local function placeTargets(window, holdings, units)
     local any = window.dropTargetsUI ~= nil
-    for _, holding in ipairs(holdings) do any = any or holding.drop ~= nil end
+    for _, holding in ipairs(holdings) do any = any or holding.drop ~= nil or holding.click ~= nil or holding.menu ~= nil end
     if not any then return end
     local DropZone = require "TraditionalPreservationCore/DropZone"
     local margin = require("TraditionalPreservationCore/Holds").DROP_MARGIN
     for _, target in pairs(window.dropTargetsUI or {}) do target.inUse = false end
     for index, holding in ipairs(holdings) do
         local unit, drop = units[index], holding.drop
-        if drop and unit then
+        if unit and (drop or holding.click or holding.menu) then
             local target = DropZone.placeTarget(window, index, unit.x - margin, unit.y - margin, unit.width + margin * 2,
-                unit.height + margin * 2, drop.judge, drop.drop)
+                unit.height + margin * 2, drop and drop.judge, drop and drop.drop, holding.click, holding.menu)
             target.inUse = true
         end
     end

@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.46)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.47)
 
 **Status: experimental, not released.** Back up your save before enabling.
 

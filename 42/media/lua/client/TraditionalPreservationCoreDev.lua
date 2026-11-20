@@ -193,6 +193,13 @@ function TPC.cauldronInfo()
 end
 
 function TPC.cauldron(litres, celsius, fluid)
+    -- A name the game has no fluid for went in as is and was never milk to Dairy (user, session 69: "Milk").
+    if (litres ~= nil and type(litres) ~= "number") or (celsius ~= nil and type(celsius) ~= "number") then
+        return say("TPC.cauldron(litres, celsius, fluid): numbers first, e.g. TPC.cauldron(20, 85, \"CowMilk\")")
+    end
+    if fluid and not Fluid.Get(fluid) then
+        return say(string.format("No fluid named %s. Milk is CowMilk, SheepMilk or AnimalMilk; water Water or TaintedWater", tostring(fluid)))
+    end
     local fire = nearestCauldron()
     if not fire then return end
     local cauldron = Cauldron.of(fire)

@@ -261,4 +261,37 @@ drawn = {}
 window:holds(0, { { kind = "cells", name = "Wood", amount = "", share = 0.4, pattern = "media/textures/TPCell_Wood.png" } })
 check("one pattern for every full cell", #drawn >= 2 and drawn[1].name == "media/textures/TPCell_Wood.png")
 
+
+-- Starter slots (user, session 69): an arrow to or from a slot is short; an empty slot's icon greyed, one in it bright;
+-- two icons split on the diagonal, a row at a time.
+local starter = { kind = "slot", name = "Add Starter", amount = "", icons = { "media/textures/Item_A.png" }, look = "empty", arrow = "" }
+local pot = { kind = "tank", name = "Milk", amount = "4.0 / 5 L", share = 0.8 }
+columns, arrows = Holds.layout({ starter, pot }, boldWidth)
+check("an arrow from a slot is SLOT_ARROW long", arrows[1] == Holds.SLOT_ARROW)
+drawn = {}
+window:holds(0, { starter, pot })
+check("an empty slot draws its icon greyed", drawn[1] and drawn[1].name == "media/textures/Item_A.png" and drawn[1].a == Holds.GREYED[4])
+drawn = {}
+starter.look = "in"
+window:holds(0, { starter, pot })
+check("a filled slot draws it bright", drawn[1] and drawn[1].a == 1)
+local rows = 0
+window.javaObject = { DrawSubTextureRGBA = function() rows = rows + 1 end }
+starter.look, starter.icons = "empty", { { name = "a", getWidth = function() return 32 end, getHeight = function() return 32 end },
+    { name = "b", getWidth = function() return 32 end, getHeight = function() return 32 end } }
+window:holds(0, { starter, pot })
+check("two icons split on the diagonal: each row draws both parts but the first", rows == Holds.SLOT_ICON * 2 - 1)
+
+
+-- A heat bar's marks close together stack down a line each, hottest first (user, session 69).
+local labels = Holds.heatLabels({ { 35, "35" }, { 45, "45" }, { 40, "40" } }, 0, 80)
+check("marks a few degrees apart: hottest first, each label a line under the last",
+    labels[1].text == "45" and labels[2].text == "40" and labels[3].text == "35"
+    and labels[2].textY == labels[1].textY + 10 and labels[3].textY == labels[2].textY + 10)
+labels = Holds.heatLabels({ { 85, "85" }, { 45, "45" } }, 0, 80)
+check("marks far apart stay centred on their ticks", labels[2].textY == labels[2].tickY - 5)
+check("crowded marks say so (their text moves right, a line to each tick); far ones don't",
+    select(2, Holds.heatLabels({ { 45, "45" }, { 40, "40" } }, 0, 80)) == true
+    and select(2, Holds.heatLabels({ { 85, "85" }, { 45, "45" } }, 0, 80)) == false)
+
 H.done()

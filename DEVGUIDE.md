@@ -102,7 +102,7 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 
 - A state the same piece passes through goes in brackets after its name, as vanilla's do (`Basil (Dried)`, `Clay Jar
   (Unfired)`), several joined by commas: `Walleye (Salt Cured)`, `Steak (Corned)`, `Beef (Hot Smoked)`, `Lard
-  (Melted)`, `Cow's Milk (Soured)`, `Yogurt Pot (Unfired)`. Vanilla adds its own `(Fresh)` or `(Rotten)` after.
+  (Melted)`, `Cow's Milk (Soured)`, `Lidded Clay Pot (Unfired)`. Vanilla adds its own `(Fresh)` or `(Rotten)` after.
 - A finished product with a trade name is named, fish or animal first: `Walleye Stockfish`, `Beef Charque`,
   `Bresaola`, `Country Ham`. What happens to it later is a bracket again: `(Matured)`, `(Aged)`, `(Soaked)`.
 - A part cut from it is a noun after the name: `Walleye Half`, `Walleye Head`, `Beef Slice (Hot Smoked)`.
@@ -199,7 +199,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    never copied by `tp sync` (`REQUIRED_ONLY` in `tp`): they own a tileset, a save key, a World and menus, which two
    mods can't both ship; the Smokehouse's four files too. A mod that wants them requires TP Core. Core's art: `tools/build_tileset.py` (tiledef 5173), the Smokehouse's four tiles and overlays in `tools/smokehouse_tiles.py`.
 5. **Info windows:** derive `TraditionalPreservationCore/InfoWindow` (rows, bars, notes, closes out of reach, one
-   window at a time across every mod); see its header and Dairy's Yogurt Incubator window. A window opens from the station's
+   window at a time across every mod); see its header and Dairy's Culturing Pot window. A window opens from the station's
    right-click menu only: a row "<the station's full name> Info" (as vanilla's Fireplace Info, Generator Info, Hutch
    Info: a station with a submenu; the bare name would sit twice beside it) in its submenu and the same row at the
    bottom of the main menu; the window's title is the bare name ("Fermentation Vessel")
@@ -228,6 +228,12 @@ local Weather = require "TraditionalPreservationCore/Weather"
    real-world history, checked, a translation key) goes beside the holdings, the window widening to give it LORE_MIN of room (left out only past MAX_WIDTH). A tank with
    `drop = { judge, drop }` is a drop target (`DropZone.placeTarget`): judge as the drop square's, plus `adds` (the
    share the pour would fill, shown see-through); the cauldron tries each container on a copy of itself by its pour.
+   A station's **starter** is a slot (`kind = "slot"`, art/starter_path_mock.png) left of its tank with an arrow into
+   it: dashed with the starter's icon greyed while it waits ("Add Starter"; two icons split on the diagonal when
+   either fits), bright once in, cleared to "used" when the batch takes it; a starter that comes back (kefir's
+   grains, the vinegar mother) gets a second slot right of the tank with an arrow out, greyed until it is there,
+   then bright in a green frame and clickable. A slot takes `drop`, `click` and `menu(context)` (a right click).
+   Crowded heat marks fan their labels out, a slanted line to each tick.
    Work is horizontal: bars (`self:bar`), 18 px, the text inside or under. Spacing is on a 4 px grid (padding 12);
    the label column is as wide as the longest label; a window is 400 wide unless its holdings need more (up to 680)
    and as tall as what it shows. The rules and mocks: ROADMAP NEXT 1 and `WIP/TPCore/art/all_info_mock.png`.

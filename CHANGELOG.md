@@ -1,5 +1,21 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.47
+- **A starter's slot in Holds** (`kind = "slot"`; user, session 69, `art/starter_path_mock.png`): a 34 px square left of
+  its tank with an arrow into it, or right of it with an arrow out (what comes back). Looks: empty (dashed, the icons
+  greyed: what it takes), in (bright), pending (greyed in a solid frame), ready (bright in a green frame); a count at
+  its foot's right; two icons split on the diagonal (`DrawSubTextureRGBA`, a row at a time). It takes a drag (`drop`,
+  as a tank), a click (`click`) and a right click (`menu(context)`); `DropZone.placeTarget` takes the two new
+  handlers, a target may take clicks alone. An arrow to or from a slot is `SLOT_ARROW` long; any arrow takes
+  `arrowColour`; a holding's name takes `nameColour`.
+- A tank's heat bar stacks marks that come close (`Holds.heatLabels`): each tick at its heat, its text a line under
+  the one above when they would overlap, hottest first (user, session 69: the pot's 45, 40 and 35 were drawn over
+  each other); then every text sits `LEADER` further right with a thin slanted line from its tick to it
+  (`art/heat_leaders_mock.png` A). Marks far apart (the cauldron's 85 and 100) stay as they were.
+- `TPC.cauldron` refuses a fluid the game has no such fluid for ("Milk": it went in and was never milk to Dairy, so it
+  never scalded) and arguments out of order, saying the right form.
+- The station outline icon generator names the Culturing Pot's `TPStation_CulturingPot.png` (was YogurtIncubator).
+
 ## 0.1.46
 - **The Craft row on items only mod recipes use** (`RecipeUI`): vanilla looks the recipes it lists up by bare name in
   module Base, so an item used only in TP's recipes (a ceramic jar) had no Craft row. Core adds vanilla's own row

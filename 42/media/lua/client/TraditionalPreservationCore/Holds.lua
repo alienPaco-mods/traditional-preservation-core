@@ -26,7 +26,15 @@
 --     a mixed holding, its full cells split by Holds.byShare) in place of the flat colour }
 --   { kind = "heat", name, amount, state, stateColour, celsius (nil: nothing to warm), top (the scale's top C,
 --     default 100), marks = { { celsius, text } } }
--- each with arrow (text above an arrow to the next holding, "" for a plain one, nil for none).
+--   { kind = "slot", name, nameColour, amount, state, stateColour, icons (one or two textures: two are split on the
+--     diagonal, the first top left, when either fits), look ("empty": dashed, the icons greyed, what it takes; "in":
+--     bright; "pending": greyed in a solid frame, what will come back; "ready": bright in a green frame), count (text at
+--     its foot's right, or nil), drop = { judge, drop } or nil as a tank's, click = function() or nil (a left click),
+--     menu = function(context) or nil (a right click fills a menu): a starter (user, session 69,
+--     art/starter_path_mock.png): what goes in, left of its tank with an arrow into it, and what comes back (kefir's
+--     grains, the vinegar mother) right of it with an arrow out. The slot stands on the tank's middle line. }
+-- each with arrow (text above an arrow to the next holding, "" for a plain one, nil for none) and arrowColour
+-- ({ r, g, b }, or nil for the usual grey). An arrow to or from a slot is SLOT_ARROW long.
 
 local Holds = {}
 
@@ -46,12 +54,20 @@ Holds.ARROW_PAD = 8          -- an arrow's ends to the holdings
 Holds.TEXT_GAP = 4           -- the graphic to its name
 Holds.HEAT_BAR = 12          -- a tank's heat bar
 Holds.HEAT_GAP = 6           -- the tank to its heat's room
+Holds.LEADER = 12            -- crowded marks: their text this much further right, a slanted line from each tick to it
+Holds.LEADER_COLOUR = { 0.55, 0.55, 0.55 }
 Holds.SETTLED_MIN = 3        -- a settled layer's least height, so a little still shows
 Holds.BUBBLE_SPEED = 8       -- a working tank's bubbles rise this many pixels a second at speed 1
 Holds.FOAM = 3               -- its foam cap's height at foam 1
 Holds.FOAM_COLOUR, Holds.BUBBLE_COLOUR = { 0.93, 0.89, 0.78 }, { 1, 0.96, 0.86 }
 Holds.SPILL = 14             -- foam running over: how far down the tank's side
 Holds.LINE_GAP = 4           -- a tank's line to its text
+Holds.SLOT = 34              -- a starter's slot, square
+Holds.SLOT_ICON = 28
+Holds.SLOT_ARROW = 34        -- an arrow to or from a slot
+Holds.SLOT_DASH = 2          -- the empty slot's dashes, and the gaps between them
+Holds.GREYED = { 0.6, 0.6, 0.6, 0.4 }     -- an icon greyed: tint and alpha
+Holds.READY = { 0.59, 0.82, 0.51 }        -- what is there to take: its frame
 -- Where a working tank's bubbles start: { across (0 to 1), up (0 to 1) }.
 local BUBBLES = { { 0.25, 0.15 }, { 0.6, 0.45 }, { 0.4, 0.75 }, { 0.75, 0.9 }, { 0.2, 0.55 }, { 0.55, 0.2 } }
 Holds.DROP_MARGIN = 6        -- a drop frame round its holding
@@ -160,6 +176,11 @@ function Holds.markSides(marks, top, height)
     return sides
 end
 
+-- The bar's height for a tank's heat: a line short of the tank's foot.
+local function heatBarHeight()
+    return Holds.HEIGHT - lineHeight() - 2
+end
+
 -- The graphic's width: a thermometer's leaves room for its marks' text on both sides, so the glass stays centred.
 -- A tank's heat: the room its temperature takes (the bar centred in it), and how far its ticks' text reaches past
 -- the bar's centre.
@@ -167,7 +188,8 @@ local function heatRoom(holding)
     local room = math.max(Holds.HEAT_BAR, measure(getText("IGUI_TraditionalPreservationCore_HeatDegrees", "100")))
     local marks = 0
     for _, mark in ipairs(holding.heat.marks or {}) do marks = math.max(marks, measure(mark[2])) end
-    local reach = Holds.HEAT_BAR / 2 + (marks > 0 and Holds.TICK + Holds.MARK_GAP + marks or 0)
+    local _, crowded = Holds.heatLabels(holding.heat.marks or {}, 0, heatBarHeight())
+    local reach = Holds.HEAT_BAR / 2 + (marks > 0 and Holds.TICK + Holds.MARK_GAP + marks + (crowded and Holds.LEADER or 0) or 0)
     return room, math.max(room / 2, reach)
 end
 
@@ -179,6 +201,7 @@ local function unitWidth(holding)
     end
     if holding.kind == "tank" then return Holds.TANK_WIDTH end
     if holding.kind == "cells" then return Holds.CELL_WIDTH end
+    if holding.kind == "slot" then return Holds.SLOT end
     return nil
 end
 
@@ -190,6 +213,7 @@ local function graphicWidth(holding)
     if holding.kind == "tank" and holding.line then return Holds.TANK_WIDTH + Holds.LINE_GAP + measure(holding.line.text or "") end
     if holding.kind == "tank" then return Holds.TANK_WIDTH end
     if holding.kind == "cells" then return Holds.CELL_WIDTH end
+    if holding.kind == "slot" then return Holds.SLOT end
     local text = 0
     for _, mark in ipairs(holding.marks or {}) do text = math.max(text, measure(mark[2])) end
     if text == 0 then return Holds.BULB end
@@ -224,7 +248,8 @@ function Holds.layout(holdings, boldWidth)
         centres[index], columns[index] = extents(holding, boldWidth)
         needed = needed + columns[index]
         if holding.arrow and index < #holdings then
-            arrows[index] = math.max(Holds.ARROW_MIN, measure(holding.arrow) + Holds.ARROW_PAD * 2)
+            local slot = holding.kind == "slot" or holdings[index + 1].kind == "slot"
+            arrows[index] = math.max(slot and Holds.SLOT_ARROW or Holds.ARROW_MIN, measure(holding.arrow) + Holds.ARROW_PAD * 2)
             needed = needed + arrows[index]
         end
     end
@@ -322,13 +347,39 @@ local function drawTank(ui, holding, x, y, adds)
     ui:drawRectBorder(x, y, width, height, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
 end
 
+-- A heat bar's marks, hottest first: each tick at its heat on a bar barHeight tall from y, its text centred on it
+-- unless that would run into the one above, then a line under it (user, session 69: 45, 40 and 35 a few pixels apart
+-- were drawn over each other). Returns { tickY, textY, text } for each.
+function Holds.heatLabels(marks, y, barHeight)
+    local sorted = {}
+    for _, mark in ipairs(marks) do table.insert(sorted, mark) end
+    table.sort(sorted, function(a, b) return a[1] > b[1] end)
+    local line, labels, lastY, crowded = lineHeight(), {}, nil, false
+    for _, mark in ipairs(sorted) do
+        local tickY = y + 2 + (barHeight - 4) * (1 - math.max(0, math.min(mark[1] / 100, 1)))
+        local textY = tickY - line / 2
+        if lastY and textY < lastY + line then textY, crowded = lastY + line, true end
+        table.insert(labels, { tickY = tickY, textY = textY, text = mark[2] })
+        lastY = textY
+    end
+    return labels, crowded
+end
+
+-- A thin line from x0, y0 to x1, y1 (y1 below y0), a pixel a row.
+local function slant(ui, x0, y0, x1, y1, colour)
+    local rows = math.max(1, math.floor(y1 - y0 + 0.5))
+    for row = 0, rows do
+        fill(ui, math.floor(x0 + (x1 - x0) * row / rows + 0.5), math.floor(y0 + row + 0.5), 1, 1, colour)
+    end
+end
+
 -- A tank's heat bar, the room for it from x: the bar centred in it from y, a line short of the tank's foot, filled
 -- by its heat in its heat's colour; ticks and their text to its right; the temperature centred under it.
 local function drawHeatBar(ui, heat, x, y)
     local room = heatRoom({ heat = heat })
     local centre = x + room / 2
     local line = lineHeight()
-    local barX, barHeight = centre - Holds.HEAT_BAR / 2, Holds.HEIGHT - line - 2
+    local barX, barHeight = centre - Holds.HEAT_BAR / 2, heatBarHeight()
     fill(ui, barX, y, Holds.HEAT_BAR, barHeight, Holds.BACK)
     if heat.celsius then
         local share = math.max(0, math.min(heat.celsius / 100, 1))
@@ -336,10 +387,15 @@ local function drawHeatBar(ui, heat, x, y)
         if level > 0 then fill(ui, barX + 2, y + barHeight - 2 - level, Holds.HEAT_BAR - 4, level, Holds.heatColour(heat.celsius)) end
     end
     ui:drawRectBorder(barX, y, Holds.HEAT_BAR, barHeight, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
-    for _, mark in ipairs(heat.marks or {}) do
-        local markY = y + 2 + (barHeight - 4) * (1 - math.max(0, math.min(mark[1] / 100, 1)))
-        fill(ui, barX + Holds.HEAT_BAR, markY, Holds.TICK, 1, Holds.GLASS)
-        ui:drawText(mark[2], barX + Holds.HEAT_BAR + Holds.TICK + Holds.MARK_GAP, markY - line / 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    -- Crowded marks (user, session 69, art/heat_leaders_mock.png A): every text LEADER further right, a slanted line from
+    -- each tick to its text's middle.
+    local labels, crowded = Holds.heatLabels(heat.marks or {}, y, barHeight)
+    local tickEnd = barX + Holds.HEAT_BAR + Holds.TICK
+    local textX = tickEnd + Holds.MARK_GAP + (crowded and Holds.LEADER or 0)
+    for _, label in ipairs(labels) do
+        fill(ui, barX + Holds.HEAT_BAR, label.tickY, Holds.TICK, 1, Holds.GLASS)
+        if crowded then slant(ui, tickEnd, label.tickY, textX - 2, label.textY + line / 2, Holds.LEADER_COLOUR) end
+        ui:drawText(label.text, textX, label.textY, 0.7, 0.7, 0.7, 1, UIFont.Small)
     end
     local degrees = heat.celsius and getText("IGUI_TraditionalPreservationCore_HeatDegrees", tostring(math.floor(heat.celsius + 0.5))) or "-"
     ui:drawTextCentre(degrees, centre, y + Holds.HEIGHT - line, 1, 1, 1, 1, UIFont.Small)
@@ -414,22 +470,88 @@ local function drawHeat(ui, holding, x, y, width)
     end
 end
 
-local function drawArrow(ui, text, x, width, y)
+-- The slot's top, standing on the middle line of a holding drawn at y.
+function Holds.slotTop(y)
+    return math.floor(y + Holds.HEIGHT / 2 - Holds.SLOT / 2)
+end
+
+-- A dashed frame round x, y, size square.
+local function dashedFrame(ui, x, y, size, colour)
+    local step = Holds.SLOT_DASH * 2
+    for along = 0, size - 1, step do
+        local length = math.min(Holds.SLOT_DASH, size - along)
+        fill(ui, x + along, y, length, 1, colour)
+        fill(ui, x + along, y + size - 1, length, 1, colour)
+        fill(ui, x, y + along, 1, length, colour)
+        fill(ui, x + size - 1, y + along, 1, length, colour)
+    end
+end
+
+-- An icon at x, y, size square, tinted { r, g, b, a } (nil: as it is). Two icons are split on the diagonal from the
+-- top right to the bottom left, the first above it: drawn row by row, each row's part of each icon.
+local function drawIcons(ui, icons, x, y, size, tint)
+    local r, g, b, a = 1, 1, 1, 1
+    if tint then r, g, b, a = tint[1], tint[2], tint[3], tint[4] end
+    local first, second = icons[1], icons[2]
+    if not second then
+        if first then ui:drawTextureScaled(first, x, y, size, size, a, r, g, b) end
+        return
+    end
+    local element = ui.javaObject
+    for row = 0, size - 1 do
+        local cut = size - row   -- the first icon left of the cut
+        for index, icon in ipairs({ first, second }) do
+            local from, to = index == 1 and 0 or cut, index == 1 and cut or size
+            if to > from then
+                local scaleX, scaleY = icon:getWidth() / size, icon:getHeight() / size
+                element:DrawSubTextureRGBA(icon, from * scaleX, row * scaleY, (to - from) * scaleX, scaleY, x + from, y + row,
+                    to - from, 1, r, g, b, a)
+            end
+        end
+    end
+end
+
+-- A starter's slot at x, y (its top left), by its look; adds (a drop over it that takes) shows its icons bright.
+local function drawSlot(ui, holding, x, y, adds)
+    local size, inset = Holds.SLOT, (Holds.SLOT - Holds.SLOT_ICON) / 2
+    local look = holding.look or "empty"
+    local icons = {}
+    for _, icon in ipairs(holding.icons or {}) do
+        local texture = type(icon) == "string" and getTexture(icon) or icon
+        if texture then table.insert(icons, texture) end
+    end
+    if look == "empty" then
+        dashedFrame(ui, x, y, size, Holds.BORDER)
+    else
+        fill(ui, x, y, size, size, Holds.EMPTY_CELL)
+        local frame = look == "ready" and Holds.READY or Holds.BORDER
+        ui:drawRectBorder(x, y, size, size, 1, frame[1], frame[2], frame[3])
+        if look == "ready" then ui:drawRectBorder(x + 1, y + 1, size - 2, size - 2, 1, frame[1], frame[2], frame[3]) end
+    end
+    local greyed = (look == "empty" or look == "pending") and not adds
+    drawIcons(ui, icons, x + inset, y + inset, Holds.SLOT_ICON, greyed and Holds.GREYED or nil)
+    if holding.count then
+        ui:drawTextRight(holding.count, x + size - 2, y + size - lineHeight() - 1, 1, 1, 1, 1, UIFont.Small)
+    end
+end
+
+local function drawArrow(ui, text, x, width, y, colour)
     local midY = y + Holds.HEIGHT / 2
     local left, right = x + Holds.ARROW_PAD, x + width - Holds.ARROW_PAD
-    fill(ui, left, midY, right - left, 1, Holds.ARROW)
-    for step = 1, 4 do fill(ui, right - step, midY - step, 1, step * 2 + 1, Holds.ARROW) end
+    colour = colour or Holds.ARROW
+    fill(ui, left, midY, right - left, 1, colour)
+    for step = 1, 4 do fill(ui, right - step, midY - step, 1, step * 2 + 1, colour) end
     if text ~= "" then
         ui:drawTextCentre(text, x + width / 2, midY - lineHeight() - 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
     end
 end
 
 -- The frame round a holding something is dragged over: white when it takes it all, orange some, red none.
-local function drawDropFrame(ui, judged, x, y, width)
+local function drawDropFrame(ui, judged, x, y, width, height)
     local colour = #judged.take == 0 and Holds.DROP_NO or judged.refused and Holds.DROP_SOME or Holds.DROP_OK
     local margin = Holds.DROP_MARGIN
-    ui:drawRectBorder(x - margin, y - margin, width + margin * 2, Holds.HEIGHT + margin * 2, 1, colour[1], colour[2], colour[3])
-    ui:drawRectBorder(x - margin + 1, y - margin + 1, width + margin * 2 - 2, Holds.HEIGHT + margin * 2 - 2, 1, colour[1], colour[2], colour[3])
+    ui:drawRectBorder(x - margin, y - margin, width + margin * 2, height + margin * 2, 1, colour[1], colour[2], colour[3])
+    ui:drawRectBorder(x - margin + 1, y - margin + 1, width + margin * 2 - 2, height + margin * 2 - 2, 1, colour[1], colour[2], colour[3])
 end
 
 -- Draws holdings from x at y on ui, packed from the left, with look { value, note (colours), bold (function(ui, text, x, y,
@@ -449,7 +571,11 @@ function Holds.draw(ui, look, x, y, holdings)
         local graphicX = centre - unit / 2
         units[index] = { x = graphicX, y = y, width = unit, height = Holds.HEIGHT }
         local judged = look.judged and look.judged(index)
-        if holding.kind == "tank" then
+        if holding.kind == "slot" then
+            local top = Holds.slotTop(y)
+            units[index] = { x = graphicX, y = top, width = unit, height = Holds.SLOT }
+            drawSlot(ui, holding, graphicX, top, judged and #judged.take > 0)
+        elseif holding.kind == "tank" then
             drawTank(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.adds or nil)
             if holding.line then drawLine(ui, holding.line, graphicX, y) end
             if holding.heat then drawHeatBar(ui, holding.heat, graphicX + Holds.TANK_WIDTH + Holds.HEAT_GAP, y) end
@@ -458,8 +584,8 @@ function Holds.draw(ui, look, x, y, holdings)
         else
             drawHeat(ui, holding, graphicX, y, graphic)
         end
-        if judged then drawDropFrame(ui, judged, graphicX, y, unit) end
-        look.bold(ui, holding.name or "", centre, textTop, look.value)
+        if judged then drawDropFrame(ui, judged, units[index].x, units[index].y, unit, units[index].height) end
+        look.bold(ui, holding.name or "", centre, textTop, holding.nameColour or look.value)
         local value = look.value
         ui:drawTextCentre(holding.amount or "", centre, textTop + line, value[1], value[2], value[3], 1, UIFont.Small)
         if holding.state then
@@ -472,7 +598,7 @@ function Holds.draw(ui, look, x, y, holdings)
         end
         x = x + columnWidth
         if arrows[index] then
-            drawArrow(ui, holding.arrow, x, arrows[index], y)
+            drawArrow(ui, holding.arrow, x, arrows[index], y, holding.arrowColour)
             x = x + arrows[index]
         end
     end

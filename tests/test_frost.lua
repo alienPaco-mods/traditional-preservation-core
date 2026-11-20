@@ -56,4 +56,27 @@ check("freezing now: the open at -5 C yes, a fridge never, a freezer always, a b
     and not Frost.freezingAt(leek, "Open", ledger))
 check("the ledger is Weather's: a place's temperature is Core's", Weather.placeTemperature(ledger, "Open") == -5)
 
+-- Frost.see: an item's record under a key, started on the first look, then the hours since at the place seen in last.
+local modData, seen = {}, { place = "Open" }
+local first = Frost.see(modData, "tpTestFrost", potato, 50, seen)
+check("see: the first look starts a record and gives no hours", first == 0 and modData.tpTestFrost.age == 0)
+for hour = 51, 58 do Frost.recordWeather(hour, -5) end
+local hours, record = Frost.see(modData, "tpTestFrost", potato, 58, { place = "Basement" })
+check("see: the next look gives the hours since at the place seen in then", near(hours, 8, 1e-6) and record.place == "Basement")
+check("frozen through: once 6 h in all are crossed, and only then", Frost.frozenThrough({ age = 8 }, 8)
+    and not Frost.frozenThrough({ age = 5 }, 5) and not Frost.frozenThrough({ age = 14 }, 6) and Frost.THROUGH_HOURS == 6
+    and Frost.frozenThrough({ age = 5.9999999 }, 1))
+
+-- Frost.bite: an item moved towards rotten, never past it; its keeping clock's base with it.
+local item = { age = 1, offAgeMax = 10, modData = {} }
+function item:getAge() return self.age end
+function item:setAge(x) self.age = x end
+function item:getOffAgeMax() return self.offAgeMax end
+local clock = { base = 1, fluidAge = { age = 0 } }
+Frost.bite(item, 12, Frost.STARTER_RUIN_HOURS, clock)
+check("bite: 12 of a starter's 48 hours are a quarter of the way to rotten, the clock's base too",
+    near(item.age, 3.5, 1e-9) and near(clock.base, 3.5, 1e-9))
+Frost.bite(item, 100, 12)
+check("bite: never past rotten", item.age == 10)
+
 H.done()

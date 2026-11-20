@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.52
+- **Frost helpers** (ROADMAP NEXT 1, step 3): `Frost.see(modData, key, kind, now, seen)` keeps an item's frost record
+  and gives the hours frozen since the last look; `Frost.frozenThrough(record, hours)` says a one-time change is due
+  (`Frost.THROUGH_HOURS` 6: a jar or pot frozen through); `Frost.bite(item, hours, ruinHours, clock)` moves an item
+  towards rotten, its PlaceKeeping clock too (`Frost.STARTER_RUIN_HOURS` 48 for live starters, user, session 76).
+  `frozenThrough` has a hair of slack, so six hours of ten-minute readings (a whisker under 6) count as 6. FV's
+  vegetables use them (no change in game). Tests added to `test_frost.lua`.
+
 ## 0.1.51
 - **Frost** (ROADMAP NEXT 1, step 1 of 4): `Frost.lua` counts hours at or below a freezing point by place, on one
   ledger for the whole series (`TraditionalPreservationCoreFrost`, recorded every ten minutes by `FrostWorld.lua`), at

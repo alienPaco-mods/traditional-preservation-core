@@ -63,6 +63,48 @@ function Frost.catchUp(record, kind, now, place, fireNote, ledger)
     return record.age - before
 end
 
+-- Hours of frost that freeze a thing through (a jar, a pot, a heap): the one-time changes (a culture Hungry, kefir
+-- Separated, yoghurt Thawed, kraut soft, a sprout dead) come once a thing has been frozen this long in all.
+Frost.THROUGH_HOURS = 6
+-- Hours of frost that take a live starter from where it is to spent (Active Culture, a yoghurt starter, a mother in
+-- a jar): milder than a vegetable's, as real starters mostly live through freezing (user, session 76).
+Frost.STARTER_RUIN_HOURS = 48
+
+-- Brings an item's frost up to now under modData[key]: the time since the last look counts at the place it was seen
+-- in then, and seen (a FluidAgeing age just brought up to now, with the fire noted at this look: a PlaceKeeping
+-- clock's fluidAge) says where it is now. The first look starts the record. Returns the hours frozen since the last
+-- look, and the record (its age the frozen hours in all).
+function Frost.see(modData, key, kind, now, seen)
+    local record = modData[key]
+    if not record then
+        record = Frost.newRecord(kind, now, seen.place)
+        record.fireUntil, record.placeWithoutFire = seen.fireUntil, seen.placeWithoutFire
+        modData[key] = record
+        return 0, record
+    end
+    local hours = Frost.catchUp(record, kind, now, seen.place, record)
+    record.fireUntil, record.placeWithoutFire = seen.fireUntil, seen.placeWithoutFire
+    return hours, record
+end
+
+-- True if a record crossed THROUGH_HOURS in all with the last hours added: the one-time change is due now. A hair of
+-- slack: six hours of ten-minute readings add up to a whisker under 6.
+local THROUGH_SLACK = 1e-6
+function Frost.frozenThrough(record, hours)
+    local through = Frost.THROUGH_HOURS - THROUGH_SLACK
+    return record.age >= through and record.age - hours < through
+end
+
+-- Moves an item hours of frost nearer rotten (its script's DaysTotallyRotten), ruinHours taking it all the way,
+-- never past rotten. With a PlaceKeeping clock its base moves too, so the keeping goes on from there.
+function Frost.bite(item, hours, ruinHours, clock)
+    local age = item:getAge()
+    local rotten = item:getOffAgeMax()
+    local frosted = math.min(age + hours / ruinHours * rotten, math.max(age, rotten))
+    if clock then clock.base = clock.base + frosted - age end
+    item:setAge(frosted)
+end
+
 -- True if a place is at or below the kind's freezing point now (a fridge never; a freezer always, by vanilla's rules).
 function Frost.freezingAt(kind, place, ledger)
     if place == FluidAgeing.FRIDGE then return false end

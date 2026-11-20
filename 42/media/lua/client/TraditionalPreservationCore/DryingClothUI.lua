@@ -226,7 +226,8 @@ local function clothDrop(window)
         for _, group in ipairs(groups) do
             for _, item in ipairs(group) do table.insert(take, item) end
         end
-        local judged = { take = take, cells = #groups, lines = {} }
+        local first = groups[1] and DryingCloth.kindOf(groups[1][1]:getFullType())
+        local judged = { take = take, cells = #groups, lines = {}, pattern = first and first.pattern }
         if #groups > 0 then
             table.insert(judged.lines, say("IGUI_TraditionalPreservationCore_ClothDropLay", tostring(#groups), tostring(#take)))
         end
@@ -252,6 +253,22 @@ function ClothWindow:refresh()
     self.drop = self.drop or clothDrop(self)
 end
 
+-- The lots' cells, each kind in its pattern (one cell a lot, so the split is exact).
+function DryingClothUI.parts(clothView)
+    local byKind, parts = {}, {}
+    for _, entry in ipairs(clothView.lots) do
+        local kind = DryingCloth.kind(entry.lot.kind)
+        if kind and kind.pattern then
+            if not byKind[kind.name] then
+                byKind[kind.name] = { pattern = kind.pattern, weight = 0 }
+                table.insert(parts, byKind[kind.name])
+            end
+            byKind[kind.name].weight = byKind[kind.name].weight + 1
+        end
+    end
+    return #parts > 0 and parts or nil
+end
+
 function ClothWindow:render()
     ISCollapsableWindow.render(self)
     if self.isCollapsed or not self.clothView then return end
@@ -265,7 +282,7 @@ function ClothWindow:render()
     y = self:holds(y, { { kind = "cells", name = getText("IGUI_TraditionalPreservationCore_ClothInfoLots"),
         amount = say("IGUI_TraditionalPreservationCore_ClothInfoLotsValue", tostring(used), tostring(DryingCloth.LOTS)),
         cells = DryingCloth.LOTS, filled = used, share = used / DryingCloth.LOTS, colour = CELL_COLOUR,
-        drop = self.drop } },
+        parts = DryingClothUI.parts(clothView), drop = self.drop } },
         getText("IGUI_TraditionalPreservationCore_DryingClothLore"))
     if #clothView.rows > 0 then
         y = self:section(y, "IGUI_TraditionalPreservationCore_SectionOnCloth")

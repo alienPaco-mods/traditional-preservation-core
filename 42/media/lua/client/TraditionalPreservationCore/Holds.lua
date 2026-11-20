@@ -16,7 +16,10 @@
 --     DropZone's { take, lines, refused } and adds, the share of the tank the pour would fill) }
 --   { kind = "cells", name, amount, state, stateColour, cells (default 5),
 --     filled (cells full; default the share's), share, colour, drop = { judge, drop } or nil: what is dragged onto the
---     cells goes on, in place of a drop square (user); judge adds cells, the cells it would fill, shown see-through }
+--     cells goes on, in place of a drop square (user); judge adds cells, the cells it would fill, shown see-through,
+--     and pattern, theirs;
+--     pattern (a texture path: every full cell drawn in it, tools/cell_patterns.py) or parts ({ { pattern, weight } }:
+--     a mixed holding, its full cells split by Holds.byShare) in place of the flat colour }
 --   { kind = "heat", name, amount, state, stateColour, celsius (nil: nothing to warm), top (the scale's top C,
 --     default 100), marks = { { celsius, text } } }
 -- each with arrow (text above an arrow to the next holding, "" for a plain one, nil for none).
@@ -92,6 +95,43 @@ function Holds.filledCells(holding)
     local filled = math.floor(share * cells + 0.5)
     if share > 0 and filled == 0 then filled = 1 end
     return filled, cells
+end
+
+-- The patterns of filled cells, bottom up, for parts { { pattern, weight } } (user, session 65): each part there gets a
+-- cell (the lightest left out when there are more parts than cells), each its whole cells by weight, and the cells
+-- left go to the heaviest first; the heaviest at the bottom.
+function Holds.byShare(parts, filled)
+    local order = {}
+    for _, part in ipairs(parts) do
+        if (part.weight or 0) > 0 then table.insert(order, part) end
+    end
+    table.sort(order, function(a, b) return a.weight > b.weight end)
+    while #order > filled do table.remove(order) end
+    local total = 0
+    for _, part in ipairs(order) do total = total + part.weight end
+    local counts, used = {}, 0
+    for index, part in ipairs(order) do
+        counts[index] = math.max(1, math.floor(part.weight / total * filled))
+        used = used + counts[index]
+    end
+    while used > filled do
+        for index = #order, 1, -1 do
+            if counts[index] > 1 then
+                counts[index], used = counts[index] - 1, used - 1
+                break
+            end
+        end
+    end
+    local index = 1
+    while used < filled and #order > 0 do
+        counts[index], used = counts[index] + 1, used + 1
+        index = index % #order + 1
+    end
+    local cells = {}
+    for i, part in ipairs(order) do
+        for _ = 1, counts[i] do table.insert(cells, part.pattern) end
+    end
+    return cells
 end
 
 -- Each mark's side, 1 right or -1 left: right, unless it comes within a line of the last one on the right.
@@ -263,20 +303,33 @@ local function drawHeatBar(ui, heat, x, y)
     ui:drawTextCentre(degrees, centre, y + Holds.HEIGHT - line, 1, 1, 1, 1, UIFont.Small)
 end
 
--- adds: cells a drop would fill, drawn see-through over the empty ones above the filled (nil: none).
-local function drawCells(ui, holding, x, y, adds)
+-- adds: cells a drop would fill, drawn see-through over the empty ones above the filled (nil: none), in addsPattern
+-- (the judge's pattern) if given.
+local function drawCells(ui, holding, x, y, adds, addsPattern)
     local width = Holds.CELL_WIDTH
     local top, height = y, Holds.HEIGHT
     local filled, cells = Holds.filledCells(holding)
     local cellHeight = (height - 2 - Holds.CELL_GAP * (cells - 1)) / cells
     fill(ui, x, top, width, height, Holds.BACK)
     local colour = holding.colour or Holds.CELL_COLOUR
+    local patterns = holding.parts and Holds.byShare(holding.parts, filled) or {}
+    -- A drop's cells in its own pattern (the judge's), else the one on top or the holding's, see-through.
+    local preview = addsPattern or patterns[#patterns] or holding.pattern
     for cell = 1, cells do
         -- From the bottom up: the first filled cells are the lowest.
         local cellY = top + 1 + (cells - cell) * (cellHeight + Holds.CELL_GAP)
-        fill(ui, x + 2, cellY, width - 4, cellHeight, cell <= filled and colour or Holds.EMPTY_CELL)
+        local pattern = cell <= filled and (patterns[cell] or holding.pattern) or nil
+        if pattern then
+            ui:drawTextureScaled(getTexture(pattern), x + 2, cellY, width - 4, cellHeight, 1, 1, 1, 1)
+        else
+            fill(ui, x + 2, cellY, width - 4, cellHeight, cell <= filled and colour or Holds.EMPTY_CELL)
+        end
         if adds and cell > filled and cell <= filled + adds then
-            ui:drawRect(x + 2, cellY, width - 4, cellHeight, Holds.PREVIEW_ALPHA, colour[1], colour[2], colour[3])
+            if preview then
+                ui:drawTextureScaled(getTexture(preview), x + 2, cellY, width - 4, cellHeight, Holds.PREVIEW_ALPHA, 1, 1, 1)
+            else
+                ui:drawRect(x + 2, cellY, width - 4, cellHeight, Holds.PREVIEW_ALPHA, colour[1], colour[2], colour[3])
+            end
         end
     end
     ui:drawRectBorder(x, top, width, height, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
@@ -358,7 +411,7 @@ function Holds.draw(ui, look, x, y, holdings)
             drawTank(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.adds or nil)
             if holding.heat then drawHeatBar(ui, holding.heat, graphicX + Holds.TANK_WIDTH + Holds.HEAT_GAP, y) end
         elseif holding.kind == "cells" then
-            drawCells(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.cells or nil)
+            drawCells(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.cells or nil, judged and judged.pattern)
         else
             drawHeat(ui, holding, graphicX, y, graphic)
         end

@@ -214,7 +214,9 @@ local Weather = require "TraditionalPreservationCore/Weather"
    then "17°C (Aired room)"; temperatures in text always carry the degree sign. What a station takes by hand is
    dragged onto its holding (`drop` on a tank or on cells), never a separate drop square (user). Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
    station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
-   real count when small, else five cells of a share), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`)
+   real count when small, else five cells of a share; full cells drawn in a pattern of what they hold, `pattern` =
+   `media/textures/TPCell_<Name>.png` from `tools/cell_patterns.py`, the texture in the mod whose thing it is; a mixed
+   holding passes `parts = { { pattern, weight } }`, split by `Holds.byShare`, the cells left to the heaviest), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`)
    (`heat = { celsius, marks }`,
    the text centred under the two), an arrow and its rate between; a lore line (`self:holds(y, holdings, lore)`:
    real-world history, checked, a translation key) goes beside the holdings, the window widening to give it LORE_MIN of room (left out only past MAX_WIDTH). A tank with

@@ -384,7 +384,7 @@ local FIRE_BANDS = {
 local function woodHolding(fireView, fireText)
     local burnMin = math.floor(fireView.burnHours * 60)
     return { kind = "cells", name = getText("IGUI_TraditionalPreservationCore_InfoWood"),
-        share = fireView.fuelMin / FUEL_SCALE_MIN,
+        share = fireView.fuelMin / FUEL_SCALE_MIN, pattern = "media/textures/TPCell_Wood.png",
         amount = say("IGUI_TraditionalPreservationCore_InfoFuelValue", tostring(math.floor(burnMin / 60)), tostring(burnMin % 60)),
         state = string.lower(fireText) }
 end

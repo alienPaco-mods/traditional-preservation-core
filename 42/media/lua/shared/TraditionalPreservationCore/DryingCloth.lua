@@ -9,7 +9,8 @@
 --     the inventory (state "wet", "dry" or "dead"), goesOff(lot, now, place, fire, isoObject) = optional: brings what
 --     keeps the lot (its own clock in lot.data) up to now and returns nil, or the share of the stretch since the last
 --     look (0 to 1) at which it went off; whichever comes first, dry or gone off, wins (yeast cakes going Spent while
---     they lie wet) }
+--     they lie wet), pattern = optional texture its lots' cells are drawn in on Info (TPCell_<Name>.png of the mod's
+--     own, tools/cell_patterns.py) }
 -- Everything that dries by air waits in a shut room's still air (the series' rule, as Dairy's kefir has always
 -- done): a lot there dries nothing until a window is opened. Frost stops it as the curve says. Time keeps counting
 -- while the cloth is unloaded: each lot holds a FluidAgeing age on the cloth's ledger, brought up to now at every

@@ -192,4 +192,26 @@ for _ in pairs(tops) do count = count + 1 end
 check("the brine's top holds still as it turns to salt", count == 1)
 check("a thermometer with nothing to warm draws", true)
 
+-- Patterns (user, session 65): a mixed holding's full cells split by weight, each part a cell, the cells left to the
+-- heaviest first, the heaviest at the bottom; a pattern drawn in each full cell.
+local function kinds(cells) return table.concat(cells, " ") end
+check("by share: 50/20/16 over 5 cells, the heaviest takes the cell left",
+    kinds(Holds.byShare({ { pattern = "fish", weight = 20 }, { pattern = "meat", weight = 50 }, { pattern = "sausage", weight = 16 } }, 5))
+    == "meat meat meat fish sausage")
+check("by share: a small part still gets a cell", kinds(Holds.byShare({ { pattern = "meat", weight = 44 },
+    { pattern = "sausage", weight = 6 } }, 3)) == "meat meat sausage")
+check("by share: more parts than cells, the lightest left out", kinds(Holds.byShare({ { pattern = "a", weight = 5 },
+    { pattern = "b", weight = 3 }, { pattern = "c", weight = 1 } }, 2)) == "a b")
+check("by share: nothing full, nothing drawn", #Holds.byShare({ { pattern = "a", weight = 5 } }, 0) == 0)
+local drawn = {}
+window.drawTextureScaled = function(_, texture, x, y, w, h, a) table.insert(drawn, { name = texture and texture.name, a = a }) end
+window:holds(0, { { kind = "cells", name = "Load", amount = "", share = 0.6,
+    parts = { { pattern = "media/textures/TPCell_Fish.png", weight = 9 }, { pattern = "media/textures/TPCell_Meat.png", weight = 5 } } } })
+local names = {}
+for _, d in ipairs(drawn) do if d.name and d.name:find("TPCell") then table.insert(names, d.name:match("TPCell_(%a+)")) end end
+check("three full cells drawn in their patterns, fish below meat", table.concat(names, " ") == "Fish Fish Meat")
+drawn = {}
+window:holds(0, { { kind = "cells", name = "Wood", amount = "", share = 0.4, pattern = "media/textures/TPCell_Wood.png" } })
+check("one pattern for every full cell", #drawn >= 2 and drawn[1].name == "media/textures/TPCell_Wood.png")
+
 H.done()

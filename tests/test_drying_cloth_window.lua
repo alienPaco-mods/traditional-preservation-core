@@ -49,4 +49,15 @@ check("by a fire, any fire's place shows the fire", UI.placeIcon("FiresideCovere
     and UI.placeIcon("EmbersOpen").name == "media/textures/TPPlace_Embers.png")
 check("a place with no icon has none", UI.placeIcon("Moon") == nil)
 
+local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
+local realKind = DryingCloth.kind
+DryingCloth.kind = function(name)
+    return ({ cakes = { name = "cakes", pattern = "Cakes.png" }, grains = { name = "grains", pattern = "Grains.png" } })[name]
+end
+local parts = DryingClothUI.parts({ lots = { { lot = { kind = "cakes" } }, { lot = { kind = "grains" } }, { lot = { kind = "cakes" } } } })
+check("the lots' cells by kind: 2 cakes, 1 grains", #parts == 2 and parts[1].pattern == "Cakes.png" and parts[1].weight == 2
+    and parts[2].weight == 1)
+check("an empty cloth: plain cells", DryingClothUI.parts({ lots = {} }) == nil)
+DryingCloth.kind = realKind
+
 H.done()

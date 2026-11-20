@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.39
+- **Patterned cells** (user, session 65; `art/all_cells_mock.png`): a cells holding can be drawn in a pattern of what it
+  holds in place of a flat colour (`pattern`, a texture), and a mixed one by share (`parts`, `Holds.byShare`: each
+  part there gets a cell, the rest by weight, the cells left to the heaviest first, the heaviest at the bottom). A
+  drag's see-through cells take the judge's `pattern`. The Stone Hearth's wood is drawn in plank grain, the Drying
+  Cloth's lots in each kind's pattern (a kind registers `pattern`). `tools/cell_patterns.py` makes every mod's
+  `TPCell_<Name>.png` (palette B, darker: one family each, wood vanilla's red-brown, one jar a cell on its side;
+  big fish scales, marbled meat and long sausage links, as small marks read as a mesh or as wood at game size).
+
 ## 0.1.38
 - An Info window's button row can shrink: `buttonRow` with fewer buttons than last time hides the rest, and the
   window's update keeps them hidden (it showed every button it had made, so a hidden one flashed on and off).

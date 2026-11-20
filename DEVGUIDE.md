@@ -384,8 +384,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
    - A recipe made several times from one vessel (Yeast's cultures from a pot of Potato Water or Hop Tea):
      **`RecipeUI.oneOrAll({ recipe, fluid, litres })`** turns vanilla's Craft row on the vessel's right-click menu
-     into One and All (n), n what the vessel's fluid covers and the rest in reach allows; All crafts one after the
-     other from that vessel.
+     into One and All (n), n what the vessel's fluid covers and the rest in reach allows (every item type in reach:
+     the count runs with manual select off, as the crafting window's MAX doesn't); All crafts one after the other from
+     that vessel. RecipeUI also adds vanilla's inventory Craft row on an item only non-Base recipes use (ENGINE_NOTES,
+     "Craft row and modules"); no setup.
    - `PlaceKeeping.new(keepingRules)`: food that keeps by place (Potted Meat, butter). Its script days are a 15 C cellar's;
      `keepingRules.curve` is days of age a day counts as by temperature, read at Core's place temperature (fridge 4 C,
      freezer stopped, by a fire or banked embers as the stations: `FluidAgeing.placeOfItem` asks `Fire.placeOf` of

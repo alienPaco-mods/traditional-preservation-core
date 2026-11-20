@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.37)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.46)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -147,7 +147,7 @@ A mod can register a food that is seasoned after it is made, as a stew is (`Seas
 
 ## What it changes in vanilla
 
-Nothing on its own beyond adding its stations and the cauldron's recipe. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update.
+Nothing on its own beyond adding its stations and the cauldron's recipe. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update. An item only TP's recipes use (a Ceramic Jar) gets vanilla's **Craft** row on its right-click, which vanilla leaves out because it looks recipes up in its own module only.
 
 ## Compatibility
 

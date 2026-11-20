@@ -94,4 +94,18 @@ shelf:update()
 check("without a key the window's class is the key, and both are kept",
     files[InfoWindow.WIDTHS_FILE]:find("ShelfWindow=600\n", 1, true) and files[InfoWindow.WIDTHS_FILE]:find("Fish.DryingFrame=560\n", 1, true))
 
+-- A list's fold (art/fold_list_mock.png): open by default, kept per station type beside its width, read back by a new
+-- window of the same type, and a second click opens it again.
+local beam = window("RackWindow", "Fish.HangingBeam")
+check("a list opens unfolded by default", not beam:isListFolded())
+beam:toggleListFold()
+check("a click folds it and keeps it in the file, per station type", beam:isListFolded()
+    and files[InfoWindow.WIDTHS_FILE]:find("Fish.HangingBeam:folded=1\n", 1, true) ~= nil)
+check("another station type keeps its own", not window("RackWindow", "Fish.DryingFrame"):isListFolded())
+check("the width is kept beside it", files[InfoWindow.WIDTHS_FILE]:find("Fish.DryingFrame=560\n", 1, true) ~= nil)
+check("a new window of the type opens folded", window("RackWindow", "Fish.HangingBeam"):isListFolded())
+beam:toggleListFold()
+check("a second click opens it, and the file forgets it", not beam:isListFolded()
+    and files[InfoWindow.WIDTHS_FILE]:find("HangingBeam:folded", 1, true) == nil)
+
 H.done()

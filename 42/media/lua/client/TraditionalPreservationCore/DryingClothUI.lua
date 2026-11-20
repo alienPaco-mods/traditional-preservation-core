@@ -9,6 +9,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
 
 local say = UI.say
 local CLOTH_ICON = "media/textures/Item_TPDryingCloth.png"
+local STATION_ICON = "media/textures/TPStation_DryingCloth.png"   -- Cloth Info's Station block (tools/station_icons.py)
 local ClothWindow -- the info window, below the menu
 local DryingClothUI = {}
 
@@ -275,8 +276,7 @@ function ClothWindow:render()
     local clothView = self.clothView
     local word, text, look = DryingClothUI.band(clothView)
     local y = self:band(getText(word), text, look[1], look[2])
-    y = self:section(y, "IGUI_TraditionalPreservationCore_SectionStation")
-    y = self:placeRow(y, "IGUI_TraditionalPreservationCore_ClothInfoPlace", clothView.place, clothView.temperature)
+    y = self:stationBlock(y, STATION_ICON, clothView.place, clothView.temperature)
     y = self:section(y, "IGUI_TraditionalPreservationCore_SectionHolds")
     local used = DryingCloth.LOTS - DryingCloth.freeLots(clothView.record)
     y = self:holds(y, { { kind = "cells", name = getText("IGUI_TraditionalPreservationCore_ClothInfoLots"),
@@ -285,8 +285,8 @@ function ClothWindow:render()
         parts = DryingClothUI.parts(clothView), drop = self.drop } },
         getText("IGUI_TraditionalPreservationCore_DryingClothLore"))
     if #clothView.rows > 0 then
-        y = self:section(y, "IGUI_TraditionalPreservationCore_SectionOnCloth")
-        y = self:pieceListNamed(y, say("IGUI_TraditionalPreservationCore_ClothListCount", tostring(#clothView.rows)), clothView.rows)
+        y = self:pieceListBlock(y, "IGUI_TraditionalPreservationCore_SectionOnCloth",
+            say("IGUI_TraditionalPreservationCore_ClothListCount", tostring(#clothView.rows)), clothView.rows)
     end
     self:drawNotes(y, { getText("IGUI_TraditionalPreservationCore_ClothNoteDrag"), getText("IGUI_TraditionalPreservationCore_ClothNoteAir") })
 end

@@ -1,5 +1,20 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.40
+- **The Station block** (`InfoWindow:stationBlock`; user, session 66, `art/station_aligned_mock.png` H): the station's
+  white outline icon, and at its right, in Small (Medium was too large in game), Place, **Season** (the series' season
+  mean, "11°C avg outdoors", on every station) and the window's own rows; the icon and the rows centre on each other's
+  height, and the icon stands on the first holding's centre line, the rows following it. Drying Cloth Info uses it.
+- **Station icons** (`tools/station_icons.py`, `art/station_icons_mock.png`): a white outline of every station in the
+  place icons' style, `TPStation_<Name>.png` at 64 px in the mod whose station it is (the Drying Cloth, Stone Hearth
+  and Smokehouse here). Info windows only; the menus keep the item icons.
+- **A piece list's block folds** (user, session 66, `art/fold_list_mock.png`; `InfoWindow:pieceListBlock`): an arrow
+  before its header, the line lit on hover, a click folds or opens it; folded, the header keeps the count
+  ("HANGING (20)") and the buttons move up. Each station type keeps its fold beside its width in the player's
+  `TraditionalPreservationWindowWidths.txt`; open by default. Drying Cloth Info uses it.
+- A window's piece list shows three rows before it scrolls (was five), rows with a line under the bar (the
+  Smokehouse's smoke) as whole rows too.
+
 ## 0.1.39
 - **Patterned cells** (user, session 65; `art/all_cells_mock.png`): a cells holding can be drawn in a pattern of what it
   holds in place of a flat colour (`pattern`, a texture), and a mixed one by share (`parts`, `Holds.byShare`: each

@@ -19,7 +19,7 @@ require "Entity/ISUI/Components/Crafting/ISToolTipItemSlot"
 
 local PieceList = ISScrollingListBox:derive("TraditionalPreservationCorePieceList")
 
-PieceList.ROWS_SHOWN = 5
+PieceList.ROWS_SHOWN = 3   -- user, session 66: three is plenty
 PieceList.ICON = 32
 PieceList.ICON_X = 6        -- the icon from the row's left
 PieceList.NAME_X = 48       -- the name and the bar from the row's left
@@ -158,12 +158,15 @@ function PieceList.rowHeight(row, barHeight)
     return height
 end
 
--- The list's height for these rows: as tall as they are, at most ROWS_SHOWN plain rows, at least one.
+-- The list's height for these rows: as tall as its first ROWS_SHOWN rows (a row with a note is taller), at least one
+-- plain row.
 function PieceList.heightFor(rows, barHeight)
-    local plain = plainHeight(barHeight)
     local height = 0
-    for _, row in ipairs(rows) do height = height + PieceList.rowHeight(row, barHeight) end
-    return math.max(plain, math.min(height, plain * PieceList.ROWS_SHOWN)) + 2
+    for index, row in ipairs(rows) do
+        if index > PieceList.ROWS_SHOWN then break end
+        height = height + PieceList.rowHeight(row, barHeight)
+    end
+    return math.max(plainHeight(barHeight), height) + 2
 end
 
 -- The colours and sizes of InfoWindow, passed in so the two files don't require each other.

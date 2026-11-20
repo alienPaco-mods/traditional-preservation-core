@@ -209,9 +209,14 @@ local Weather = require "TraditionalPreservationCore/Weather"
    Notes; a block with nothing to show is left out. Every window opens with a state band under its title
    (`self:band(word, text, colour, dark, entry)`): a word in capitals for its state and a short line that doesn't
    repeat a bar; green `InfoWindow.BAND_WORKING`, amber `BAND_WAITING` (slowed, or waiting on the player), red
-   `BAND_AT_RISK` (something will be lost); a fire's band is FireUI's own. It replaces a Stage row. The Place row is
-   `self:placeRow(y, label, place, celsius)`: the place's icon (`UI.placeIcon`, drawn by `tools/place_icons.py`),
-   then "17°C (Aired room)"; temperatures in text always carry the degree sign. What a station takes by hand is
+   `BAND_AT_RISK` (something will be lost); a fire's band is FireUI's own. It replaces a Stage row. The Station block
+   is `self:stationBlock(y, icon, place, celsius, rows)`, its own header included: the station's white outline icon
+   at 64 px (`TPStation_<Name>.png` in the station's mod, drawn by `tools/station_icons.py`; Info windows only, menus
+   keep the item icons), and at its right, in Small (`InfoWindow.STATION_FONT`), Place (the place's icon, `UI.placeIcon`, drawn
+   by `tools/place_icons.py`, then "17°C (Aired room)"), Season (the series' season mean from `Weather`, the same on
+   every station: "11°C avg outdoors") and the window's own rows (`{ label key, text }`); the icon and the rows
+   centre on each other's height, the icon on the first holding's centre line (`holds` keeps it on the window), a long value wraps under itself. A window not yet on it uses
+   `self:placeRow(y, label, place, celsius)`. Temperatures in text always carry the degree sign. What a station takes by hand is
    dragged onto its holding (`drop` on a tank or on cells), never a separate drop square (user). Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
    station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
    real count when small, else five cells of a share; full cells drawn in a pattern of what they hold, `pattern` =
@@ -231,12 +236,15 @@ local Weather = require "TraditionalPreservationCore/Weather"
    with a single process: a row names its `tab`, ordered by `tabOrder`; each window keeps its own tab, back to All when
    that tab empties), one row a piece (a 32 px icon, the name in bold, a `warning` right-aligned in amber, the bar the
    row's width under them with its text, a line under the bar if given; a name is cut with "..." only when the warning
-   needs the room; five rows show, then it scrolls) and the row's popup on hover, drawn as a crafting slot's
+   needs the room; three rows show, then it scrolls) and the row's popup on hover, drawn as a crafting slot's
    (`UI.drawTooltip`). The window builds a new rows table in refresh; the list lays it out again only then, or when
    the tab or the width changes. A window that draws a list resizes in width only, 400 to 680 (vanilla's corner
    widget), and opens at the width last given a window of its `widthKey` (its station type: the window's class
    unless it sets one; the racks set theirs per hanger), kept in `~/Zomboid/Lua/TraditionalPreservationWindowWidths.txt`,
-   the player's, not the save's. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
+   the player's, not the save's. On the settled look the list is a block of its own, `self:pieceListBlock(y,
+   sectionLabel, labelText, rows)`: a folding header (an arrow, lit on hover, a click folds or opens it; folded, the
+   count after the name and the list hidden), each station type's fold kept beside its width ("<key>:folded=1"),
+   open by default. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
    (retired window by window as each moves its drop onto its holding) `self:dropZone(y, idleText, judge, drop, icon)` (`DropZone.lua`): an always-shown 56 px square, an icon of what it takes beside its text, that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,

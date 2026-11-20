@@ -122,14 +122,15 @@ check("and kept for the next frame", owner.fitCache["60|Bluegill (cold)"] == "Bl
 check("the same text at another width is fitted again", PieceList.fit(owner, "Bluegill (cold)", 90) == "Bluegill (cold)"
     and owner.fitCount == 3)
 
--- Heights: a plain row 40, one with a note 50; at least one row, at most five plain rows, and the border's 2.
+-- Heights: a plain row 40, one with a note 50; at least one row, at most the first three rows, and the border's 2.
 check("a plain row and one with a note", PieceList.rowHeight({}) == 40 and PieceList.rowHeight({ note = "x" }) == 50)
 check("a bar tall enough makes the row taller than the icon", PieceList.rowHeight({}, 24) == 10 + 4 + 24 + 8)
 check("an empty list is one row high", PieceList.heightFor({}) == 42)
 local many = {}
 for i = 1, 20 do many[i] = { name = "Fish " .. i, share = i / 20 } end
-check("twenty rows show five and scroll", PieceList.heightFor(many) == 5 * 40 + 2)
+check("twenty rows show three and scroll", PieceList.heightFor(many) == 3 * 40 + 2)
 check("three rows, one with a note, are as high as they are", PieceList.heightFor({ {}, {}, { note = "x" } }) == 40 + 40 + 50 + 2)
+check("rows with notes: three still show whole", PieceList.heightFor({ { note = "x" }, { note = "x" }, { note = "x" }, {} }) == 3 * 50 + 2)
 
 -- In a window: the header at y, the switch beside it, the list under it.
 local window = element({ width = 360, children = {} })
@@ -152,8 +153,8 @@ check("the tabs sit under the header, side by side, All open", list.tabButtons[1
 check("four tabs take two lines of 340 (the fourth wraps); the list sits under them, inside the padding",
     list.tabButtons[4].x == 10 and list.tabButtons[4].y == 68 + 14 + PieceList.TAB_GAP
     and list.y == 68 + 14 * 2 + PieceList.TAB_GAP + 4 and list.x == 10 and list.width == 340)
-check("its rows are sorted, its height theirs", names(list.rows) == names(rows) and list.items[1].text == "Yellow Perch"
-    and list.height == 4 * 40 + 2)
+check("its rows are sorted, its height three of them", names(list.rows) == names(rows) and list.items[1].text == "Yellow Perch"
+    and list.height == 3 * 40 + 2)
 check("laid out again, the scroll height counts the new rows only (the jitter)", list.scrollHeight == 4 * 40)
 check("the next y is under the list", nextY == list.y + list.height + 4)
 

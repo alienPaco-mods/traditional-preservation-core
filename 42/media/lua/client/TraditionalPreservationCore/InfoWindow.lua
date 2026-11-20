@@ -25,6 +25,7 @@ local InfoWindow = ISCollapsableWindow:derive("TraditionalPreservationCoreInfoWi
 InfoWindow.WIDTH = 400
 InfoWindow.MAX_WIDTH = 680
 InfoWindow.WIDTHS_FILE = "TraditionalPreservationWindowWidths.txt"   -- in ~/Zomboid/Lua: the player's, not the save's
+InfoWindow.FOLDED = ":folded"   -- a station type's folded list, kept in WIDTHS_FILE beside its width ("<key>:folded=1")
 InfoWindow.REACH = 6
 InfoWindow.PADDING = 12
 InfoWindow.LABEL_WIDTH = 120
@@ -117,7 +118,7 @@ end
 function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
-    if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
+    if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed and not self.listFolded) end
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
     if self.dropTargetsUI then require("TraditionalPreservationCore/DropZone").showTargets(self, math.huge) end
     self:showButtons()
@@ -275,6 +276,92 @@ function InfoWindow:placeRow(y, label, place, celsius)
     return InfoWindow.drawRow(self, self:layoutFor(labelText), y, labelText, UI.placeText(place, celsius), UI.placeIcon(place))
 end
 
+-- The Station block (art/station_aligned_mock.png H, user, session 66): the station's white outline icon
+-- (TPStation_<Name>.png, tools/station_icons.py; Info windows only, menus keep the item icons), and at its right, in
+-- STATION_FONT (Small: Medium was too large in game, user), Place (its icon, temperature and word), Season (the series'
+-- season mean, Weather's: the same on every station; left out before the first reading) and the window's own rows
+-- ({ label key, finished text }), a value too long for the room wrapping under itself. The icon and the rows centre
+-- on each other's height; the icon stands on the first holding's centre line (user: it threw the eye off when the
+-- two didn't line up), as the last holds drew it, at the padding in a window with none. Returns the y under the
+-- block.
+InfoWindow.STATION_ICON, InfoWindow.STATION_GAP = 64, 16   -- the icon, square; the icon to the rows
+InfoWindow.STATION_LABEL_GAP = 12   -- a label to its value
+InfoWindow.STATION_FONT = "Small"   -- by name: the game has none between Small and Medium
+
+local function stationFont()
+    return UIFont[InfoWindow.STATION_FONT]
+end
+
+local function stationWidth(text)
+    return getTextManager():MeasureStringX(stationFont(), text)
+end
+
+-- A Station value's lines in width, kept on the window until the width changes (a value counts down: the cache
+-- starts over past VALUE_CACHE).
+local function stationLines(window, text, width)
+    if window.stationWidth ~= width or window.stationCount > InfoWindow.VALUE_CACHE then
+        window.stationWidth, window.stationCache, window.stationCount = width, {}, 0
+    end
+    local lines = window.stationCache[text]
+    if not lines then
+        lines = wrapped(text, width, stationWidth)
+        if #lines == 0 then lines = { text } end
+        window.stationCache[text], window.stationCount = lines, window.stationCount + 1
+    end
+    return lines
+end
+
+-- The block's rows, label and value as text, the Place row's icon: Place, Season, then the window's own.
+function InfoWindow.stationRows(place, celsius, rows, seasonCelsius)
+    local UI = require "TraditionalPreservationCore/UI"
+    local all = { { label = getText("IGUI_TraditionalPreservationCore_StationPlace"), value = UI.placeText(place, celsius),
+        icon = UI.placeIcon(place) } }
+    if seasonCelsius then
+        table.insert(all, { label = getText("IGUI_TraditionalPreservationCore_StationSeason"),
+            value = UI.say("IGUI_TraditionalPreservationCore_StationSeasonValue", UI.degrees(seasonCelsius)) })
+    end
+    for _, row in ipairs(rows or {}) do table.insert(all, { label = getText(row[1]), value = row[2] }) end
+    return all
+end
+
+function InfoWindow:stationBlock(y, icon, place, celsius, rows)
+    y = self:section(y, "IGUI_TraditionalPreservationCore_SectionStation")
+    local Weather = require "TraditionalPreservationCore/Weather"
+    local all = InfoWindow.stationRows(place, celsius, rows, Weather.weatherModData().seasonTemperature)
+    local font = stationFont()
+    local lineHeight = getTextManager():getFontHeight(font)
+    local labelWidth = 0
+    for _, row in ipairs(all) do labelWidth = math.max(labelWidth, stationWidth(row.label)) end
+    local box = InfoWindow.STATION_ICON
+    local iconX = self.holdsCentre and math.max(InfoWindow.PADDING, math.floor(self.holdsCentre - box / 2 + 0.5))
+        or InfoWindow.PADDING
+    local labelX = iconX + box + InfoWindow.STATION_GAP
+    local valueX = labelX + labelWidth + InfoWindow.STATION_LABEL_GAP
+    local rowsHeight = 0
+    for index, row in ipairs(all) do
+        row.x = valueX + (row.icon and lineHeight + InfoWindow.ICON_GAP or 0)
+        row.lines = stationLines(self, row.value, self.width - InfoWindow.PADDING - row.x)
+        rowsHeight = rowsHeight + #row.lines * lineHeight + (index > 1 and InfoWindow.ROW_GAP or 0)
+    end
+    local height = math.max(box, rowsHeight)
+    if type(icon) == "string" then icon = getTexture(icon) end
+    if icon then
+        self:drawTextureScaledAspect(icon, iconX, y + math.floor((height - box) / 2), box, box, 1, 1, 1, 1)
+    end
+    local rowY = y + math.floor((height - rowsHeight) / 2)
+    local label, value = InfoWindow.LABEL_COLOUR, InfoWindow.VALUE_COLOUR
+    for _, row in ipairs(all) do
+        self:drawText(row.label, labelX, rowY, label[1], label[2], label[3], 1, font)
+        if row.icon then self:drawTextureScaledAspect(row.icon, valueX, rowY, lineHeight, lineHeight, 1, 1, 1, 1) end
+        for _, line in ipairs(row.lines) do
+            self:drawText(line, row.x, rowY, value[1], value[2], value[3], 1, font)
+            rowY = rowY + lineHeight
+        end
+        rowY = rowY + InfoWindow.ROW_GAP
+    end
+    return y + height + InfoWindow.ROW_GAP
+end
+
 function InfoWindow:bar(y, label, share, colour, text)
     local labelText = getText(label)
     return InfoWindow.drawBar(self, self:layoutFor(labelText), y, labelText, share, colour, text)
@@ -309,6 +396,7 @@ end
 
 function InfoWindow:prerender()
     ISCollapsableWindow.prerender(self)
+    self.foldTarget = nil   -- set again by this frame's foldSection, if it draws one
     if self.bandLook and not self.isCollapsed then drawBand(self, self.bandLook) end
 end
 
@@ -439,6 +527,8 @@ function InfoWindow:holds(y, holdings, lore)
     local Holds = require "TraditionalPreservationCore/Holds"
     HOLDS_LOOK.judged = function(index) return judgedOver(self, index) end
     local under, needed, units = Holds.draw(self, HOLDS_LOOK, InfoWindow.PADDING, y, holdings)
+    -- The first holding's centre line, for the Station block's icon (drawn above it, from the next frame on).
+    self.holdsCentre = units[1] and units[1].x + units[1].width / 2 or nil
     placeTargets(self, holdings, units)
     local ruleX = InfoWindow.PADDING + needed + InfoWindow.LORE_GAP
     if lore then
@@ -526,6 +616,83 @@ function keepWidth(window)
     window.widthToSave = false
     widths()[window.widthKey or window.Type] = window.width
     saveWidths()
+end
+
+-- A list's block folds (user, session 66, art/fold_list_mock.png): its header line has an arrow before the name
+-- (down open, right folded) and a count after it while folded, lights on hover, and a click on it folds or opens the
+-- block. Each station type keeps its fold (widthKey, as its width) in WIDTHS_FILE; open by default.
+InfoWindow.FOLD_ARROW = 9        -- the arrow's width
+InfoWindow.FOLD_GAP = 4          -- the arrow to the name
+InfoWindow.FOLD_HOVER = 0.1      -- the header line's light under the mouse
+
+function InfoWindow:isListFolded()
+    return widths()[(self.widthKey or self.Type) .. InfoWindow.FOLDED] == 1
+end
+
+function InfoWindow:toggleListFold()
+    local key = (self.widthKey or self.Type) .. InfoWindow.FOLDED
+    widths()[key] = not self:isListFolded() and 1 or nil
+    saveWidths()
+end
+
+-- The arrow at x, y, drawn in 1 px lines: down while open, right while folded.
+local function drawFoldArrow(window, x, y, open, colour)
+    local size = InfoWindow.FOLD_ARROW
+    for i = 0, math.floor(size / 2) do
+        if open then
+            window:drawRect(x + i, y + i, size - 2 * i, 1, 1, colour[1], colour[2], colour[3])
+        else
+            window:drawRect(x + i, y + i, 1, size - 2 * i, 1, colour[1], colour[2], colour[3])
+        end
+    end
+end
+
+-- The folding header at y (label a translation key; count, finished text, shown while folded); the click target is
+-- kept for onMouseDown. Returns the y of the block's first row.
+function InfoWindow:foldSection(y, label, count)
+    if y > self:top() then y = y + InfoWindow.SECTION_GAP end
+    local folded = self:isListFolded()
+    local lineHeight = InfoWindow.lineHeight()
+    local left, right = InfoWindow.PADDING, self.width - InfoWindow.PADDING
+    self.foldTarget = { top = y - 2, bottom = y + lineHeight + 2 }
+    local mouseY = self:getMouseY()
+    local hover = self:isMouseOver() and mouseY >= self.foldTarget.top and mouseY < self.foldTarget.bottom
+    if hover then self:drawRect(left - 4, y - 2, right - left + 8, lineHeight + 4, InfoWindow.FOLD_HOVER, 1, 1, 1) end
+    local colour = hover and InfoWindow.VALUE_COLOUR or InfoWindow.HEADER_COLOUR
+    drawFoldArrow(self, left, y + math.floor((lineHeight - InfoWindow.FOLD_ARROW) / 2) + 2, not folded, colour)
+    local text = string.upper(getText(label)) .. (folded and count and " (" .. count .. ")" or "")
+    local textX = left + InfoWindow.FOLD_ARROW + InfoWindow.FOLD_GAP
+    drawText(self, text, textX, y, colour)
+    local lineX = textX + getTextManager():MeasureStringX(UIFont.Small, text) + InfoWindow.HEADER_SPACE
+    local hair = InfoWindow.HAIRLINE
+    self:drawRect(lineX, y + math.floor(lineHeight / 2), right - lineX, 1, 1, hair[1], hair[2], hair[3])
+    return y + lineHeight + InfoWindow.HEADER_GAP
+end
+
+function InfoWindow:onMouseDown(x, y)
+    local target = self.foldTarget
+    if target and not self.isCollapsed and y >= target.top and y < target.bottom then
+        self:toggleListFold()
+        return true
+    end
+    return ISCollapsableWindow.onMouseDown(self, x, y)
+end
+
+-- A list's block: its folding header (sectionLabel a key), then while open the list under labelText (finished text,
+-- a count: "Pieces: 20") with its sort switch, tabs and rows. The window resizes in width either way. Returns the y
+-- under it.
+function InfoWindow:pieceListBlock(y, sectionLabel, labelText, rows)
+    self:resizeWidth()
+    y = self:foldSection(y, sectionLabel, tostring(#rows))
+    self.listFolded = self:isListFolded()
+    local PieceList = require "TraditionalPreservationCore/PieceList"
+    if self.listFolded then
+        if self.pieceListUI then PieceList.show(self, false) end
+        return y
+    end
+    y = PieceList.draw(self, LIST_LOOK, y, labelText, rows)
+    PieceList.show(self, not self.isCollapsed)
+    return y
 end
 
 -- The pieces, one row each, under a header (label is a translation key) with the sort switch; rows as PieceList's

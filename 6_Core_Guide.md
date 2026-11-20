@@ -194,7 +194,7 @@ Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth'
 
 ### The Drying Cloth
 
-A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: the place, its temperature and a bar for each lot.
+A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: a band saying how the cloth is doing (drying, waiting for moving air, too hot), the place and its temperature, the five lots, and a row for each lot with its bar. You can also drag what dries here from your inventory onto the lots in the window to lay it.
 
 | | |
 |---|---|
@@ -240,7 +240,7 @@ While you're away, the fire counts only for as long as its fuel would have laste
 
 Every station in the series works by the temperature of **where it stands**. The weather is noted every 10 in-game minutes for the whole world, so a station you left a month ago has had exactly the weather it should have had when you come back.
 
-**The station tells you.** Every station (a Stone Hearth, Salt's vat, Yeast's shelf, Vinegar's floor, vessel and cask, Dairy's incubator and crock, Fish & Meat's racks, tub and Smokehouse) has an Info window: right-click it and pick Info. It lists the place, the temperature there and how fast it is working (the vat goes by the clock alone, so it shows its soil, what is soaking through and its tub). Where many pieces hang, Info lists one row a piece, with a tab for each kind when there are several; drag the window's bottom-right corner to widen it, and it opens that wide next time. Hover a running batch or a piece for the real time left at today's weather.
+**The station tells you.** Every station (a Stone Hearth, Salt's vat, Yeast's shelf, Vinegar's floor, vessel and cask, Dairy's incubator and crock, Fish & Meat's racks, tub and Smokehouse) has an Info window: right-click it and pick Info. It lists the place (with an icon for it: the sun for the open air, a house indoors, a gust for an aired room, steps down for a basement, a flame by a fire), the temperature there and how fast it is working (the vat goes by the clock alone, so it shows its soil, what is soaking through and its tub). Where many pieces hang, Info lists one row a piece, with a tab for each kind when there are several; drag the window's bottom-right corner to widen it, and it opens that wide next time. Hover a running batch or a piece for the real time left at today's weather.
 
 | Place | When | Temperature |
 |---|---|---|

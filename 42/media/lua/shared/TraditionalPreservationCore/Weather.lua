@@ -6,8 +6,6 @@
 -- The weather itself is kept once for the whole series (Weather.weatherModData): the last reading and the season's means.
 -- Each mod's ledger copies them at every record, so a mod added to a running save agrees with the others about the
 -- temperature under a roof from its first day, where a mean of its own would take ten days to catch up.
--- A craft recipe's bar and clock (startRun, showProgress, setRecipeHours, recipeHours, startClock, showClock,
--- batchStatus) are CraftClock's; Weather passes them on, so callers name Weather only.
 local Windows = require "TraditionalPreservationCore/Windows"
 
 local Weather = {}
@@ -366,14 +364,12 @@ function Weather.catchUp(marks, ledger, process, place)
     return work
 end
 
--- Moved to CraftClock, still reached here (DEVGUIDE refactoring rule 5). CraftClock requires Weather, so it is
--- required the first time one of its functions is called.
-local craftClock
-for _, name in ipairs({ "startRun", "showProgress", "setRecipeHours", "recipeHours", "startClock", "showClock", "batchStatus" }) do
-    Weather[name] = function(...)
-        craftClock = craftClock or require("TraditionalPreservationCore/CraftClock")
-        return craftClock[name](...)
-    end
+-- A run's record starts at nothing, marked on the ledger now (Yeast's cultures). A record that is used again
+-- (a culture refreshed) clears its place and fire too.
+function Weather.startRun(modData, ledger, process)
+    modData.workHours = 0
+    modData.marks = Weather.mark({}, ledger, process)
+    modData.place, modData.fireUntil, modData.placeWithoutFire = nil, nil, nil
 end
 
 return Weather

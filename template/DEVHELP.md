@@ -13,4 +13,4 @@ These console commands load only when the game runs in **debug mode** (launch op
 | `__SHORT__.give(name, n)` | Spawns `n` of: `"batch"` (a raw batch). `__SHORT__.give()` lists them. |
 | `__SHORT__.kit(kind)` | Gives what a test of `kind` needs: `"station"` (the default: a hammer, 4 planks and 8 nails to build the __STATION__, Woodwork 2, and 4 raw batches). `__SHORT__.kit("?")` lists the kinds. Add one kit per feature, covering the whole group. |
 
-**Typical check:** `__SHORT__.kit()`, build the station, load the station and press Craft, then `__SHORT__.age(72)`.
+**Typical check:** `__SHORT__.kit()`, build the station, put the raw batches in from its right-click menu, then `__SHORT__.age(72)`.

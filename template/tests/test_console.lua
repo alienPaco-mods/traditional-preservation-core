@@ -10,8 +10,6 @@ H.installEvents()
 function getClimateManager()
     return { isUpdated = function() return true end, getTemperature = function() return 20 end, getHumidity = function() return 50 end }
 end
-local loaded = {}
-ScriptManager = { instance = { getCraftRecipe = function() return { Load = function(_, name, text) loaded[name] = text end } end } }
 SandboxVars = { __MOD__ = { ProcessDays = 2 } }
 function getCell() return { getGridSquare = function() return nil end } end
 local player = H.player({ z = -1 })
@@ -37,7 +35,7 @@ run("age", 12)
 check("age adds its hours to every place", M.getLedger()[key] == before + 12)
 
 run("fast", 2)
-check("fast sets the test timer and reloads the recipe", M.PROCESS_HOURS == 2 and next(loaded) ~= nil)
+check("fast sets the test timer", M.PROCESS_HOURS == 2)
 run("fast")
 check("fast with no number goes back to the sandbox time", M.PROCESS_HOURS == 48)
 

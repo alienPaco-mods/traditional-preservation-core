@@ -3,7 +3,7 @@
 -- open roof or in the open the air takes the heat away, so there it is that place's air plus Fire.FIRE_LIFT, never
 -- past FIRE_C (places PLACE .. "Covered", .. "Open"; a campfire in a January field is cold at the back). Beside banked
 -- embers it is Fire.EMBERS. It is opt-in: Weather.placeOf never returns it, placeOf here does, so only a mod that
--- asks for it gets it. And the weather-timed work done there: catchUp, the craft runs, notePlace.
+-- asks for it gets it. And the weather-timed work done there: catchUp, notePlace.
 -- Fire passes every function here on (Fire.placeOf, Fire.catchUp, ...), so callers name Fire only; the
 -- places' numbers are Fire's (they are registered with Weather when Fire loads).
 local Weather = require "TraditionalPreservationCore/Weather"
@@ -86,22 +86,6 @@ function Fireside.catchUp(stationModData, marks, ledger, process, place, rateAt)
     end
     Weather.mark(marks, ledger, process)
     return work
-end
-
--- A weather-timed craft run (Yeast's culture, Vinegar's malt and wort, the template's batch): its recipe data's
--- modData keeps workHours and marks (the ledger's) and the place notePlace wrote. These bring one up to now at
--- that place, by a fire or not; a run not yet started (no workHours or no marks) is left alone.
-function Fireside.catchUpRun(modData, ledger, process, place, rateAt)
-    if not (modData.workHours and modData.marks) then return end
-    modData.workHours = modData.workHours + Fireside.catchUp(modData, modData.marks, ledger, process, place, rateAt)
-end
-
--- A run's OnUpdate: catches it up and sets the craft's bar from the work done (Weather.showProgress).
-function Fireside.updateRun(craftRecipeData, ledger, process, place, rateAt, speed)
-    local modData = craftRecipeData:getModData()
-    if not (modData.workHours and modData.marks) then return end
-    Fireside.catchUpRun(modData, ledger, process, place, rateAt)
-    Weather.showProgress(craftRecipeData, ledger, process, place, speed or 1, getGameTime():getWorldAgeHours(), rateAt)
 end
 
 -- Where a station stands for its work, written into stationModData (a run's or a station's): its place now, with

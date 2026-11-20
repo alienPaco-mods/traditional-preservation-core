@@ -264,32 +264,6 @@ function Station.tracker(options)
     return tracker
 end
 
--- The station's CraftLogicUILogic, which lists its running batches, kept in its session state. Its constructor
--- reads the player's mod data, so it needs a real player: nil until there is one.
-function Station.uiLogic(station, sessionState, logic)
-    if not sessionState.uiLogic or sessionState.uiLogic:getCraftLogic() ~= logic then
-        local player = getPlayer()
-        if not player then return nil end
-        sessionState.uiLogic = CraftLogicUILogic.new(player, station, logic)
-    end
-    return sessionState.uiLogic
-end
-
--- The item slots of one resource group, input or output, as a Java list.
-function Station.itemSlots(resources, group, io)
-    return resources:getResourcesFromGroup(group, ArrayList.new(), io, ResourceType.Item)
-end
-
--- How many items the group's slots hold.
-function Station.countItems(resources, group, io)
-    local count = 0
-    local slots = Station.itemSlots(resources, group, io)
-    for i = 0, slots:size() - 1 do
-        count = count + slots:get(i):storedSize()
-    end
-    return count
-end
-
 -- Shows these sprites on the station, in order, unless signature says nothing has changed since last time.
 function Station.showSprites(station, sessionState, signature, names)
     if signature == sessionState.signature then return end

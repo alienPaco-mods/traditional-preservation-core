@@ -1,7 +1,4 @@
 -- Traditional Preservation core: text and popups for the station windows, and what the right-click menus share.
-require "Entity/ISUI/Components/Crafting/ISWidgetCraftLogicOutputProgress"
-require "Entity/ISUI/Components/Crafting/ISCraftLogicPanel"
-local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local UI = {}
 
@@ -308,88 +305,6 @@ function UI.drawTooltip(tooltip, fill)
     closeTooltip(tooltip, bottom)
 end
 
--- A recipe's name without its module.
-function UI.shortName(recipe)
-    return (string.gsub(recipe:getName(), "^.*%.", ""))
-end
-
--- Each handler runs for every slot of every station's progress list, as handler(slot, name, widget), name
--- being the running recipe's short name. A batch that has just finished hands its data back to the engine's
--- pool with no recipe, so name can be nil.
-local slotHandlers = {}
-local hooked = false
-
-local function hook()
-    if hooked then return end
-    hooked = true
-    Wrap.method("ISWidgetCraftLogicOutputProgress", "updateProgressItems", function(vanillaProgressItems, self)
-        vanillaProgressItems(self)
-        for _, slot in ipairs(self.progressItems:getItemSlots()) do
-            local recipe = slot.craftRecipeData and slot.craftRecipeData:getRecipe()
-            local name = recipe and UI.shortName(recipe)
-            for _, handler in ipairs(slotHandlers) do handler(slot, name, self) end
-        end
-    end)
-end
-
--- Adds a handler (see above). The first call installs the one wrap.
-function UI.onProgressSlot(handler)
-    hook()
-    table.insert(slotHandlers, handler)
-end
-
--- Vanilla's popup on a running batch goes by the recipe's time alone. draws maps recipe short names to
--- draw(slot, tooltip, name, entity). Other recipes' slots keep whatever popup they had.
-function UI.progressTooltips(draws)
-    UI.onProgressSlot(function(slot, name, widget)
-        local draw = name and draws[name]
-        if not draw then return end
-        local entity = widget.entity
-        -- Vanilla updates the list many times a second: the slot's popup is only made anew when it would differ.
-        if slot.tpDraw == draw and slot.tpName == name and slot.tpEntity == entity then return end
-        slot.tpDraw, slot.tpName, slot.tpEntity = draw, name, entity
-        slot.drawTooltip = function(itemSlot, tooltip)
-            -- A batch that has just finished hands its craftRecipeData back before the slot goes.
-            local craftRecipeData = itemSlot.craftRecipeData
-            if craftRecipeData and craftRecipeData:getRecipe() then draw(itemSlot, tooltip, name, entity) end
-        end
-    end)
-end
-
--- The Output slot of a station's window names the script's one output (Charque) for a recipe whose OnCreate may
--- make others. draws maps recipe short names to draw(tooltip, name, entity), the popup in its place; other
--- recipes keep vanilla's. Wraps ISWidgetCraftLogicInputControl.createChildren, which the recipe panel runs anew
--- whenever the selected recipe changes: compare it with vanilla after a game update. Slots copy the panel's
--- drawTooltip when made, so the output slots are made again.
-local outputDraws = {}
-local outputHooked = false
-function UI.outputTooltips(draws)
-    if not outputHooked then
-        outputHooked = true
-        Wrap.method("ISWidgetCraftLogicInputControl", "createChildren", function(vanillaCreateChildren, self)
-            vanillaCreateChildren(self)
-            local name = self.recipe and UI.shortName(self.recipe)
-            local draw = name and self.outputItems and outputDraws[name]
-            if not draw then return end
-            local entity = self.entity
-            self.outputItems.drawTooltip = function(_itemSlot, tooltip) draw(tooltip, name, entity) end
-            self:updateOutputItems()
-        end)
-    end
-    for name, draw in pairs(draws) do outputDraws[name] = draw end
-end
-
--- A popup with its own title and plain lines of finished text, for UI.outputTooltips.
-function UI.drawListTooltip(tooltip, title, lines)
-    local y = drawTitle(tooltip, title)
-    for _, line in ipairs(lines) do
-        tooltip:DrawText(tooltip:getFont(), line, UI.TOOLTIP_PADDING, y, 1, 1, 1, 1)
-        tooltip:adjustWidth(UI.TOOLTIP_PADDING, line)
-        y = y + tooltip:getLineSpacing()
-    end
-    closeTooltip(tooltip, y)
-end
-
 -- Functions moved to their own files, still reached here so no caller changes (DEVGUIDE refactoring rule 5). Each
 -- file is required the first time one of its functions is called.
 local function passOn(file, names)
@@ -402,7 +317,6 @@ local function passOn(file, names)
     end
 end
 
-passOn("SlotRules", { "slotRules", "craftRefusal" })
 passOn("Placement", { "keepInPlace", "outdoorOnly", "notInRooms", "keepDoorsFree", "offAppliances" })
 
 return UI

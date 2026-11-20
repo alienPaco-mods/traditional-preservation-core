@@ -121,20 +121,18 @@ The harness only adds what a test asks for, so a test keeps its own stubs where 
 3. One word, one meaning across the series. The words below mean that and nothing else.
 4. A name tells saved from not saved: what goes in modData or a ledger says it is kept; what lives only while the
    game runs says so too (`sessionState`).
-5. Vanilla's names stay as vanilla spells them: `modData`, `craftData`, `uiLogic` (a `CraftLogicUILogic`),
-   `playerObj`, the Java getters.
+5. Vanilla's names stay as vanilla spells them: `modData`, `movableData`, `craftData`, `playerObj`, the Java getters.
 6. Short names only where Lua expects them: `i`, `j` for indexes, `_` for a value not used.
 7. A rename is a refactor (see Refactoring rules): same tests and golden results, a version bump, renamed by
    meaning and never by search-and-replace.
 
-The example: `Station.uiLogic(station, sessionState, logic)` gives the station's `CraftLogicUILogic` (the name
-says what comes back, in vanilla's word), kept in the station's session state.
+The example: `Station.movableData(station)` gives the station's `movableData` (the name says what comes back, in
+vanilla's word), the table that goes onto the item when vanilla picks the station up.
 
 | Word | Means |
 |---|---|
 | `station` | Any mod's placed object the series tracks: a vessel, a shelf, a tub, a fire. |
-| `sessionState` | The table a station tracker keeps for one station while it is loaded: sprites drawn, hanger, heat and light, the cached `uiLogic`. Never saved. |
-| `logic` | The station's `CraftLogic` component. |
+| `sessionState` | The table a station tracker keeps for one station while it is loaded: sprites drawn, hanger, heat and light. Never saved. |
 
 **The console convention** (every TP mod, and the template):
 
@@ -165,7 +163,7 @@ every mod's translation files for a literal `%`.
 ## The shared core
 
 This folder is itself a mod, **TP Core** (id `TraditionalPreservationCore`), that every TP mod requires. Its Lua is
-`42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers; the one name callers use, passing on the next), `.../CraftClock.lua` (a craft recipe's bar and clock: `startRun`, `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock`, `batchStatus`), `.../Station.lua`, `.../Container.lua` (a bucket
+`42/media/lua/shared/TraditionalPreservationCore/Weather.lua` (places, temperatures, the season's means, ledgers, a run's record started with `startRun`), `.../Station.lua`, `.../Container.lua` (a bucket
 that comes back as the bucket it was), `.../Recipes.lua` (craft recipes: more fluids for a vanilla recipe's fluid
 line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helpers; teaching from a magazine and by research), `.../ItemFluid.lua` (fluid that turns, goes off, burns or stays in a pot or saucepan: the cauldron's rules for an item; `ItemFluidUI.addPieces` puts pieces in as a fluid; `RecipeUI.oneOrAll` gives a vessel's recipe row One and All), `.../OnHeat.lua` (food kept
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../DryingCloth.lua` (the Drying Cloth: lots of what mods register, drying by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
@@ -174,7 +172,7 @@ Smokehouse every mod smokes in; the one name callers use, passing on
 `.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
-`ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `SlotRules.lua`, a station's input rules, and `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list), `StationInfo.lua`,
+`ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list),
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
 `SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and the Drying Cloth window) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua`, `FluidAgeingWorld.lua`, `DryingClothWorld.lua` and `Loot.lua` (a mod's item into vanilla's loot lists). A mod that uses it says so in its mod.info:
@@ -262,12 +260,6 @@ local Weather = require "TraditionalPreservationCore/Weather"
    and draws its icon faded (vanilla draws it at full alpha). A button with `menu` (rows `{ title, icon, enabled,
    tooltip, onClick }`) opens them as a context menu under it instead of running `onClick`, vanilla's combo box arrow
    at its right: one button a kind with One / All (n) in it (the Kraut Barrel's Take buttons), not a button each.
-   **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
-   `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
-   shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a
-   station without one keeps an InfoWindow. Both draw with InfoWindow's `drawRow`, `drawBar` and `drawNoteLines`
-   (one look, one set of colours: `InfoWindow.LABEL_COLOUR` and the rest); running batches are listed furthest along
-   first, ties by recipe name then count (`StationInfo.batchBefore`).
 6. **What the core already does, so a mod doesn't write it again:**
    - Menus (`UI`): `findItems`, `tooltip`, `disable`, `litres`, `degrees`, `hoursText`, `durationText` (hours up to two days, then "about N days"), `fluidName`, and
      `keepInPlace(test)` for a station that mustn't be picked up while it holds something (every station that keeps its state in movableData uses it, so nothing is carried mid-process; vanilla already refuses a station whose slots or container hold items) (test returns true for vanilla's *Has items* line, or an `InfoPanelFlags` name such as `"tooHot"`).
@@ -381,9 +373,6 @@ local Weather = require "TraditionalPreservationCore/Weather"
      update run it on the game clock (getDuration -1): the item's job bar follows, done at the minutes (Salt's Dig, Fill).
      **`Action.removeItem(item)`** takes an item out of whatever holds it (a bag too); **`Action.replaceItem(old, new)`** puts new where old is, in a container or on the ground. `Fire.redraw(fire)`
      redraws a Stone Hearth after an action changed it (nothing where the World doesn't run).
-   - `Fire.catchUpRun(modData, ledger, kind, place, rateAt)` and `Fire.updateRun(craftRecipeData, ledger, kind,
-     place, rateAt, speed)`: a weather-timed craft run's catch-up and its bar. A mod keeps only its own place
-     default and old-save migration (Yeast, Vinegar, the template).
    - Pieces into something as a fluid (Fish & Meat's fat, Dairy's butter): one action, **`TPPutPieces`**, takes a
      destination (`Cauldron.piecesInto(fire)`, `ItemFluid.piecesInto(item)`: here, room, put, station, after; what goes in is `asFluid` = { fluid, pieceMl, hoursLeft }), and one
      row, **`PiecesUI.row`**: with more than one fitting it opens One (the piece nearest to going off,
@@ -490,21 +479,14 @@ the handler is guarded: if it fails, vanilla still runs and the error is printed
 mod's version of the function) is never inside the guard, so its errors are raised with their own message. Debug mode
 runs the handler bare, so every error shows where it happened with its full trace. `tp test` fails on a vanilla
 function replaced in place (`function ISThing:name(`) and on a function wrapped twice anywhere in the series. After every B42 patch, check
-each one below against the new vanilla Lua; the copied add loop in `UI.slotRules` most
-of all:
+each one below against the new vanilla Lua:
 
 | Wrapped vanilla function | Where | Why |
 |---|---|---|
-| `ISWidgetCraftLogicOutputProgress.updateProgressItems` | core `UI.onProgressSlot` (the template, through `progressTooltips`) | Weather-aware popups on running batches; Fish's salt badge |
-| `ISCraftLogicPanel.ItemSlotAddItems` (add loop copied) | core `UI.slotRules` (`SlotRules.lua`; the template) | Each station's own input rules |
-| `ISItemSlot.defaultVerifyItem`, `ISItemSlot.onMouseUp` | core `UI.slotRules` | Slot border and refusal halo agree with the rules |
-| `ISWidgetCraftLogicControl.startCraft` | core `SlotRules`: `UI.slotRules` with `recipeRefusal` (Fish & Meat), `UI.craftRefusal` (no user now) | Craft refuses stored inputs the selected recipe can't take; Craft on a vessel that can't run says why, and a second press doesn't queue another run |
 | `ISMoveableSpriteProps.canPlaceMoveable` | core `Placement` (one wrap for every rule): `UI.outdoorOnly` (Salt), `UI.notInRooms` (Fish, the Smokehouse), `UI.keepDoorsFree` (every TP station), `UI.offAppliances` (Dairy's crock) | Outdoor stations can't be carried indoors (or into a room); a station with a door (`Doors.register`) needs its front tile free, and none is put down in front of one's door (the build menu asks `TraditionalPreservationCore.doorFits`, `OnIsValid`); table-top stations refuse stoves, fridges, freezers, washers and dryers (vanilla lets an IsTableTop tile onto any IsTable square; its build ghost asks only on a solid square, so the build recipe asks `TraditionalPreservationCore.offAppliances`) |
 | `ISAddItemInRecipe.complete`, `ISAddItemInRecipe.checkName` | Fish `...Evolved` | Single-icon stand-ins in a dish's ingredient list; stock pot names |
 | `ISHandcraftAction.performRecipe` | core `Handcraft` only; handlers: Salt `...Shaker`, Vinegar `...Bottles`, Fish & Meat `...Stock` | Empty shakers and the right bottles come back; a boiled bone smashes into boiled pieces (without giving vanilla's Smash Bone an OnCreate, which would replace another mod's) |
-| `ISWidgetCraftLogicInputControl.createChildren` (wrapped on the first `UI.outputTooltips`) | core `UI.outputTooltips` (Fish & Meat) | The Output slot's popup lists every end of a recipe whose OnCreate swaps its output (the Hang recipes); remakes the output slots, which copy the panel's drawTooltip. Other recipes keep vanilla's |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `.getInfoPanelFlagsPerTile` | core `UI.keepInPlace` (`Placement.lua`; Vinegar, the Stone Hearth, the kraut barrel, the Salting Tub, Dairy's pot and crock) | A station holding liquid, a running batch, a hose or anything kept in its movableData can't be picked up, nor a Stone Hearth that is lit, banked or holds fluid, and the cursor says why. No station moves mid-process: each process has its time and place |
-| `ISWidgetCraftLogicOutputProgress.createDynamicChildren`, `.calculateLayout` (wrapped on the first `StationInfo.add`) | core `StationInfo` (Fish & Meat) | A station's info block under Take All; the widget grows by its height. Other stations pass straight through |
 | `ISFluidTransferAction.start`, `stop`, `complete` | core `Pour` only; handlers: core `FluidAgeingWorld`, Dairy `World` | Poured fluid takes the source's age (older wins) and both ends are looked at as it ends, so names change at once (core); poured milk carries its heat record (`tpdCarry`) over, mixed by volume (Dairy) |
 | `ISInventoryTransferAction.transferItem` | core `Transfer` only; handlers: core `FluidAgeingUI`, core `PlaceKeepingUI`, Dairy `UI`, Fish & Meat `UI`, Salt `BrineUI` | Looked at while still on the heat: hot milk scalds (core); kept food moved counts its time where it was (core, Dairy's butter); milk off a stove or fire keeps a heat record (Dairy); a crock moved counts its time (Fish & Meat); a bucket of brine into the heat becomes the boiling item and back (Salt) |
 | `ISToolTipInv.render` | Salt `BrineUI` | A bucket of brine and the boiling item show their strength and the salt they boil to (the item's Tooltip text for the one draw) |
@@ -521,7 +503,7 @@ of all:
 
 A new wrap goes in this table. **One function has one wrap in the series: when a second mod needs a vanilla function
 a first one wraps, the wrap moves to the core** and both add handlers (`Transfer`, `Portions`, `Handcraft`, `Pour`,
-`Drink`, `SlotRules`' layers): one place to compare with vanilla after a game update. Registering the same function
+`Drink`): one place to compare with vanilla after a game update. Registering the same function
 again replaces the handler (a file reloaded in debug mode); it never wraps twice.
 The handler order differs: Transfer runs its handlers in the order added, Pour and Handcraft as nested wraps would
 (the last added's before first). Each module's header says which; a handler that depends on another's must not
@@ -709,8 +691,7 @@ Three kinds, by what the station holds:
   right-click menu (`PiecesUI`: One / All / a count) or the Info window's drop square (`dropZone`), take off from both;
   each piece its own row in the Info window's `pieceList`. The World steps the record; a station holding anything stays
   where it is (`UI.keepInPlace`). Every TP workstation is one of these.
-- **Not a `CraftLogic` station.** No TP workstation uses vanilla's crafting window. Core's crafting-window pieces
-  (`StationInfo`, `SlotRules` and their wraps) have no user left.
+- **Not a `CraftLogic` station.** No TP workstation uses vanilla's crafting window, and Core has no pieces for one.
 - **A measured liquid, one continuous pool, or a state that depends on its own past: Lua state and right-click
   timed actions** (the Orleans Cask, the Stone Hearth and its cauldron, Dairy's Incubator and Crock). The engine can't be
   trusted with fluid amounts in a station, a cask is one pool with no batch, and the
@@ -729,30 +710,11 @@ sprites to `UI.keepDoorsFree` (a list like `Tiles.STATIONS` or a set) for puttin
 entity script without an `OnIsValid`. Vanilla's build ghost asks `canPlaceMoveable` only on a solid square, so the
 build check can't be left to the put-down rule.
 
-**Why override the craft timers?**
-The engine's craft timers tick at the speed of a 60-minute day whatever Day Length says, and stop while the area is
-unloaded. So a recipe's `OnStart` notes where the run begins, and `OnUpdate` sets the elapsed time from the game clock
-(plain timers) or from the work in the ledger (weather timers). The recipe's `time` is overwritten from the sandbox
-options at load with `recipe:Load()`, so the window's Duration matches the real time.
-
 **Why layer attached sprites instead of using SpriteOverlayConfig?**
 SpriteOverlayConfig shows one overlay, for the first batch only. A shelf with five cultures or a frame with eight
 spots needs one sprite per batch or spot, each at its own stage, and a station waiting to start or holding a finished batch
 needs a look too. So the tracker reads the station and lays its own sprites with `addAttachedAnimSpriteByName`, only
 redrawing when a signature of the state changes.
-
-**Why custom popups and slot rules instead of vanilla's?**
-Vanilla's progress popup goes by the recipe's time and its own temperature curve, so it shows the wrong time left
-for a weather timer. Ours shows progress, real time left at today's rate, the temperature, the place and the rate.
-Vanilla's slots take any item and only limit by free slots, so a wrong item leaves Craft greyed with no reason, and a
-station that limits by weight or by count can't be expressed. Our slot rules check before the item goes in, and the
-same check sets the slot's green border, so it never promises what adding then refuses. It is one core function,
-`UI.slotRules`, whose add loop is a copy of vanilla's: compare that one copy with vanilla after a game update.
-A rule that depends on the **selected recipe** goes in `recipeRefusal(slot, item)` (slot.recipe is the recipe's
-short name, read from the station's `CraftLogic:getCurrentRecipe()`, which the window sets when a recipe is selected): the border turns red and a drop says
-why, and because the recipe can change after loading, Craft refuses to start while a stored input fails it. Vanilla
-alone would start the recipe on the inputs its OnTest passes and leave the rest in the slots, with Craft enabled.
-No station uses it now.
 
 **Why is the core one required mod instead of a copy in each mod?**
 A copy in each mod would let a player subscribe to one with no dependency (PZ loads only one file per Lua path, so
@@ -788,9 +750,10 @@ tp new Dairy --station "Cheese Press"     # --short TPX to pick the console name
 ```
 
 It renders `TraditionalPreservationCore/template/` into `<TP_MODS>/TraditionalPreservationDairy`: one floor station (S and E faces, a
-placeholder crate painted by `tools/build_tileset.py`), a placeholder item in and out, a weather-weighted timer on the
-core, the popup, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
-`test_process.lua`, `test_console.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
+placeholder crate painted by `tools/build_tileset.py`) kept as a piece record (the station rule: raw batches put in from
+its right-click menu or dragged onto its Info window's cells, each batch on its own weather-weighted clock, Take Done /
+Take All), a placeholder item in and out, the Dev console (`TPD`, or the first free `TP` + letters), sandbox options, translations,
+`test_process.lua`, `test_menu.lua`, `test_console.lua` and `test_tiles.lua`, a golden `tools/season_report.lua` (added to `golden/golden.json` and
 recorded), README, DEVHELP, WORKSHOP, and a guide stub as the next number in `guides/`. It picks the tiledef, syncs
 the core, builds the art, runs `git init` and the tests. Nothing is committed or installed.
 

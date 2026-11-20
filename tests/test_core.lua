@@ -23,10 +23,6 @@ check("rate: frozen is 0, else the curve after the sensitivity, never under the 
     and Weather.rate(testCurve, -5, 0) == 1)
 check("an unknown place goes by the day; every place has a rule", Weather.placeTemperature({ temperature = 7, seasonTemperature = 15 }, "Nowhere") == 7
     and Weather.DEFAULT_PLACE == "Sheltered")
-check("a batch paused there has no time left", Weather.batchStatus(5, 10, { temperature = -5, seasonTemperature = -5 }, "Open",
-    function() return 0 end).hoursLeft == nil)
-check("a running batch's recipe hours are its script time", Weather.recipeHours({ getRecipe = function()
-    return { getTime = function() return 5 * 3600 end } end }) == 5)
 local ledger = { temperature = 30, seasonTemperature = 12 }
 check("place: open goes by the hour", Weather.placeTemperature(ledger, "Open") == 30)
 check("place: an open roof by the hour too", Weather.placeTemperature(ledger, "Covered") == 30)
@@ -306,22 +302,6 @@ check("catchUp: the work at the station's place", Weather.catchUp(marks, ledger,
 check("catchUp: moves every mark on", marks.Open == 14 and marks.Sheltered == 25 and marks.Basement == 36)
 check("catchUp: a new place with no mark counts nothing", Weather.catchUp({}, ledger, "", "Open") == 0)
 
--- The plain clock
-local recipe = { modData = {}, elapsed = 12 }
-function recipe:getModData() return self.modData end
-function recipe:setElapsedTime(value) self.elapsed = value end
-function recipe:getRecipe() return { getTime = function() return 7200 end } end
-Weather.showClock(recipe, "runStartHour", 100)
-check("showClock: a run with no start hour is left alone", recipe.elapsed == 12)
-Weather.startClock(recipe, "runStartHour", 100)
-Weather.showClock(recipe, "runStartHour", 101)
-check("showClock: one hour is 3600 seconds", recipe.elapsed == 3600)
-Weather.showClock(recipe, "runStartHour", 150)
-check("showClock: time away finishes the run, and no further", recipe.elapsed == 7200)
-Weather.startClock(recipe, "runStartHour", 100)
-Weather.showClock(recipe, "runStartHour", 100.5, 3)
-check("showClock: a speed runs the bar faster", recipe.elapsed == 1.5 * 3600)
-
 H.installClock(50)
 H.installModData()
 local made = 0
@@ -457,7 +437,6 @@ local realRequire = require
 require = function(name)
     if name:find("^TraditionalPreservationCore/") then return realRequire(name) end
 end
-ISWidgetCraftLogicOutputProgress = { updateProgressItems = function(self) self.vanillaRan = true end }
 local placed
 ISMoveableSpriteProps = { canPlaceMoveable = function() placed = true return true end }
 local UI = require "TraditionalPreservationCore/UI"
@@ -500,23 +479,6 @@ check("place words: one set for the series", table.concat(words, ", ")
     == "Open air, Under an open roof, Indoors, Basement, In the Smokehouse, By a fire, By banked embers")
 check("placeText: the temperature, then the place", UI.placeText("Sheltered", 12.4) == "12°C (Indoors)" and #H.textWarnings == 0)
 H.installGetText(fakeTexts)
-
-local function slot(name)
-    local recipe = name and { getName = function() return "Mod." .. name end }
-    return { craftRecipeData = { getRecipe = function() return recipe end } }
-end
-local seen = {}
-UI.onProgressSlot(function(s, name) table.insert(seen, tostring(name)) end)
-local drew
-UI.progressTooltips({ Ferment = function(s, tooltip, name, entity) drew = { name, entity } end })
-local slots = { slot("Ferment"), slot("Other"), slot(nil) }
-local widget = { entity = "shelf", progressItems = { getItemSlots = function() return slots end } }
-ISWidgetCraftLogicOutputProgress.updateProgressItems(widget)
-check("progress hook: runs vanilla first", widget.vanillaRan)
-check("progress hook: every slot, by short name", table.concat(seen, ",") == "Ferment,Other,nil")
-check("progressTooltips: only the named recipe", slots[1].drawTooltip and not slots[2].drawTooltip and not slots[3].drawTooltip)
-slots[1].drawTooltip(slots[1], {})
-check("progressTooltips: draws with the name and station", drew[1] == "Ferment" and drew[2] == "shelf")
 
 UI.outdoorOnly({ beam_0 = true })
 local inside = { isOutside = function() return false end }
@@ -571,111 +533,6 @@ for _, name in ipairs({ "cask_0", "cask_1", "shelf_0", "rug_0" }) do
 end
 check("keepDoorsFree: a list or a set, other sprites not asked", refused == 3 and #asked == 3)
 Doors.fits = savedFits
-
--- slotRules, twice as two mods would: each mod's stations go to its own rules, the rest on to vanilla.
-ResourceIO = { Input = "in", Output = "out" }
-local vanillaAdds, vanillaUps, halos, queuedActions = 0, 0, {}, {}
-ISCraftLogicPanel = { ItemSlotAddItems = function() vanillaAdds = vanillaAdds + 1 end }
-ISItemSlot = { defaultVerifyItem = function() return true end, onMouseUp = function() vanillaUps = vanillaUps + 1 end }
-HaloTextHelper = { addBadText = function(_, text) table.insert(halos, text) end }
-ISEntityUI = { WalkToEntity = function() return true end }
-ISItemSlotAddAction = { new = function(_, _, _, item) return { item = item } end }
-instanceof = function(object, class) return class == "IsoObject" and not object.isItem end
-ISTimedActionQueue = { add = function(action) table.insert(queuedActions, action) end }
-ISMouseDrag = {}
-ISInventoryPane = { getActualItems = function(dragging) return dragging end }
-function getPlayer() return "player" end
-local function station(name, free)
-    local entity = { name = name, component = { free = free, getCurrentRecipe = function() return nil end } }
-    local resource = { getIO = function() return ResourceIO.Input end, getGameEntity = function() return entity end }
-    return { resource = resource }, entity
-end
-local tracked = {}
-local function rulesFor(name, refusalKey)
-    UI.slotRules{
-        station = function(entity) if entity and entity.name == name then return entity.component, name end end,
-        refusal = function(s, item, queued)
-            if item == "wrong" then return refusalKey end
-            if #queued >= s.component.free then return "T_Full" end
-        end,
-        added = function(entity) tracked[entity] = true end,
-    }
-end
-rulesFor("cask", "T_NotCask")
-rulesFor("shelf", "T_NotShelf")
-local caskSlot, cask = station("cask", 2)
-ISCraftLogicPanel.ItemSlotAddItems("player", cask, caskSlot, { "a", "b", "c" }, cask.component)
-check("slotRules: adds until the refusal, then says why", #queuedActions == 2 and halos[1] == getText("T_Full") and tracked[cask])
-check("slotRules: each queued action asks again", queuedActions[1].tpSlot.extra == "cask" and queuedActions[1].canAddItem(queuedActions[1]))
-halos, queuedActions = {}, {}
-local shelfSlot, shelf = station("shelf", 5)
-ISCraftLogicPanel.ItemSlotAddItems("player", shelf, shelfSlot, { "wrong" }, shelf.component)
-check("slotRules: the other mod's station gets its own rules", #queuedActions == 0 and halos[1] == getText("T_NotShelf"))
-local otherSlot, other = station("barrel", 5)
-ISCraftLogicPanel.ItemSlotAddItems("player", other, otherSlot, { "a" }, {})
-check("slotRules: anything else goes to vanilla", vanillaAdds == 1)
-local itemSlot, craftedItem = station("cask", 2)
-craftedItem.isItem = true
-ISCraftLogicPanel.ItemSlotAddItems("player", craftedItem, itemSlot, { "a" }, {})
-check("slotRules: an item that crafts is never asked for a sprite", vanillaAdds == 2 and #queuedActions == 0)
-check("slotRules: green border follows the refusal", ISItemSlot.defaultVerifyItem({}, caskSlot, "a") and not ISItemSlot.defaultVerifyItem({}, caskSlot, "wrong"))
-local outSlot = station("cask", 2)
-outSlot.resource.getIO = function() return ResourceIO.Output end
-check("slotRules: output slots are left alone", ISItemSlot.defaultVerifyItem({}, outSlot, "wrong"))
-halos = {}
-ISMouseDrag.dragging = { "wrong" }
-ISItemSlot.onMouseUp(caskSlot, 0, 0)
-check("slotRules: a refused drop says why, and vanilla still runs", halos[1] == getText("T_NotCask") and vanillaUps == 1)
-halos = {}
-ISMouseDrag.dragging = { "wrong", "a" }
-ISItemSlot.onMouseUp(caskSlot, 0, 0)
-check("slotRules: a drag that can partly go in says nothing", #halos == 0 and vanillaUps == 2)
-ISMouseDrag.dragging = nil
-
--- recipeRefusal: what the selected recipe can't take. The station's CraftLogic says which recipe, by its full name.
-local vanillaStarts = 0
-ISWidgetCraftLogicControl = { startCraft = function() vanillaStarts = vanillaStarts + 1 end }
-ComponentType = { Resources = "resources" }
-ResourceType = { Item = "item" }
-ArrayList = { new = function() return H.list({}) end }
-UI.slotRules{
-    station = function(entity) if entity and entity.name == "tub" then return entity.component, "tub" end end,
-    refusal = function() return nil end,
-    recipeRefusal = function(s, item) if s.recipe == "Short" and item == "leg" then return "T_TooThick" end end,
-}
-local tubSlot, tub = station("tub", 5)
-local function select(name)
-    tub.component.getCurrentRecipe = function() return name and { getName = function() return "Mod." .. name end } end
-end
-select("Short")
-check("recipeRefusal: the selected recipe turns the border red, by its short name", not ISItemSlot.defaultVerifyItem({}, tubSlot, "leg")
-    and ISItemSlot.defaultVerifyItem({}, tubSlot, "cut"))
-select("Long")
-check("recipeRefusal: another recipe takes it", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
-select(nil)
-check("recipeRefusal: no recipe, no recipe rule", ISItemSlot.defaultVerifyItem({}, tubSlot, "leg"))
-halos = {}
-select("Short")
-ISMouseDrag.dragging = { "leg" }
-ISItemSlot.onMouseUp(tubSlot, 0, 0)
-check("recipeRefusal: a refused drop says why", halos[1] == getText("T_TooThick"))
-ISMouseDrag.dragging = nil
-local stored = { "cut" }
-local inputSlot = { getStoredItems = function() return H.list(stored) end }
-tub.getComponent = function(_, kind)
-    return kind == ComponentType.Resources and { getResourcesFromGroup = function() return H.list({ inputSlot }) end } or nil
-end
-local logic = { getCraftLogic = function() return { getInputsGroupName = function() return "inputs" end } end }
-halos = {}
-ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
-check("recipeRefusal: Craft starts when every stored input fits", vanillaStarts == 1)
-stored = { "cut", "leg" }
-ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
-check("recipeRefusal: loaded under one recipe, Craft under another says why", vanillaStarts == 1 and halos[1] == getText("T_TooThick"))
-select("Long")
-ISWidgetCraftLogicControl.startCraft({ entity = tub, player = "player", logic = logic })
-ISWidgetCraftLogicControl.startCraft({ entity = cask, player = "player", logic = logic })
-check("recipeRefusal: other recipes and stations start as vanilla", vanillaStarts == 3)
 
 -- Yeast, Fish and Vinegar were checked here against their old code when each moved onto the core (2026-11-09).
 -- Their golden outputs and their own tests keep them in step now.

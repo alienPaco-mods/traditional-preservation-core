@@ -2,34 +2,16 @@ module __MOD__
 {
     entity __STATION_ID__
     {
+        /* No window: the batches are kept in its movableData (__MOD__.lua), shown by its menu and Info window. */
         component UiConfig
         {
             xuiSkin = default,
             entityStyle = ES___STATION_TAG__,
-            uiEnabled = true,
-        }
-        component Resources
-        {
-            group craft_inputs
-            {
-                Item@Input@4,
-            }
-            group craft_outputs
-            {
-                Item@Output@4,
-            }
-        }
-        /* CraftLogic, not DryingCraftLogic: drying scales with temperature and stalls in rain, which would break the timer. */
-        component CraftLogic
-        {
-            Recipes = __STATION_TAG__,
-            StartMode = Manual,
-            inputGroup = craft_inputs,
-            outputGroup = craft_outputs,
-            actionAnim = Untie_Mid,
+            uiEnabled = false,
         }
         component SpriteConfig
         {
+            OnIsValid = TraditionalPreservationCore.doorFits,
             isThumpable = false,
             face S
             {

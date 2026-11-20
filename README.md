@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.48)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.49)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -163,7 +163,7 @@ Every TP wrap calls the function it replaced, and goes in once all mods have loa
 | `ISMilkAnimal.milk`, `ISGatherBloodFromAnimal.updateBucket` | A fresh age for new milk and blood |
 | `ISAddItemInRecipe.complete`, `checkName` | Fish & Meat's ingredient icons and stock dish names |
 | `ISToolTipInv.render` | Brine strength in a bucket's tooltip |
-| `ISCraftLogicPanel.ItemSlotAddItems`, `createChildren`; `ISItemSlot.defaultVerifyItem`, `onMouseUp`; `ISWidgetCraftLogicControl.startCraft`; `ISWidgetCraftLogicInputControl.createChildren`, `updateOutputItems`; `ISWidgetCraftLogicOutputProgress.updateProgressItems`, `createDynamicChildren`, `calculateLayout`; `ISWidgetInput.updateValues` | The TP stations' crafting windows: slot rules, popups, info blocks, tanks |
+| `ISWidgetInput.updateValues` | A charged recipe line's real amount (Fish & Meat's filler) |
 | `ISMoveableSpriteProps.canPickUpMoveable`, `getInfoPanelFlagsPerTile`, `canPlaceMoveable` | Where stations may stand, and which can't be picked up |
 | `ISWorldMenuElements.ContextEntity` | Station icons in the right-click menu |
 | `ISCampingMenu.doLightFireOption`, the loot window's Light Fire and Put Out buttons | A banked fire |

@@ -1,5 +1,27 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.49
+- **Crafting-window pieces retired** (ROADMAP Info windows step d; a refactor, nothing changes in game): no TP station
+  uses vanilla's crafting window, so `StationInfo.lua`, `SlotRules.lua` (`UI.slotRules`, `UI.craftRefusal`),
+  `UI.onProgressSlot`, `UI.progressTooltips`, `UI.outputTooltips`, `UI.drawListTooltip`, `UI.shortName` and
+  `Station.uiLogic` / `itemSlots` / `countItems` are gone, with their wraps of `ISCraftLogicPanel.ItemSlotAddItems`,
+  `ISItemSlot.defaultVerifyItem` / `onMouseUp`, `ISWidgetCraftLogicControl.startCraft`,
+  `ISWidgetCraftLogicInputControl.createChildren` and `ISWidgetCraftLogicOutputProgress.updateProgressItems` /
+  `createDynamicChildren` / `calculateLayout`, and their tests. `UI.drawTooltip` stays (the piece lists' popups).
+- **Craft-run timers retired** (no craft recipe runs on a timer now): `Fire.updateRun` / `catchUpRun` and CraftClock's
+  `showProgress`, `setRecipeHours`, `recipeHours`, `startClock`, `showClock` and `batchStatus` are gone with their
+  tests. `CraftClock.lua` is gone too: its one live function, `Weather.startRun` (Yeast's cultures), is in Weather
+  itself, same name, same behaviour. `Action.startClock` (timed actions on the game clock) is untouched.
+- **The template's station is a piece record** (`tp new`), as the station rule says: raw batches put in from its
+  right-click menu (One / All) or dragged onto the cells in its Info window, each batch on its own weather-weighted
+  clock in the station's movableData (FluidAgeing on the mod's ledger), Take Done / Take All, kept in place while it
+  holds anything, never in front of a door (`OnIsValid`). Its timed action is `TP<Station>`. No crafting window, no
+  Process Batch recipe; the Dev console's `fast` sets the hours alone. New `tests/test_menu.lua` (put in, age, take
+  out); `test_process.lua` and the golden `season_report.lua` run on the record. README, DEVHELP and the guide stub
+  follow.
+- DEVGUIDE: the wrap table, "Where things live", the naming example and the station rule follow; the crafting-window
+  and craft-timer FAQ entries are gone.
+
 ## 0.1.48
 - **A menu button in a window's button row** (user, session 72, `art/kraut_info_mock.png`): a button entry with `menu`
   (`{ { title, icon, enabled, tooltip, onClick } }`) opens its rows as a context menu under it on a click, in place of

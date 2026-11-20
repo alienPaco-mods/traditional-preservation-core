@@ -10,12 +10,14 @@ rewrite it as the mod takes shape. Settle the questions in `~/MODS/WIP/TPCore/SE
 ## How it works (skeleton)
 
 1. **Build a __STATION__** (Build menu, Furniture): 4 planks + 8 nails + any hammer, Carpentry 2.
-2. Put up to 4 Raw __NAME__ Batches in it and press **Craft**.
-3. After 3 in-game days at the best temperature, take out the Finished __NAME__ Batches.
+2. Right-click it and put up to 4 Raw __NAME__ Batches in (**Put Raw Batches In**, One or All), or drag them onto
+   the cells in **__STATION__ Info**. Each put-in is a batch with its own clock.
+3. After 3 in-game days at the best temperature, take out the Finished __NAME__ Batches (**Take Done**). Anything in
+   the station keeps it where it is.
 
 A batch works by the temperature where the station stands (open air, under an open roof, indoors, in a basement), through the
-shared weather ledger, and keeps working while the area is unloaded. Hover a running batch for its progress, time
-left, temperature and rate.
+shared weather ledger, and keeps working while the area is unloaded. **__STATION__ Info** shows each batch's progress and
+time left, the place and its temperature.
 
 `luajit tools/season_report.lua` prints the days a batch takes by month and place (golden-checked by `tp test`).
 
@@ -33,6 +35,8 @@ In debug mode, `__SHORT__.help()` in the Lua console lists commands for testing 
 
 - The shared core (Weather, Station, UI) is the required TP Core mod (`~/MODS/TraditionalPreservationCore`), loaded as `require "TraditionalPreservationCore/Weather"`. Edit it there.
 - `tiledef` __TILEDEF__ was picked by `tp new` as the next free number.
-- Save keys: the ledger lives in global ModData under `__MOD__` (totals `process<Place>`), and a run's recipe
-  ModData holds `done`, `last`, `place`. Never rename them once the mod is out.
+- A piece-record station (Core DEVGUIDE, "Which kind of station?"): no crafting window, the batches live in the
+  station's movableData.
+- Save keys: the ledger lives in global ModData under `__MOD__` (totals `process<Place>`), and the station's batches
+  under `__LOWER__Station` (`batches`: `id`, `count`, `work`; `nextId`). Never rename them once the mod is out.
 - Singleplayer only for now.

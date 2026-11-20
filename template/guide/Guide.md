@@ -29,7 +29,7 @@ TEMPLATE: the problem in vanilla, and the real technique this mod brings back.
 | Step | You need | You get |
 |---|---|---|
 | Build a **__STATION__** | 4 planks, 8 nails, hammer (kept). Carpentry 2 | The station |
-| Load it, press **Craft** | Up to 4 Raw __NAME__ Batches | |
+| Right-click it, **Put Raw Batches In** | Up to 4 Raw __NAME__ Batches | |
 | Wait **3 in-game days** (at the best temperature) | | Finished __NAME__ Batches |
 
 ---
@@ -42,7 +42,8 @@ TEMPLATE
 
 ## 4. The __STATION__
 
-- **Each press of Craft starts its own timer.**
+- **Each put-in is a batch with its own timer.** __STATION__ Info lists them with their time left.
+- **Anything in it keeps it where it is**: take everything out before picking it up.
 - **Temperature matters.** In open air it follows the day's weather; under an open roof or indoors the average of the
   last ten days (a room is 22 C while the grid is on); in a loft (the top storey) as indoors, plus three tenths of
   whatever that average is above 10 C; in a basement it follows the ground, a month behind the season and two fifths

@@ -421,7 +421,7 @@ end
 
 passOn("FireConnect", { "connect", "connection", "connections", "connectedTo", "joinOf", "takesSmoke", "connectionOf",
     "join", "unjoin", "connectRefusalOf", "connectRefusal", "kitMissing", "kitBack", "flueSideTo", "flueSquare" })
-passOn("Fireside", { "fireC", "isFirePlace", "firePlace", "near", "fittedNear", "placeOf", "catchUp", "catchUpRun",
-    "updateRun", "notePlace", "noteFire" })
+passOn("Fireside", { "fireC", "isFirePlace", "firePlace", "near", "fittedNear", "placeOf", "catchUp",
+    "notePlace", "noteFire" })
 
 return Fire

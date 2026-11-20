@@ -1,27 +1,30 @@
--- Traditional Preservation (__NAME__) B42: keeps track of every __STATION__, records the weather and tells each
--- running batch where its station stands. TEMPLATE: layer attached sprites here to show the station's state
--- (Station.showSprites; Yeast's shelf shows one jar per culture).
+-- Traditional Preservation (__NAME__) B42: keeps track of every __STATION__, records the weather and brings each
+-- loaded station's batches up to now. TEMPLATE: layer attached sprites here to show the station's state
+-- (Station.showSprites; the Drying Cloth shows one overlay a lot).
 if isClient() then return end
 
 __MOD__World = __MOD__World or {}
+local World = __MOD__World
 local Station = require "TraditionalPreservationCore/Station"
 local Weather = require "TraditionalPreservationCore/Weather"
 local Tiles = require "__MOD__/Tiles"
 
-local function refresh(station, sessionState)
-    local logic = station:getComponent(ComponentType.CraftLogic)
-    if not logic then return end
-    local uiLogic = Station.uiLogic(station, sessionState, logic)
-    if not uiLogic then return end
-    local now = getGameTime():getWorldAgeHours()
-    for craftData in pairs(uiLogic:getItemsInProgress()) do
-        __MOD__.notePlace(craftData:getModData(), station, now)
-    end
+local function newSessionState(isoObject)
+    return __MOD__.isStation(isoObject) and {} or nil
 end
 
-local tracker = Station.tracker({ sprites = Tiles.STATIONS, refresh = refresh })
+local function refresh(station, _sessionState)
+    __MOD__.update(station)
+end
 
-__MOD__World.track = tracker.track
+local tracker = Station.tracker({ sprites = Tiles.STATIONS, newSessionState = newSessionState, refresh = refresh, scan = true })
+
+-- Brings a station up to now at once (after a put or a take). Returns its record.
+function World.updateStation(station)
+    local sessionState = tracker.track(station)
+    if sessionState then refresh(station, sessionState) end
+    return __MOD__.recordOf(station)
+end
 
 Weather.onReading(function(now, climate)
     local M = __MOD__

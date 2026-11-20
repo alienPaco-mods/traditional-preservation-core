@@ -1,18 +1,17 @@
 -- Shows how long a batch takes through the year, from forecasts read from the real game. It runs the mod's
--- own code (the ten-minute weather record, a run's start and updates, the popup), so it doubles as a check
+-- own code (the ten-minute weather record, a batch put in and brought up to now, its status), so it doubles as a check
 -- that a change to that code keeps every number. Run from the mod folder: luajit tools/season_report.lua [climate.csv]
 -- Each line of the file: world month offset tempMin tempMean tempMax humMin humMean humMax rainy snowy
 local H = dofile((os.getenv("TPCORE") or "../TraditionalPreservationCore") .. "/tests/harness.lua")
 H.useModPaths()
 H.installClock(0)
 H.installModData()
-Events = { OnInitGlobalModData = { Add = function() end } }
+H.installEvents()
 dofile("42/media/lua/shared/__MOD__.lua")
 local M = __MOD__
 
 local MONTHS = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
 local STEPS_PER_HOUR = 6
-local SECONDS_PER_HOUR = 3600
 
 local function readDays(path)
     local days = {}
@@ -33,13 +32,9 @@ local function temperatureAt(day, hour)
     return swing >= 0 and day.mean + (day.high - day.mean) * swing or day.mean + (day.mean - day.low) * swing
 end
 
-local function recipeData(seconds)
-    local craftRecipeData = { modData = {}, elapsed = 0 }
-    function craftRecipeData:getModData() return self.modData end
-    function craftRecipeData:getElapsedTime() return self.elapsed end
-    function craftRecipeData:setElapsedTime(seconds) self.elapsed = seconds end
-    function craftRecipeData:getRecipe() return { getTime = function() return seconds end } end
-    return craftRecipeData
+local function station()
+    local modData = {}
+    return { getModData = function() return modData end }
 end
 
 -- The first sampled world's calendar year, settled (Weather.settledMeans).
@@ -54,17 +49,15 @@ end
 local days = readDays(arg[1] or "tools/climate_year.csv")
 -- The ledger starts as a long-running save's would on 1 January.
 M.getLedger().seasonTemperature, M.getLedger().groundTemperature = settle(days)(days[1].month, days[1].offset)
-local seconds = M.PROCESS_HOURS * SECONDS_PER_HOUR
 
 -- One batch per place, started on the first day of each month, plus one that goes down to the basement
 -- halfway through its first day. Updated every in-game hour, as an open window would.
 local runs = {}
 local function startRuns(index)
     for _, place in ipairs({ "Open", "Sheltered", "Basement", "Moved" }) do
-        local craftRecipeData = recipeData(seconds)
-        M.onProcessStart(craftRecipeData)
-        craftRecipeData.modData.place = place == "Moved" and "Sheltered" or place
-        table.insert(runs, { craftRecipeData = craftRecipeData, place = place, month = days[index].month, startHour = H.hours })
+        local run = { station = station(), place = place, at = place == "Moved" and "Sheltered" or place, month = days[index].month, startHour = H.hours }
+        M.put(run.station, 1, H.hours, run.at)
+        table.insert(runs, run)
     end
 end
 
@@ -78,13 +71,16 @@ for index, day in ipairs(days) do
         end
         for _, run in ipairs(runs) do
             if not run.finished then
-                if run.place == "Moved" and H.hours - run.startHour >= 12 then run.craftRecipeData.modData.place = "Basement" end
-                M.onProcessUpdate(run.craftRecipeData)
+                local record = M.update(run.station, H.hours, run.at)
+                if run.place == "Moved" and H.hours - run.startHour >= 12 then run.at = "Basement" end
                 local key = run.month .. run.place
+                local batch = record.batches[1]
                 if not statuses[key] and H.hours - run.startHour >= 24 then
-                    statuses[key] = M.batchStatus(run.craftRecipeData.modData, M.PROCESS_HOURS, M.getLedger())
+                    local temperature = M.placeTemperature(M.getLedger(), run.at)
+                    statuses[key] = M.status(batch, temperature)
+                    statuses[key].temperature, statuses[key].place = temperature, run.at
                 end
-                if run.craftRecipeData.elapsed >= seconds then
+                if M.isDone(batch) then
                     run.finished = true
                     results[key] = results[key] or (H.hours - run.startHour) / 24
                 end
@@ -107,7 +103,7 @@ for month = 1, 12 do
 end
 
 print("")
-print("Popup after one day: progress, hours left, temperature, rate")
+print("Info after one day: progress, hours left, temperature, rate")
 for month = 1, 12 do
     for _, place in ipairs({ "Open", "Sheltered", "Basement", "Moved" }) do
         local s = statuses[month .. place]

@@ -3,10 +3,7 @@
 if not isDebugEnabled() then return end
 
 local M = __MOD__
-local Weather = require "TraditionalPreservationCore/Weather"
 __SHORT__ = {}
-
-local RECIPE_NAME = "__MOD__.ProcessBatch"
 
 local function say(text) print("[__SHORT__] " .. text) end
 
@@ -44,11 +41,10 @@ end
 
 function __SHORT__.fast(hours)
     if not hours then
-        M.applyProcessTime()
+        M.applySandbox()
         return say(string.format("Back to the sandbox time: %.1f hours.", M.PROCESS_HOURS))
     end
     M.PROCESS_HOURS = hours
-    Weather.setRecipeHours(RECIPE_NAME, hours, "__MOD__")
     say(string.format("Test timer on: a batch takes %s hours at full speed.", tostring(hours)))
 end
 

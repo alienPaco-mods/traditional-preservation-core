@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.51
+- **Frost** (ROADMAP NEXT 1, step 1 of 4): `Frost.lua` counts hours at or below a freezing point by place, on one
+  ledger for the whole series (`TraditionalPreservationCoreFrost`, recorded every ten minutes by `FrostWorld.lua`), at
+  Core's place temperature, so a thing left alone catches up when next looked at. A mod names its points at load
+  (`Frost.point(celsius)`, processes `frostAt<celsius>`), starts a record (`Frost.newRecord`) and gets the hours frozen
+  since the last look (`Frost.catchUp`); `Frost.freezingAt` says whether a place freezes now. A powered fridge never
+  freezes, a powered freezer counts nothing (vanilla's rules), a place by a fire goes by the fire's heat while its fuel
+  lasted. Nothing in game changes yet: no mod names a point, and with none Core makes no ledger. Tests: `test_frost.lua`.
+
 ## 0.1.50
 - **Aired room by distance** (ROADMAP NEXT 1): a square in a room is an aired room when the outside air reaches it
   within `Windows.AIR_STEPS` (6) steps, walking through edges with nothing shut on them: an open or broken window, an

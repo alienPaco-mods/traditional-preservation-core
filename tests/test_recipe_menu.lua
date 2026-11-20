@@ -50,7 +50,8 @@ HandcraftLogic = { new = function()
     function logic:setIsoObject() end
     function logic:setContainers() end
     function logic:setRecipeFromContextClick(_, vessel) self.vessel = vessel end
-    function logic:getPossibleCraftCount() return possible end
+    function logic:setManualSelectInputs(on) self.manual = on end
+    function logic:getPossibleCraftCount() return self.manual == false and possible or math.min(possible, 1) end
     function logic:canPerformCurrentRecipe() return performable > 0 end
     function logic:getRecipeData() return { getAllInputItems = function() return list({}) end,
         getAllPutBackInputItems = function() return list({}) end } end
@@ -72,7 +73,35 @@ ISInventoryPaneContextMenu.OnNewCraft = function() vanillaCrafts = vanillaCrafts
 
 local RecipeUI = require "TraditionalPreservationCore/RecipeUI"
 RecipeUI.oneOrAll({ recipe = "Mod.MakeSoup", fluid = "Broth", litres = 0.5 })
-local onFill = H.handlers.OnFillInventoryObjectContextMenu[1]
+local onCraftRow = H.handlers.OnFillInventoryObjectContextMenu[1]
+local onFill = H.handlers.OnFillInventoryObjectContextMenu[2]
+
+-- The Craft row on an item only a mod's recipes use (vanilla's finds recipes in Base only).
+local inBase = { BaseRecipe = true }
+getScriptManager = function() return { getCraftRecipe = function(_, name) return inBase[name] and {} or nil end } end
+local listed = {}
+ISInventoryPaneContextMenu.doRecipeListForItem = function(_, text, scriptItem) table.insert(listed, { text = text, item = scriptItem }) end
+local function jar(names, vanillaCount)
+    local scriptItem = { getUsedInRecipes = function(_, playerObj)
+        if playerObj then return list(vanillaCount > 0 and { "BaseRecipe" } or {}) end
+        return list(names)
+    end }
+    local item = { getScriptItem = function() return scriptItem end }
+    setmetatable(item, { __index = { class = "InventoryItem" } })
+    return item, scriptItem
+end
+getSpecificPlayer = function() return {} end
+local clay, clayScript = jar({ "MakeFermentingCulture" }, 0)
+onCraftRow(0, menu(), { clay })
+check("an item only mod recipes use gets the Craft row", #listed == 1 and listed[1].item == clayScript
+    and listed[1].text == "ContextMenu_ShowCraftRecipesUsed")
+listed = {}
+onCraftRow(0, menu(), { (jar({ "BaseRecipe", "MakeFermentingCulture" }, 1)) })
+check("one vanilla finds keeps vanilla's own row, none added", #listed == 0)
+onCraftRow(0, menu(), { (jar({ "BaseRecipe" }, 0)) })
+check("only Base recipes the player can't see: left out, as vanilla does", #listed == 0)
+onCraftRow(0, menu(), { clay, (jar({ "MakeFermentingCulture" }, 0)) })
+check("two selected: no row, as vanilla", #listed == 0)
 
 -- Vanilla's row, at the top (one recipe) or in the item's submenu (two or more).
 local function open(vessel, nested)

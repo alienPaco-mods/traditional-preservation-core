@@ -119,7 +119,11 @@ end
 function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
-    if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed and not self.listFolded) end
+    -- The list shows only when the last frame drew it: a window leaves its list out when it holds nothing (the last
+    -- piece taken off), and the rows and sort switch must go with it.
+    if self.pieceListUI then
+        require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed and not self.listFolded and self.listDrawn)
+    end
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
     if self.dropTargetsUI then require("TraditionalPreservationCore/DropZone").showTargets(self, math.huge) end
     self:showButtons()
@@ -404,6 +408,7 @@ end
 function InfoWindow:prerender()
     ISCollapsableWindow.prerender(self)
     self.foldTarget = nil   -- set again by this frame's foldSection, if it draws one
+    self.listDrawn = false  -- set again by this frame's list, if it draws one
     if self.bandLook and not self.isCollapsed then drawBand(self, self.bandLook) end
 end
 
@@ -701,6 +706,7 @@ end
 -- under it.
 function InfoWindow:pieceListBlock(y, sectionLabel, labelText, rows)
     self:resizeWidth()
+    self.listDrawn = true
     y = self:foldSection(y, sectionLabel, tostring(#rows))
     self.listFolded = self:isListFolded()
     local PieceList = require "TraditionalPreservationCore/PieceList"
@@ -718,12 +724,14 @@ end
 -- the list.
 function InfoWindow:pieceList(y, label, rows)
     self:resizeWidth()
+    self.listDrawn = true
     return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, getText(label), rows)
 end
 
 -- A list whose header line is already text (a count: "2 lots").
 function InfoWindow:pieceListNamed(y, labelText, rows)
     self:resizeWidth()
+    self.listDrawn = true
     return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, labelText, rows)
 end
 

@@ -1,5 +1,15 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.46
+- **The Craft row on items only mod recipes use** (`RecipeUI`): vanilla looks the recipes it lists up by bare name in
+  module Base, so an item used only in TP's recipes (a ceramic jar) had no Craft row. Core adds vanilla's own row
+  (same text, icon and crafting window filtered to the item) when vanilla left it out; one item or stack selected,
+  as vanilla. No wrap.
+- `RecipeUI.oneOrAll`'s All (n) counts every item type in reach: the context click's logic is manual select, which
+  counted only the type each input was given (a glass Jar beside Ceramic ones gave 1, so no submenu).
+- An Info window's list (rows, sort switch, tabs) hides when the window stops drawing it: taking the last piece off a
+  shelf, floor, cloth, rack or Smokehouse left the rows and the sort switch over the notes.
+
 ## 0.1.45
 - An Info window that resizes keeps its 12 px under the notes clear of vanilla's status bar at its foot (the bar
   covered it: the last note sat on the edge).

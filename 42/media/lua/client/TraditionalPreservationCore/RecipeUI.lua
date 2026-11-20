@@ -3,6 +3,9 @@
 -- (vanilla's own craft) and All (n), n the crafts the vessel's fluid covers and the rest in reach allows. All makes
 -- them one after the other from the same vessel, each started as vanilla starts one (ISInventoryPaneContextMenu
 -- OnNewCraft), and stops when the next can't be made. The crafting window's own count is left as it is.
+-- Also the Craft row (the crafting window filtered to recipes using the item) on an item only a mod's recipes use:
+-- vanilla looks each recipe it lists up by its bare name, in Base only, so a recipe in any other module (every TP
+-- recipe) is never found and the row left out (ENGINE_NOTES, "Craft row and modules").
 local UI = require "TraditionalPreservationCore/UI"
 
 local RecipeUI = {}
@@ -82,8 +85,11 @@ function RecipeUI.oneOrAll(oneOrAll)
         if not row or row.notAvailable then return end
         local playerObj = getSpecificPlayer(playerNum)
         local recipe = row.param1
-        local count = math.min(math.floor((litres + AMOUNT_TOLERANCE_L) / oneOrAll.litres),
-            handcraftLogic(playerObj, recipe, vessel):getPossibleCraftCount(true))
+        -- A context click sets manual select, which counts only the item type each input was given (one glass Jar
+        -- beside Ceramic ones: 1); counted unset, every type in reach counts (ENGINE_NOTES, "Craft row and modules").
+        local counter = handcraftLogic(playerObj, recipe, vessel)
+        counter:setManualSelectInputs(false)
+        local count = math.min(math.floor((litres + AMOUNT_TOLERANCE_L) / oneOrAll.litres), counter:getPossibleCraftCount(true))
         if count <= 1 then return end
         local sub = menu:getNew(menu)
         local one = sub:addOption(getText("ContextMenu_One"), row.target, row.onSelect, row.param1, row.param2, row.param3)
@@ -94,5 +100,29 @@ function RecipeUI.oneOrAll(oneOrAll)
         menu:addSubMenu(row, sub)
     end)
 end
+
+-- Whether vanilla's Craft row would find a recipe the item is used in: a bare name it can look up in Base.
+local function vanillaFinds(scriptItem, playerObj)
+    return scriptItem:getUsedInRecipes(playerObj):size() > 0
+end
+
+-- Whether any recipe using the item lives outside Base, where vanilla's lookup can't see it.
+local function usedOutsideBase(scriptItem)
+    local names = scriptItem:getUsedInRecipes()
+    for i = 0, names:size() - 1 do
+        if not getScriptManager():getCraftRecipe(names:get(i)) then return true end
+    end
+    return false
+end
+
+-- One item or one stack selected, as vanilla's row wants; its Craft row added when vanilla left it out.
+Events.OnFillInventoryObjectContextMenu.Add(function(playerNum, context, items)
+    if #items ~= 1 then return end
+    local item = UI.firstSelected(items, function() return true end)
+    local scriptItem = item and item:getScriptItem()
+    local playerObj = getSpecificPlayer(playerNum)
+    if not scriptItem or vanillaFinds(scriptItem, playerObj) or not usedOutsideBase(scriptItem) then return end
+    ISInventoryPaneContextMenu.doRecipeListForItem(context, getText("ContextMenu_ShowCraftRecipesUsed"), scriptItem, playerObj)
+end)
 
 return RecipeUI

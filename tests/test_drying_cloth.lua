@@ -1,4 +1,4 @@
--- Checks the Drying Cloth (DryingCloth: lots, drying by place, the shut room's still air, heat that kills) on
+-- Checks the Drying Cloth (DryingCloth: lots in its room, drying by place, the shut room's still air, heat that kills) on
 -- stand-ins for the engine. Run from TraditionalPreservationCore: luajit tests/test_drying_cloth.lua
 local H = dofile("tests/harness.lua")
 local check, near = H.check, H.near
@@ -11,14 +11,14 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local given = {}
 local cakes = DryingCloth.register({
-    name = "testCakes", title = "Cakes", types = { ["Test.Cake"] = true }, perLot = 1, hours = 168,
+    name = "testCakes", title = "Cakes", types = { ["Test.Cake"] = true }, room = 10, perLot = 1, hours = 168,
     curve = { { 0, 0 }, { 15, 1 }, { 25, 1 } }, killAbove = 35,
     sprite = function(lot, state) return "cake_" .. lot .. "_" .. state end,
     lay = function(items) return { first = items[1]:getFullType() } end,
     give = function(lot, inventory, state) table.insert(given, lot.kind .. ":" .. state .. ":" .. lot.count) end,
 })
 DryingCloth.register({
-    name = "testGrains", title = "Grains", types = { ["Test.Grain"] = true }, perLot = 10, hours = 48,
+    name = "testGrains", title = "Grains", types = { ["Test.Grain"] = true }, room = 1, hours = 48,
     curve = { { 0, 0 }, { 25, 1 } },
     sprite = function(lot, state) return "grain_" .. lot .. "_" .. state end,
     give = function(lot, inventory, state) table.insert(given, lot.kind .. ":" .. state .. ":" .. lot.count) end,
@@ -51,13 +51,15 @@ check("kinds are found by what they take", DryingCloth.kindOf("Test.Cake") == ca
 -- Lots
 local open = cloth()
 DryingCloth.getLedger()
-check("an empty cloth has five free lots", DryingCloth.freeLots(DryingCloth.recordOf(open)) == 5 and DryingCloth.isEmpty(DryingCloth.recordOf(open)))
-check("a lay takes the first free lot", DryingCloth.lay(open, { item("Test.Cake") }, H.hours, "Open") == 1
+check("an empty cloth has room for five batches of cakes or fifty grains", DryingCloth.isEmpty(DryingCloth.recordOf(open))
+    and DryingCloth.fits(DryingCloth.recordOf(open), cakes) == 5 and DryingCloth.fits(DryingCloth.recordOf(open), DryingCloth.kind("testGrains")) == 50)
+check("a lay is one lot, ids in order", DryingCloth.lay(open, { item("Test.Cake") }, H.hours, "Open") == 1
     and DryingCloth.lay(open, { item("Test.Grain"), item("Test.Grain"), item("Test.Grain") }, H.hours, "Open") == 2)
 local record = DryingCloth.recordOf(open)
 check("a lot keeps its kind, count and data", record.lots[1].kind == "testCakes" and record.lots[1].data.first == "Test.Cake"
     and record.lots[2].count == 3)
-check("each lot shows its kind's sprite", table.concat(DryingCloth.lotSprites(record), " ") == "cake_0_wet grain_1_wet")
+check("the room used is each piece's room", DryingCloth.roomUsed(record) == 13 and DryingCloth.fits(record, cakes) == 3)
+check("each spot shows the lot covering most of it", table.concat(DryingCloth.lotSprites(record), " ") == "cake_0_wet grain_1_wet")
 check("unknown items lay nothing", DryingCloth.lay(open, { item("Base.Apple") }, H.hours, "Open") == nil)
 
 -- Drying: 48 hours at 25 C dries the grains, the cakes (a week at full speed) are on their way.
@@ -71,7 +73,7 @@ check("and frost waits", DryingCloth.status(record.lots[1], -3, "Open").waits ==
 
 -- Taking off: the finished lot only, then everything (the wet cakes come back as they went).
 check("take gives what its kind gives", DryingCloth.take(open, 2, {}) == "dry" and given[1] == "testGrains:dry:3")
-check("a taken lot is free again", DryingCloth.freeLots(DryingCloth.recordOf(open)) == 4)
+check("a taken lot's room is free again", DryingCloth.roomUsed(DryingCloth.recordOf(open)) == 10 and DryingCloth.take(open, 2, {}) == nil)
 DryingCloth.take(open, 1, {})
 check("a wet lot comes off wet", given[2] == "testCakes:wet:1" and DryingCloth.isEmpty(DryingCloth.recordOf(open)))
 
@@ -97,10 +99,46 @@ check("but not the grains", DryingCloth.state(record.lots[2]) == "wet")
 check("the status warns of the heat first", DryingCloth.status({ kind = "testCakes", dry = { age = 0 } }, 37, "Open").tooHot)
 check("the look key follows the states", DryingCloth.lookKey(record) == "testCakesdead,testGrainswet,-,-,-")
 
+-- The room: lays fill it in any mix, a lay too big takes what fits, a full cloth takes nothing.
+local full = cloth()
+local grains = {}
+for _ = 1, 25 do table.insert(grains, item("Test.Grain")) end
+DryingCloth.lay(full, { item("Test.Cake") }, H.hours, "Open")
+DryingCloth.lay(full, { item("Test.Cake") }, H.hours, "Open")
+local id, count = DryingCloth.lay(full, grains, H.hours, "Open")
+check("a lay takes as many as fit", id == 3 and count == 25)
+id, count = DryingCloth.lay(full, { item("Test.Cake"), item("Test.Cake") }, H.hours, "Open")
+record = DryingCloth.recordOf(full)
+check("the last batch fills only the room left", id == nil and DryingCloth.fits(record, cakes) == 0
+    and DryingCloth.fits(record, DryingCloth.kind("testGrains")) == 5)
+DryingCloth.lay(full, { item("Test.Grain"), item("Test.Grain"), item("Test.Grain"), item("Test.Grain"), item("Test.Grain"), item("Test.Grain") }, H.hours, "Open")
+check("fifty is full", DryingCloth.roomUsed(record) == 50 and #record.lots == 4 and record.lots[4].count == 5)
+check("the spots follow the room in the order laid", table.concat(DryingCloth.lotSprites(record), " ")
+    == "cake_0_wet cake_1_wet grain_2_wet grain_3_wet grain_4_wet")
+DryingCloth.take(full, 1, {})
+check("taken off, the rest move up", table.concat(DryingCloth.lotSprites(record), " ") == "cake_0_wet grain_1_wet grain_2_wet grain_3_wet")
+local apart = cloth()
+id, count = DryingCloth.lay(apart, { item("Test.Cake"), item("Test.Cake"), item("Test.Cake") }, H.hours, "Open")
+check("a kind with perLot 1 lays one piece a lot", id == 1 and count == 1 and DryingCloth.roomUsed(DryingCloth.recordOf(apart)) == 10)
+local split = DryingCloth.lotsOf(cakes, { 1, 2, 3 })
+local whole = DryingCloth.lotsOf(DryingCloth.kind("testGrains"), { 1, 2, 3 })
+check("lotsOf: perLot each, else one lot", #split == 3 and #split[2] == 1 and #whole == 1 and #whole[1] == 3)
+local few = cloth()
+DryingCloth.lay(few, { item("Test.Grain") }, H.hours, "Open")
+check("one grain still shows a spot", table.concat(DryingCloth.lotSprites(DryingCloth.recordOf(few)), " ") == "grain_0_wet")
+
+-- A cloth from before the room: five fixed lots, false when free, packed into the list with ids.
+local old = cloth()
+old.modData[DryingCloth.KEY] = { lots = { false, { kind = "testGrains", count = 10, dry = { age = 0 } }, false,
+    { kind = "testCakes", count = 1, dry = { age = 0 } }, false } }
+record = DryingCloth.recordOf(old)
+check("an old cloth's lots are packed", #record.lots == 2 and record.lots[1].id == 1 and record.lots[2].kind == "testCakes"
+    and record.nextId == 3 and DryingCloth.roomUsed(record) == 20)
+
 -- A kind that goes off: whichever comes first, gone off or dry, wins.
 local offAt = {}
 DryingCloth.register({
-    name = "testCurd", title = "Curd", types = { ["Test.Curd"] = true }, perLot = 1, hours = 48,
+    name = "testCurd", title = "Curd", types = { ["Test.Curd"] = true }, room = 10, hours = 48,
     curve = { { 0, 0 }, { 25, 1 } },
     sprite = function(lot, state) return "curd_" .. lot .. "_" .. state end,
     lay = function(items, now, place) return { laidAt = now, place = place } end,

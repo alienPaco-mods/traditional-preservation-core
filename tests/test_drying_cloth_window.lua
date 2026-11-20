@@ -52,11 +52,12 @@ check("a place with no icon has none", UI.placeIcon("Moon") == nil)
 local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
 local realKind = DryingCloth.kind
 DryingCloth.kind = function(name)
-    return ({ cakes = { name = "cakes", pattern = "Cakes.png" }, grains = { name = "grains", pattern = "Grains.png" } })[name]
+    return ({ cakes = { name = "cakes", pattern = "Cakes.png", room = 10 }, grains = { name = "grains", pattern = "Grains.png", room = 1 } })[name]
 end
-local parts = DryingClothUI.parts({ lots = { { lot = { kind = "cakes" } }, { lot = { kind = "grains" } }, { lot = { kind = "cakes" } } } })
-check("the lots' cells by kind: 2 cakes, 1 grains", #parts == 2 and parts[1].pattern == "Cakes.png" and parts[1].weight == 2
-    and parts[2].weight == 1)
+local parts = DryingClothUI.parts({ lots = { { lot = { kind = "cakes", count = 1 } }, { lot = { kind = "grains", count = 7 } },
+    { lot = { kind = "cakes", count = 2 } } } })
+check("the cells by kind, by the room each takes: 30 cakes, 7 grains", #parts == 2 and parts[1].pattern == "Cakes.png"
+    and parts[1].weight == 30 and parts[2].weight == 7)
 check("an empty cloth: plain cells", DryingClothUI.parts({ lots = {} }) == nil)
 DryingCloth.kind = realKind
 

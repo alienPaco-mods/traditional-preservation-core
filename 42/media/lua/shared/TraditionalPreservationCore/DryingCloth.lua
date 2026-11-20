@@ -1,10 +1,13 @@
 -- Traditional Preservation core: the Drying Cloth, a Sheet spread on the floor with two Stones on its corners, where
--- things dry by the air of their place (Yeast's cakes, Dairy's kefir grains). It holds LOTS lots; a lot is what one
--- put laid down, of one kind. What a kind is belongs to its mod, which registers it here:
---   DryingCloth.register{ name, label = translation key of its lot ("%1" the count), types = { [fullType] = true } it
---     takes, perLot = most pieces in a lot, hours = hours to dry at full speed, curve = { { celsius, share } },
---     killAbove = optional celsius past which it dies (after KILL_HOURS there), sprite(lot, state) = the overlay for
---     lot 0 to 4 in state "wet", "dry" or "dead" (a tile of the mod's own art, cloth_art.lot_spot),
+-- things dry by the air of their place (Yeast's cakes, Dairy's kefir grains). It has ROOM room, as the Drying Frame
+-- has its weight: each piece takes its kind's room, and a lot is what one lay put down, of one kind, with its own
+-- clock (any number of lots while there is room). What a kind is belongs to its mod, which registers it here:
+--   DryingCloth.register{ name, title = translation key of its name, types = { [fullType] = true } it takes, room =
+--     the cloth's room one piece takes (of ROOM), perLot = optional most pieces in one lot (a kind whose lay data
+--     is one piece's, as yeast cakes' age: 1; none, any number), hours = hours to dry at full speed, curve = { { celsius, share } },
+--     killAbove = optional celsius past which it dies (after KILL_HOURS there), sprite(spot, state) = the overlay for
+--     the cloth's spot 0 to SPOTS - 1 in state "wet", "dry" or "dead" (a tile of the mod's own art, cloth_art.lot_spot;
+--     a spot shows the lot covering most of its share of the room),
 --     lay(items, now, place) = data kept with the lot (optional), give(lot, inventory, state) = puts what comes off in
 --     the inventory (state "wet", "dry" or "dead"), goesOff(lot, now, place, fire, isoObject) = optional: brings what
 --     keeps the lot (its own clock in lot.data) up to now and returns nil, or the share of the stretch since the last
@@ -22,9 +25,10 @@ local Tiles = require "TraditionalPreservationCore/Tiles"
 
 local DryingCloth = {}
 
-DryingCloth.LOTS = 5
--- Save key on the cloth: never rename it once the mod is out. { lots = { [1..LOTS] = lot or false } }; a lot is
--- { kind, count, data, dry = a FluidAgeing age (hours at full drying), heat = one (hours past killAbove), dead,
+DryingCloth.ROOM = 50     -- a batch of yeast cakes takes 10, a kefir grain 1: five batches or fifty grains (user)
+DryingCloth.SPOTS = 5     -- the art's spots, each a fifth of the room
+-- Save key on the cloth: never rename it once the mod is out. { lots = { lot, ... } in the order laid, nextId }; a lot
+-- is { id, kind, count, data, dry = a FluidAgeing age (hours at full drying), heat = one (hours past killAbove), dead,
 -- spoiled (dead because it went off before it dried) }.
 DryingCloth.KEY = "tpcCloth"
 DryingCloth.LEDGER_KEY = "TraditionalPreservationCoreCloth"
@@ -39,10 +43,9 @@ local function dryProcess(name) return "cloth" .. name end
 local function heatProcess(name) return "clothHeat" .. name end
 
 function DryingCloth.register(kind)
-    assert(kind.name and kind.types and kind.hours and kind.curve and kind.sprite and kind.give, "DryingCloth.register: a kind needs name, types, hours, curve, sprite and give")
+    assert(kind.name and kind.types and kind.room and kind.hours and kind.curve and kind.sprite and kind.give, "DryingCloth.register: a kind needs name, types, room, hours, curve, sprite and give")
     if not kinds[kind.name] then table.insert(kindOrder, kind.name) end
     kinds[kind.name] = kind
-    kind.perLot = kind.perLot or 1
     kind.drying = { process = dryProcess(kind.name), rate = function(celsius) return Weather.curve(kind.curve, celsius) end }
     processes[kind.drying.process] = kind.drying.rate
     if kind.killAbove then
@@ -89,14 +92,22 @@ function DryingCloth.isCloth(isoObject)
     return sprite ~= nil and CLOTHS[sprite:getName()] == true
 end
 
--- The cloth's record, made on first use.
+-- The cloth's record, made on first use. A cloth from before the room (five fixed lots, false when free) is packed
+-- into the list.
 function DryingCloth.recordOf(isoObject)
     local modData = isoObject:getModData()
     local record = modData[DryingCloth.KEY]
     if not record then
-        record = { lots = {} }
-        for i = 1, DryingCloth.LOTS do record.lots[i] = false end
+        record = { lots = {}, nextId = 1 }
         modData[DryingCloth.KEY] = record
+    end
+    if not record.nextId then
+        local lots = {}
+        for i = 1, DryingCloth.SPOTS do
+            if record.lots[i] then table.insert(lots, record.lots[i]) end
+        end
+        for i, lot in ipairs(lots) do lot.id = i end
+        record.lots, record.nextId = lots, #lots + 1
     end
     return record
 end
@@ -108,18 +119,42 @@ function DryingCloth.state(lot)
 end
 
 function DryingCloth.isEmpty(record)
-    for _, lot in ipairs(record.lots) do
-        if lot then return false end
-    end
-    return true
+    return #record.lots == 0
 end
 
-function DryingCloth.freeLots(record)
-    local free = 0
-    for _, lot in ipairs(record.lots) do
-        if not lot then free = free + 1 end
+-- The room a lot takes.
+function DryingCloth.lotRoom(lot)
+    local kind = kinds[lot.kind]
+    return lot.count * (kind and kind.room or 1)
+end
+
+function DryingCloth.roomUsed(record)
+    local used = 0
+    for _, lot in ipairs(record.lots) do used = used + DryingCloth.lotRoom(lot) end
+    return used
+end
+
+-- How many pieces of a kind still fit.
+function DryingCloth.fits(record, kind)
+    return math.max(math.floor((DryingCloth.ROOM - DryingCloth.roomUsed(record)) / kind.room), 0)
+end
+
+-- Pieces of one kind in lots: perLot each, or one lot.
+function DryingCloth.lotsOf(kind, pieces)
+    local per, lots = kind.perLot or math.max(#pieces, 1), {}
+    for i, item in ipairs(pieces) do
+        local n = math.floor((i - 1) / per) + 1
+        lots[n] = lots[n] or {}
+        table.insert(lots[n], item)
     end
-    return free
+    return lots
+end
+
+-- A lot by its id, and its place in the list.
+function DryingCloth.lotById(record, id)
+    for i, lot in ipairs(record.lots) do
+        if lot.id == id then return lot, i end
+    end
 end
 
 -- Brings one lot up to now at place (where the cloth is now). A stretch in a shut room's still air dries nothing; a
@@ -153,43 +188,44 @@ function DryingCloth.update(isoObject, now, place, ledger)
     local fire
     if not place then place, fire = Fire.placeOf(isoObject) end
     local record = DryingCloth.recordOf(isoObject)
-    for _, lot in ipairs(record.lots) do
-        if lot then advanceLot(lot, ledger, now, place, fire, isoObject) end
-    end
+    for _, lot in ipairs(record.lots) do advanceLot(lot, ledger, now, place, fire, isoObject) end
     record.place = place
     return record, place
 end
 
--- Lays items (all of one kind, at most perLot) on the first free lot. Returns the lot's index, or nil.
+-- Lays items (all of one kind) as one lot, as many as there is room for (at most the kind's perLot), the first first. Returns the lot's id and
+-- how many went on, or nil.
 function DryingCloth.lay(isoObject, items, now, place, ledger)
     local kind = items[1] and DryingCloth.kindOf(items[1]:getFullType())
     if not kind then return nil end
     local record
     record, place = DryingCloth.update(isoObject, now, place, ledger)
+    local count = math.min(#items, DryingCloth.fits(record, kind), kind.perLot or #items)
+    if count == 0 then return nil end
+    local laid = {}
+    for i = 1, count do laid[i] = items[i] end
     now = now or getGameTime():getWorldAgeHours()
     ledger = ledger or DryingCloth.getLedger()
-    for i, lot in ipairs(record.lots) do
-        if not lot then
-            record.lots[i] = {
-                kind = kind.name, count = #items, data = kind.lay and kind.lay(items, now, place) or nil,
-                dry = FluidAgeing.newFluidAge(kind.drying, ledger, now, place),
-                heat = kind.heating and FluidAgeing.newFluidAge(kind.heating, ledger, now, place) or nil,
-            }
-            return i
-        end
-    end
-    return nil
+    local id = record.nextId
+    record.nextId = id + 1
+    table.insert(record.lots, {
+        id = id, kind = kind.name, count = count, data = kind.lay and kind.lay(laid, now, place) or nil,
+        dry = FluidAgeing.newFluidAge(kind.drying, ledger, now, place),
+        heat = kind.heating and FluidAgeing.newFluidAge(kind.heating, ledger, now, place) or nil,
+    })
+    return id, count
 end
 
--- Takes lot i off into the inventory, as its kind gives it. Returns its state, or nil if there was none.
-function DryingCloth.take(isoObject, i, inventory)
+-- Takes the lot with this id off into the inventory, as its kind gives it. Returns its state, or nil if there was
+-- none.
+function DryingCloth.take(isoObject, id, inventory)
     local record = DryingCloth.recordOf(isoObject)
-    local lot = record.lots[i]
+    local lot, i = DryingCloth.lotById(record, id)
     if not lot then return nil end
     local state = DryingCloth.state(lot)
     local kind = kinds[lot.kind]
     if kind then kind.give(lot, inventory, state) end
-    record.lots[i] = false
+    table.remove(record.lots, i)
     return state
 end
 
@@ -212,12 +248,29 @@ function DryingCloth.status(lot, placeC, place)
     return status
 end
 
--- The overlay sprites for a cloth's lots, in lot order (each kind draws its own; cloth_art.lot_spot).
+-- The lot each spot shows, or false: the lots fill the room in the order laid, and a spot shows the lot covering most
+-- of its share (the first on a tie), when anything lies there.
+function DryingCloth.spotLots(record)
+    local spots, span = {}, DryingCloth.ROOM / DryingCloth.SPOTS
+    for spot = 1, DryingCloth.SPOTS do
+        local from, to = (spot - 1) * span, spot * span
+        local start, best, most = 0, false, 0
+        for _, lot in ipairs(record.lots) do
+            local finish = start + DryingCloth.lotRoom(lot)
+            local cover = math.min(finish, to) - math.max(start, from)
+            if cover > most and kinds[lot.kind] then best, most = lot, cover end
+            start = finish
+        end
+        spots[spot] = best
+    end
+    return spots
+end
+
+-- The overlay sprites for a cloth's spots (each kind draws its own; cloth_art.lot_spot).
 function DryingCloth.lotSprites(record)
     local names = {}
-    for i, lot in ipairs(record.lots) do
-        local kind = lot and kinds[lot.kind]
-        if kind then table.insert(names, kind.sprite(i - 1, DryingCloth.state(lot))) end
+    for i, lot in ipairs(DryingCloth.spotLots(record)) do
+        if lot then table.insert(names, kinds[lot.kind].sprite(i - 1, DryingCloth.state(lot))) end
     end
     return names
 end
@@ -225,7 +278,7 @@ end
 -- A key that changes when what the cloth shows does.
 function DryingCloth.lookKey(record)
     local parts = {}
-    for i, lot in ipairs(record.lots) do parts[i] = lot and (lot.kind .. DryingCloth.state(lot)) or "-" end
+    for i, lot in ipairs(DryingCloth.spotLots(record)) do parts[i] = lot and (lot.kind .. DryingCloth.state(lot)) or "-" end
     return table.concat(parts, ",")
 end
 

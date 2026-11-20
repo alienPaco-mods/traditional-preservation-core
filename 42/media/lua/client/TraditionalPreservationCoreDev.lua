@@ -362,14 +362,12 @@ function TPC.cloth()
     for _, cloth in ipairs(cloths) do
         local record, place = DryingCloth.update(cloth)
         local placeC = Weather.placeTemperature(DryingCloth.getLedger(), place)
-        say(string.format("Drying Cloth at %d,%d: %s, %.1f C, %d of %d lots free", cloth:getX(), cloth:getY(), tostring(place), placeC,
-            DryingCloth.freeLots(record), DryingCloth.LOTS))
-        for i, lot in ipairs(record.lots) do
-            if lot then
-                local status = DryingCloth.status(lot, placeC, place)
-                say(string.format("  lot %d: %s x %d, %s, %.0f%%, %s", i, lot.kind, lot.count, status.state, status.progress * 100,
-                    status.hoursLeft and string.format("%.1f h left", status.hoursLeft) or (status.waits or "done")))
-            end
+        say(string.format("Drying Cloth at %d,%d: %s, %.1f C, room %d of %d used", cloth:getX(), cloth:getY(), tostring(place), placeC,
+            DryingCloth.roomUsed(record), DryingCloth.ROOM))
+        for _, lot in ipairs(record.lots) do
+            local status = DryingCloth.status(lot, placeC, place)
+            say(string.format("  lot %d: %s x %d, %s, %.0f%%, %s", lot.id, lot.kind, lot.count, status.state, status.progress * 100,
+                status.hoursLeft and string.format("%.1f h left", status.hoursLeft) or (status.waits or "done")))
         end
     end
 end
@@ -380,7 +378,7 @@ function TPC.dryCloth(hours)
     for _, cloth in ipairs(cloths) do
         local record = DryingCloth.update(cloth)
         for _, lot in ipairs(record.lots) do
-            if lot and DryingCloth.state(lot) == "wet" then
+            if DryingCloth.state(lot) == "wet" then
                 lot.dry.age = lot.dry.age + hours
                 dried = dried + 1
             end

@@ -4,12 +4,15 @@
 require "TimedActions/TPDryingCloth"
 local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local Holds = require "TraditionalPreservationCore/Holds"
+local PiecesUI = require "TraditionalPreservationCore/PiecesUI"
 local UI = require "TraditionalPreservationCore/UI"
 local Weather = require "TraditionalPreservationCore/Weather"
 
 local say = UI.say
 local CLOTH_ICON = "media/textures/Item_TPDryingCloth.png"
 local STATION_ICON = "media/textures/TPStation_DryingCloth.png"   -- Cloth Info's Station block (tools/station_icons.py)
+local CRAFTED_ICON, RETURNED_ICON = "media/ui/Entity/Icon_Crafted_48x48.png", "media/ui/Entity/Icon_Returned_48x48.png"
 local ClothWindow -- the info window, below the menu
 local DryingClothUI = {}
 
@@ -37,8 +40,8 @@ local function view(station)
     place = record.place or Weather.DEFAULT_PLACE
     local temperature = Weather.placeTemperature(DryingCloth.getLedger(), place)
     local lots = {}
-    for i, lot in ipairs(record.lots) do
-        if lot then table.insert(lots, { index = i, lot = lot, status = DryingCloth.status(lot, temperature, place) }) end
+    for _, lot in ipairs(record.lots) do
+        table.insert(lots, { id = lot.id, lot = lot, status = DryingCloth.status(lot, temperature, place) })
     end
     return { record = record, place = place, temperature = temperature, lots = lots }
 end
@@ -50,57 +53,40 @@ local function queue(playerObj, station, mode, items, lots)
     ISTimedActionQueue.add(TPDryingCloth:new(playerObj, station, mode, items, lots))
 end
 
--- Lays groups (each a lot's pieces), one action a lot.
+-- Lays groups (each one kind's pieces), one action a lot.
 local function onLay(playerObj, station, groups)
     for _, group in ipairs(groups) do queue(playerObj, station, "lay", group) end
 end
 
--- The kind's carried pieces in lots of perLot, at most free lots of them.
-local function groupsOf(pieces, perLot, free)
-    local groups = {}
-    for i, item in ipairs(pieces) do
-        local g = math.floor((i - 1) / perLot) + 1
-        if g > free then break end
-        groups[g] = groups[g] or {}
-        table.insert(groups[g], item)
-    end
-    return groups
-end
-
+-- Each kind's carried pieces (rows One and All, as many as fit; PiecesUI).
 local function addLayRows(menu, playerObj, station, record)
-    local free = DryingCloth.freeLots(record)
     for _, kind in ipairs(DryingCloth.kinds()) do
         local pieces = UI.findItems(playerObj, function(item)
             return kind.types[item:getFullType()] == true and (not kind.layable or kind.layable(item) == nil)
         end)
         if #pieces > 0 then
-            local label = say("ContextMenu_TraditionalPreservationCore_ClothLay", getText(kind.title))
-            local groups = groupsOf(pieces, kind.perLot, free)
-            local option
-            if #groups <= 1 then
-                option = menu:addOption(label, playerObj, onLay, station, groups)
-            else
-                option = menu:addOption(label)
-                local sub = menu:getNew(menu)
-                menu:addSubMenu(option, sub)
-                sub:addOption(getText("ContextMenu_TraditionalPreservationCore_ClothOneLot"), playerObj, onLay, station, { groups[1] })
-                sub:addOption(say("ContextMenu_TraditionalPreservationCore_ClothAllLots", tostring(#groups)), playerObj, onLay, station, groups)
-            end
-            if free == 0 then
-                UI.refuse(option, getText("IGUI_TraditionalPreservationCore_ClothFull"))
-            else
-                UI.tooltip(option, say("IGUI_TraditionalPreservationCore_ClothLayHelp", tostring(kind.perLot)))
-            end
+            local fits = DryingCloth.fits(record, kind)
+            while #pieces > math.max(fits, 1) do table.remove(pieces) end
+            PiecesUI.row(menu, { label = say("ContextMenu_TraditionalPreservationCore_ClothLay", getText(kind.title)),
+                room = fits, pieces = pieces, help = say("IGUI_TraditionalPreservationCore_ClothLayHelp", tostring(fits)),
+                noRoom = getText("IGUI_TraditionalPreservationCore_ClothFull") },
+                function(chosen) onLay(playerObj, station, DryingCloth.lotsOf(kind, chosen)) end)
         end
     end
 end
 
-local function addTakeRows(menu, playerObj, station, clothView)
+-- The ids of the lots done (dry or dead) and of every lot.
+local function takeIds(clothView)
     local done, all = {}, {}
     for _, entry in ipairs(clothView.lots) do
-        table.insert(all, entry.index)
-        if entry.status.state ~= "wet" then table.insert(done, entry.index) end
+        table.insert(all, entry.id)
+        if entry.status.state ~= "wet" then table.insert(done, entry.id) end
     end
+    return done, all
+end
+
+local function addTakeRows(menu, playerObj, station, clothView)
+    local done, all = takeIds(clothView)
     if #done > 0 then
         menu:addOption(say("ContextMenu_TraditionalPreservationCore_ClothTakeDone", tostring(#done)), playerObj, queue, station, "take", nil, done)
     end
@@ -117,11 +103,10 @@ local function addClothMenu(context, playerObj, station)
     local menu = context:getNew(context)
     context:addSubMenu(option, menu)
 
-    local used = DryingCloth.LOTS - DryingCloth.freeLots(clothView.record)
-    local status = menu:addOption(say("IGUI_TraditionalPreservationCore_ClothLots", tostring(used), tostring(DryingCloth.LOTS)))
+    local status = menu:addOption(say("IGUI_TraditionalPreservationCore_ClothLots", UI.percent(DryingCloth.roomUsed(clothView.record) / DryingCloth.ROOM)))
     status.isDisabled = true
     local lines = { UI.placeText(clothView.place, clothView.temperature) }
-    for _, entry in ipairs(clothView.lots) do table.insert(lines, entry.index .. ". " .. lotName(entry.lot) .. ": " .. lotText(entry.status)) end
+    for _, entry in ipairs(clothView.lots) do table.insert(lines, lotName(entry.lot) .. ": " .. lotText(entry.status)) end
     UI.tooltip(status, table.concat(lines, " <LINE> "))
     local info = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_ClothInfo"), playerObj, ClothWindow.open, station)
     info.iconTexture = getTexture(CLOTH_ICON)
@@ -130,8 +115,8 @@ local function addClothMenu(context, playerObj, station)
     addTakeRows(menu, playerObj, station, clothView)
 end
 
--- Drying Cloth Info (all_info_mock): a band with the cloth's state, the place, the lots as cells with the cloth's lore
--- beside them, then a list row for each lot (its share dried and time left, or why it waits).
+-- Drying Cloth Info (all_info_mock): a band with the cloth's state, the place, its room as cells with the cloth's lore
+-- beside them, then a list row for each lot (its share dried and time left, or why it waits), and Take Done / Take All.
 local BAR_COLOURS = { wet = { 0.62, 0.66, 0.38 }, dry = { 0.35, 0.7, 0.35 }, dead = { 0.6, 0.3, 0.25 } }
 local CELL_COLOUR = { 0.78, 0.73, 0.59 }
 
@@ -194,14 +179,14 @@ local function lotRows(clothView)
         local text = (status.state == "wet" and status.waits) and getText("IGUI_TraditionalPreservationCore_ClothWaiting")
             or (status.state == "wet" and say("IGUI_TraditionalPreservationCore_ClothLeft", UI.percent(status.progress), UI.durationText(status.hoursLeft)))
             or lotText(status)
-        table.insert(rows, { icon = kind and kindIcon(kind), name = entry.index .. ". " .. lotName(entry.lot), warning = warning,
+        table.insert(rows, { icon = kind and kindIcon(kind), name = lotName(entry.lot), warning = warning,
             share = status.state == "dead" and 1 or status.progress, colour = BAR_COLOURS[status.state], text = text })
     end
     return rows
 end
 
--- What is dragged onto the cloth's cells, as lots: each kind's pieces in lots of its perLot, while lots are free.
--- Returns the groups.
+-- What is dragged onto the cloth's cells, as lots: each kind's pieces one lot (or perLot each), while there is room. Returns the groups
+-- and the room they take.
 local function dropGroups(record, items)
     local byKind, order = {}, {}
     for _, item in ipairs(items) do
@@ -211,31 +196,45 @@ local function dropGroups(record, items)
             table.insert(byKind[kind.name], item)
         end
     end
-    local groups, free = {}, DryingCloth.freeLots(record)
+    local groups, free = {}, DryingCloth.ROOM - DryingCloth.roomUsed(record)
     for _, kind in ipairs(order) do
-        for _, group in ipairs(groupsOf(byKind[kind.name], kind.perLot, free - #groups)) do table.insert(groups, group) end
+        local group = {}
+        for _, item in ipairs(byKind[kind.name]) do
+            if free < kind.room then break end
+            table.insert(group, item)
+            free = free - kind.room
+        end
+        for _, lot in ipairs(DryingCloth.lotsOf(kind, group)) do table.insert(groups, lot) end
     end
-    return groups
+    return groups, DryingCloth.ROOM - DryingCloth.roomUsed(record) - free
 end
 
 -- The cells' drop: what goes on, how many lots, and why the rest doesn't.
 local function clothDrop(window)
     local function judge(items)
         local record = clothNow(window.station)
-        local groups = dropGroups(record, items)
+        local groups, room = dropGroups(record, items)
         local take = {}
         for _, group in ipairs(groups) do
             for _, item in ipairs(group) do table.insert(take, item) end
         end
         local first = groups[1] and DryingCloth.kindOf(groups[1][1]:getFullType())
-        local judged = { take = take, cells = #groups, lines = {}, pattern = first and first.pattern }
+        local used = DryingCloth.roomUsed(record)
+        local before = Holds.filledCells({ share = used / DryingCloth.ROOM })
+        local after = Holds.filledCells({ share = (used + room) / DryingCloth.ROOM })
+        local judged = { take = take, cells = room > 0 and math.max(after - before, 1) or 0, lines = {}, pattern = first and first.pattern }
         if #groups > 0 then
             table.insert(judged.lines, say("IGUI_TraditionalPreservationCore_ClothDropLay", tostring(#groups), tostring(#take)))
         end
         if #take < #items then
             local titles = {}
             for _, kind in ipairs(DryingCloth.kinds()) do table.insert(titles, getText(kind.title)) end
-            judged.refused = DryingCloth.freeLots(record) == 0 and getText("IGUI_TraditionalPreservationCore_ClothFull")
+            local layable = 0
+            for _, item in ipairs(items) do
+                local kind = DryingCloth.kindOf(item:getFullType())
+                if kind and (not kind.layable or kind.layable(item) == nil) then layable = layable + 1 end
+            end
+            judged.refused = layable > #take and getText("IGUI_TraditionalPreservationCore_ClothFull")
                 or say("IGUI_TraditionalPreservationCore_ClothDropOnly", table.concat(titles, ", "))
             if #take == 0 then judged.lines = { judged.refused } end
         end
@@ -254,7 +253,7 @@ function ClothWindow:refresh()
     self.drop = self.drop or clothDrop(self)
 end
 
--- The lots' cells, each kind in its pattern (one cell a lot, so the split is exact).
+-- The room's cells, each kind in its pattern by the room it takes (Holds.byShare).
 function DryingClothUI.parts(clothView)
     local byKind, parts = {}, {}
     for _, entry in ipairs(clothView.lots) do
@@ -264,7 +263,7 @@ function DryingClothUI.parts(clothView)
                 byKind[kind.name] = { pattern = kind.pattern, weight = 0 }
                 table.insert(parts, byKind[kind.name])
             end
-            byKind[kind.name].weight = byKind[kind.name].weight + 1
+            byKind[kind.name].weight = byKind[kind.name].weight + entry.lot.count * kind.room
         end
     end
     return #parts > 0 and parts or nil
@@ -278,16 +277,25 @@ function ClothWindow:render()
     local y = self:band(getText(word), text, look[1], look[2])
     y = self:stationBlock(y, STATION_ICON, clothView.place, clothView.temperature)
     y = self:section(y, "IGUI_TraditionalPreservationCore_SectionHolds")
-    local used = DryingCloth.LOTS - DryingCloth.freeLots(clothView.record)
+    local share = DryingCloth.roomUsed(clothView.record) / DryingCloth.ROOM
     y = self:holds(y, { { kind = "cells", name = getText("IGUI_TraditionalPreservationCore_ClothInfoLots"),
-        amount = say("IGUI_TraditionalPreservationCore_ClothInfoLotsValue", tostring(used), tostring(DryingCloth.LOTS)),
-        cells = DryingCloth.LOTS, filled = used, share = used / DryingCloth.LOTS, colour = CELL_COLOUR,
+        amount = say("IGUI_TraditionalPreservationCore_ClothInfoLotsValue", UI.percent(share)), share = share, colour = CELL_COLOUR,
         parts = DryingClothUI.parts(clothView), drop = self.drop } },
         getText("IGUI_TraditionalPreservationCore_DryingClothLore"))
     if #clothView.rows > 0 then
         y = self:pieceListBlock(y, "IGUI_TraditionalPreservationCore_SectionOnCloth",
             say("IGUI_TraditionalPreservationCore_ClothListCount", tostring(#clothView.rows)), clothView.rows)
     end
+    local station, playerObj = self.station, self.playerObj
+    local done, all = takeIds(clothView)
+    y = self:buttonRow(y, {
+        { title = say("IGUI_TraditionalPreservationCore_ClothButtonTakeDone", tostring(#done)), icon = CRAFTED_ICON,
+          enabled = #done > 0, tooltip = #done == 0 and #all > 0 and getText("IGUI_TraditionalPreservationCore_ClothNoneDry") or nil,
+          onClick = function() queue(playerObj, station, "take", nil, done) end },
+        { title = say("IGUI_TraditionalPreservationCore_ClothButtonTakeAll", tostring(#all)), icon = RETURNED_ICON,
+          enabled = #all > 0, tooltip = #all > #done and getText("IGUI_TraditionalPreservationCore_ClothTakeAllHelp") or nil,
+          onClick = function() queue(playerObj, station, "take", nil, all) end },
+    })
     self:drawNotes(y, { getText("IGUI_TraditionalPreservationCore_ClothNoteDrag"), getText("IGUI_TraditionalPreservationCore_ClothNoteAir") })
 end
 

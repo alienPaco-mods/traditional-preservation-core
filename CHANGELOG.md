@@ -1,5 +1,22 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.44
+- **The Drying Cloth has room, not five lots** (as the Drying Frame has its weight): `DryingCloth.ROOM` 50, each kind
+  registers `room` per piece, and `perLot` is now optional (most pieces in one lot; none, any number). A lay is
+  one lot, as many as fit, with its own clock (`DryingCloth.lotsOf` splits by perLot); any number of lots while
+  there is room. Five batches of yeast cakes or fifty kefir grains as before, now in any mix,
+  and a single grain no longer takes a fifth of the cloth.
+- The cloth's art keeps its five spots (`DryingCloth.SPOTS`): each shows the lot covering most of its fifth
+  (`DryingCloth.spotLots`); a kind's `sprite(spot, state)`.
+- Save: `tpcCloth` is `{ lots = { lot, ... }, nextId }`, a lot with an `id`; an older cloth's five slots are packed
+  on first look. `DryingCloth.take` goes by id; `fits`, `roomUsed`, `lotRoom`, `lotById` added, `freeLots` and
+  `LOTS` gone.
+- Menu: Lay <kind> uses Core's One / All (n) rows (`PiecesUI.row`); the status line and Cloth Info's cells read how
+  full the cloth is, the cells split by the room each kind takes; list rows lose their lot numbers. Laying takes
+  about 5 s for each fifth of the cloth, as before.
+- Cloth Info has **Take Done (n)** and **Take All (n)** buttons, as every window with a cell-style process (vanilla's
+  Icon_Crafted and Icon_Returned; Take Done greyed says nothing is dry yet).
+
 ## 0.1.43
 - `Container.fluidColour(name)`: a fluid's own colour, for any mod's tanks (was the cauldron's own, `CauldronFluid` now uses it).
 - **A tank at work** (`working = { speed, foam }` on a Holds tank; the Fermentation Vessel's batch): bubbles rising

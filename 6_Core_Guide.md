@@ -194,11 +194,11 @@ Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth'
 
 ### The Drying Cloth
 
-A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One Lot** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: a band saying how the cloth is doing (drying, waiting for moving air, too hot), the place and its temperature, the five lots, and a row for each lot with its bar. You can also drag what dries here from your inventory onto the lots in the window to lay it.
+A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: a band saying how the cloth is doing (drying, waiting for moving air, too hot), the place and its temperature, how full the cloth is, a row for each lot with its bar, and **Take Done** / **Take All** buttons. You can also drag what dries here from your inventory onto the cloth's cells in the window to lay it.
 
 | | |
 |---|---|
-| Lots | 5, each one kind: one batch of yeast cakes, or 10 kefir grains |
+| Room | 5 batches of yeast cakes or 50 kefir grains, in any mix; each lay is a lot with its own clock, each batch of cakes its own |
 | Dries | In the open, under a roof, in a room with a window open, in a basement, by a fire |
 | Waits | In a shut room (the air doesn't move: open a window), and when frozen |
 | Too hot | Yeast cakes die after an hour above 35 C |
@@ -375,7 +375,7 @@ In vanilla, no liquid ever goes bad. TP Core lets a mod name one that does, and 
 | `TPC.stone()` | The nearest Stone Hearth within 2 tiles, fitted or not: position, fire, fuel in minutes, sprite, what is fitted, what is joined (its kit and side), the hole's look, and the square on its back and each flank. |
 | `TPC.doors()` | The tile you stand on: whether a door facing S or E could open there (or what blocks it: a wall edge or an object) and whether a Stone Hearth's or Smokehouse's door opens onto it. |
 | `TPC.smokehouse()` | Each Smokehouse tile within 3 tiles on your floor: its facing, back or door tile, the entry overlay it shows, and each Stone Hearth beside it with its flue and why it can't join (or `may join`, `joined here`). |
-| `TPC.cloth()` | Each Drying Cloth within 3 tiles: its place and temperature, free lots, and each lot's kind, count, state, share dried and hours left. |
+| `TPC.cloth()` | Each Drying Cloth within 3 tiles: its place and temperature, the room used, and each lot's kind, count, state, share dried and hours left. |
 | `TPC.dryCloth(hours)` | Every wet lot on the Drying Cloths within 3 tiles dries this many hours at full speed (24 if left out). |
 | `TPC.flue(kitName, side)` | Joins the Smokehouse's flue to the nearest Stone Hearth at once, for an art check: `kitName` Pipe or Stones, `side` Back, Left or Right (Back if left out); `TPC.flue()` caps it. |
 

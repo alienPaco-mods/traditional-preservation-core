@@ -8,7 +8,7 @@
 --     function MyWindow.open(playerObj, station) InfoWindow.open(MyWindow, playerObj, station) end
 -- The drawing (drawRow, drawBar, noteLines, drawNoteLines) is shared with StationInfo's block in vanilla's crafting
 -- window: each takes the element to draw on and its layout { padding, labelWidth, barHeight }.
--- A window reads in blocks, each under a small grey header and a hairline (section): Place, Holds, Working, List,
+-- A window reads in blocks, each under a small grey header and a hairline (section): Station, Holds, Working, List,
 -- Buttons, the drop square, then the notes; a block with nothing to show is left out. Spacing is on a 4 px grid. The
 -- label column is as wide as the longest label the window has drawn. holds (Holds.lua) draws what the station holds
 -- standing up: tanks, cells and a thermometer. A window is WIDTH wide unless what it holds needs more, up to
@@ -31,15 +31,22 @@ InfoWindow.LABEL_WIDTH = 120
 InfoWindow.LABEL_GAP = 16       -- a label to its value
 InfoWindow.SECTION_GAP = 12     -- above a block's header
 InfoWindow.HEADER_GAP = 4       -- a header to its first row
-InfoWindow.HEADER_LEAD, InfoWindow.HEADER_SPACE = 8, 6   -- the hairline before a header's name, and either side of it
+InfoWindow.HEADER_SPACE = 6     -- a header's name to its hairline
 InfoWindow.BAR_HEIGHT = 18
 InfoWindow.BAR_TEXT_PAD = 6     -- a bar's text to its ends; longer text goes under the bar
 InfoWindow.REFRESH_TICKS = 30
 InfoWindow.START_HEIGHT = 200   -- drawNotes fits it to what is drawn
 InfoWindow.VALUE_CACHE = 32     -- row values kept wrapped before the cache starts over (a value counts down)
 InfoWindow.ROW_GAP, InfoWindow.BAR_GAP, InfoWindow.NOTE_GAP = 4, 4, 4
+InfoWindow.ICON_GAP = 4         -- a row's icon to its text
 InfoWindow.BAND_HEIGHT = 28    -- the state band under the title
 InfoWindow.BAND_BUTTON, InfoWindow.BAND_ICON = 24, 20   -- its icon-only button, square, and the icon in it
+-- A band's colours { colour, dark } by what its state means (user): working, slowed or waiting on the player, something
+-- will be lost. The fire has its own (FireUI).
+InfoWindow.BAND_WORKING = { { 0.35, 0.6, 0.3 }, { 0.12, 0.22, 0.11 } }
+InfoWindow.BAND_WAITING = { { 0.75, 0.55, 0.2 }, { 0.27, 0.2, 0.07 } }
+InfoWindow.BAND_AT_RISK = { { 0.6, 0.3, 0.25 }, { 0.24, 0.11, 0.09 } }
+InfoWindow.BAND_IDLE = { { 0.51, 0.51, 0.51 }, { 0.18, 0.18, 0.18 } }   -- nothing in it: grey, as a fire that is out
 InfoWindow.BUTTON_HEIGHT, InfoWindow.BUTTON_GAP, InfoWindow.BUTTON_PAD, InfoWindow.BUTTON_ICON = 24, 8, 12, 16
 -- Text colours { r, g, b }: a row's label, its value, the notes; a bar's empty part and border.
 InfoWindow.LABEL_COLOUR = { 0.7, 0.7, 0.7 }
@@ -171,12 +178,18 @@ function InfoWindow.rowLines(ui, layout, text, width)
     return InfoWindow.valueLines(ui, text, width - layout.padding * 2 - layout.labelWidth)
 end
 
--- Draws label (text) and the text's lines at y on ui; returns the next row's y.
-function InfoWindow.drawRow(ui, layout, y, label, text)
+-- Draws label (text) and the text's lines at y on ui, icon (a Texture, or nil) before the first line, a line high;
+-- returns the next row's y.
+function InfoWindow.drawRow(ui, layout, y, label, text, icon)
     local lineHeight = InfoWindow.lineHeight()
     drawText(ui, label, layout.padding, y, InfoWindow.LABEL_COLOUR)
-    for _, line in ipairs(InfoWindow.rowLines(ui, layout, text, ui.width)) do
-        drawText(ui, line, layout.padding + layout.labelWidth, y, InfoWindow.VALUE_COLOUR)
+    local x = layout.padding + layout.labelWidth
+    if icon then
+        ui:drawTextureScaledAspect(icon, x, y, lineHeight, lineHeight, 1, 1, 1, 1)
+        x = x + lineHeight + InfoWindow.ICON_GAP
+    end
+    for _, line in ipairs(InfoWindow.valueLines(ui, text, ui.width - layout.padding - x)) do
+        drawText(ui, line, x, y, InfoWindow.VALUE_COLOUR)
         y = y + lineHeight
     end
     return y + InfoWindow.ROW_GAP
@@ -249,6 +262,13 @@ function InfoWindow:row(y, label, text)
     return InfoWindow.drawRow(self, self:layoutFor(labelText), y, labelText, text)
 end
 
+-- The Place row: the place's icon, its temperature and its word ("17°C (Aired room)").
+function InfoWindow:placeRow(y, label, place, celsius)
+    local UI = require "TraditionalPreservationCore/UI"
+    local labelText = getText(label)
+    return InfoWindow.drawRow(self, self:layoutFor(labelText), y, labelText, UI.placeText(place, celsius), UI.placeIcon(place))
+end
+
 function InfoWindow:bar(y, label, share, colour, text)
     local labelText = getText(label)
     return InfoWindow.drawBar(self, self:layoutFor(labelText), y, labelText, share, colour, text)
@@ -310,15 +330,14 @@ function InfoWindow:band(word, text, colour, dark, entry)
     return self.bandBottom
 end
 
--- A block's header at y (label a translation key): its name in small grey capitals on a hairline, a short lead before
--- it and the rest to the window's edge (user), a gap above it unless it is the window's first. Returns the y of the block's first row.
+-- A block's header at y (label a translation key): its name in small grey capitals, then a hairline to the window's
+-- edge (user: no lead before the name), a gap above it unless it is the window's first. Returns the y of the block's first row.
 function InfoWindow:section(y, label)
     if y > self:top() then y = y + InfoWindow.SECTION_GAP end
     local text = string.upper(getText(label))
     local lineHeight = InfoWindow.lineHeight()
     local hair, lineY = InfoWindow.HAIRLINE, y + math.floor(lineHeight / 2)
-    self:drawRect(InfoWindow.PADDING, lineY, InfoWindow.HEADER_LEAD, 1, 1, hair[1], hair[2], hair[3])
-    local textX = InfoWindow.PADDING + InfoWindow.HEADER_LEAD + InfoWindow.HEADER_SPACE
+    local textX = InfoWindow.PADDING
     drawText(self, text, textX, y, InfoWindow.HEADER_COLOUR)
     local lineX = textX + getTextManager():MeasureStringX(UIFont.Small, text) + InfoWindow.HEADER_SPACE
     self:drawRect(lineX, lineY, self.width - InfoWindow.PADDING - lineX, 1, 1, hair[1], hair[2], hair[3])
@@ -509,6 +528,12 @@ end
 function InfoWindow:pieceList(y, label, rows)
     self:resizeWidth()
     return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, getText(label), rows)
+end
+
+-- A list whose header line is already text (a count: "2 lots").
+function InfoWindow:pieceListNamed(y, labelText, rows)
+    self:resizeWidth()
+    return require("TraditionalPreservationCore/PieceList").draw(self, LIST_LOOK, y, labelText, rows)
 end
 
 -- The drop square (DropZone.lua's header): idleText (finished text) at rest beside icon (what it takes: a Texture or

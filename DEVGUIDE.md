@@ -205,8 +205,14 @@ local Weather = require "TraditionalPreservationCore/Weather"
    bottom of the main menu; the window's title is the bare name ("Fermentation Vessel")
    (`UI.topInfo`, vanilla's place for such rows). A left click stays vanilla's, as for any furniture (a container's loot
    window; vanilla gives no workstation a left click). A window reads in blocks, in this order, each under
-   `self:section(y, label)` (a small grey header and a hairline): Place, Holds, Working, List, Buttons, the drop
-   square, Notes; a block with nothing to show is left out. Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
+   `self:section(y, label)` (a small grey header and a hairline after it): Station, Holds, Working, List, Buttons,
+   Notes; a block with nothing to show is left out. Every window opens with a state band under its title
+   (`self:band(word, text, colour, dark, entry)`): a word in capitals for its state and a short line that doesn't
+   repeat a bar; green `InfoWindow.BAND_WORKING`, amber `BAND_WAITING` (slowed, or waiting on the player), red
+   `BAND_AT_RISK` (something will be lost); a fire's band is FireUI's own. It replaces a Stage row. The Place row is
+   `self:placeRow(y, label, place, celsius)`: the place's icon (`UI.placeIcon`, drawn by `tools/place_icons.py`),
+   then "17°C (Aired room)"; temperatures in text always carry the degree sign. What a station takes by hand is
+   dragged onto its holding (`drop` on a tank or on cells), never a separate drop square (user). Holds is `self:holds(y, holdings)` (`Holds.lua`): what the
    station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
    real count when small, else five cells of a share), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`)
    (`heat = { celsius, marks }`,
@@ -229,7 +235,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    widget), and opens at the width last given a window of its `widthKey` (its station type: the window's class
    unless it sets one; the racks set theirs per hanger), kept in `~/Zomboid/Lua/TraditionalPreservationWindowWidths.txt`,
    the player's, not the save's. `TPC.pieceList(n)` opens a sample. Under it, a station that takes items has
-   `self:dropZone(y, idleText, judge, drop, icon)` (`DropZone.lua`): an always-shown 56 px square, an icon of what it takes beside its text, that takes a selection
+   (retired window by window as each moves its drop onto its holding) `self:dropZone(y, idleText, judge, drop, icon)` (`DropZone.lua`): an always-shown 56 px square, an icon of what it takes beside its text, that takes a selection
    dragged from the inventory or a loot window (vanilla's `ISMouseDrag`, read through
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
    its border white (all taken), orange (some taken, `refused` set) or red (none) while held over it;

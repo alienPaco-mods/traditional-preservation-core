@@ -498,7 +498,7 @@ local words = {}
 for _, place in ipairs({ "Open", "Covered", "Sheltered", "Basement", "Smokehouse", "Fireside", "Embers" }) do table.insert(words, UI.placeName(place)) end
 check("place words: one set for the series", table.concat(words, ", ")
     == "Open air, Under an open roof, Indoors, Basement, In the Smokehouse, By a fire, By banked embers")
-check("placeText: the temperature, then the place", UI.placeText("Sheltered", 12.4) == "12 C (Indoors)" and #H.textWarnings == 0)
+check("placeText: the temperature, then the place", UI.placeText("Sheltered", 12.4) == "12°C (Indoors)" and #H.textWarnings == 0)
 H.installGetText(fakeTexts)
 
 local function slot(name)

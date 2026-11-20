@@ -91,7 +91,16 @@ function UI.placeName(place)
     return getText("IGUI_TraditionalPreservationCore_Place" .. tostring(place))
 end
 
--- A place's temperature with its word: "12 C (Indoors)".
+-- A place's icon (tools/place_icons.py): a fire's place shows the fire (its warmth is what the place reads), the rest
+-- their own. Returns the texture, or nil for a place with none.
+local PLACE_ICONS = { Open = true, Covered = true, Sheltered = true, AiredRoom = true, Basement = true, Smokehouse = true }
+function UI.placeIcon(place)
+    place = tostring(place)
+    local icon = place:find("^Fireside") and "Fireside" or place:find("^Embers") and "Embers" or PLACE_ICONS[place] and place
+    return icon and getTexture("media/textures/TPPlace_" .. icon .. ".png") or nil
+end
+
+-- A place's temperature with its word: "12°C (Indoors)".
 function UI.placeText(place, celsius)
     return UI.say("IGUI_TraditionalPreservationCore_PlaceAt", UI.degrees(celsius), UI.placeName(place))
 end

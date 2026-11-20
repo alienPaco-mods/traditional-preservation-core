@@ -1,5 +1,27 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.37
+- Drying Cloth Info on the settled look (`art/all_info_mock.png`): a state band under the title (EMPTY grey, DRYING
+  or DRY green, WAITING amber for still air or frost, TOO HOT or LOST red, the worst first), a Station block with the
+  place, the lots as five cells under Holds with the cloth's lore beside them (1800s hop yeast dried into cakes with
+  Indian meal), then a piece list a lot: its icon, name, a warning in amber (Still air, Too cold, Too hot), the bar.
+  The window resizes in width as the other list windows.
+- InfoWindow: a block's header has no lead line before its name (`HOLDS ------`); band colours by meaning,
+  `BAND_WORKING` green, `BAND_WAITING` amber, `BAND_AT_RISK` red, `BAND_IDLE` grey; `pieceListNamed` for a list
+  whose header line is finished text. The Place block's header reads "Station" (`SectionStation`).
+- **Place icons** (user, `art/place_icons_mock.png`): white outlines of our own beside the Place row, one a place
+  (the sun, a roof on posts, a house, a gust for an aired room, steps down for a basement, the Smokehouse, a flame,
+  banked embers; a fire's place shows the fire). `tools/place_icons.py` draws them (`TPPlace_<place>.png`);
+  `InfoWindow:placeRow(y, label, place, celsius)` draws the row, `UI.placeIcon(place)` picks the icon, and
+  `drawRow` takes an icon.
+- **Drag onto the cells** (user, `art/place_drop_mock.png` B): a cells holding takes `drop = { judge, drop }` as a
+  tank does, in place of a drop square; while dragging, the cells it would fill show see-through (judge's `cells`).
+  The Drying Cloth takes its lots this way: what is dragged is grouped by kind into lots as the menu lays them, the
+  rest refused with what the cloth takes.
+- Temperatures in the game's text read with the degree sign ("17°C (Aired room)", was "17 C").
+- DEVGUIDE: every window opens with a state band; its colours by what the state means; the Place row with its icon;
+  a list window's cells take the drag.
+
 ## 0.1.36
 - Piece lists draw rows as in `art/all_info_mock.png`: a 32 px icon, the name in bold, a warning (new `warning` field)
   right-aligned in amber, the bar the row's width under them, the line under the bar as before. A name is cut with

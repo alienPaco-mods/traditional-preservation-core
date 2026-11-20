@@ -15,7 +15,8 @@
 --     { judge(items), drop(take) } or nil: buckets dragged onto the tank pour in (InfoWindow:holds; judge returns
 --     DropZone's { take, lines, refused } and adds, the share of the tank the pour would fill) }
 --   { kind = "cells", name, amount, state, stateColour, cells (default 5),
---     filled (cells full; default the share's), share, colour }
+--     filled (cells full; default the share's), share, colour, drop = { judge, drop } or nil: what is dragged onto the
+--     cells goes on, in place of a drop square (user); judge adds cells, the cells it would fill, shown see-through }
 --   { kind = "heat", name, amount, state, stateColour, celsius (nil: nothing to warm), top (the scale's top C,
 --     default 100), marks = { { celsius, text } } }
 -- each with arrow (text above an arrow to the next holding, "" for a plain one, nil for none).
@@ -262,7 +263,8 @@ local function drawHeatBar(ui, heat, x, y)
     ui:drawTextCentre(degrees, centre, y + Holds.HEIGHT - line, 1, 1, 1, 1, UIFont.Small)
 end
 
-local function drawCells(ui, holding, x, y)
+-- adds: cells a drop would fill, drawn see-through over the empty ones above the filled (nil: none).
+local function drawCells(ui, holding, x, y, adds)
     local width = Holds.CELL_WIDTH
     local top, height = y, Holds.HEIGHT
     local filled, cells = Holds.filledCells(holding)
@@ -273,6 +275,9 @@ local function drawCells(ui, holding, x, y)
         -- From the bottom up: the first filled cells are the lowest.
         local cellY = top + 1 + (cells - cell) * (cellHeight + Holds.CELL_GAP)
         fill(ui, x + 2, cellY, width - 4, cellHeight, cell <= filled and colour or Holds.EMPTY_CELL)
+        if adds and cell > filled and cell <= filled + adds then
+            ui:drawRect(x + 2, cellY, width - 4, cellHeight, Holds.PREVIEW_ALPHA, colour[1], colour[2], colour[3])
+        end
     end
     ui:drawRectBorder(x, top, width, height, 1, Holds.BORDER[1], Holds.BORDER[2], Holds.BORDER[3])
 end
@@ -353,7 +358,7 @@ function Holds.draw(ui, look, x, y, holdings)
             drawTank(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.adds or nil)
             if holding.heat then drawHeatBar(ui, holding.heat, graphicX + Holds.TANK_WIDTH + Holds.HEAT_GAP, y) end
         elseif holding.kind == "cells" then
-            drawCells(ui, holding, graphicX, y)
+            drawCells(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.cells or nil)
         else
             drawHeat(ui, holding, graphicX, y, graphic)
         end

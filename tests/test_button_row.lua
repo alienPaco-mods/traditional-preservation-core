@@ -92,4 +92,24 @@ check("a disabled button's icon is greyed, an enabled one's whole", offAlpha == 
     and off.textureColor.a == InfoWindow.DISABLED_ICON_ALPHA and on.textureColor.a == 1)
 check("and the button draws as vanilla again after", rawget(off, "drawTextureScaled") == nil)
 
+-- A shorter row hides the buttons left over, and the window's update keeps them hidden (no flashing); none hides all.
+for _, button in ipairs(window2.buttonsUI) do
+    button.visible = true
+    function button:getIsVisible() return self.visible end
+    function button:setVisible(shown) self.visible = shown end
+end
+window2:buttonRow(10, { { title = "Take One", enabled = true } })
+window2:showButtons()
+window2:showButtons()
+check("one button after two: the second stays hidden", window2.buttonsUI[1].visible and not window2.buttonsUI[2].visible)
+window2:buttonRow(10, {})
+window2:showButtons()
+check("no buttons: all hidden", not window2.buttonsUI[1].visible and not window2.buttonsUI[2].visible)
+window2:buttonRow(10, { { title = "Take One", enabled = true }, { title = "Take All (2)", enabled = true } })
+window2:showButtons()
+check("back to two: both show", window2.buttonsUI[1].visible and window2.buttonsUI[2].visible)
+window2.isCollapsed = true
+window2:showButtons()
+check("collapsed: none show", not window2.buttonsUI[1].visible)
+
 H.done()

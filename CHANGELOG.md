@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.38
+- An Info window's button row can shrink: `buttonRow` with fewer buttons than last time hides the rest, and the
+  window's update keeps them hidden (it showed every button it had made, so a hidden one flashed on and off).
+  `InfoWindow:showButtons`. Salting Tub Info's buttons change with its stage.
+
 ## 0.1.37
 - Drying Cloth Info on the settled look (`art/all_info_mock.png`): a state band under the title (EMPTY grey, DRYING
   or DRY green, WAITING amber for still air or frost, TOO HOT or LOST red, the worst first), a Station block with the

@@ -106,15 +106,21 @@ end
 
 local keepWidth -- below, with the resize
 
+-- The buttons the last buttonRow placed show, unless the window is collapsed; any left over from a longer row hide.
+function InfoWindow:showButtons()
+    for index, button in ipairs(self.buttonsUI or {}) do
+        local shown = not self.isCollapsed and index <= (self.buttonsShown or math.huge)
+        if button:getIsVisible() ~= shown then button:setVisible(shown) end
+    end
+end
+
 function InfoWindow:update()
     ISCollapsableWindow.update(self)
     if not Station.isLoaded(self.station) or not InfoWindow.inReach(self.playerObj, self.station) then return self:close() end
     if self.pieceListUI then require("TraditionalPreservationCore/PieceList").show(self, not self.isCollapsed) end
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
     if self.dropTargetsUI then require("TraditionalPreservationCore/DropZone").showTargets(self, math.huge) end
-    for _, button in ipairs(self.buttonsUI or {}) do
-        if button:getIsVisible() == self.isCollapsed then button:setVisible(not self.isCollapsed) end
-    end
+    self:showButtons()
     local bandButton = self.bandButtonUI
     if bandButton and bandButton:getIsVisible() == self.isCollapsed then bandButton:setVisible(not self.isCollapsed) end
     if self.widthResizes then keepWidth(self) end
@@ -608,8 +614,11 @@ function placeButton(window, button, entry, x, top, width, height)
     return button
 end
 
+-- The buttons, left to right, wrapping when a row is full; fewer than last time hides the rest (a tub's start
+-- buttons give way to its take buttons, none while it cures).
 function InfoWindow:buttonRow(y, buttons)
     self.buttonsUI = self.buttonsUI or {}
+    self.buttonsShown = #buttons
     local widths = {}
     for index, entry in ipairs(buttons) do widths[index] = buttonWidth(entry) end
     local placed, lines = InfoWindow.buttonLayout(widths, self.width - InfoWindow.PADDING * 2, InfoWindow.BUTTON_GAP)

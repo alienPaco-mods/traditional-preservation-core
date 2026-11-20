@@ -743,16 +743,42 @@ function InfoWindow:dropZone(y, idleText, judge, drop, icon)
 end
 
 -- Buttons across the window at y, each { title (finished text, a count in brackets: "Take All (5)"), icon (what it
--- gives or uses: a Texture or texture name, or nil), enabled, tooltip (or nil; a disabled one says why), onClick (button) },
--- each as wide as its text, onto a new line when the next doesn't fit; made on the first call, then kept and set from
--- the list each draw. Returns the y under them.
+-- gives or uses: a Texture or texture name, or nil), enabled, tooltip (or nil; a disabled one says why), onClick (button),
+-- menu (or nil: { { title, icon, enabled, tooltip, onClick } }, opened under the button by a click in place of
+-- onClick, vanilla's combo box arrow at its right; user, session 72, art/kraut_info_mock.png: the barrel's Take
+-- Sauerkraut (n) opening One / All (n)) }, each as wide as its text, onto a new line when the next doesn't fit; made on
+-- the first call, then kept and set from the list each draw. Returns the y under them.
+local MENU_ARROW = "media/ui/ArrowDown.png"
+
+-- A menu button's rows as a context menu under it; a disabled row in red with its reason, as a station menu's.
+local function openButtonMenu(entry, button)
+    local window = button.parent
+    local playerNum = window and window.playerObj and window.playerObj:getPlayerNum() or 0
+    local context = ISContextMenu.get(playerNum, button:getAbsoluteX(), button:getAbsoluteY() + button:getHeight())
+    for _, row in ipairs(entry.menu) do
+        local option = context:addOption(row.title, row, function(item) if item.onClick then item.onClick() end end)
+        local icon = row.icon
+        if type(icon) == "string" then icon = getTexture(icon) end
+        option.iconTexture = icon
+        local UI = require "TraditionalPreservationCore/UI"
+        if row.enabled == false then
+            UI.refuse(option, row.tooltip)
+        elseif row.tooltip then
+            UI.tooltip(option, row.tooltip)
+        end
+    end
+    if #context.options == 0 then context:setVisible(false) end
+end
+
 local function onButton(entry, button)
+    if entry.menu then return openButtonMenu(entry, button) end
     if entry.onClick then entry.onClick(button) end
 end
 
 local function buttonWidth(entry)
     local width = getTextManager():MeasureStringX(UIFont.Small, entry.title) + InfoWindow.BUTTON_PAD * 2
     if entry.icon then width = width + InfoWindow.BUTTON_ICON + 5 end
+    if entry.menu then width = width + getTexture(MENU_ARROW):getWidthOrig() + 3 end
     return width
 end
 
@@ -780,6 +806,11 @@ local function renderButton(button)
     if not button.enable then button.drawTextureScaled = dimmedTexture end
     ISButton.render(button)
     button.drawTextureScaled = nil
+    if button.target and button.target.menu then
+        local arrow = getTexture(MENU_ARROW)
+        local shade = button.enable and 1 or 0.5
+        button:drawTexture(arrow, button.width - arrow:getWidthOrig() - 3, button.height / 2 - arrow:getHeight() / 2, 1, shade, shade, shade)
+    end
 end
 
 -- A button on window for entry, made when button is nil, placed at x, top and set from entry. Returns it.

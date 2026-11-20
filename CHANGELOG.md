@@ -1,5 +1,15 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.48
+- **A menu button in a window's button row** (user, session 72, `art/kraut_info_mock.png`): a button entry with `menu`
+  (`{ { title, icon, enabled, tooltip, onClick } }`) opens its rows as a context menu under it on a click, in place of
+  `onClick`; vanilla's combo box arrow (`media/ui/ArrowDown.png`) at its right, the button wider by it. A disabled row
+  is refused with its reason, as a station menu's. First used by the Kraut Barrel's Take Sauerkraut (n) / Take Sauer
+  Turnip (n), each opening One / All (n).
+- **A counts line under a holding** (`counts = { { icon, count } }`; user, session 72, `art/kraut_spiked_mock.png` B):
+  small icons a line high, each with its count beside it, as the holding's last line; the column widens to fit it.
+  First used by the Kraut Barrel's apples and carrots.
+
 ## 0.1.47
 - **A starter's slot in Holds** (`kind = "slot"`; user, session 69, `art/starter_path_mock.png`): a 34 px square left of
   its tank with an arrow into it, or right of it with an arrow out (what comes back). Looks: empty (dashed, the icons

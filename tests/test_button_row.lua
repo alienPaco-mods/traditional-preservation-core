@@ -112,4 +112,53 @@ window2.isCollapsed = true
 window2:showButtons()
 check("collapsed: none show", not window2.buttonsUI[1].visible)
 
+-- A menu button (user, session 72): wider by vanilla's combo box arrow, drawn at its right; a click opens its rows as a
+-- context menu under it instead of running onClick, a disabled row refused with its reason.
+local arrowWidth = 11
+function getTexture(name) return { name = name, getWidthOrig = function() return arrowWidth end, getHeight = function() return 6 end } end
+local arrowDrawn
+function ISButton:drawTexture(texture, x) arrowDrawn = { name = texture.name, x = x } end
+function ISButton:getAbsoluteX() return 50 + self.x end
+function ISButton:getAbsoluteY() return 300 + self.y end
+function ISButton:getHeight() return self.height end
+local opened
+ISContextMenu = { get = function(playerNum, x, y)
+    opened = { playerNum = playerNum, x = x, y = y, options = {} }
+    function opened:addOption(title, target, onSelect)
+        local option = { title = title, target = target, onSelect = onSelect }
+        table.insert(self.options, option)
+        return option
+    end
+    function opened:setVisible() end
+    return opened
+end }
+ISWorldObjectContextMenu = { addToolTip = function() return {} end }
+local window3 = setmetatable({ width = 400, children = {}, playerObj = { getPlayerNum = function() return 2 end } }, { __index = InfoWindow })
+function window3:addChild(child) child.parent = self table.insert(self.children, child) end
+local took
+window3:buttonRow(10, {
+    { title = "Take Sauerkraut (22)", enabled = true, icon = "Item_Sauerkraut", menu = {
+        { title = "One", icon = "Item_Sauerkraut", enabled = true, onClick = function() took = "one" end },
+        { title = "All (22)", icon = "Item_Sauerkraut", enabled = false, tooltip = "Too far." },
+    } },
+    { title = "Take Sauerkraut (22)", enabled = true, icon = "Item_Sauerkraut" },
+})
+local menuButton, plain = window3.buttonsUI[1], window3.buttonsUI[2]
+check("a menu button is wider by the arrow and 3", menuButton.width == plain.width + arrowWidth + 3)
+arrowDrawn = nil
+menuButton:render()
+check("its arrow drawn at its right", arrowDrawn and arrowDrawn.name == "media/ui/ArrowDown.png"
+    and arrowDrawn.x == menuButton.width - arrowWidth - 3)
+arrowDrawn = nil
+plain:render()
+check("a plain button draws no arrow", arrowDrawn == nil)
+menuButton:click()
+check("a click opens its rows under it, for the window's player", opened and opened.playerNum == 2
+    and opened.x == 50 + menuButton.x and opened.y == 300 + menuButton.y + menuButton.height and #opened.options == 2
+    and opened.options[1].title == "One" and opened.options[2].title == "All (22)")
+check("a disabled row is refused with its reason", opened.options[2].notAvailable == true
+    and opened.options[2].toolTip.description == "Too far." and not opened.options[1].notAvailable)
+opened.options[1].onSelect(opened.options[1].target)
+check("choosing a row runs its onClick", took == "one")
+
 H.done()

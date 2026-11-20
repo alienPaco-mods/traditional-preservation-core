@@ -257,9 +257,11 @@ local Weather = require "TraditionalPreservationCore/Weather"
    `ISInventoryPane.getActualItems` as vanilla's slots do); `judge(items)` returns `{ take, lines, refused }`,
    its border white (all taken), orange (some taken, `refused` set) or red (none) while held over it;
    `drop(take)` queues the hand jobs, and `refused` shows over the player. `self:buttonRow(y, buttons)` draws
-   buttons (`{ title, icon, enabled, tooltip, onClick }`), each as wide as its text (12 px each side, gap 8), wrapping
+   buttons (`{ title, icon, enabled, tooltip, onClick, menu }`), each as wide as its text (12 px each side, gap 8), wrapping
    onto a new line; a count goes in brackets in the title ("Take All (5)"), and a disabled one says why in its tooltip
-   and draws its icon faded (vanilla draws it at full alpha).
+   and draws its icon faded (vanilla draws it at full alpha). A button with `menu` (rows `{ title, icon, enabled,
+   tooltip, onClick }`) opens them as a context menu under it instead of running `onClick`, vanilla's combo box arrow
+   at its right: one button a kind with One / All (n) in it (the Kraut Barrel's Take buttons), not a button each.
    **Info inside vanilla's crafting window:** `TraditionalPreservationCore/StationInfo`, `StationInfo.add(provider)`:
    `provider(entity)` returns `{ rows, bars, notes }` for the mod's station and nil for anything else, and the block
    shows under In Progress, Done and Take All (Fish & Meat's `...Info.lua`). For a station with a vanilla window; a

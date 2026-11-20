@@ -33,6 +33,8 @@
 --     menu = function(context) or nil (a right click fills a menu): a starter (user, session 69,
 --     art/starter_path_mock.png): what goes in, left of its tank with an arrow into it, and what comes back (kefir's
 --     grains, the vinegar mother) right of it with an arrow out. The slot stands on the tank's middle line. }
+-- any of them with counts = { { icon (a Texture or texture path), count } } or nil: a last line of small icons, each
+-- with its count beside it (the kraut barrel's apples and carrots; user, session 72, art/kraut_spiked_mock.png B);
 -- each with arrow (text above an arrow to the next holding, "" for a plain one, nil for none) and arrowColour
 -- ({ r, g, b }, or nil for the usual grey). An arrow to or from a slot is SLOT_ARROW long.
 
@@ -227,11 +229,28 @@ local function textLines(holding)
     return lines
 end
 
+-- The counts line: an icon a line high, its count COUNT_GAP after it, COUNTS_GAP to the next.
+Holds.COUNT_GAP, Holds.COUNTS_GAP = 3, 10
+
+local function countsWidth(holding)
+    local width = 0
+    for index, entry in ipairs(holding.counts or {}) do
+        width = width + lineHeight() + Holds.COUNT_GAP + measure(tostring(entry[2])) + (index > 1 and Holds.COUNTS_GAP or 0)
+    end
+    return width
+end
+
+-- The text lines and the counts line, if any.
+local function lineCount(holding)
+    return #textLines(holding) + ((holding.counts and #holding.counts > 0) and 1 or 0)
+end
+
 -- A holding's text centre from its column's left, and its column's width: the text centres under the unit (a tank
 -- and its heat bar as one), the graphic runs on to its right.
 local function extents(holding, boldWidth)
     local text = boldWidth(holding.name or "")
     for _, line in ipairs(textLines(holding)) do text = math.max(text, measure(line)) end
+    text = math.max(text, countsWidth(holding))
     local graphic = graphicWidth(holding)
     local unit = unitWidth(holding) or graphic
     local left = math.max(unit / 2, text / 2)
@@ -259,7 +278,7 @@ end
 -- The height of the block for these holdings: the graphic, then the most text lines any of them has.
 function Holds.heightFor(holdings)
     local lines = 0
-    for _, holding in ipairs(holdings) do lines = math.max(lines, 1 + #textLines(holding)) end
+    for _, holding in ipairs(holdings) do lines = math.max(lines, 1 + lineCount(holding)) end
     return Holds.HEIGHT + Holds.TEXT_GAP + lines * lineHeight()
 end
 
@@ -595,6 +614,18 @@ function Holds.draw(ui, look, x, y, holdings)
         if holding.under then
             local note = holding.underColour or look.note
             ui:drawTextCentre(holding.under, centre, textTop + line * (holding.state and 3 or 2), note[1], note[2], note[3], 1, UIFont.Small)
+        end
+        if holding.counts and #holding.counts > 0 then
+            local note, size = look.note, line
+            local countX, countY = centre - countsWidth(holding) / 2, textTop + line * (1 + #textLines(holding))
+            for _, entry in ipairs(holding.counts) do
+                local icon = entry[1]
+                if type(icon) == "string" then icon = getTexture(icon) end
+                if icon then ui:drawTextureScaledAspect(icon, countX, countY, size, size, 1, 1, 1, 1) end
+                local count = tostring(entry[2])
+                ui:drawText(count, countX + size + Holds.COUNT_GAP, countY, note[1], note[2], note[3], 1, UIFont.Small)
+                countX = countX + size + Holds.COUNT_GAP + measure(count) + Holds.COUNTS_GAP
+            end
         end
         x = x + columnWidth
         if arrows[index] then

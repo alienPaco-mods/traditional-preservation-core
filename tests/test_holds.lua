@@ -294,4 +294,13 @@ check("crowded marks say so (their text moves right, a line to each tick); far o
     select(2, Holds.heatLabels({ { 45, "45" }, { 40, "40" } }, 0, 80)) == true
     and select(2, Holds.heatLabels({ { 85, "85" }, { 45, "45" } }, 0, 80)) == false)
 
+-- A counts line (user, session 72, art/kraut_spiked_mock.png B): icons a line high with their counts, a line more,
+-- and as wide as it needs. Here a line is 10, a character 6: two of (10 + 3 + 6) with 10 between = 48.
+local spiked = { kind = "cells", name = "In", amount = "4", share = 0.5, counts = { { "Item_Apple", 2 }, { "Item_Carrots", 1 } } }
+local bare = { kind = "cells", name = "In", amount = "4", share = 0.5 }
+check("a counts line adds a line to the block", Holds.heightFor({ spiked }) == Holds.heightFor({ bare }) + 10)
+check("and widens the column to fit it", Holds.layout({ spiked }, function() return 1 end)[1] == 48 + 2 * Holds.COLUMN_PAD)
+check("no counts, or none to show, add nothing", Holds.heightFor({ { kind = "cells", name = "In", amount = "4", share = 0.5, counts = {} } })
+    == Holds.heightFor({ bare }))
+
 H.done()

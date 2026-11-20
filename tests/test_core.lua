@@ -77,8 +77,14 @@ local function onWall(a, b, isKind)
 end
 IsoFlagType = { DoorWallN = "DoorWallN", DoorWallW = "DoorWallW" }
 local function square(x, y, z, roomId, region)
-    local sq = { objects = {}, flags = {} }
+    local sq = { objects = {}, flags = {}, walls = {} }
     function sq:has(flag) return sq.flags[flag] == true end
+    -- A wall on the edge to next: walls.N or walls.W on the square that owns the edge, as onWall finds.
+    function sq:isWallTo(next)
+        local dx, dy = next:getX() - x, next:getY() - y
+        local owner = (dx == 1 or dy == 1) and next or sq
+        return owner.walls[dy ~= 0 and "N" or "W"] == true
+    end
     function sq:getX() return x end
     function sq:getY() return y end
     function sq:getZ() return z end
@@ -99,13 +105,16 @@ local function square(x, y, z, roomId, region)
     world[x .. "," .. y .. "," .. z] = sq
     return sq
 end
--- A 3 x 3 room (id 7) at 0..2, 0..2 on level z, with the outside round it; a neighbouring room (id 8) to the east at x 3.
+-- A 3 x 3 room (id 7) at 0..2, 0..2 on level z, with the outside round it; a neighbouring room (id 8) to the east at
+-- x 3. Walled round, and between the two.
 local function house(z, room, region)
     for x = -1, 4 do
         for y = -1, 3 do
             local inside = x >= 0 and x <= 2 and y >= 0 and y <= 2
             local next = x == 3 and y >= 0 and y <= 2
-            square(x, y, z, inside and room or (next and 8 or nil), inside and region or nil)
+            local sq = square(x, y, z, inside and room or (next and 8 or nil), inside and region or nil)
+            if y >= 0 and y <= 2 and x >= 0 and x <= 4 and x ~= 1 and x ~= 2 then sq.walls.W = true end
+            if (y == 0 or y == 3) and x >= 0 and x <= 3 then sq.walls.N = true end
         end
     end
 end
@@ -165,7 +174,7 @@ on(frame({ hasWindow = true }), 0, 2, 0)
 check("placeOf: a frame with a window in it goes by the window", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 world["0,2,0"].objects = {}
 on(window({ open = true }), 3, 1, 0)
-check("placeOf: an open window into the next room doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+check("placeOf: an open window into the next room, shut to the outside, doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 local function door(state)
     local d = { class = "IsoDoor" }
     function d:isNorth() return state.north or false end
@@ -181,7 +190,7 @@ on(door({ open = true, barricaded = true }), 0, 1, 0)
 check("placeOf: nor a barricaded one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 world["0,1,0"].objects = {}
 on(door({ open = true }), 3, 1, 0)
-check("placeOf: an open door into the next room doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+check("placeOf: an open door into the next room, shut to the outside, doesn't air this one", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 world["3,1,0"].objects = {}
 local builtDoor = { class = "IsoThumpable", door = true }
 function builtDoor:isWindow() return false end
@@ -204,7 +213,7 @@ check("placeOf: an empty doorway on the south wall (the square south of the room
 world["1,3,0"].flags = {}
 Windows.forget()
 world["3,1,0"].flags.DoorWallW = true
-check("placeOf: an empty doorway into the next room doesn't", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
+check("placeOf: nor an empty doorway into it", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 world["3,1,0"].flags = {}
 world["3,1,0"].objects = {}
 on(window({ open = true, north = true }), 1, 0, 0)
@@ -212,27 +221,27 @@ Weather.placeOf(standing(1, 1, 0))
 H.setHours(1 / 12)
 local wall = world["1,0,0"].objects
 wall[#wall] = window({ north = true })
-check("placeOf: a room's answer holds for the reading", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+check("placeOf: a square's answer holds for the reading", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
 H.setHours(1 / 6)
 check("a window shut counts from the next reading", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 Weather.placeOf(standing(3, 1, 0))
 local both = Windows.keptCount()
 H.setHours(2 / 6)
 Weather.placeOf(standing(1, 1, 0))
-check("a new reading keeps only the rooms looked at since", both == 2 and Windows.keptCount() == 1)
--- The frame budget: one scan in SCAN_GAP_MS of real time; a room due inside it keeps the last reading's answer.
+check("a new reading keeps only the squares looked at since", both == 2 and Windows.keptCount() == 1)
+-- The frame budget: one walk in SCAN_GAP_MS of real time; a square due inside it keeps the last reading's answer.
 local clockMs = 1000
 getTimestampMs = function() return clockMs end
 Windows.forget()
 H.setHours(3 / 6)
 world["1,0,0"].objects = { window({ open = true, north = true }) }
-check("a scan when the budget allows", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
+check("a walk when the budget allows", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom")
 H.setHours(4 / 6)
 world["1,0,0"].objects = { window({ north = true }) }
 clockMs = clockMs + 5
 local waited = Weather.placeOf(standing(3, 1, 0))
 local kept = Weather.placeOf(standing(1, 1, 0))
-check("a second room inside the budget waits: no answer before (shut), and a room due again keeps its last",
+check("a second square inside the budget waits: no answer before (shut), and a square due again keeps its last",
     waited == "Sheltered" and kept == "AiredRoom")
 clockMs = clockMs + Windows.SCAN_GAP_MS
 check("once the budget allows, it is read again", Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
@@ -242,15 +251,11 @@ Windows.forget()
 H.setHours(5 / 6)
 Weather.placeOf(standing(1, 1, 0))
 world["1,0,0"].objects = { window({ north = true }) }
-check("measure: a fresh scan replaces the room's kept answer at once", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom"
+check("measure: a fresh walk replaces the square's kept answer at once", Weather.placeOf(standing(1, 1, 0)) == "AiredRoom"
     and Windows.measure(world["1,1,0"]).aired == false and Weather.placeOf(standing(1, 1, 0)) == "Sheltered")
 local measured = Windows.measure(world["1,1,0"])
-check("measure: a fresh scan of the room, its squares, outside walls (12 less the 3 to the room next door) and calls",
-    measured.aired == false and measured.squares == 9 and measured.walls == 9 and measured.calls > 0 and Windows.measure(world["-1,-1,0"]) == nil)
-local saved = Windows.MAX_SQUARES
-Windows.MAX_SQUARES = 4
-check("a room past the cap is read that far from the station", Windows.measure(world["1,1,0"]).squares == 4)
-Windows.MAX_SQUARES = saved
+check("measure: a fresh walk, its indoor squares (the room's 9, the walls keep the next room out) and calls",
+    measured.aired == false and measured.squares == 9 and measured.calls > 0 and Windows.measure(world["-1,-1,0"]) == nil)
 house(1, nil, 42)
 local built = { class = "IsoThumpable" }
 function built:isWindow() return true end
@@ -263,6 +268,47 @@ check("placeOf: a room a player built (a world region), upstairs, with its built
 function built:IsOpen() return false end
 Windows.forget()
 check("placeOf: shut, sheltered", Weather.placeOf(standing(1, 1, 1)) == "Sheltered")
+
+-- The walk's reach: room 20 at 0..2, 0..2 and room 21 at 3..8, 0..2 on level 5, walled round, the outside
+-- beyond; the wall between them at x 3. The walk goes square to square, AIR_STEPS at most out to the air.
+for x = -1, 9 do
+    for y = -1, 3 do
+        local room = y >= 0 and y <= 2 and (x >= 0 and x <= 2 and 20 or x >= 3 and x <= 8 and 21) or nil
+        square(x, y, 5, room or nil)
+    end
+end
+local function at5(x, y) return world[x .. "," .. y .. ",5"] end
+for y = 0, 2 do at5(0, y).walls.W, at5(3, y).walls.W, at5(9, y).walls.W = true, true, true end
+for x = 0, 8 do at5(x, 0).walls.N, at5(x, 3).walls.N = true, true end
+local function walked(x, y) return Windows.measure(at5(x, y)).aired end
+check("walk: a walled room with no opening is shut", walked(1, 1) == false and walked(5, 1) == false)
+at5(0, 1).objects = { window({ open = true }) }
+check("walk: an open window airs a square beside it and one across the room", walked(0, 1) and walked(2, 2))
+at5(0, 1).objects = { window({}) }
+check("walk: a shut window doesn't", walked(1, 1) == false)
+at5(0, 1).objects = {}
+at5(9, 1).objects = { window({ open = true }) }
+check("walk: the window 6 steps away airs, 7 steps away doesn't (AIR_STEPS)", walked(3, 1) and walked(4, 1)
+    and walked(2, 1) == false)
+at5(3, 1).objects = { door({ open = true }) }
+check("walk: through an open inside door too, still 6 steps at most", walked(2, 1) == false and walked(5, 1))
+local savedSteps = Windows.AIR_STEPS
+Windows.AIR_STEPS = 10
+check("walk: farther with a longer reach, through the open inside door", walked(1, 1))
+at5(3, 1).objects = { door({}) }
+check("walk: a shut inside door stops it", walked(1, 1) == false)
+at5(3, 1).objects = {}
+at5(3, 0).walls.W = false
+check("walk: a knocked-through wall lets it through", walked(1, 0))
+at5(3, 0).walls.W = true
+at5(9, 1).objects = {}
+at5(0, 2).walls.W = false
+check("walk: a knocked-out outside wall airs it", walked(1, 2))
+at5(0, 2).walls.W = true
+at5(0, 2).flags.DoorWallW = true
+check("walk: so does an empty doorway", walked(1, 2))
+Windows.AIR_STEPS = savedSteps
+check("walk: a square in no room has no walk", Windows.measure(at5(-1, -1)) == nil)
 
 local function object(z, outside)
     return { getSquare = function() return square(9, 9, z, not outside and 99 or nil) end }

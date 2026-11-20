@@ -643,12 +643,15 @@ ten days) own 30-day mean (`GROUND_HOURS`, `groundTemperature`), so a cellar is 
 Every mean is kept once in the series' weather and copied into each ledger by `Weather.seasonTemperature`. Season
 tools start from `Weather.settledMeans` (the sampled year gone round twice), not a cold 1 January. A room is not a
 heated house: most players don't keep one heated, so autumn indoors is slow and a fire is the answer.
-`Windows.lua` walks the room's squares (a map room by `getRoomID()`, a built one by its world region) because
-`IsoRoom:getWindows()` is never filled, and asks each outside wall through the game's own lookups (`getWindowTo`,
-`getWindowFrameTo`, `getWindowThumpableTo`, `getDoorTo`, then the wall's DoorWallN / DoorWallW flag for an empty
-doorway), never the other objects on a square. It is kept cheap on purpose: a
-room's answer holds for the ten-minute reading, a room is read at most 150 squares from the station, and at most one
-scan runs in 20 real milliseconds (a room due inside that keeps its last answer). `TPC.windows()` times one.
+An **aired room** is a square the outside air reaches: `Windows.lua` walks from the station's square, at most
+`Windows.AIR_STEPS` (6) steps out to a square in no room, through edges with nothing shut on them. Each edge is asked
+through the game's own lookups (`getWindowTo`, `getWindowFrameTo`, `getWindowThumpableTo`, `getDoorTo`, then the
+wall's DoorWallN / DoorWallW flag for an empty doorway, then `isWallTo`), never the other objects on a square: an open
+or broken window, an empty frame, an open door, an empty doorway or no wall at all lets it through, room to room too
+(an open inside door, a knocked-through wall); a wall, a shut door or a shut window stops it. So a big room's far end
+reads shut. It is kept cheap on purpose: the walk reads at most about 60 squares, a square's answer holds for the
+ten-minute reading, and at most one walk runs in 20 real milliseconds (a square due inside that keeps its last
+answer). `TPC.windows()` times one.
 Every place is a square's: a station that is a building of its own is not a place. Inside the Smokehouse
 (*In the Smokehouse*, `Smokehouse.PLACE`) the pieces carry the Smokehouse's word, set by the mod when it steps them
 (Fish & Meat's `F.rackPlace`), and its temperature is an open roof's (`Weather.STATION_PLACES`). The still air and the rain

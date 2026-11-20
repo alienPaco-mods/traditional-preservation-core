@@ -179,11 +179,15 @@ function H.installGetText(texts)
     end
 end
 
--- Gives a fake square what Core's window check asks of a room (Windows.roomKey): in no map room nor built one, so a
--- square in a room reads as a shut room. Returns the square.
+-- Gives a fake square what Core's aired-room walk (Windows.lua) asks of it: a shut window on every side, so a square
+-- in a room reads as a shut room. Returns the square.
+local SHUT_WINDOW = { class = "IsoWindow" }
+function SHUT_WINDOW:isBarricaded() return false end
+function SHUT_WINDOW:IsOpen() return false end
+function SHUT_WINDOW:isSmashed() return false end
+function SHUT_WINDOW:isGlassRemoved() return false end
 function H.shutRoom(square)
-    square.getRoomID = function() return -1 end
-    square.getIsoWorldRegion = function() return nil end
+    square.getWindowTo = function() return SHUT_WINDOW end
     return square
 end
 

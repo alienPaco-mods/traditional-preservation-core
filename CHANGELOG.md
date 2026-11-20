@@ -1,5 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.50
+- **Aired room by distance** (ROADMAP NEXT 1): a square in a room is an aired room when the outside air reaches it
+  within `Windows.AIR_STEPS` (6) steps, walking through edges with nothing shut on them: an open or broken window, an
+  empty frame, an open door, an empty doorway or no wall at all lets it through, room to room too (an open inside
+  door, a knocked-through wall); a wall, a shut door or a shut window stops it. Replaces the walk by room id, which
+  kept two rooms opened into one apart (Known issue "A knocked-through wall doesn't share the air"); a big room's far
+  end now reads shut. The answer is kept per square for the ten-minute reading (was per room), under the same frame
+  budget; `Windows.MAX_SQUARES` and `Windows.roomKey` are gone. Checked first against both long saves with a
+  temporary `TPC.airCheck()`: one Drying Beam beside a broken wall goes from shut to aired, nothing else moves.
+- `TPC.windows()` walks from where you stand. Tests: the harness's `H.shutRoom` gives a square a shut window on
+  every side; new walk tests (distance, inside doors, a knocked-through wall, a gap, a doorway).
+
 ## 0.1.49
 - **Crafting-window pieces retired** (ROADMAP Info windows step d; a refactor, nothing changes in game): no TP station
   uses vanilla's crafting window, so `StationInfo.lua`, `SlotRules.lua` (`UI.slotRules`, `UI.craftRefusal`),

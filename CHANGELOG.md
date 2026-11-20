@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.43
+- `Container.fluidColour(name)`: a fluid's own colour, for any mod's tanks (was the cauldron's own, `CauldronFluid` now uses it).
+- **A tank at work** (`working = { speed, foam }` on a Holds tank; the Fermentation Vessel's batch): bubbles rising
+  through its liquid by the clock, `speed` times `Holds.BUBBLE_SPEED` (still at 0), and a foam cap on top.
+- A Holds tank's `line = { share, text }` (a dashed line across, its text beside: the vessel's 16 L headspace),
+  `working.spill` (foam running down its side) and `underColour`.
+- `UI.shortDuration(hours)`: a wait in few letters for a state line under a tank ("<1h", "30h", "3d").
+
 ## 0.1.42
 - **Bank and Stoke move into the fire's band** (user, session 67; `art/fire_toggle_mock.png`): one icon button by the
   fire's state, glowing embers for Bank the Fire while it is stoked, a flame for Stoke the Fire while it is banked,

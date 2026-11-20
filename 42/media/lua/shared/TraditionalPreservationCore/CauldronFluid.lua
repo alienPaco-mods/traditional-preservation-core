@@ -5,6 +5,8 @@
 -- The few that touch the engine (a container's fluids, an item's heat, a fluid's colour) are at the bottom.
 -- Mods call these by this name (CauldronFluid.pourInto, CauldronFluid.advance, ...); the cauldron as an attachment
 -- (its id, state, fit) is Cauldron's.
+local Container = require "TraditionalPreservationCore/Container"
+
 local CauldronFluid = {}
 
 CauldronFluid.CAULDRON_ML = 60000     -- a farmhouse cauldron's size (real ones 40 to 100 L)
@@ -459,16 +461,7 @@ function CauldronFluid.filledFrom(item, fill)
 end
 
 -- What the cauldron holds, coloured: each vanilla fluid's own colour, mixed by their shares. nil when it is empty.
-local fluidColours = {}
-
-local function fluidColour(name)
-    if fluidColours[name] == nil then
-        local fluid = Fluid and Fluid.Get and Fluid.Get(name)
-        local c = fluid and fluid:getColor()
-        fluidColours[name] = c and { c:getRedFloat(), c:getGreenFloat(), c:getBlueFloat() } or false
-    end
-    return fluidColours[name] or nil
-end
+local fluidColour = Container.fluidColour
 
 function CauldronFluid.liquidColour(cauldron)
     local total, mix = 0, { 0, 0, 0 }

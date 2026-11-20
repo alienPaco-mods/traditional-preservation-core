@@ -88,4 +88,16 @@ function Container.giveBack(craftRecipeData, character, placeholderType)
     return item
 end
 
+-- A fluid's own colour by its name (its script's ColorReference), { r, g, b }, kept once read; nil for one the game
+-- doesn't know. A tank in an info window is drawn in it.
+local fluidColours = {}
+function Container.fluidColour(name)
+    if fluidColours[name] == nil then
+        local fluid = Fluid and Fluid.Get and Fluid.Get(name)
+        local c = fluid and fluid:getColor()
+        fluidColours[name] = c and { c:getRedFloat(), c:getGreenFloat(), c:getBlueFloat() } or false
+    end
+    return fluidColours[name] or nil
+end
+
 return Container

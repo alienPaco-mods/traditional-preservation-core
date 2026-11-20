@@ -188,6 +188,43 @@ window:holds(0, { { kind = "tank", name = "Salt Pan", amount = "15 / 30 L", shar
 local brine
 for _, rect in ipairs(rects) do if rect.b == 1 and rect.r == 0 then brine = rect end end
 check("the brine stands on the salt", brine and brine.y + brine.h == Holds.HEIGHT - 2 - 23)
+-- A tank at work: a foam cap on the liquid's top, bubbles rising by the clock (still at speed 0).
+local borders, ms = {}, 0
+getTimestampMs = function() return ms end
+window.drawRectBorder = function(_, x, y, w, h) if w <= 3 then table.insert(borders, { x = x, y = y }) end end
+local function workingTank(speed)
+    rects, borders = {}, {}
+    window:holds(0, { { kind = "tank", name = "Fermenting", amount = "10.0 / 20 L", share = 0.13, colour = { 0.95, 0.64, 0.37 },
+        settled = { share = 0.37, colour = { 0.82, 0.71, 0.55 } }, working = { speed = speed, foam = 1 } } })
+    local foam
+    for _, rect in ipairs(rects) do if rect.r == Holds.FOAM_COLOUR[1] and rect.h == Holds.FOAM then foam = rect end end
+    return foam, borders
+end
+local foam, bubbles = workingTank(1)
+check("a working tank has its foam cap at the liquid's top", foam and foam.y == Holds.HEIGHT - 2 - 46, foam and foam.y)
+check("and bubbles in the liquid", #bubbles == 6)
+local before = bubbles[1].y
+ms = 1000
+local _, later = workingTank(1)
+check("the bubbles rise with the clock", later[1].y == before - Holds.BUBBLE_SPEED, later[1].y .. " " .. before)
+local _, still = workingTank(0)
+ms = 5000
+local _, stillLater = workingTank(0)
+check("at speed 0 they stay put", still[1].y == stillLater[1].y)
+getTimestampMs = nil
+-- A tank's line: dashed across at its share, its text beside the tank, the column wide enough for it.
+drawn = {}
+local texts = {}
+window.drawText = function(_, text, x, y) table.insert(texts, { text = text, x = x, y = y }) end
+window:holds(0, { { kind = "tank", name = "Wort", amount = "6.0 / 20 L", share = 0.3, colour = { 1, 0.6, 0.4 },
+    line = { share = 0.8, text = "16 L" } } })
+local label
+for _, t in ipairs(texts) do if t.text == "16 L" then label = t end end
+check("a tank's line has its text at its right, level with it", label and label.x > Holds.TANK_WIDTH
+    and math.abs(label.y + InfoWindow.lineHeight() / 2 - (2 + math.floor((Holds.HEIGHT - 4) * 0.2 + 0.5))) <= 1, label and label.y)
+local columns = Holds.layout({ { kind = "tank", name = "W", amount = "", share = 0, line = { share = 0.8, text = "16 L" } } }, function() return 1 end)
+local plain = Holds.layout({ { kind = "tank", name = "W", amount = "", share = 0 } }, function() return 1 end)
+check("and its column makes room for the text", columns[1] > plain[1])
 -- Past saturation each litre boiled off leaves a litre of salt: the brine's top holds still, step after step.
 local tops = {}
 for step = 0, 40 do

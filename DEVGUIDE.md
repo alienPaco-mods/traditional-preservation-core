@@ -222,7 +222,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    station holds standing up, packed from the left in flow order: a fluid a tank, anything else a column of cells (a
    real count when small, else five cells of a share; full cells drawn in a pattern of what they hold, `pattern` =
    `media/textures/TPCell_<Name>.png` from `tools/cell_patterns.py`, the texture in the mod whose thing it is; a mixed
-   holding passes `parts = { { pattern, weight } }`, split by `Holds.byShare`, the cells left to the heaviest), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`)
+   holding passes `parts = { { pattern, weight } }`, split by `Holds.byShare`, the cells left to the heaviest), heat on its own a thermometer with marks, a heated tank its heat as a thin bar beside it and what settles out at its foot (`settled = { share, colour }`), a tank at work bubbles under a foam cap (`working = { speed, foam, spill }`: speed times `Holds.BUBBLE_SPEED`, 0 still; spill runs foam down its side), a tank's `line = { share, text }` is a dashed mark with its text beside
    (`heat = { celsius, marks }`,
    the text centred under the two), an arrow and its rate between; a lore line (`self:holds(y, holdings, lore)`:
    real-world history, checked, a translation key) goes beside the holdings, the window widening to give it LORE_MIN of room (left out only past MAX_WIDTH). A tank with
@@ -275,6 +275,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - Timed actions (`Action`): `duration(character, ticks)` honours the instant-actions cheat, `pourDuration` is the
      series' one pouring speed. Every `getDuration` goes through one of them.
    - `Container.fluidIn(fluidContainer)`: the one fluid a container holds, or nil for none or a mixture.
+   - `Container.fluidColour(name)`: a fluid's own colour { r, g, b } from its script, for a tank in an Info window.
    - `CauldronFluid.taints(tainting, tainted)`: `tainting` taints `tainted`; poured in together, either way round, the lot
      becomes `tainting` (Core names vanilla's `TaintedWater` and `Water`). `CauldronFluid.taintedBy(cauldron, fluid)` says what a pour
      would make; `CauldronFluid.partsIn` reads a container holding both as all `tainting`. Each fluid in one taint only.

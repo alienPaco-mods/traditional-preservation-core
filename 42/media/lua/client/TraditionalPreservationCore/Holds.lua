@@ -9,11 +9,15 @@
 -- an arrow draws one to the next, its text (a rate) above it. A window doesn't draw one itself: InfoWindow:holds(y,
 -- holdings) draws it in the window's flow.
 -- holdings is a list of
---   { kind = "tank", name, amount, state, stateColour, under, share (0 to 1), colour { r, g, b }, layers (bands, or
+--   { kind = "tank", name, amount, state, stateColour, under, underColour, share (0 to 1), colour { r, g, b }, layers (bands, or
 --     nil), heat = { celsius (nil: no reading), marks = { { celsius, text } } } or nil, settled = { share (0 to 1),
 --     colour } or nil: what has settled out at its foot under the fluid, the salt a boil leaves (user), drop =
 --     { judge(items), drop(take) } or nil: buckets dragged onto the tank pour in (InfoWindow:holds; judge returns
---     DropZone's { take, lines, refused } and adds, the share of the tank the pour would fill) }
+--     DropZone's { take, lines, refused } and adds, the share of the tank the pour would fill), working = { speed,
+--     foam, spill } or nil: a tank at work (a batch fermenting), bubbles rising through its liquid, speed times
+--     Holds.BUBBLE_SPEED (0: still), a foam cap on top, foam (0 to 1) of Holds.FOAM thick, and with spill foam
+--     running down its side, line = { share, text } or nil: a dashed line across at that share of the tank, its text
+--     beside it (the vessel's headspace) }
 --   { kind = "cells", name, amount, state, stateColour, cells (default 5),
 --     filled (cells full; default the share's), share, colour, drop = { judge, drop } or nil: what is dragged onto the
 --     cells goes on, in place of a drop square (user); judge adds cells, the cells it would fill, shown see-through,
@@ -43,6 +47,13 @@ Holds.TEXT_GAP = 4           -- the graphic to its name
 Holds.HEAT_BAR = 12          -- a tank's heat bar
 Holds.HEAT_GAP = 6           -- the tank to its heat's room
 Holds.SETTLED_MIN = 3        -- a settled layer's least height, so a little still shows
+Holds.BUBBLE_SPEED = 8       -- a working tank's bubbles rise this many pixels a second at speed 1
+Holds.FOAM = 3               -- its foam cap's height at foam 1
+Holds.FOAM_COLOUR, Holds.BUBBLE_COLOUR = { 0.93, 0.89, 0.78 }, { 1, 0.96, 0.86 }
+Holds.SPILL = 14             -- foam running over: how far down the tank's side
+Holds.LINE_GAP = 4           -- a tank's line to its text
+-- Where a working tank's bubbles start: { across (0 to 1), up (0 to 1) }.
+local BUBBLES = { { 0.25, 0.15 }, { 0.6, 0.45 }, { 0.4, 0.75 }, { 0.75, 0.9 }, { 0.2, 0.55 }, { 0.55, 0.2 } }
 Holds.DROP_MARGIN = 6        -- a drop frame round its holding
 Holds.PREVIEW_ALPHA = 0.45   -- a pour shown in the tank before it is made, see-through as vanilla's fluid bar
 Holds.DROP_OK, Holds.DROP_SOME, Holds.DROP_NO = { 1, 1, 1 }, { 0.92, 0.6, 0.25 }, { 0.86, 0.35, 0.27 }
@@ -176,6 +187,7 @@ local function graphicWidth(holding)
         local room, reach = heatRoom(holding)
         return Holds.TANK_WIDTH + Holds.HEAT_GAP + room / 2 + reach
     end
+    if holding.kind == "tank" and holding.line then return Holds.TANK_WIDTH + Holds.LINE_GAP + measure(holding.line.text or "") end
     if holding.kind == "tank" then return Holds.TANK_WIDTH end
     if holding.kind == "cells" then return Holds.CELL_WIDTH end
     local text = 0
@@ -240,6 +252,35 @@ local function disc(ui, x, y, size, colour)
     end
 end
 
+-- A tank at work, over its liquid (left x, foot y, width, depth in pixels): bubbles rising by the clock, wrapping
+-- round at the surface, and the foam cap.
+local function drawWorking(ui, working, x, foot, width, depth)
+    local seconds = getTimestampMs and getTimestampMs() / 1000 or 0
+    local rise = depth - Holds.FOAM - 4
+    for index, bubble in ipairs(BUBBLES) do
+        local size = index % 2 == 0 and 2 or 3
+        local up = (bubble[2] * rise + seconds * Holds.BUBBLE_SPEED * (working.speed or 0)) % rise
+        ui:drawRectBorder(math.floor(x + 1 + bubble[1] * (width - size - 2)), math.floor(foot - 2 - up - size), size, size,
+            0.8, Holds.BUBBLE_COLOUR[1], Holds.BUBBLE_COLOUR[2], Holds.BUBBLE_COLOUR[3])
+    end
+    local foam = math.max(1, math.floor(Holds.FOAM * (working.foam or 1) + 0.5))
+    fill(ui, x, foot - depth, width, foam, Holds.FOAM_COLOUR)
+    for bump = 1, width - 4, 6 do fill(ui, x + bump, foot - depth - 1, 4, 1, Holds.FOAM_COLOUR) end
+    if working.spill then
+        fill(ui, x + width + 1, foot - depth - 1, 2, Holds.SPILL, Holds.FOAM_COLOUR)
+        fill(ui, x + width, foot - depth - 1 + Holds.SPILL, 4, 3, Holds.FOAM_COLOUR)
+    end
+end
+
+-- A tank's line: dashed across at its share (x, y the tank's top left), its text to the right.
+local function drawLine(ui, line, x, y)
+    local lineY = y + 2 + math.floor((Holds.HEIGHT - 4) * (1 - line.share) + 0.5)
+    for dash = x + 2, x + Holds.TANK_WIDTH - 4, 4 do fill(ui, dash, lineY, 2, 1, Holds.GLASS) end
+    if line.text then
+        ui:drawText(line.text, x + Holds.TANK_WIDTH + Holds.LINE_GAP, lineY - lineHeight() / 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    end
+end
+
 local function drawTank(ui, holding, x, y, adds)
     local width, height = Holds.TANK_WIDTH, Holds.HEIGHT
     gradient = gradient or getTexture("media/ui/Fluids/fluid_gradient.png")
@@ -272,6 +313,7 @@ local function drawTank(ui, holding, x, y, adds)
                 math.min(1, colour[1] + 0.35), math.min(1, colour[2] + 0.3), math.min(1, colour[3] + 0.25))
         end
     end
+    if holding.working and top > 8 then drawWorking(ui, holding.working, x + 2, y + height - 2, width - 4, top) end
     if gradient then ui:drawTextureScaled(gradient, x, y, width, height, Holds.GRADIENT_ALPHA, 1, 1, 1) end
     for quarter = 1, 3 do
         local tickY = y + 2 + (height - 4) * (1 - quarter / 4)
@@ -409,6 +451,7 @@ function Holds.draw(ui, look, x, y, holdings)
         local judged = look.judged and look.judged(index)
         if holding.kind == "tank" then
             drawTank(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.adds or nil)
+            if holding.line then drawLine(ui, holding.line, graphicX, y) end
             if holding.heat then drawHeatBar(ui, holding.heat, graphicX + Holds.TANK_WIDTH + Holds.HEAT_GAP, y) end
         elseif holding.kind == "cells" then
             drawCells(ui, holding, graphicX, y, judged and #judged.take > 0 and judged.cells or nil, judged and judged.pattern)
@@ -424,7 +467,7 @@ function Holds.draw(ui, look, x, y, holdings)
             ui:drawTextCentre(holding.state, centre, textTop + line * 2, colour[1], colour[2], colour[3], 1, UIFont.Small)
         end
         if holding.under then
-            local note = look.note
+            local note = holding.underColour or look.note
             ui:drawTextCentre(holding.under, centre, textTop + line * (holding.state and 3 or 2), note[1], note[2], note[3], 1, UIFont.Small)
         end
         x = x + columnWidth

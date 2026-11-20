@@ -42,6 +42,7 @@ InfoWindow.ROW_GAP, InfoWindow.BAR_GAP, InfoWindow.NOTE_GAP = 4, 4, 4
 InfoWindow.ICON_GAP = 4         -- a row's icon to its text
 InfoWindow.BAND_HEIGHT = 28    -- the state band under the title
 InfoWindow.BAND_BUTTON, InfoWindow.BAND_ICON = 24, 20   -- its icon-only button, square, and the icon in it
+InfoWindow.BAND_BUTTON_GAP = 6   -- between two of them
 -- A band's colours { colour, dark } by what its state means (user): working, slowed or waiting on the player, something
 -- will be lost. The fire has its own (FireUI).
 InfoWindow.BAND_WORKING = { { 0.35, 0.6, 0.3 }, { 0.12, 0.22, 0.11 } }
@@ -122,8 +123,7 @@ function InfoWindow:update()
     if self.dropZoneUI then require("TraditionalPreservationCore/DropZone").show(self, not self.isCollapsed) end
     if self.dropTargetsUI then require("TraditionalPreservationCore/DropZone").showTargets(self, math.huge) end
     self:showButtons()
-    local bandButton = self.bandButtonUI
-    if bandButton and bandButton:getIsVisible() == self.isCollapsed then bandButton:setVisible(not self.isCollapsed) end
+    self:showBandButtons()
     if self.widthResizes then keepWidth(self) end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
@@ -374,7 +374,7 @@ end
 
 -- A band right under the title bar, the window's full width: a state at a glance (the fire: lit, banked, out). word
 -- (finished text, drawn bold in capitals) then text, on a strip fading from colour { r, g, b } to dark, and entry (a
--- button as buttonRow's, or nil) at its right as its icon alone, the title heading its hover (user: saves room). The rows start under it (top). Returns the y of the first row.
+-- button as buttonRow's, a list of them left to right, or nil) at its right, each as its icon alone, the title heading its hover (user: saves room). The rows start under it (top). Returns the y of the first row.
 local placeButton -- below, with the buttons
 
 -- The game draws a window's prerender, then its children (buttons), then its render: the band is drawn in
@@ -403,25 +403,36 @@ end
 function InfoWindow:band(word, text, colour, dark, entry)
     local top, height = self:titleBarHeight(), InfoWindow.BAND_HEIGHT
     self.bandLook = { word = string.upper(word), text = text, colour = colour, dark = dark }
-    if entry then
-        local size = InfoWindow.BAND_BUTTON
-        local iconOnly = { title = "", enabled = entry.enabled, onClick = entry.onClick,
-            tooltip = entry.tooltip and entry.title .. " <LINE> " .. entry.tooltip or entry.title }
-        local button = placeButton(self, self.bandButtonUI, iconOnly, self.width - InfoWindow.PADDING - size,
-            top + (height - size) / 2, size, size)
-        local icon = entry.icon
+    local entries = entry == nil and {} or entry.title and { entry } or entry
+    local buttons, size = self.bandButtonsUI or {}, InfoWindow.BAND_BUTTON
+    local x = self.width - InfoWindow.PADDING - size
+    -- Right to left: the last entry at the band's edge.
+    for slot = 1, #entries do
+        local one = entries[#entries - slot + 1]
+        local iconOnly = { title = "", enabled = one.enabled, onClick = one.onClick,
+            tooltip = one.tooltip and one.title .. " <LINE> " .. one.tooltip or one.title }
+        local button = placeButton(self, buttons[slot], iconOnly, x, top + (height - size) / 2, size, size)
+        local icon = one.icon
         if type(icon) == "string" then icon = getTexture(icon) end
         if button.image ~= icon then
             button:setImage(icon)
             button:forceImageSize(InfoWindow.BAND_ICON, InfoWindow.BAND_ICON)
         end
-        if not button:getIsVisible() and not self.isCollapsed then button:setVisible(true) end
-        self.bandButtonUI = button
-    elseif self.bandButtonUI and self.bandButtonUI:getIsVisible() then
-        self.bandButtonUI:setVisible(false)
+        buttons[slot] = button
+        x = x - size - InfoWindow.BAND_BUTTON_GAP
     end
+    self.bandButtonsUI, self.bandButtonsShown = buttons, #entries
+    self:showBandButtons()
     self.bandBottom = top + height + InfoWindow.PADDING
     return self.bandBottom
+end
+
+-- The buttons the last band placed show, unless the window is collapsed; any left over from a band with more hide.
+function InfoWindow:showBandButtons()
+    for slot, button in ipairs(self.bandButtonsUI or {}) do
+        local shown = not self.isCollapsed and slot <= (self.bandButtonsShown or 0)
+        if button:getIsVisible() ~= shown then button:setVisible(shown) end
+    end
 end
 
 -- A block's header at y (label a translation key): its name in small grey capitals, then a hairline to the window's

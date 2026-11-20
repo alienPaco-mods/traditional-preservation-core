@@ -75,7 +75,7 @@ Right-click it. Its **Stone Hearth** submenu has:
 
 | Option | What it does |
 |---|---|
-| The **Stone Hearth Info** window | A small window: a coloured band for the fire, the wood, what is fitted, Bank and Stoke buttons, a note |
+| The **Stone Hearth Info** window | A small window: a coloured band for the fire with its buttons, the Station block, the wood, what is fitted, a note |
 | **Bank the Fire** / **Stoke the Fire** | While the fire is lit; also a button beside Put out Fire in the loot window. See chapter 5 |
 | **Fit Cauldron** | Hangs the cauldron over the hole (chapter 4) |
 | With Salt: **Fit Salt Pan** | Beds a 30 L salt pan in clay over the hole, to boil brine down (Salt's guide). One thing fitted at a time: the cauldron or the pan |
@@ -111,12 +111,12 @@ The **Stone Hearth Info** window then shows:
 
 | Part | Reads |
 |---|---|
-| The band under the title | Red when stoked ("STOKED burns 5 h 49 min, full heat"), orange when banked (embers and how long), grey when out (the wood in it); at its right a small button: a lighter for **Light the Fire** (the game's own light menu: matches, lighter, kindling), an extinguisher for **Put Out the Fire** |
+| The band under the title | Red when stoked ("STOKED burns 5 h 49 min, full heat"), orange when banked (embers and how long), grey when out (the wood in it); at its right small buttons: glowing embers for **Bank the Fire** while it is stoked, a flame for **Stoke the Fire** while it is banked (none while it is out), then a lighter for **Light the Fire** (the game's own light menu: matches, lighter, kindling) or a bucket of water for **Put Out the Fire** |
+| Station | The hearth's outline, then Place: the place the fire makes round it, what a station beside it gets ("28°C (By a fire)" lit, "24°C (By banked embers)" banked, the room's own air when out), and Season |
 | Wood | Five cells (all five are 12 hours of wood), the time it will burn, and lit, banked or out |
 | Cauldron | A tank in the colour of what it holds, with a thin heat bar beside it (ticks at 85, steam, and 100, the boil; its temperature under it); under both, the litres of 60, the fluid (each fluid of a blend), and "steaming" or "steams in 1.2 hours" |
 | Beside them | A line of the hearth's history (the window widens to fit it) |
 | Drag onto the cauldron | Drag containers from your inventory onto the cauldron to pour them in: it lights up white and shows the pour see-through, or red with the reason (a mix, another fluid, full) |
-| Bank the Fire, Stoke the Fire | Buttons: the one that can't work now is greyed, its hover says why |
 
 The window updates while it's open, and closes when you walk more than 6 squares away. What the cauldron holds shows in its mouth, in the fluid's own colour.
 

@@ -209,7 +209,8 @@ local Weather = require "TraditionalPreservationCore/Weather"
    Notes; a block with nothing to show is left out. Every window opens with a state band under its title
    (`self:band(word, text, colour, dark, entry)`): a word in capitals for its state and a short line that doesn't
    repeat a bar; green `InfoWindow.BAND_WORKING`, amber `BAND_WAITING` (slowed, or waiting on the player), red
-   `BAND_AT_RISK` (something will be lost); a fire's band is FireUI's own. It replaces a Stage row. The Station block
+   `BAND_AT_RISK` (something will be lost); a fire's band is FireUI's own (`FireUI.BANDS`, `FireUI.bandButtons`). `entry` is
+   one icon-only button at the band's right or a list of them, left to right, the last at the edge. It replaces a Stage row. The Station block
    is `self:stationBlock(y, icon, place, celsius, rows)`, its own header included: the station's white outline icon
    at 64 px (`TPStation_<Name>.png` in the station's mod, drawn by `tools/station_icons.py`; Info windows only, menus
    keep the item icons), and at its right, in Small (`InfoWindow.STATION_FONT`), Place (the place's icon, `UI.placeIcon`, drawn

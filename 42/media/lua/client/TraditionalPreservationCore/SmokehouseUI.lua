@@ -52,7 +52,7 @@ UI.keepDoorsFree(Smokehouse.CHAMBER_NAMES)
 
 -- The band of the shed's Info (window an InfoWindow, chamberTile any of its tiles), drawn: the joined Stone Hearth
 -- stoked (hot smoke), banked (cold smoke, or too warm for it when the mod says the day is: tooWarm) or out, in the
--- hearth's colours with its Light / Put Out button; grey with no button when none is joined. Returns the y under it.
+-- hearth's colours with its Bank / Stoke and Light / Put Out buttons; grey with no button when none is joined. Returns the y under it.
 function SmokehouseUI.band(window, chamberTile, tooWarm)
     local stoneHearth = Smokehouse.joinedStoneHearth(chamberTile)
     if not stoneHearth then
@@ -71,7 +71,7 @@ function SmokehouseUI.band(window, chamberTile, tooWarm)
     elseif stoneHearth:getFuelAmount() > 0 then text = UI.say("IGUI_TraditionalPreservationCore_SmokeBandOut", time)
     else text = getText("IGUI_TraditionalPreservationCore_SmokeBandNoWood") end
     local word = getText(look.word or (banked and "IGUI_TraditionalPreservationCore_InfoFireBanked" or "IGUI_TraditionalPreservationCore_InfoFireOut"))
-    return window:band(word, text, look.colour, look.dark, FireUI.bandButton(window, stoneHearth))
+    return window:band(word, text, look.colour, look.dark, FireUI.bandButtons(window, stoneHearth))
 end
 
 return SmokehouseUI

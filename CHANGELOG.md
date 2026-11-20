@@ -1,5 +1,19 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.42
+- **Bank and Stoke move into the fire's band** (user, session 67; `art/fire_toggle_mock.png`): one icon button by the
+  fire's state, glowing embers for Bank the Fire while it is stoked, a flame for Stoke the Fire while it is banked,
+  none while it is out, left of Light / Put Out. Stone Hearth Info loses its Bank / Stoke button row; Smokehouse Info
+  gets the same pair for its joined hearth. Put Out the Fire's icon is vanilla's Metal Bucket of Water (`Item_MetalBucket_Water`), not the Extinguisher
+  (`art/fire_icon_options_mock.png`, B1 with darker coals and P1).
+- `InfoWindow:band` takes a list of buttons (`InfoWindow.BAND_BUTTON_GAP` between them); `FireUI.bandButtons`
+  replaces `FireUI.bandButton`. Icons `TPIcon_Stoke.png` and `TPIcon_Bank.png` from `tools/fire_icons.py`.
+- The Bank / Stoke refusal strings (FireIsOut, BankedAlready, BurningAlready) are gone with the buttons.
+- **Stone Hearth Info gets the Station block** (user, session 67; `art/hearth_station_mock.png` A): the hearth's
+  outline icon (its kind's `display.station`), Place as the place the fire makes round it, what a station beside it
+  reads (by a fire lit, by banked embers banked, the air where it stands when out; `FireUI.placeAround`), and Season;
+  its holdings get their Holds header back.
+
 ## 0.1.41
 - **The Smokehouse's band** (`SmokehouseUI.band`; the module now returns `SmokehouseUI`): its joined Stone Hearth's
   fire as the hearth's own band, in its colours: Stoked (hot smoke and how long it burns), Banked (cold smoke on

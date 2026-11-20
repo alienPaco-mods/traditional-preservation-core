@@ -206,6 +206,7 @@ StoneHearth.kind = Fire.kind({
     showing = showing,
     -- How a bare Stone Hearth shows in its menu and Info window, its fire banked or burning up again, and its help.
     display = { icon = "media/textures/Item_TPStoneHearth.png", title = "IGUI_CraftingWindow_TPStoneHearth",
+        station = "media/textures/TPStation_StoneHearth.png",   -- its Info window's outline (tools/station_icons.py)
         infoText = "ContextMenu_TraditionalPreservationCore_StoneHearthInfo",
         fire = { bank = "media/textures/Item_TPStoneHearthBanked.png", stoke = "media/textures/Item_TPStoneHearthLit.png" },
         help = { out = "IGUI_TraditionalPreservationCore_StoneHearthHelpOut",

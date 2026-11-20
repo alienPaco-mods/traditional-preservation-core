@@ -118,10 +118,20 @@ function ISButton:setVisible(visible) self.visible = visible end
 function window:addChild() end
 window:band("Out", "6 h 0 min of wood in it", { 0.5, 0.5, 0.5 }, { 0.2, 0.2, 0.2 },
     { title = "Light the Fire", icon = "Item_Lighter", enabled = true, tooltip = "Light it.", onClick = function() end })
-local lighter = window.bandButtonUI
+local lighter = window.bandButtonsUI[1]
 check("the band's button is its icon alone, square at the right, its title heading the hover", lighter and lighter.title == ""
     and lighter.image.name == "Item_Lighter" and lighter.width == InfoWindow.BAND_BUTTON
     and lighter.x == window.width - InfoWindow.PADDING - InfoWindow.BAND_BUTTON and lighter.tooltip == "Light the Fire <LINE> Light it.")
+-- Two: left to right, the last at the edge, a gap between; a band with one again hides the other.
+local function entry(title, icon) return { title = title, icon = icon, enabled = true, onClick = function() end } end
+window:band("Lit", "burns", { 0.5, 0.5, 0.5 }, { 0.2, 0.2, 0.2 }, { entry("Bank the Fire", "Bank"), entry("Put Out", "Out") })
+local edge, inner = window.bandButtonsUI[1], window.bandButtonsUI[2]
+check("two band buttons: the last at the edge, the first left of it by a gap", edge.image.name == "Out"
+    and inner.image.name == "Bank" and inner.x == edge.x - InfoWindow.BAND_BUTTON - InfoWindow.BAND_BUTTON_GAP
+    and inner:getIsVisible())
+window:band("Out", "none", { 0.5, 0.5, 0.5 }, { 0.2, 0.2, 0.2 }, entry("Light", "Lighter"))
+check("a band with one button again hides the second", window.bandButtonsUI[1]:getIsVisible()
+    and not window.bandButtonsUI[2]:getIsVisible() and window.bandButtonsUI[1].image.name == "Lighter")
 window.bandBottom = nil
 drawn = {}
 local lore = "Curfew comes from the Old French cuevrefeu, cover fire: the evening bell that told a household to rake its hearth over."

@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.45
+- An Info window that resizes keeps its 12 px under the notes clear of vanilla's status bar at its foot (the bar
+  covered it: the last note sat on the edge).
+- An Info window refreshes as soon as the player's action starts or ends (a lay, a take, a pour), so the cells and
+  rows follow a drag at once instead of on the next half-second refresh.
+
 ## 0.1.44
 - **The Drying Cloth has room, not five lots** (as the Drying Frame has its weight): `DryingCloth.ROOM` 50, each kind
   registers `room` per piece, and `perLot` is now optional (most pieces in one lot; none, any number). A lay is

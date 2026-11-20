@@ -125,6 +125,13 @@ function InfoWindow:update()
     self:showButtons()
     self:showBandButtons()
     if self.widthResizes then keepWidth(self) end
+    -- The player's action starting or ending (a lay, a take, a pour) refreshes at once, not on the next half second.
+    local queue = ISTimedActionQueue and ISTimedActionQueue.queues and ISTimedActionQueue.queues[self.playerObj]
+    local action = queue and queue.current or false
+    if action ~= self.lastAction then
+        self.lastAction = action
+        self.ticks = InfoWindow.REFRESH_TICKS
+    end
     self.ticks = self.ticks + 1
     if self.ticks >= InfoWindow.REFRESH_TICKS then
         self.ticks = 0
@@ -809,9 +816,11 @@ function InfoWindow:buttonRow(y, buttons)
     return y + lines * InfoWindow.BUTTON_HEIGHT + (lines - 1) * InfoWindow.BUTTON_GAP + InfoWindow.BAR_GAP
 end
 
--- The notes, after which the window fits its height to them.
+-- The notes, after which the window fits its height to them: the padding under them, clear of the status bar vanilla
+-- draws at the foot of a window that resizes.
 function InfoWindow:drawNotes(y, notes)
     local height = InfoWindow.drawNoteLines(self, LAYOUT, y, notes) + InfoWindow.PADDING
+    if self.resizable and self.resizeWidget and self.resizeWidget:getIsVisible() then height = height + self:resizeWidgetHeight() end
     if self.height ~= height then self:setHeight(height) end
 end
 

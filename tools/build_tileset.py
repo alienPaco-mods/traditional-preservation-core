@@ -1322,19 +1322,6 @@ def contact_sheet(tiles, path):
     sheet.save(path)
 
 
-def write_depth_assignments(path):
-    """tileDepthTextureAssignments.txt (the game reads a mod's only from common/media): the Drying Cloth takes vanilla's
-    rug depth (floors_rugs_01_0), so a character standing on it is drawn over it (user, session 77). Without a depth
-    texture a mod tile gets a default that drew the cloth over the character's legs. What lies on it is attached to it
-    and shares its depth."""
-    lines = ["tileDepthTextureAssignments", "{", "    VERSION = 1,"]
-    for index in range(CLOTH, CLOTH + len(FACES)):
-        lines.append(f"    {TILESET}_{index} = floors_rugs_01_0,")
-    lines += ["}", ""]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines), encoding="utf8")
-
-
 def main():
     import smokehouse_tiles as shed  # it imports this file for the shared painters, so only once this one is loaded
     media = Path(__file__).resolve().parent.parent / "42" / "media"
@@ -1363,7 +1350,9 @@ def main():
         tiles[CLOTH + face] = cloth_art.paint_cloth(name)
     pzart.write_pack(media / "texturepacks" / f"{NAME}.pack", tiles, NAME, TILESET, PAGE_SIZE)
     pzart.write_tiles(media / f"{NAME}.tiles", [(TILESET, COLUMNS, ROWS)], TILE_PROPS)
-    write_depth_assignments(media.parent.parent / "common" / "media" / "tileDepthTextureAssignments.txt")
+    # The Drying Cloth lies flat as a rug: a character standing on it is drawn over it (user, session 77).
+    pzart.write_depth_assignments(media.parent.parent / "common" / "media" / "tileDepthTextureAssignments.txt",
+                                  {f"{TILESET}_{index}": pzart.RUG_DEPTH for index in range(CLOTH, CLOTH + len(FACES))})
     (media / "textures").mkdir(parents=True, exist_ok=True)
     pzart.write_build_icon(tiles[CAULDRON_PLAIN], media / "textures" / "Item_TPStoneHearthCauldron.png")
     # Menu icons: the Forged Cauldron's, empty and full (the item, the Stone Hearth's status row) and Fit / Remove.

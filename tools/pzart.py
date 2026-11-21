@@ -200,6 +200,22 @@ def write_container_icon(tile, path):
     icon.save(path)
 
 
+# A flat thing lying on the floor (a rug, the Drying Cloth and what lies on it) takes vanilla's rug depth.
+RUG_DEPTH = "floors_rugs_01_0"
+
+
+def write_depth_assignments(path, assignments):
+    """common/media/tileDepthTextureAssignments.txt: { tile name: the tile whose depth texture it takes }. The game
+    reads a mod's only from there (ENGINE_NOTES "Depth"); a mod tile with no depth texture gets a default that can
+    draw it over a character standing on it."""
+    lines = ["tileDepthTextureAssignments", "{", "    VERSION = 1,"]
+    lines += [f"    {tile} = {other}," for tile, other in sorted(assignments.items())]
+    lines += ["}", ""]
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines), encoding="utf8")
+
+
 def write_mod_icon(art, path, badge=None, keep=None):
     """The station on the series' pale sky with rounded corners, so the mods match in the mod list.
     badge is an item icon set in the bottom right corner. keep crops a tall station to its top part, which then

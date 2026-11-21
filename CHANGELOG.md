@@ -12,6 +12,8 @@
   drawn over it. Without a depth texture the game's default drew the cloth over the character's legs. What lies on it
   shares its depth.
 - Internal: `tp install` ships Core's `common/` folder too (it had shipped `42/` only).
+- Internal: `tools/pzart.py` `write_depth_assignments` and `RUG_DEPTH`, shared by the builders that put things on
+  the cloth (Yeast's cakes, Dairy's grains).
 
 ## 0.1.53
 - **Clamp places** (ROADMAP section 8 phase 3, session 77): `StrawClamp` (roots under straw) and `EarthedClamp` (earthed

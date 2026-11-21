@@ -133,10 +133,14 @@ cultureBasement    6104.559220476
 cultureBasementRate 0.613867470
 cultureCovered     7206.686475815
 cultureCoveredRate 0.512840314
+cultureEarthedClamp 6893.242526675
+cultureEarthedClampRate 0.654500700
 cultureOpen        7206.686475815
 cultureOpenRate    0.512840314
 cultureSheltered   7966.134820421
 cultureShelteredRate 0.771350447
+cultureStrawClamp  6901.153575823
+cultureStrawClampRate 0.667934830
 dayTemperature     14.293362543
 groundTemperature  17.128915669
 lastHour           15119.999999981

@@ -97,6 +97,13 @@ function UI.placeIcon(place)
     return icon and getTexture("media/textures/TPPlace_" .. icon .. ".png") or nil
 end
 
+-- A storage's loot-window button icon (vanilla's ContainerButtonIcons, by container type): without one it shows the
+-- shelves. texturePath: a 32 px icon (tools/pzart.py write_container_icon), as vanilla's.
+function UI.containerIcon(containerType, texturePath)
+    ContainerButtonIcons = ContainerButtonIcons or {}
+    ContainerButtonIcons[containerType] = getTexture(texturePath)
+end
+
 -- A place's temperature with its word: "12°C (Indoors)".
 function UI.placeText(place, celsius)
     return UI.say("IGUI_TraditionalPreservationCore_PlaceAt", UI.degrees(celsius), UI.placeName(place))

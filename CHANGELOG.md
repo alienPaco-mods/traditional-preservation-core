@@ -1,5 +1,22 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.53
+- **Clamp places** (ROADMAP section 8 phase 3, session 77): `StrawClamp` (roots under straw) and `EarthedClamp` (earthed
+  over) join `Weather.PLACES`, given by a container, never by a square: `FluidAgeing.CONTAINER_PLACES[type] =
+  fn(container)` says the place of what lies in a world container (Fruits and Vegetables' clamp). A clamp sits halfway
+  (`Weather.CLAMP_GROUND` 0.5) from the air it follows to the basement's temperature (`Weather.clampTemperature`):
+  under straw the day's mean, earthed over the three-day mean. Every ledger gets their totals (Yeast's and Dairy's
+  golden reports re-recorded for the new ledger lines; Dairy's report skips the clamps, which take only roots).
+  Words "In a clamp", "In an earthed clamp". DEVGUIDE lists it as a place exception. Tests in `test_core.lua` and
+  `test_fluid_ageing.lua`.
+- **Diggable ground** (`Ground.lua`): `Ground.diggable(square)` is vanilla's own rule for a furrow
+  (`ISFarmingMenu.canDigHereSquare`: ground level, a free square of bare dirt, no plant or grave) with its grass
+  removed first (`Ground.hasGrass`: what Remove Grass takes, flagged `canBeRemoved`; a furrow digs through it), outdoors
+  under the sky; for something set into the earth (FV's clamp). Tests: `test_ground.lua`.
+- **Storage icons in the loot window** (user, session 77): `UI.containerIcon(type, path)` gives a container type its
+  button icon (vanilla's `ContainerButtonIcons`; a type it doesn't know shows the shelves). `tools/pzart.py`
+  `write_container_icon` paints one as vanilla's: 32 px, the art fitted inside 30 (`art/container_icons_mock.png`).
+
 ## 0.1.52
 - **Frost helpers** (ROADMAP NEXT 1, step 3): `Frost.see(modData, key, kind, now, seen)` keeps an item's frost record
   and gives the hours frozen since the last look; `Frost.frozenThrough(record, hours)` says a one-time change is due

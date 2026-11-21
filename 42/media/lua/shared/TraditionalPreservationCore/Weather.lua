@@ -17,16 +17,22 @@ local Weather = {}
 -- empty frame; Windows.aired) follows the day's mean (AIRED_HOURS), at most AIRED_LIFT warmer in winter. A basement
 -- follows the ground: the season's mean (SEASON_HOURS, about ten days) over a further GROUND_HOURS (a month behind,
 -- so a cellar is coldest in March and warmest in August), and only BASEMENT_SWING as far from BASEMENT_ANCHOR: the
--- ground round it keeps it cool in summer and above frost in winter (about 5 C to 13). Every place is a square's:
--- the Smokehouse is a station, not a place, and its air is an aired room's (Smokehouse.PLACE).
+-- ground round it keeps it cool in summer and above frost in winter (about 5 C to 13). Every place but the clamps is a
+-- square's: the Smokehouse is a station, not a place, and its air is an aired room's (Smokehouse.PLACE).
+-- A clamp (roots heaped on the ground under straw, then earthed over) is a place of its own, given by the container
+-- the item lies in (FluidAgeing.CONTAINER_PLACES), never by a square: an exception to the squares' places, as a real
+-- clamp holds crops above frost through a winter that freezes every unheated room (DEVGUIDE). Under straw alone
+-- (StrawClamp) it sits CLAMP_GROUND of the way from the day's mean to the basement's temperature; earthed over
+-- (EarthedClamp) from a shut room's three-day mean, so a cold night barely reaches it.
 -- Save values: a station's noted place and the ledger's totals are named by these. Never rename them.
-Weather.PLACES = { "Open", "Covered", "Sheltered", "AiredRoom", "Basement" }
+Weather.PLACES = { "Open", "Covered", "Sheltered", "AiredRoom", "Basement", "StrawClamp", "EarthedClamp" }
 Weather.SEASON_HOURS = 240
 Weather.GROUND_HOURS = 720
 Weather.ROOM_HOURS = 72
 Weather.AIRED_HOURS = 24
 Weather.BASEMENT_ANCHOR = 10
 Weather.BASEMENT_SWING = 0.4
+Weather.CLAMP_GROUND = 0.5
 -- While the grid is on, vanilla keeps every room at 22 C (ClimateManager.getAirTemperatureForSquare); a shut room and
 -- an aired one do here too. An open roof and a basement don't: vanilla's 22 C is for squares in a room above ground.
 Weather.GRID_ROOM_C = 22
@@ -123,6 +129,12 @@ function Weather.basementTemperature(groundTemperature)
     return Weather.BASEMENT_ANCHOR + Weather.BASEMENT_SWING * (groundTemperature - Weather.BASEMENT_ANCHOR)
 end
 
+-- A clamp between the air it follows (the day's mean under straw, the three-day mean earthed over) and the basement's
+-- temperature from the ground's: CLAMP_GROUND of the way to the basement. Never warmed by the grid (it is outdoors).
+function Weather.clampTemperature(airTemperature, groundTemperature)
+    return airTemperature + Weather.CLAMP_GROUND * (Weather.basementTemperature(groundTemperature) - airTemperature)
+end
+
 -- How much of the winter lift a room has at a mean temperature: 1 in the cold, 0 from ROOM_LIFT_NONE.
 local function winterShare(celsius)
     return Weather.curve({ { Weather.ROOM_LIFT_FULL, 1 }, { Weather.ROOM_LIFT_NONE, 0 } }, celsius)
@@ -156,6 +168,12 @@ local PLACE_RULES = {
     end,
     -- A ledger from before the ground's mean (or a test's) goes by the season.
     Basement = function(_, season, ledger) return Weather.basementTemperature(ledger.groundTemperature or season) end,
+    StrawClamp = function(day, season, ledger)
+        return Weather.clampTemperature(ledger.dayTemperature or day, ledger.groundTemperature or season)
+    end,
+    EarthedClamp = function(_, season, ledger)
+        return Weather.clampTemperature(ledger.threeDayTemperature or season, ledger.groundTemperature or season)
+    end,
 }
 for _, place in ipairs(Weather.PLACES) do assert(PLACE_RULES[place], "Weather: no rule for the place " .. place) end
 

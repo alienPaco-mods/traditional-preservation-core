@@ -24,6 +24,8 @@ DIAMOND_HALF_W, DIAMOND_HALF_H = 62, 31
 MAX_SHEET_TILES = 512  # per tileset sheet, as the tile definitions number them
 
 BUILD_ICON_SIZE = 64
+# A storage's loot-window icon: vanilla's are 32 px with the art up to 30 across (the shelf 25 x 30, the crate 32 x 28).
+CONTAINER_ICON_SIZE, CONTAINER_ICON_ART = 32, 30
 # The mod list icon: a station on a pale sky with rounded corners, the same across the series.
 MOD_ICON_SIZE, MOD_ICON_MARGIN, MOD_ICON_CORNER, MOD_ICON_BADGE = 128, 8, 16, 52
 MOD_ICON_SKY = (176, 196, 204, 255)
@@ -180,6 +182,19 @@ def write_build_icon(tile, path, size=BUILD_ICON_SIZE):
     art = art.resize((max(1, round(art.width * scale)), max(1, round(art.height * scale))), Image.LANCZOS)
     icon = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     icon.alpha_composite(art, ((size - art.width) // 2, (size - art.height) // 2))
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    icon.save(path)
+
+
+def write_container_icon(tile, path):
+    """A storage's loot-window button icon, as vanilla's (media/ui/Container_*.png): 32 px, drawn at its own size and
+    centred in the button (32 to 48 px), the art fitted inside CONTAINER_ICON_ART so it keeps vanilla's margin."""
+    art = tile.crop(tile.getbbox())
+    scale = CONTAINER_ICON_ART / max(art.size)
+    art = art.resize((max(1, round(art.width * scale)), max(1, round(art.height * scale))), Image.LANCZOS)
+    icon = Image.new("RGBA", (CONTAINER_ICON_SIZE, CONTAINER_ICON_SIZE), (0, 0, 0, 0))
+    icon.alpha_composite(art, ((CONTAINER_ICON_SIZE - art.width) // 2, (CONTAINER_ICON_SIZE - art.height) // 2))
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     icon.save(path)

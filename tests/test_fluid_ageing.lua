@@ -488,6 +488,19 @@ SandboxVars = nil
 check("food rot speed: Normal with no sandbox", FluidAgeing.foodRotSpeed() == 1)
 SandboxVars = { FoodRotSpeed = 1 }
 check("Very Fast ages food 1.7 times as fast", FluidAgeing.foodRotSpeed() == 1.7)
+-- A container that is a place of its own (FV's clamp): what lies in it, in a bag in it too, is at that place.
+local clampBox = { type = "testclamp", earthed = false }
+function clampBox:getType() return self.type end
+function clampBox:isPowered() return false end
+FluidAgeing.CONTAINER_PLACES.testclamp = function(c) return c.earthed and "EarthedClamp" or "StrawClamp" end
+local root = item()
+function root:getOutermostContainer() return clampBox end
+check("placeOfItem: a container that is a place gives its place", FluidAgeing.placeOfItem(root) == "StrawClamp")
+clampBox.earthed = true
+local place, fire, holder = FluidAgeing.placeOfItem(root)
+check("placeOfItem: as the container says now, with no fire or holder", place == "EarthedClamp" and fire == nil and holder == nil)
+FluidAgeing.CONTAINER_PLACES.testclamp = nil
+
 SandboxVars = { FoodRotSpeed = 5 }
 check("Very Slow 0.4", FluidAgeing.foodRotSpeed() == 0.4)
 SandboxVars = sandbox

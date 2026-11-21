@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.52)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.53)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -131,6 +131,7 @@ Every TP station works by the temperature of the place it stands in, from one we
 | **Aired room** (AiredRoom) | A square in a room the outside air reaches within 6 steps (`Windows.AIR_STEPS`): through a window open, smashed, without its glass or an empty frame, a door to the outside open, an empty doorway (its door broken off) or a gap in the wall, not barricaded, and on through open inside doors and knocked-through walls; a wall, a shut door or a shut window stops it (`Windows.aired`: walked edge by edge; a square's answer holds for the ten-minute reading) | The day's average (`dayTemperature`, `AIRED_HOURS`), at most 1 C warmer in winter (`AIRED_LIFT`), never stuffy; 22 C while the grid is on. Anything that dries by air dries here as under a roof; in a shut room it waits |
 | **Basement** | Any level below ground | `10 + 0.4 x (ground - 10)`, the ground being the 10-day average's own 30-day mean (`Weather.GROUND_HOURS`, a month behind): about 5 C January to March, 9 in May, 13 July to September, 9 in November |
 | **In the Smokehouse** | Not a place: inside the Smokehouse chamber, a station's word (`Smokehouse.PLACE`) its pieces carry, never from a square. Still air, out of the rain and wind (each mod counts that) | An open roof's (`Smokehouse.AIR`, through `Weather.STATION_PLACES`) |
+| **In a clamp** (StrawClamp) / **In an earthed clamp** (EarthedClamp) | Not a square's place: inside a clamp's container (Fruits and Vegetables), given by the container (`FluidAgeing.CONTAINER_PLACES`) | Halfway from the air it follows to the basement's temperature (`Weather.CLAMP_GROUND`): under straw the day's average, earthed over the 3-day average. About 1 C in January, never at -1 C in the sampled winter once earthed |
 | **By a fire** / **By banked embers** | A lit fire within 2 tiles on the same floor (see the Stone Hearth) | 28 C / 24 C in a shut room, for as long as the fuel lasts; with a window open or outside the air's plus a lift |
 
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Fire.placeOf`); Fish & Meat dries by its own rates.

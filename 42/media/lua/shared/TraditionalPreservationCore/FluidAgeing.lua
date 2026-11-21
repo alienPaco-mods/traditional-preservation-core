@@ -402,9 +402,13 @@ local function placeOfHolder(holder)
     return lastHolder.place, lastHolder.fire
 end
 
--- Where an item is for ageing: a powered fridge or freezer, else the place of whatever holds it (a player, a world
--- container, the floor, a vehicle), by a fire or not. Nil when nothing says. By a fire, the fire and the holder
--- come second and third, for Fire.noteFire.
+-- World containers that are a place of their own: container type -> fn(container), the Weather place for what lies
+-- in it (FV's clamp: StrawClamp under straw, EarthedClamp earthed up). A mod adds its own at load.
+FluidAgeing.CONTAINER_PLACES = {}
+
+-- Where an item is for ageing: a powered fridge or freezer, a container that is a place (CONTAINER_PLACES), else the
+-- place of whatever holds it (a player, a world container, the floor, a vehicle), by a fire or not. Nil when nothing
+-- says. By a fire, the fire and the holder come second and third, for Fire.noteFire.
 function FluidAgeing.placeOfItem(item)
     local holder
     local container = item:getOutermostContainer()
@@ -413,6 +417,8 @@ function FluidAgeing.placeOfItem(item)
         if (containerType == "fridge" or containerType == "freezer") and container:isPowered() then
             return containerType == "freezer" and FluidAgeing.FREEZER or FluidAgeing.FRIDGE
         end
+        local containerPlace = FluidAgeing.CONTAINER_PLACES[containerType]
+        if containerPlace then return containerPlace(container) end
         holder = container:getParent()
         local part = not holder and container:getVehiclePart()
         if part then holder = part:getVehicle() end

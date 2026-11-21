@@ -169,7 +169,7 @@ line, or more items for a mod's item line, at `OnInitWorld`; the OnCreate helper
 hot after it was made), `.../Season.lua` (seasoning a food afterwards), `.../FluidAgeing.lua` (fluids that go off), `.../PlaceKeeping.lua` (food that keeps by place), `.../Frost.lua` (hours at or below a freezing point by place, on one ledger for the series: a mod names its points with `Frost.point` and turns the hours into what frost does to its things), `.../DryingCloth.lua` (the Drying Cloth: lots of what mods register, drying by place), `.../FluidTreat.lua` (treating them by hand), `.../Fire.lua` (any fire the mods bank and stoke: kinds, banking, fuel, attachments; passes on the next two), `.../FireConnect.lua` (connections), `.../Fireside.lua` (by a fire as a place, and the work done there), `.../StoneHearth.lua` (the Stone Hearth, the first kind of fire: its tiles, hole, door, `StoneHearth.cooksOn`, the build), `.../Cauldron.lua` (the Forged Cauldron, the first attachment: `Cauldron.ID`, `Cauldron.ITEM`, `Cauldron.state`, `Cauldron.of`), `.../CauldronFluid.lua` (what the cauldron holds: heating, boiling, blends, the pour hooks; called by its own name), `.../Smokehouse.lua` (the
 Smokehouse every mod smokes in; the one name callers use, passing on
 `.../SmokehouseStacks.lua`, a hanging piece's fire counters),
-`.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
+`.../Action.lua`, `.../Appliances.lua` (stoves, fridges and washers, and the table-top build check), `.../Ground.lua` (ground that can be dug for something set into the earth: vanilla's furrow rule under the sky, `Ground.diggable`), `.../Log.lua`, `.../Wrap.lua` (every wrap of a vanilla function: late, guarded, one each), `.../Portions.lua` (food eaten from a vessel by the portion, and the one wrap of
 vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.performRecipe`), `.../Pour.lua` (the one
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
 `ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list),
@@ -677,6 +677,10 @@ with its reason. The ones there are:
   temperature as the open air must.
 - **A lit fire draws air through a shut room** for onions and garlic (Fruits and Vegetables' dry cure); banked embers
   don't.
+- **A clamp is a place of its own, given by its container** (`StrawClamp`, `EarthedClamp`; Fruits and Vegetables' clamp
+  registers `FluidAgeing.CONTAINER_PLACES`): roots heaped on the ground under straw and soil sat a few degrees above
+  frost all winter while every unheated room froze, which no square's place gives. It sits halfway between the air it
+  follows (the day's mean under straw, the three-day mean earthed over) and the basement (`Weather.CLAMP_GROUND`).
 More places (north wall, near the stove) would ask the player to learn rules the game can't show them.
 By a fire and by banked embers are `Weather.FIRE_PLACES` that Stone Hearth registers, in a shut room at a fixed 28 / 24
 C, and in an aired room, under an open roof or in the open (`FiresideAiredRoom`, `FiresideCovered`, `FiresideOpen`,

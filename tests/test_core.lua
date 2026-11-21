@@ -51,6 +51,15 @@ check("place: both rooms are 22 C while the grid is on, an open roof and a basem
     and Weather.placeTemperature(gridOn, "AiredRoom") == Weather.GRID_ROOM_C
     and Weather.placeTemperature(gridOn, "Covered") == 0 and Weather.placeTemperature(gridOn, "Basement") < 10)
 check("basement: the anchor holds still", Weather.basementTemperature(Weather.BASEMENT_ANCHOR) == Weather.BASEMENT_ANCHOR)
+-- A January night: the day's mean -6, three days' -2, the ground's mean 0 (a basement at 6 C).
+local winter = { temperature = -12, seasonTemperature = -3, dayTemperature = -6, threeDayTemperature = -2, groundTemperature = 0,
+    gridOn = true }
+check("place: a clamp under straw halfway from the day's mean to the basement, never the grid's",
+    near(Weather.placeTemperature(winter, "StrawClamp"), 0))
+check("place: an earthed clamp halfway from the three-day mean to the basement",
+    near(Weather.placeTemperature(winter, "EarthedClamp"), 2))
+check("place: a clamp with no means yet goes by the season", near(Weather.placeTemperature({ temperature = -12,
+    seasonTemperature = 0 }, "EarthedClamp"), Weather.clampTemperature(0, 0)))
 Weather.STATION_PLACES.TestShed = "AiredRoom"
 check("a station's inside goes by the air it names (the Smokehouse: an aired room's), never the grid's",
     Weather.placeTemperature({ temperature = 2, seasonTemperature = 8, dayTemperature = 12, gridOn = true }, "TestShed") == 12.75)

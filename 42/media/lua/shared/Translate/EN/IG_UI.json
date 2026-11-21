@@ -40,6 +40,8 @@
   "IGUI_TraditionalPreservationCore_PlaceAiredRoom": "Aired room",
   "IGUI_TraditionalPreservationCore_PlaceBasement": "Basement",
   "IGUI_TraditionalPreservationCore_PlaceSmokehouse": "In the Smokehouse",
+  "IGUI_TraditionalPreservationCore_PlaceStrawClamp": "In a clamp",
+  "IGUI_TraditionalPreservationCore_PlaceEarthedClamp": "In an earthed clamp",
   "IGUI_TraditionalPreservationCore_PlaceFireside": "By a fire",
   "IGUI_TraditionalPreservationCore_PlaceEmbers": "By banked embers",
   "IGUI_TraditionalPreservationCore_PlaceFiresideCovered": "By a fire, under a roof",

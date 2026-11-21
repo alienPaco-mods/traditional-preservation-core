@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.55
+- **Spread Drying Cloth finds the kit in bags**: the Sheet and Stones are looked for in everything carried, a
+  backpack too, and brought out to the main inventory before the cloth is spread (it showed only when both were
+  loose in the main inventory).
+
 ## 0.1.54
 - **Spread Drying Cloth** (user, session 77: the build menu is for what is built of wood): with a Sheet and 2 Stones in
   the inventory, right-click a floor: **Spread Drying Cloth** (only with the whole kit; greyed in front of a door, on

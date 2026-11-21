@@ -113,23 +113,44 @@ local function squareTakes(square, sprite)
     return Doors.fits(square, sprite)
 end
 
-local function onSpread(playerObj, square, sprite, free)
-    if not luautils.walkAdj(playerObj, square) then return end
+-- The cloth's kit in what the character carries, bags too: its items, or nil if any is missing.
+local function kitInReach(playerObj)
+    local wanted, found = {}, {}
+    for _, need in ipairs(DryingCloth.KIT) do wanted[need[1]] = need[2] end
+    UI.findItems(playerObj, function(item)
+        local fullType = item:getFullType()
+        if (wanted[fullType] or 0) > 0 then
+            wanted[fullType] = wanted[fullType] - 1
+            table.insert(found, item)
+        end
+        return false
+    end)
+    for _, left in pairs(wanted) do
+        if left > 0 then return nil end
+    end
+    return found
+end
+
+-- The kit out of the bags into the main inventory first (the action takes it from there), then the walk.
+local function onSpread(playerObj, square, sprite, free, kit)
+    for _, item in ipairs(kit) do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item) end
+    if not luautils.walkAdj(playerObj, square, true) then return end
     ISTimedActionQueue.add(TPDryingCloth.spreadOn(playerObj, square, sprite, free))
 end
 
--- Spread Drying Cloth on the square clicked, offered only with the whole kit (a Sheet and 2 Stones) in the
--- inventory (user, session 77; a Sheet alone is carried too often to offer it), greyed where it can't lie. Returns
--- true if it added the row.
+-- Spread Drying Cloth on the square clicked, offered only with the whole kit (a Sheet and 2 Stones) carried, in a bag
+-- or not (user, session 77; a Sheet alone is carried too often to offer it), greyed where it can't lie. Returns true
+-- if it added the row.
 local function addSpreadRow(context, playerObj, square, test)
-    if not square or not TPDryingCloth.hasKit(playerObj) then return false end
+    local kit = square and kitInReach(playerObj)
+    if not kit then return false end
     if test then ISWorldObjectContextMenu.setTest() return true end
     local dir = playerObj:getDir()
     local sprite = DryingCloth.spriteFacing(dir == IsoDirections.N or dir == IsoDirections.S)
     local free = squareTakes(square, sprite)
-    local option = context:addOption(getText("ContextMenu_TraditionalPreservationCore_SpreadCloth"), playerObj, onSpread, square, sprite, free)
+    local option = context:addOption(getText("ContextMenu_TraditionalPreservationCore_SpreadCloth"), playerObj, onSpread, square, sprite, free, kit)
     option.iconTexture = getTexture(CLOTH_ICON)
-    local refusal = DryingCloth.spreadRefusal(free, TPDryingCloth.hasKit(playerObj))
+    local refusal = DryingCloth.spreadRefusal(free, true)
     if refusal then
         UI.refuse(option, getText(CLOTH_REFUSALS[refusal]))
     else

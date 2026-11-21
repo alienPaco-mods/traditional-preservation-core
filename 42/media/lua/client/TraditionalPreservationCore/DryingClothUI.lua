@@ -5,6 +5,7 @@
 require "TimedActions/TPDryingCloth"
 local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local StationReport = require "TraditionalPreservationCore/StationReport"
 local Holds = require "TraditionalPreservationCore/Holds"
 local PiecesUI = require "TraditionalPreservationCore/PiecesUI"
 local UI = require "TraditionalPreservationCore/UI"
@@ -202,6 +203,7 @@ end
 function ClothWindow.open(playerObj, station)
     InfoWindow.open(ClothWindow, playerObj, station)
 end
+StationReport.add(ClothWindow, function(isoObject) return DryingCloth.isCloth(isoObject) and isoObject or nil end)
 
 -- The icon of the first item a kind takes.
 local function kindIcon(kind)

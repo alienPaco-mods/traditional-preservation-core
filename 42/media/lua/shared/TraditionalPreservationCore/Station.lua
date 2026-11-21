@@ -158,6 +158,22 @@ function Station.onHeatNear(heat, fn)
     Events.EveryOneMinute.Add(lookAtHeat)
 end
 
+-- Every tracker made, from any mod, for what looks over all the stations at once (StationReport).
+Station.trackers = {}
+
+-- Calls fn(isoObject) for every station a tracker holds that is loaded now, each once.
+function Station.eachLoaded(fn)
+    local seen = {}
+    for _, tracker in ipairs(Station.trackers) do
+        for isoObject in pairs(tracker.tracked) do
+            if not seen[isoObject] and Station.isLoaded(isoObject) then
+                seen[isoObject] = true
+                fn(isoObject)
+            end
+        end
+    end
+end
+
 -- A station just built or put down isn't known to the map loader. For the trackers that ask (options.scan), the
 -- squares round each player are looked over twice a second, once for all of them, so a new one shows at once.
 local scanning = {}
@@ -194,6 +210,7 @@ function Station.tracker(options)
     assert(type(options.sprites) == "table", "Station.tracker: sprites (a list of sprite names) needed")
     assert(type(options.refresh) == "function", "Station.tracker: refresh (a function) needed")
     local tracker = { tracked = {} }
+    table.insert(Station.trackers, tracker)
     local ticks = options.ticks or Station.TICKS_PER_REFRESH
     local ticksSinceRefresh = 0
 

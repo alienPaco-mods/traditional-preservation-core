@@ -1,5 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.56
+- **Station report on each save** (ROADMAP "after the break" 4, for the long-save log): when the game saves (quitting,
+  waking up), TP Core writes `~/Zomboid/Lua/TraditionalPreservationStations_<save>.txt`, what every loaded station's
+  info window would show then: its band, the Station block (place, season, its own rows), what it holds (amount,
+  state, heat, the rate on an arrow) and its list's rows with their warnings, a block per station, by window title
+  then position, under a header with the save, the in-game date and the player's square. Read-only: each station is
+  brought up to now as opening its window does. Only stations loaded at the save are in it (those round the player).
+  Buttons, notes and lore are left out. A window takes part with one `StationReport.add(class, stationOf)` line
+  (`StationReport.lua`); `Station.trackers` and `Station.eachLoaded` list every mod's tracked stations. The Fire and
+  Drying Cloth windows are in it; test `test_station_report.lua`. `_pzdev/longsave_snapshot.py` copies the report into
+  the log as `stations.txt`.
+
 ## 0.1.55
 - **Spread Drying Cloth finds the kit in bags**: the Sheet and Stones are looked for in everything carried, a
   backpack too, and brought out to the main inventory before the cloth is spread (it showed only when both were

@@ -19,6 +19,7 @@ local Fire = require "TraditionalPreservationCore/Fire"
 local Weather = require "TraditionalPreservationCore/Weather"
 local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local StationReport = require "TraditionalPreservationCore/StationReport"
 local Wrap = require "TraditionalPreservationCore/Wrap"
 
 local FireUI = {}
@@ -363,6 +364,7 @@ end
 function FireWindow.open(playerObj, fire)
     InfoWindow.open(FireWindow, playerObj, fire)
 end
+StationReport.add(FireWindow, function(isoObject) return Fire.isFire(isoObject) and isoObject or nil end)
 
 function FireWindow:refresh()
     local fire = self.station

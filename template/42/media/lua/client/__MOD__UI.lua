@@ -3,6 +3,7 @@
 -- in it stays where it is; none is put down in front of a door.
 require "TimedActions/TP__STATION_TAG__"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
+local StationReport = require "TraditionalPreservationCore/StationReport"
 local PiecesUI = require "TraditionalPreservationCore/PiecesUI"
 local UI = require "TraditionalPreservationCore/UI"
 local Weather = require "TraditionalPreservationCore/Weather"
@@ -104,6 +105,7 @@ end
 function StationWindow.open(playerObj, station)
     InfoWindow.open(StationWindow, playerObj, station)
 end
+StationReport.add(StationWindow, function(isoObject) return M.isStation(isoObject) and isoObject or nil end)
 
 -- The band: empty, all done, or working.
 local function band(stationView)

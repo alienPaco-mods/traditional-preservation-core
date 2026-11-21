@@ -174,7 +174,7 @@ vanilla's eat action), `.../Handcraft.lua` (the one wrap of `ISHandcraftAction.p
 wrap of `ISFluidTransferAction`), `.../Drink.lua` (fluids that ease food sickness, the one wrap of
 `ISDrinkFluidAction.updateEat`) and `.../Cooldown.lua` (cooldowns kept on a player), with `42/media/lua/client/TraditionalPreservationCore/UI.lua` (text, menus and window popups; the one name callers use, passing on `Placement.lua`, where stations may be put down or picked up), `InfoWindow.lua` (with `PieceList.lua`, its scrolling list),
 `FireUI.lua`, `CauldronUI.lua`, `SmokehouseUI.lua`, `FluidAgeingUI.lua`, `FluidTreatUI.lua` (the treat menu),
-`SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and the Drying Cloth window) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
+`SeasonUI.lua`, `PlaceKeepingUI.lua` (looks at kept food), `DryingClothUI.lua` (the cloth's menu and the Drying Cloth window), `StationReport.lua` (on each save, `~/Zomboid/Lua/TraditionalPreservationStations_<save>.txt`: what every loaded station's info window shows, read from its render; every info window adds itself with `StationReport.add(class, stationOf)` beside its class, `stationOf(isoObject)` giving the station it opens on, one for a station of several tiles) and `Transfer.lua` (the one wrap of vanilla's `transferItem`: a mod that needs to
 see items moved adds `Transfer.before` or `Transfer.after` instead of wrapping it again), and the server's `FireWorld.lua`, `SmokehouseWorld.lua`, `FluidAgeingWorld.lua`, `FrostWorld.lua`, `DryingClothWorld.lua` and `Loot.lua` (a mod's item into vanilla's loot lists). A mod that uses it says so in its mod.info:
 
 ```

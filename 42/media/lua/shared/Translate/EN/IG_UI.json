@@ -169,5 +169,8 @@
   "IGUI_TraditionalPreservationCore_ClothNoteDrag": "Drag what dries here onto the cells to lay it.",
   "IGUI_TraditionalPreservationCore_ClothButtonTakeDone": "Take Done (%1)",
   "IGUI_TraditionalPreservationCore_ClothButtonTakeAll": "Take All (%1)",
-  "IGUI_TraditionalPreservationCore_ClothNoneDry": "Nothing on the cloth is dry yet."
+  "IGUI_TraditionalPreservationCore_ClothNoneDry": "Nothing on the cloth is dry yet.",
+  "IGUI_TraditionalPreservationCore_ClothNoRoom": "Needs a clear floor, not in front of a door.",
+  "IGUI_TraditionalPreservationCore_ClothNoKit": "Needs a sheet and 2 stones.",
+  "IGUI_TraditionalPreservationCore_ClothNotEmpty": "Take everything off it first."
 }

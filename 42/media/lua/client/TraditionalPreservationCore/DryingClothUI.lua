@@ -1,6 +1,7 @@
--- Traditional Preservation core: the Drying Cloth's right-click menu (lay each kind a mod registered, take dry lots,
--- take everything off) and Cloth Info (TP Core's InfoWindow), opened from the menu or by clicking the cloth. A cloth
--- with anything on it stays where it is; none is put down in front of a door.
+-- Traditional Preservation core: the Drying Cloth's right-click menus: Spread Drying Cloth on a floor with a Sheet and
+-- two Stones in the inventory (no build menu: user, session 77), and on a cloth lay each kind a mod registered, take
+-- dry lots, take everything off, Pick Up Drying Cloth once empty (the Sheet and Stones back); and Cloth Info (TP Core's
+-- InfoWindow), opened from the menu. Not a moveable; none is spread in front of a door.
 require "TimedActions/TPDryingCloth"
 local DryingCloth = require "TraditionalPreservationCore/DryingCloth"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
@@ -8,6 +9,7 @@ local Holds = require "TraditionalPreservationCore/Holds"
 local PiecesUI = require "TraditionalPreservationCore/PiecesUI"
 local UI = require "TraditionalPreservationCore/UI"
 local Weather = require "TraditionalPreservationCore/Weather"
+local Doors = require "TraditionalPreservationCore/Doors"
 
 local say = UI.say
 local CLOTH_ICON = "media/textures/Item_TPDryingCloth.png"
@@ -96,6 +98,53 @@ local function addTakeRows(menu, playerObj, station, clothView)
     end
 end
 
+local CLOTH_REFUSALS = { NoRoom = "IGUI_TraditionalPreservationCore_ClothNoRoom", NoKit = "IGUI_TraditionalPreservationCore_ClothNoKit",
+    NotEmpty = "IGUI_TraditionalPreservationCore_ClothNotEmpty" }
+
+-- Whether a cloth of sprite can lie on square: a floor, nothing standing on it that takes the square (furniture, a
+-- station, another cloth), not in front of a door.
+local function squareTakes(square, sprite)
+    if not square or not square:getFloor() or not square:isFree(false) then return false end
+    local objects = square:getObjects()
+    for i = 0, objects:size() - 1 do
+        local properties = objects:get(i):getProperties()
+        if properties and properties:has("BlocksPlacement") then return false end
+    end
+    return Doors.fits(square, sprite)
+end
+
+local function onSpread(playerObj, square, sprite, free)
+    if not luautils.walkAdj(playerObj, square) then return end
+    ISTimedActionQueue.add(TPDryingCloth.spreadOn(playerObj, square, sprite, free))
+end
+
+-- Spread Drying Cloth on the square clicked, offered only with the whole kit (a Sheet and 2 Stones) in the
+-- inventory (user, session 77; a Sheet alone is carried too often to offer it), greyed where it can't lie. Returns
+-- true if it added the row.
+local function addSpreadRow(context, playerObj, square, test)
+    if not square or not TPDryingCloth.hasKit(playerObj) then return false end
+    if test then ISWorldObjectContextMenu.setTest() return true end
+    local dir = playerObj:getDir()
+    local sprite = DryingCloth.spriteFacing(dir == IsoDirections.N or dir == IsoDirections.S)
+    local free = squareTakes(square, sprite)
+    local option = context:addOption(getText("ContextMenu_TraditionalPreservationCore_SpreadCloth"), playerObj, onSpread, square, sprite, free)
+    option.iconTexture = getTexture(CLOTH_ICON)
+    local refusal = DryingCloth.spreadRefusal(free, TPDryingCloth.hasKit(playerObj))
+    if refusal then
+        UI.refuse(option, getText(CLOTH_REFUSALS[refusal]))
+    else
+        UI.tooltip(option, getText("Tooltip_craft_TPDryingClothDesc"))
+    end
+    return true
+end
+
+local function addPickUpRow(menu, playerObj, station, record)
+    local option = menu:addOption(getText("ContextMenu_TraditionalPreservationCore_PickUpCloth"), playerObj, queue, station, "pickup")
+    option.iconTexture = getTexture(CLOTH_ICON)
+    local refusal = DryingCloth.pickUpRefusal(record)
+    if refusal then UI.refuse(option, getText(CLOTH_REFUSALS[refusal])) end
+end
+
 local function addClothMenu(context, playerObj, station)
     local clothView = view(station)
     local option = context:addOption(getText("IGUI_CraftingWindow_TP_DryingCloth"))
@@ -113,6 +162,7 @@ local function addClothMenu(context, playerObj, station)
     UI.topInfo(context, getText("ContextMenu_TraditionalPreservationCore_ClothInfo"), getTexture(CLOTH_ICON), playerObj, ClothWindow.open, station)
     addLayRows(menu, playerObj, station, clothView.record)
     addTakeRows(menu, playerObj, station, clothView)
+    addPickUpRow(menu, playerObj, station, clothView.record)
 end
 
 -- Drying Cloth Info (all_info_mock): a band with the cloth's state, the place, its room as cells with the cloth's lore
@@ -300,24 +350,22 @@ function ClothWindow:render()
 end
 
 local function onFillContextMenu(playerNum, context, worldobjects, test)
-    local seen = {}
+    local playerObj = getSpecificPlayer(playerNum)
+    local seen, onCloth = {}, false
     for _, isoObject in ipairs(worldobjects) do
         if DryingCloth.isCloth(isoObject) and not seen[isoObject] then
             if test then return ISWorldObjectContextMenu.setTest() end
             seen[isoObject] = true
-            addClothMenu(context, getSpecificPlayer(playerNum), isoObject)
+            onCloth = true
+            addClothMenu(context, playerObj, isoObject)
         end
+    end
+    if not onCloth then
+        local clicked = worldobjects[1] and worldobjects[1]:getSquare()
+        if addSpreadRow(context, playerObj, clicked, test) and test then return true end
     end
 end
 
 Events.OnFillWorldObjectContextMenu.Add(onFillContextMenu)
-
--- Anything on the cloth keeps it where it is (no station moves mid-process).
-UI.keepInPlace(function(isoObject)
-    if not DryingCloth.isCloth(isoObject) or not isoObject:hasModData() then return nil end
-    local record = isoObject:getModData()[DryingCloth.KEY]
-    return (record ~= nil and not DryingCloth.isEmpty(record)) or nil
-end)
-UI.keepDoorsFree(DryingCloth.SPRITES)
 
 return DryingClothUI

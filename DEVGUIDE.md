@@ -14,7 +14,7 @@ The examples run `tp`, the script at the top of this folder (`TraditionalPreserv
 |---|---|
 | `<TP_MODS>/<Mod>` | The source. Each mod is its own git repo. Edit here. |
 | `~/Zomboid/mods/<Mod>` | The installed copy the game loads. Only `tp install` writes here. |
-| `<TP_MODS>/TraditionalPreservationCore` | TP Core, the mod itself (`42/`, `README.md`, `DEVHELP.md`, `WORKSHOP.txt`, its player guide `6_Core_Guide.md`), and the shared tooling: `tp`, the test harness, the golden results, this guide. |
+| `<TP_MODS>/TraditionalPreservationCore` | TP Core, the mod itself (`42/`, `common/` with its `media/tileDepthTextureAssignments.txt`, `README.md`, `DEVHELP.md`, `WORKSHOP.txt`, its player guide `6_Core_Guide.md`), and the shared tooling: `tp`, the test harness, the golden results, this guide. |
 | `<TP_MODS>/guides` | The player guides' source (not in any mod's repo). The copy inside each mod is made from these by `tp guides`. |
 
 ## The everyday loop

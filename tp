@@ -77,15 +77,16 @@ def short(mod):
 
 
 def shipped_files(root):
-    """Relative paths of the files that belong in an installed copy. TP Core ships its 42/ folder only: the rest of
-    this folder is tooling (tp, harness, template, golden) and private notes."""
+    """Relative paths of the files that belong in an installed copy. TP Core ships its 42/ and common/ folders only
+    (common/media: the tile depth files, which the game reads from there alone): the rest of this folder is tooling (tp,
+    harness, template, golden) and private notes."""
     files = {}
     core = root.name == CORE.name
     for path in root.rglob("*"):
         rel = path.relative_to(root)
         if any(part in SKIP_NAMES for part in rel.parts) or path.suffix in SKIP_SUFFIXES or not path.is_file():
             continue
-        if core and rel.parts[0] != "42":
+        if core and rel.parts[0] not in ("42", "common"):
             continue
         files[rel] = path
     return files

@@ -194,7 +194,7 @@ Joined, the pipe or trench shows running into the shed's wall, the Stone Hearth'
 
 ### The Drying Cloth
 
-A Sheet spread on the floor with two Stones on its corners (Build menu, Furniture: a Sheet and 2 Stones, nothing else). Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: a band saying how the cloth is doing (drying, waiting for moving air, too hot), the place and its temperature, how full the cloth is, a row for each lot with its bar, and **Take Done** / **Take All** buttons. You can also drag what dries here from your inventory onto the cloth's cells in the window to lay it.
+A Sheet spread on the floor with two Stones on its corners: with a Sheet and 2 Stones in your inventory, right-click the floor, **Spread Drying Cloth**. Empty, right-click it, **Pick Up Drying Cloth**: the Sheet and Stones come back. You walk over it like a rug. Things dry on it by the air where it lies: Yeast's cakes, Dairy's kefir grains. Right-click it: **Lay** what you carry (**One** or **All**), **Take Off the Finished Lots**, **Take Everything Off**, and the **Drying Cloth Info** window: a band saying how the cloth is doing (drying, waiting for moving air, too hot), the place and its temperature, how full the cloth is, a row for each lot with its bar, and **Take Done** / **Take All** buttons. You can also drag what dries here from your inventory onto the cloth's cells in the window to lay it.
 
 | | |
 |---|---|

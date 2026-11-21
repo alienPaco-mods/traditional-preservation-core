@@ -174,4 +174,14 @@ weather(24, 25)
 record = DryingCloth.update(quick, H.hours, "Open")
 check("a dry lot no longer goes off", DryingCloth.state(record.lots[1]) == "dry")
 
+-- Spread and picked up from the menu (user, session 77): a Sheet and two Stones, back when picked up empty
+check("its kit is a Sheet and two Stones", DryingCloth.KIT[1][1] == "Base.Sheet" and DryingCloth.KIT[1][2] == 1
+    and DryingCloth.KIT[2][1] == "Base.Stone2" and DryingCloth.KIT[2][2] == 2)
+check("spread: the square first, then the kit", DryingCloth.spreadRefusal(false, true) == "NoRoom"
+    and DryingCloth.spreadRefusal(true, false) == "NoKit" and DryingCloth.spreadRefusal(true, true) == nil)
+check("picked up only empty", DryingCloth.pickUpRefusal({ lots = {} }) == nil
+    and DryingCloth.pickUpRefusal({ lots = { { id = 1, kind = "x", count = 1 } } }) == "NotEmpty")
+check("it lies along the way the character looks", DryingCloth.spriteFacing(true) == DryingCloth.SPRITES[1]
+    and DryingCloth.spriteFacing(false) == DryingCloth.SPRITES[2])
+check("no build recipe: it is spread from the menu", io.open("42/media/scripts/entities/entity_TP_DryingCloth.txt") == nil)
 H.done()

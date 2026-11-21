@@ -1,5 +1,18 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.54
+- **Spread Drying Cloth** (user, session 77: the build menu is for what is built of wood): with a Sheet and 2 Stones in
+  the inventory, right-click a floor: **Spread Drying Cloth** (only with the whole kit; greyed in front of a door, on
+  furniture or on another cloth), lying along the way you look. Empty, its menu has **Pick Up Drying Cloth**: the
+  Sheet and Stones back (greyed while anything lies on it). No Build menu entry; not a moveable any more (no
+  `IsMoveAble`). `DryingCloth.KIT`, `spreadRefusal`, `pickUpRefusal`, `spread`; `TPDryingCloth` modes "spread",
+  "pickup". Tests in `test_drying_cloth.lua`.
+- **Walking over the Drying Cloth**: the cloth takes vanilla's rug depth (`floors_rugs_01_0`) through
+  `common/media/tileDepthTextureAssignments.txt`, written by `tools/build_tileset.py`, so a character standing on it is
+  drawn over it. Without a depth texture the game's default drew the cloth over the character's legs. What lies on it
+  shares its depth.
+- Internal: `tp install` ships Core's `common/` folder too (it had shipped `42/` only).
+
 ## 0.1.53
 - **Clamp places** (ROADMAP section 8 phase 3, session 77): `StrawClamp` (roots under straw) and `EarthedClamp` (earthed
   over) join `Weather.PLACES`, given by a container, never by a square: `FluidAgeing.CONTAINER_PLACES[type] =

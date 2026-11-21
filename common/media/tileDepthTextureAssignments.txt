@@ -1,0 +1,6 @@
+tileDepthTextureAssignments
+{
+    VERSION = 1,
+    traditionalpreservationcore_01_100 = floors_rugs_01_0,
+    traditionalpreservationcore_01_101 = floors_rugs_01_0,
+}

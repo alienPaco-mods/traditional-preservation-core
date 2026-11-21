@@ -87,6 +87,36 @@ end
 local CLOTHS = {}
 for _, sprite in ipairs(Tiles.CLOTHS) do CLOTHS[sprite] = true end
 
+-- Spread from a right-click on the floor with its kit in the inventory, picked up the same way once empty, the kit
+-- back (user, session 77: the build menu is for what is built of wood): a Sheet and two Stones. Not a moveable.
+DryingCloth.KIT = { { "Base.Sheet", 1 }, { "Base.Stone2", 2 } }
+
+-- Why a cloth can't be spread on a square now, or nil. free: nothing on the square stands in its way (a floor, no
+-- furniture or station, not in front of a door); hasKit: the kit in the inventory.
+function DryingCloth.spreadRefusal(free, hasKit)
+    if not free then return "NoRoom" end
+    if not hasKit then return "NoKit" end
+    return nil
+end
+
+-- Why a cloth can't be picked up now, or nil: anything still on it.
+function DryingCloth.pickUpRefusal(record)
+    if not DryingCloth.isEmpty(record) then return "NotEmpty" end
+    return nil
+end
+
+-- The cloth's sprite for a character's facing: lying along the way they look.
+function DryingCloth.spriteFacing(northSouth)
+    return DryingCloth.SPRITES[northSouth and 1 or 2]
+end
+
+-- Spreads a cloth on square (its tile's object, as vanilla puts a tile down). Returns it.
+function DryingCloth.spread(square, spriteName)
+    local cloth = IsoObject.new(getCell(), square, getSprite(spriteName))
+    square:AddTileObject(cloth)
+    return cloth
+end
+
 function DryingCloth.isCloth(isoObject)
     local sprite = isoObject and isoObject.getSprite and isoObject:getSprite()
     return sprite ~= nil and CLOTHS[sprite:getName()] == true

@@ -1,0 +1,8 @@
+VERSION = 1,
+
+option TraditionalPreservationCore.KeepingTooltips {
+    type = boolean,
+    default = true,
+    page = TraditionalPreservationCore,
+    translation = TraditionalPreservationCore_KeepingTooltips,
+}

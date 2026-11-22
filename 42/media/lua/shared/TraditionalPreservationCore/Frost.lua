@@ -101,7 +101,12 @@ function Frost.bite(item, hours, ruinHours, clock)
     local age = item:getAge()
     local rotten = item:getOffAgeMax()
     local frosted = math.min(age + hours / ruinHours * rotten, math.max(age, rotten))
-    if clock then clock.base = clock.base + frosted - age end
+    -- On its stale clock once it has one (PlaceKeeping's staleShare), else moved along its fresh clock's base.
+    if clock and clock.stale then
+        clock.stale.age = clock.stale.age + (frosted - age) * 24
+    elseif clock then
+        clock.base = clock.base + frosted - age
+    end
     item:setAge(frosted)
 end
 

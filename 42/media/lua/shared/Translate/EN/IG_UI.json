@@ -172,5 +172,11 @@
   "IGUI_TraditionalPreservationCore_ClothNoneDry": "Nothing on the cloth is dry yet.",
   "IGUI_TraditionalPreservationCore_ClothNoRoom": "Needs a clear floor, not in front of a door.",
   "IGUI_TraditionalPreservationCore_ClothNoKit": "Needs a sheet and 2 stones.",
-  "IGUI_TraditionalPreservationCore_ClothNotEmpty": "Take everything off it first."
+  "IGUI_TraditionalPreservationCore_ClothNotEmpty": "Take everything off it first.",
+  "IGUI_TraditionalPreservationCore_KeepFresh": "Fresh for %1 here, rotten in %2",
+  "IGUI_TraditionalPreservationCore_KeepStale": "Stale: rotten in %1 here",
+  "IGUI_TraditionalPreservationCore_KeepStill": "Doesn't age here",
+  "IGUI_TraditionalPreservationCore_KeepAt": "%1, ages %2 days a day",
+  "IGUI_TraditionalPreservationCore_PlaceFridge": "Fridge",
+  "IGUI_TraditionalPreservationCore_PlaceFreezer": "Freezer"
 }

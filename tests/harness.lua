@@ -43,7 +43,7 @@ H.VANILLA = {
     "Entity/TimedActions/ISHandcraftAction", "TimedActions/ISEatFoodAction", "Fluids/ISFluidTransferAction",
     "Entity/ISUI/CraftRecipe/ISWidgetInput", "TimedActions/Animals/ISGatherBloodFromAnimal",
     "Entity/TimedActions/ISItemSlotRemoveAction", "TimedActions/ISInventoryTransferAction", "TimedActions/ISDrinkFluidAction",
-    "Items/ProceduralDistributions",
+    "Items/ProceduralDistributions", "ISUI/ISToolTipInv",
 }
 
 function H.preloadVanilla()

@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.56)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.57)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -137,6 +137,21 @@ Every TP station works by the temperature of the place it stands in, from one we
 Every place has one word for the whole series (`UI.placeName`, `UI.placeText`: "12 C (Indoors)"). Yeast, Vinegar and Dairy count by a fire (`Fire.placeOf`); Fish & Meat dries by its own rates.
 
 Each mod keeps its own rate curve, and its sandbox option **Temperature sensitivity** (Off, Forgiving, Normal, Harsh) sets how much of a temperature's slowdown applies: none, half, all, or half as much again. `Weather.frozen(celsius, sensitivity, freezeC)` says whether work has stopped for the frost (at or below its freezing point, 0 C unless given): a stop outside the scaling and under any floor, the same on every setting but Off. `Weather.rate(curve, celsius, sensitivity, minRate, freezeC)` puts the two together: a stage's speed, 0 when frozen.
+
+## How long food keeps, in its tooltip
+
+A food that keeps by where it is (Fruits and Vegetables' vegetables, Fish & Meat's Potted Meat, Dairy's butter,
+Yeast's culture) says in its inventory and loot tooltip how long it keeps there and how fast it ages:
+
+> Fresh for about 50 days here, rotten in about 88 days
+> 4°C (Fridge), ages 0.40 days a day
+
+(Stale already: *Stale: rotten in about 3 days here*; in a freezer or frozen through, *Doesn't age here*.) A mod adds
+its own lines under them: Fruits and Vegetables the storage's factors and the cure. The age is as at the item's last
+look, so a container opened just now is up to date. Sandbox **Keeping in item tooltips** (Traditional Preservation
+(Core), on) turns it off for a harder game, where the place is yours to judge. `ItemTooltip.lua` is the one wrap of
+the tooltip's draw (Salt's brine strength goes through it too); `KeepingTooltip.lua` the keeping lines, from
+`PlaceKeeping`'s read-only `keeper.forecast(item, place, factor)`.
 
 ## Fluids that go off
 

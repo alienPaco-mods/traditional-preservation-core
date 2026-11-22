@@ -103,4 +103,57 @@ SandboxVars = { FoodRotSpeed = 1 }
 check("vanilla's Very Fast food spoilage speeds it up", near(keeper.ageing.speed(), 1.7))
 SandboxVars = nil
 
+-- The tooltip's forecast: read-only, the days left at the rate where it is now.
+local fresh = food("Base.Butter", 30, 45, 10)
+local seen = keeper.forecast(fresh, "Fridge")
+check("a forecast in a fridge: 4 C, 0.4 a day, 50 days to stale, 87.5 to rotten", seen.place == "Fridge" and seen.celsius == 4
+    and near(seen.rate, 0.4) and near(seen.stale, 50) and near(seen.rotten, 87.5))
+check("it changes nothing on the item", fresh.age == 10 and fresh.modData.tpKeep == nil)
+check("a storage's factor scales the rate", near(keeper.forecast(fresh, "Fridge", 0.5).stale, 100))
+seen = keeper.forecast(fresh, "Freezer")
+check("in a freezer: no reading, and it doesn't age", seen.celsius == nil and seen.rate == 0 and seen.stale == math.huge
+    and seen.rotten == math.huge)
+local stale = food("Base.Butter", 30, 45, 40)
+seen = keeper.forecast(stale, "Fridge")
+check("stale already: only the days to rotten", seen.stale == nil and near(seen.rotten, 12.5))
+check("rotten: neither", keeper.forecast(food("Base.Butter", 30, 45, 50), "Fridge").rotten == nil)
+check("with no place given, where the item is (nowhere: the default place)", keeper.forecast(fresh).place == Weather.DEFAULT_PLACE)
+
+-- A stale stretch of its own (staleShare): cold buys the fresh days, the stale ones go at a day a day (share 0).
+local stales = PlaceKeeping.new({ process = "staleTest", curve = { { -2, 0 }, { 4, 0.2 }, { 15, 1 } }, ledgerKey = "TestStale",
+    modDataKey = "tpStale", staleShare = 0, days = { ["Base.Potato"] = { 28, 73 } } })
+check("share 0: a stale day is a day, a cold one too; frozen stops it", stales.staleRateOf(0.2) == 1 and stales.staleRateOf(1) == 1
+    and stales.staleRateOf(0) == 0)
+check("share a half: half the slowing (0.2 is five times slower, at half three: 1/3)",
+    near(PlaceKeeping.new({ process = "half", curve = { { 0, 1 } }, ledgerKey = "TestHalf", modDataKey = "h", staleShare = 0.5 })
+        .staleRateOf(0.2), 1 / 3))
+check("its stale process is on the ledger", stales.processes.staleTestStale ~= nil and stales.ledger().staleTestStaleBasement ~= nil)
+local staleLedger = stales.ledger()
+local spud = food("Base.Potato", 28, 280, 20)
+stales.keep(spud, 0, "Fridge", staleLedger)
+check("its days: fresh as given, rotten its stale days after", spud.offAge == 28 and spud.offAgeMax == 73)
+stales.keep(spud, 24 * 20, nil, staleLedger)
+check("20 days in a fridge at 0.2: 4 days of age, still fresh, no stale clock", near(spud.age, 24, 1e-6)
+    and spud.modData.tpStale.stale == nil)
+local crossing = food("Base.Potato", 28, 73, 27)
+stales.keep(crossing, 0, "Fridge", staleLedger)
+stales.keep(crossing, 24 * 10, nil, staleLedger)
+check("crossing into stale in a fridge: 2 days of fresh age past it count again at the stale rate (5 times)",
+    crossing.modData.tpStale.stale ~= nil and near(crossing.age, 28 + 1 * 5, 1e-6))
+stales.keep(crossing, 24 * 20, nil, staleLedger)
+check("then a day a day, the fridge no help", near(crossing.age, 33 + 10, 1e-6))
+seen = stales.forecast(crossing, "Fridge")
+check("its forecast: stale, rotten in its stale days left at a day a day", seen.stale == nil and near(seen.rotten, 73 - 43)
+    and near(seen.rate, 1))
+local cold = food("Base.Potato", 28, 73, 0)
+seen = stales.forecast(cold, "Fridge")
+check("a fresh one's forecast: 140 days fresh in a fridge, then its 45 stale", near(seen.stale, 140) and near(seen.rotten, 185))
+check("in a freezer neither", stales.forecast(cold, "Freezer").rotten == math.huge)
+local lootStale = food("Base.Potato", 28, 73, 50)
+stales.keep(lootStale, 24 * 20, "Fridge", staleLedger)
+check("one stale already at its first look starts on its stale clock", lootStale.modData.tpStale.stale ~= nil
+    and near(lootStale.modData.tpStale.stale.age, 22 * 24))
+stales.age(lootStale, 3)
+check("the console's age moves its stale clock", near(lootStale.age, 53, 1e-6))
+
 H.done()

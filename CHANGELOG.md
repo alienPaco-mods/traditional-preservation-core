@@ -1,5 +1,23 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.57
+- **How long food keeps, in its tooltip** (user, 2026-11-21: needed to check the storages in game without debug): a
+  food kept by place (`PlaceKeeping`) says in its inventory and loot tooltip how long it keeps where it is ("Fresh for
+  about 50 days here, rotten in about 88 days", "Stale: rotten in ...", "Doesn't age here") and where and how fast
+  ("4°C (Fridge), ages 0.40 days a day"), read-only from the new `keeper.forecast(item, place, factor)`. A mod adds its
+  types with `KeepingTooltip.add(types, lines)`. TP Core's first sandbox option, **Keeping in item tooltips** (on), turns
+  it off for a harder game. Places Fridge and Freezer have names now.
+- **`ItemTooltip.lua`, the one wrap of `ISToolTipInv.render`**, moved here from Salt so every mod adds lines to it
+  (`ItemTooltip.add(fn, { sameLine })`); Salt's brine line reads as before.
+- **A stale stretch of its own** (`PlaceKeeping` `staleShare`, for Fruits and Vegetables, user, session 78): a keeper
+  that sets it runs an item's stale days on a second clock (`clock.stale`, its own ledger process `<process>Stale`)
+  where only that share of the place's slowing holds (0: a day a day, frozen still stopping it). The crossing at a look
+  counts the part past stale again at the stale rate. `keeper.settle` / `keeper.active` for mods that move a clock
+  themselves; `Frost.bite` moves the stale clock once there is one; the forecast and the console's `describe` count
+  both stretches. Keepers without it (Potted Meat, butter, the cultures) keep as before. A keeper's `days` now also
+  sets a rotten day that differs while the fresh one matches.
+- Tests: `test_item_tooltip.lua`, forecast and stale-clock checks in `test_place_keeping.lua`.
+
 ## 0.1.56
 - **Station report on each save** (ROADMAP "after the break" 4, for the long-save log): when the game saves (quitting,
   waking up), TP Core writes `~/Zomboid/Lua/TraditionalPreservationStations_<save>.txt`, what every loaded station's

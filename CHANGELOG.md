@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.62
+- **Fixed: the station report wrote `xnil` for a holding's counts** (the Kraut Barrel's apples and carrots;
+  long-save snapshot, 2026-11-22). It read a `count` field; the entries are `{ icon, count }` as Holds draws them. It
+  now writes the item its icon names and the count ("Apple x2"). Test in `test_station_report.lua`.
+
 ## 0.1.61
 - **Fixed: a pot of melting butter turned into an empty pot** (user, 2026-11-22, Dairy's Put Butter in a Pot).
   Vanilla's `canAddFluid` refuses anything while the player can't empty a container, and a fluid that stays in

@@ -61,7 +61,8 @@ function TestWindow:render()
     y = self:holds(y, { { kind = "tank", name = "Wort", amount = "6.0 L", state = self.view.pct .. ", 3d", heat = { celsius = 45 },
         arrow = "1 L/day" }, { kind = "cells", name = "Lots", amount = "60%" }, { kind = "slot", name = "Add Mother", arrow = "" },
         { kind = "slot", name = "Mother", amount = "2 layers", count = "2" }, { kind = "slot", name = "Next in 3.0 L", count = "+1" },
-        { kind = "cells", name = "Heaps" } }, "Some lore.")
+        { kind = "cells", name = "Heaps" },
+        { kind = "cells", name = "Spiked", amount = "38", counts = { { "Item_Apple", 2 }, { "media/textures/Item_Carrots.png", 1 } } } }, "Some lore.")
     y = self:pieceListBlock(y, "Test_SectionList", "2 lots", { { name = "Yeast Cakes x6", text = "74%, 3d", warning = "Too hot" },
         { name = "Kefir Grains", text = "Dry", note = "smoked 2 times" } })
     y = self:buttonRow(y, { { title = "Take All (2)" } })
@@ -93,6 +94,7 @@ check("an empty slot: what it says, no dangling colon", text:find("\n  Slot: Add
 check("a filled slot: its count and amount", text:find("  Slot: Mother (2), 2 layers", 1, true) ~= nil
     and text:find("  Slot: Next in 3.0 L (+1)", 1, true) ~= nil)
 check("a holding with nothing to say: its name alone", text:find("\n  Heaps\n", 1, true) ~= nil)
+check("counts as the item its icon names, then its count", text:find("  Spiked: 38, Apple x2, Carrots x1", 1, true) ~= nil)
 check("the lore is left out", text:find("lore", 1, true) == nil)
 check("the list's header and rows, a warning and a note", text:find("On it:\n2 lots\n  - Yeast Cakes x6: 74%, 3d [Too hot]\n"
     .. "  - Kefir Grains: Dry (smoked 2 times)", 1, true) ~= nil)

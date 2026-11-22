@@ -37,6 +37,13 @@ local function joined(parts)
     return table.concat(kept, ", ")
 end
 
+-- A counts entry ({ icon, count }, Holds' header) as text: the item its icon names, then its count ("Apple x2").
+local function countText(entry)
+    local icon, name = entry[1], nil
+    if type(icon) == "string" then name = icon:gsub("^.*/", ""):gsub("%.png$", ""):gsub("^Item_", "") end
+    return (name and name ~= "" and name .. " " or "") .. "x" .. tostring(entry[2])
+end
+
 -- A holding as one line: its name, amount, state, the line under it, heat, counts, and the rate on its arrow. A
 -- starter's slot has no label in the window, its name is what it says ("Add Mother", "used"): "Slot: " and that,
 -- its count in brackets.
@@ -44,7 +51,7 @@ local function holdingLine(holding)
     local parts = { holding.amount, holding.state, holding.under }
     local celsius = holding.kind == "heat" and holding.celsius or holding.heat and holding.heat.celsius
     if celsius then table.insert(parts, getText("IGUI_TraditionalPreservationCore_HeatDegrees", tostring(math.floor(celsius + 0.5)))) end
-    for _, count in ipairs(holding.counts or {}) do table.insert(parts, "x" .. tostring(count.count)) end
+    for _, entry in ipairs(holding.counts or {}) do table.insert(parts, countText(entry)) end
     local line
     if holding.kind == "slot" then
         line = "Slot: " .. plain(holding.name)

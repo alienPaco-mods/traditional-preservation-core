@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.61
+- **Fixed: a pot of melting butter turned into an empty pot** (user, 2026-11-22, Dairy's Put Butter in a Pot).
+  Vanilla's `canAddFluid` refuses anything while the player can't empty a container, and a fluid that stays in
+  (`ItemFluid.staysIn`, Butter (Melting)) locks it: the turn to Clarified Butter (Melted) took the butter out and
+  added nothing, and Put Butter in a Pot on a pot already melting butter used the butter and added nothing.
+  ItemFluid now unlocks, adds and locks again. The test's container refuses as vanilla's does. Yeast's hop water
+  and potato soak were never locked, so never affected.
+
 ## 0.1.60
 - **Right-click the cauldron's tank in Stone Hearth Info to fill a container you choose** (user, 2026-11-22): the
   same Fill from the Cauldron submenu as the hearth's menu, while the cauldron holds anything. Test in

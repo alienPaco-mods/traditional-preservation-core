@@ -84,7 +84,8 @@ local function pot(fullType, heat)
             for _, litres in pairs(fluids) do most = math.max(most, litres) end
             return most
         end,
-        addFluid = function(_, name, litres) fluids[name] = (fluids[name] or 0) + litres end,
+        -- As vanilla's canAddFluid: nothing goes in while the player can't empty it.
+        addFluid = function(self, name, litres) if self.canEmpty then fluids[name] = (fluids[name] or 0) + litres end end,
         adjustSpecificFluidAmount = function(_, name, litres) fluids[name] = litres > 0 and litres or nil end,
         Empty = function() for name in pairs(fluids) do fluids[name] = nil end end,
         canEmpty = true,

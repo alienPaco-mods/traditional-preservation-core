@@ -148,9 +148,16 @@ end
 
 ItemFluid.HOT_HEAT = CauldronFluid.itemHeat(ItemFluid.HOT_C)
 
+-- Adds fluid to a vessel whatever its lock: vanilla's canAddFluid refuses anything while the player can't empty it,
+-- which a fluid that stays in sets (staysIn). The caller sets the lock for what it now holds.
+local function addFluid(container, fluid, litres)
+    container:setCanPlayerEmpty(true)
+    container:addFluid(fluid, litres)
+end
+
 local function swap(container, from, to, litres)
     container:adjustSpecificFluidAmount(Fluid.Get(from), 0)
-    container:addFluid(to, litres)
+    addFluid(container, to, litres)
 end
 
 -- The burnt item, where the vessel was: emptied, its condition kept.
@@ -199,7 +206,7 @@ function ItemFluid.addPieces(item, fluid, pieceMl, hoursLeft, now)
     ItemFluid.putPieces(itemFluid, taken, now)
     modData[ItemFluid.KEY] = itemFluid
     local container = item:getFluidContainer()
-    container:addFluid(fluid, count * pieceMl / CauldronFluid.ML_PER_L)
+    addFluid(container, fluid, count * pieceMl / CauldronFluid.ML_PER_L)
     container:setCanPlayerEmpty(ItemFluid.canEmpty(fluid))
     return count
 end

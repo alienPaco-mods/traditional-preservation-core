@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.59)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.60)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -38,7 +38,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 - **Empty the Cauldron** (when it holds anything): pours the whole lot away, its age record with it. The hover says how much of what.
 - **Remove Cauldron**.
 
-The **Stone Hearth Info** window then also shows the cauldron as a tank in the colour of what it holds (its litres and fluid under it) with a thin heat bar beside it (ticks at 85 and 100, its temperature under it), and "steaming" or "steams in 1.2 hours" under both. Drag containers onto the cauldron there to pour them in. It closes when you walk more than 6 squares away.
+The **Stone Hearth Info** window then also shows the cauldron as a tank in the colour of what it holds (its litres and fluid under it) with a thin heat bar beside it (ticks at 85 and 100, its temperature under it), and "steaming" or "steams in 1.2 hours" under both. Drag containers onto the cauldron there to pour them in; right-click it to fill a container you choose. It closes when you walk more than 6 squares away.
 
 ### The cauldron
 

@@ -541,6 +541,21 @@ local full = dragged({ ml = 55000, fluid = "Water", tempC = 20, parts = { Water 
 judged = full.judge({ water, H.vessel("Bucket", "Water", 10, 10) })
 check("near full: the first fills it, the next is refused as full", #judged.take == 1
     and judged.refused == getText("IGUI_TraditionalPreservationCore_CauldronFull") and math.abs(judged.adds - 5 / 60) < 1e-6)
+-- A right click on the cauldron's tank: Fill from the Cauldron, as the hearth's menu; nothing for an empty one.
+local function tankMenu(cauldron)
+    local aHearth = withCauldron(cauldron)
+    local holdings = {}
+    Fire.attachment(Cauldron.ID).holds({ part = aHearth:getModData()[Fire.KEY][Cauldron.ID], fire = aHearth,
+        playerObj = character, lit = false, banked = false, burnHours = 0 }, holdings)
+    local context = H.menu()
+    holdings[1].menu(context)
+    return context
+end
+ui.carried = { H.vessel("Empty Bucket", nil, 0, 10) }
+local filled = tankMenu({ ml = 20000, fluid = "Water", tempC = 20, parts = { Water = 20000 } })
+check("right-click on a full cauldron's tank: Fill from the Cauldron", filled.options[1] ~= nil
+    and filled.options[1].name == getText("ContextMenu_TraditionalPreservationCore_FillFromCauldron"))
+check("and nothing on an empty one", #tankMenu({}).options == 0)
 local queuedBefore, walksBefore = #ui.queued, ui.walks
 local aDrop, aHearth = dragged({}, {})
 aDrop.drop({ water, H.vessel("Bucket", "Water", 10, 10) })

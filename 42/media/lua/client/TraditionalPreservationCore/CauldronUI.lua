@@ -189,7 +189,11 @@ local function cauldronHolds(fireView, holdings)
         -- FireUI is required here, not at the top: it adds its menu handler when loaded, after this file's.
         heat = require("TraditionalPreservationCore/FireUI").heatOf(ml > 0 and cauldron.tempC or nil, true),
         drop = { judge = function(items) return pourJudge(cauldron, items) end,
-            drop = function(take) pourDropped(fireView.playerObj, fireView.fire, take) end } })
+            drop = function(take) pourDropped(fireView.playerObj, fireView.fire, take) end },
+        -- A right click: Fill from the Cauldron into the container you choose (user, 2026-11-22).
+        menu = function(context)
+            if mlOf(cauldron) > 0 then addFillMenu(context, fireView.playerObj, fireView.fire, cauldron) end
+        end })
 end
 
 local MENUS, NOTES = {}, {}

@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.60
+- **Right-click the cauldron's tank in Stone Hearth Info to fill a container you choose** (user, 2026-11-22): the
+  same Fill from the Cauldron submenu as the hearth's menu, while the cauldron holds anything. Test in
+  `test_fire_menu.lua`.
+
 ## 0.1.59
 - **The clay pipe flue is laid as masonry** (user, 2026-11-22): Connect / Disconnect with the Pipe kit play vanilla's
   crouched brick-laying (`MakeWithBrick_Low`), the trowel carried in the right hand and a lump of clay in the left,

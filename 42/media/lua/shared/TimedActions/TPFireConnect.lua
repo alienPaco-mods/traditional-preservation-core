@@ -27,7 +27,7 @@ function TPFireConnect:waitToStart()
 end
 
 function TPFireConnect:start()
-    self:setActionAnim(CharacterActionAnims[self.kit.anim or "Build"] or CharacterActionAnims.Build)
+    Action.playKit(self, self.kit)
 end
 
 function TPFireConnect:complete()

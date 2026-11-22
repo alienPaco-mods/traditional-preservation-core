@@ -25,7 +25,7 @@ function TPFireFit:waitToStart()
 end
 
 function TPFireFit:start()
-    self:setActionAnim(CharacterActionAnims.Build)
+    Action.playKit(self, self.attachment.fit)
 end
 
 function TPFireFit:complete()

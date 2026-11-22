@@ -34,15 +34,15 @@ Smokehouse.CONNECT_XP = 5
 -- The two ways to join them, in menu order: the connection's kits (Fire.connect). Items are { full type, count };
 -- the tool (an ItemTag's name) stays.
 Smokehouse.FLUE_KIT_NAMES = { "Pipe", "Stones" }
-local function kit(kitName, tool, toolText, items, back, anim)
-    return { tool = tool, toolText = toolText, items = items, back = back, anim = anim,
+local function kit(kitName, tool, toolText, items, back, anim, prop)
+    return { tool = tool, toolText = toolText, items = items, back = back, anim = anim, prop = prop,
         ticks = Smokehouse.CONNECT_TICKS, removeTicks = Smokehouse.DISCONNECT_TICKS, xp = { "Masonry", Smokehouse.CONNECT_XP },
         text = "ContextMenu_TraditionalPreservationCore_Connect" .. kitName, help = "IGUI_TraditionalPreservationCore_Flue" .. kitName .. "Help",
         name = "IGUI_TraditionalPreservationCore_Flue" .. kitName }
 end
 Smokehouse.FLUE_KITS = {
     Pipe = kit("Pipe", "MASONS_TROWEL", "IGUI_TraditionalPreservationCore_ToolTrowel",
-        { { "Base.ClayPipeSegment", 2 }, { "Base.Clay", 1 } }, "Base.ClayPipeSegment", "Build"),
+        { { "Base.ClayPipeSegment", 2 }, { "Base.Clay", 1 } }, "Base.ClayPipeSegment", "MakeWithBrick_Low", "Base.Clay"),
     Stones = kit("Stones", "DIG_GRAVE", "IGUI_TraditionalPreservationCore_ToolShovel",
         { { "Base.FlatStone", 3 }, { "Base.Clay", 2 } }, "Base.FlatStone", "DigShovel"),
 }

@@ -297,7 +297,10 @@ local Weather = require "TraditionalPreservationCore/Weather"
      its `removeText` gives Remove's hover for its own reasons.
      `Fire.fireModDataNow(fire)` is the fire's own modData brought up to now. Each field's arguments are in
      `Fire.lua` above `Fire.attach`; `attach` and `connect` share `Fire.registry`, which refuses one without an
-     id and a field given again as something else. Fit / Remove are Core's (`TPFireFit`, by the attachment's `fit`).
+     id and a field given again as something else. Fit / Remove are Core's (`TPFireFit`, by the attachment's `fit`). A fit's or a kit's `anim` and `prop` are how
+     the work looks (`Action.playKit`): `anim` a `CharacterActionAnims` name or a vanilla action's PerformingAction
+     value (`"MakeWithBrick_Low"`, vanilla's masonry), `Build` if none; with `prop` (a full type) the kit's tool in the
+     right hand and `prop`'s model in the left.
    - **Connections** (`Fire.connect{ id, kitNames, kits, blocks, finds, joined, refusal, onChange, connectText,
      disconnectText, disconnectHelp, icon, notes, smoke }`): what is built onto a fire in
      its second slot, one at a time; the Smokehouse's flue is the first (`Smokehouse.ID`, in `Smokehouse.lua`, its notes
@@ -306,7 +309,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      `Fire.joinOf(fireModData)`,
      `Fire.connectionOf(fire)`). `blocks` is `"connection"` (the default) or `"both"`: then Fit is refused while it
      is joined and Connect while something is fitted. Each kit is `{ tool, items, back, ticks, removeTicks, xp, anim,
-     text, help, name, toolText }`: Connect uses its items, Disconnect gives back the `back` items, the tool is kept.
+     prop, text, help, name, toolText }`: Connect uses its items, Disconnect gives back the `back` items, the tool is kept.
      Core enforces one connection a fire, never the door's side, never while the fire burns (`Fire.connectRefusal`,
      after the connection's own `refusal`), builds it with the timed action `TPFireConnect` and puts Connect /
      Disconnect on the fire's menu (`FireUI.addConnect`, `FireUI.addDisconnect`, which the joined thing's own

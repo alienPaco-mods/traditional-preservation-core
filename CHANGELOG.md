@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.59
+- **The clay pipe flue is laid as masonry** (user, 2026-11-22): Connect / Disconnect with the Pipe kit play vanilla's
+  crouched brick-laying (`MakeWithBrick_Low`), the trowel carried in the right hand and a lump of clay in the left,
+  in place of the generic build. The flat-stone kit keeps its digging.
+- A fit (Fire.attach) can say how its work looks, as a connection's kit could: `anim` and `prop`, played by the new
+  `Action.playKit` for Fit / Remove and Connect / Disconnect; `Build` without them, so the cauldron's fit is as
+  before. DEVGUIDE; test `test_action_kit.lua`.
+
+
 ## 0.1.58
 - **Fixed: a favourite tool didn't count for a hearth kit** (user, 2026-11-22: a favourited Wooden Trowel read
   "Missing" for Fit Salt Pan). Fit, Remove and the Smokehouse's joining kits now take a favourite as the kept tool, as

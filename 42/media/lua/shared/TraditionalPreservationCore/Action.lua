@@ -35,6 +35,18 @@ function Action.hasTool(character, tag)
     return character:getInventory():containsTagRecurse(ItemTag[tag])
 end
 
+-- Plays a kit's work (a fit's or a connection's kit): its anim, a CharacterActionAnims name or a vanilla action's
+-- PerformingAction value ("MakeWithBrick_Low", vanilla's masonry), "Build" if none; with prop (a full type), the
+-- kit's tool in the right hand (the one carried) and prop's model in the left, as vanilla's Make_With_Brick.
+function Action.playKit(action, kit)
+    local anim = kit.anim or "Build"
+    action:setActionAnim(CharacterActionAnims[anim] or anim)
+    if not kit.prop then return end
+    local tool = action.character:getInventory():getFirstTagRecurse(ItemTag[kit.tool])
+    local script = getScriptManager():FindItem(kit.prop)
+    action:setOverrideHandModels(tool, script and script:getStaticModel() or nil)
+end
+
 -- The items a kit needs, all from the main inventory (a menu brings them there first), or nil if any are missing.
 function Action.kitItems(character, needs)
     local inventory = character:getInventory()

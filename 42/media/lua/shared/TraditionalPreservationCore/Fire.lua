@@ -155,7 +155,8 @@ end
 --   name                                  its text key
 --   fit                                   what Fit takes: { items = { {full type, count} }, tool (an ItemTag's
 --                                         name, kept), ticks, removeTicks, xp = { perk, amount }, lost = { full type
---                                         = true } }; Remove gives the items back, all but lost ones
+--                                         = true }, anim, prop (Action.playKit: how the work looks; Build if
+--                                         none) }; Remove gives the items back, all but lost ones
 --   fitHelp, fitIcon                      client: Fit's tooltip line (a text key) and Fit / Remove's icon path
 --   canRemove(part, fire)                 true, or false and a reason; never asked while the fire burns
 --   removeText                            client: optional, { reason = text key } for Remove's hover; any other

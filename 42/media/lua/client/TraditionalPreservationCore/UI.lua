@@ -205,15 +205,16 @@ end
 
 -- Right-click menus
 
--- Every item on the player or in containers in reach that passes test. Favourites are left alone.
-function UI.findItems(playerObj, test)
+-- Every item on the player or in containers in reach that passes test. Favourites are left alone, unless
+-- withFavourites: a tool that is kept, as vanilla's crafting allows a favourite for a kept input (InputScript.allowFavorites).
+function UI.findItems(playerObj, test, withFavourites)
     local found = {}
     local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
     for i = 0, containers:size() - 1 do
         local items = containers:get(i):getItems()
         for j = 0, items:size() - 1 do
             local item = items:get(j)
-            if not item:isFavorite() and test(item) then table.insert(found, item) end
+            if (withFavourites or not item:isFavorite()) and test(item) then table.insert(found, item) end
         end
     end
     return found

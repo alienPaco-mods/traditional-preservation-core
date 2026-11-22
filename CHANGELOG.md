@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.58
+- **Fixed: a favourite tool didn't count for a hearth kit** (user, 2026-11-22: a favourited Wooden Trowel read
+  "Missing" for Fit Salt Pan). Fit, Remove and the Smokehouse's joining kits now take a favourite as the kept tool, as
+  vanilla's crafting does (`InputScript.allowFavorites`); a favourite is still never used up. `UI.findItems` takes a
+  third argument, `withFavourites`, for kept tools. Test in `test_fire_menu.lua`.
+- The trowel reads "a Mason's or Wooden Trowel": both carry vanilla's mason's trowel tag.
+
+
 ## 0.1.57
 - **How long food keeps, in its tooltip** (user, 2026-11-21: needed to check the storages in game without debug): a
   food kept by place (`PlaceKeeping`) says in its inventory and loot tooltip how long it keeps where it is ("Fresh for

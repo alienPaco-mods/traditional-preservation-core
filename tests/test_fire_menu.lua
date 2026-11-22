@@ -323,6 +323,18 @@ local spare = bare()
 sub = open(spare)
 fit = fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit")
 check("with the kit in reach it can be chosen", fit.isDisabled ~= true and fit.toolTip.description:find("Missing", 1, true) == nil)
+-- A favourite is fine as the kept tool (vanilla's crafting allows it), never as an item the fit uses up.
+local function favourite(item) item.isFavorite = function() return true end return item end
+ui.carried = { kit[1], kit[2], kit[3], kit[4], kit[5], favourite(thing("Base.Pliers", { ["base:pliers"] = true })) }
+local withFavouriteTool = fitRow(open(bare()), "ContextMenu_TraditionalPreservationCore_Fit")
+check("a favourite tool counts", withFavouriteTool.isDisabled ~= true)
+ui.carried = { favourite(thing("TraditionalPreservationCore.ForgedCauldron")), kit[2], kit[3], kit[4], kit[5], kit[6] }
+local withFavouriteItem = fitRow(open(bare()), "ContextMenu_TraditionalPreservationCore_Fit")
+check("a favourite item to be used up doesn't", withFavouriteItem.isDisabled == true
+    and withFavouriteItem.toolTip.description:find("Missing", 1, true) ~= nil)
+ui.carried = kit
+sub = open(spare)
+fit = fitRow(sub, "ContextMenu_TraditionalPreservationCore_Fit")
 fit.onSelect(character, unpack(fit.args))
 local fitting = ui.queued[#ui.queued]
 check("choosing it brings the kit to hand and queues the fit", fitting.Type == "TPFireFit" and fitting.fitting == true

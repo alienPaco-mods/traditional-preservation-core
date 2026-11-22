@@ -116,16 +116,17 @@ local function kitToolName(kit)
     return getText(kit.toolText or TOOL_NAMES[kit.tool] or kit.tool)
 end
 
--- What of a kit is in reach, in one look through every container: its items by full type, and an unbroken tool.
+-- What of a kit is in reach, in one look through every container: its items by full type (not favourites: they are
+-- used up), and an unbroken tool (a favourite too: it is kept).
 local function kitInReach(playerObj, kit)
     local found, tool, tag = {}, nil, ItemTag[kit.tool]
     for _, need in ipairs(kit.items) do found[need[1]] = {} end
     UI.findItems(playerObj, function(item)
         local items = found[item:getFullType()]
-        if items then table.insert(items, item) end
+        if items and not item:isFavorite() then table.insert(items, item) end
         if not tool and item:hasTag(tag) and not item:isBroken() then tool = item end
         return false
-    end)
+    end, true)
     return found, tool
 end
 

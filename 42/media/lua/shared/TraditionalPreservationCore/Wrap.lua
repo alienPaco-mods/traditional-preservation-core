@@ -1,5 +1,6 @@
 -- Traditional Preservation core: every wrap of a vanilla function goes through here, once for all TP mods.
---   Wrap.method(owner, name, handler)  owner is the global's name ("ISToolTipInv"); handler(vanilla, ...) gets the
+--   Wrap.method(owner, name, handler)  owner is the global's name ("ISToolTipInv"), or a path to a table in one
+--                                      ("Fishing.Utils"); handler(vanilla, ...) gets the
 --                                      call's own arguments (self first for a method) and calls vanilla(...) itself
 -- Two things keep TP out of other mods' way:
 -- - Late: a wrap goes in once every mod's Lua has loaded (OnGameStart; a dedicated server has no OnGameStart, so
@@ -50,9 +51,19 @@ local function guarded(where, vanilla, wrap)
     end
 end
 
+-- The table an owner names: a global, or a path through globals' tables ("Fishing.Utils"); nil if any step is missing.
+local function ownerTable(path)
+    local owner = _G
+    for step in string.gmatch(path, "[^%.]+") do
+        if type(owner) ~= "table" then return nil end
+        owner = owner[step]
+    end
+    return owner
+end
+
 local function apply(wrap)
     if wrap.applied then return end
-    local owner = _G[wrap.owner]
+    local owner = ownerTable(wrap.owner)
     if type(owner) ~= "table" or type(owner[wrap.name]) ~= "function" then return end
     wrap.applied = true
     owner[wrap.name] = guarded(wrap.owner .. "." .. wrap.name, owner[wrap.name], wrap)

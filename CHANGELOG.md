@@ -1,5 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.63
+- **Console: `TPC.food(r)`, `TPC.foodTotal()`, `TPC.foodReset()` and `TPC.crops(r)`** (user, 2026-11-23, for the long
+  save's winter sums): the food on you and in containers within reach summed by name and state (count, weight, kcal,
+  hunger, days at 2,500 kcal, salt in uses and E), a running total over the containers read, and the living crops by
+  kind with their ready dates and expected harvest. Read-only. DEVHELP.
+- `Wrap.method` takes a path to a nested table as its owner (`"Fishing.Utils"`), for Fish & Meat's fishing by season.
+
 ## 0.1.62
 - **Fixed: the station report wrote `xnil` for a holding's counts** (the Kraut Barrel's apples and carrots;
   long-save snapshot, 2026-11-22). It read a `count` field; the entries are `{ icon, count }` as Holds draws them. It

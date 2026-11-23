@@ -474,7 +474,7 @@ the table: `FluidTreat.REFUSALS`, `Season.REFUSALS`, `FireConnect.REFUSALS`, `Sm
 `F.REFUSALS` and `F.WORDS`, Vinegar's `V.PUMP_REFUSALS`. So does a key written more than once in a module. Tests
 compare the full key, so they check the one the translation file holds.
 
-**Vanilla wraps.** Every wrap goes through Core's `Wrap.method(owner, name, handler)`: handler(vanilla, ...) gets
+**Vanilla wraps.** Every wrap goes through Core's `Wrap.method(owner, name, handler)` (owner a global's name, or a path into one: `"Fishing.Utils"`): handler(vanilla, ...) gets
 the call's arguments and calls `vanilla(...)` for anything that isn't the mod's. Its comment says why vanilla's isn't
 enough. `Wrap` puts it in late (OnGameStart; OnGameBoot on a dedicated server, which never fires OnGameStart), so a
 mod that replaces the function outright as its file loads is wrapped too instead of wiping TP's out. In normal play

@@ -17,6 +17,8 @@ TPC = {}
 
 local HOT_TEST_C = 90   -- TPC.hot's steam: above CauldronFluid.HOT_C, so it shows Hot at once
 local CLOTH_RADIUS = 3
+local DAY_KCAL = 2500   -- TPC.food and TPC.crops: a day's food, the long save's ledger figure
+local FOOD_RADIUS = 1
 
 local function say(text) print("[TPC] " .. text) end
 
@@ -39,6 +41,9 @@ function TPC.help()
     say("TPC.doors()          the tile you stand on: may a door facing S or E open there, and does a door open onto it")
     say(string.format("TPC.cloth()          each Drying Cloth within %d tiles: place, and each lot's kind, count, state, progress and hours left", CLOTH_RADIUS))
     say(string.format("TPC.dryCloth(hours)  every wet lot on the Drying Cloths within %d tiles dries this many hours at full speed (default 24)", CLOTH_RADIUS))
+    say(string.format("TPC.food(r)          food on you and in containers within r tiles (default %d), summed by name and state: count, weight, kcal, hunger; totals, days at %d kcal, salt uses. Remembers each container for TPC.foodTotal()", FOOD_RADIUS, DAY_KCAL))
+    say("TPC.foodTotal()      everything TPC.food() has read so far (each container as last seen) plus what is on you, summed; TPC.foodReset() forgets them")
+    say("TPC.crops(r)         living crops within r tiles (default 60) by kind: plants, stages, ready dates, expected yield and its kcal, hunger and weight at Farming now")
     say("TPC.pieceList(n)     a sample info window with n made-up pieces (default 14) in Core's scrolling list, on the floor you stand on: scroll, sort switch, tabs, warnings, hover popups")
 end
 
@@ -464,6 +469,267 @@ function TPC.pieceList(count)
     window.count = count or SAMPLE_COUNT
     require("TraditionalPreservationCore/InfoWindow").open(window, player, floor)
     say(string.format("Sample list opened with %d pieces. Walk off or close it.", window.count))
+end
+
+-- Food and crops, for the long save's larder sums (user, 2026-11-23): TPC.food() what is on you and in reach,
+-- remembered by container for TPC.foodTotal(); TPC.crops() the living crops near you by kind. Printed as columns to
+-- screenshot. Hunger is in the tooltip's points (an item's getHungChange x 100, a fluid's per-litre value x litres),
+-- calories as the game counts them; a day's food is reckoned at DAY_KCAL, the long save's ledger figure.
+local MONTHS = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
+local MONTH_DAYS = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+
+local function fit(text, width)
+    text = tostring(text)
+    if #text > width then return text:sub(1, width - 1) .. "~" end
+    return text .. string.rep(" ", width - #text)
+end
+local function num(x, width, decimals)
+    local text = string.format("%." .. (decimals or 0) .. "f", x)
+    return string.rep(" ", math.max(width - #text, 0)) .. text
+end
+
+-- The game's date now, and the date days from now ("Sep 30").
+local function dateIn(days)
+    local time = getGameTime()
+    local month, day = time:getMonth() + 1, time:getDay() + 1 + math.floor(days + 0.5)
+    while day > MONTH_DAYS[month] do
+        day = day - MONTH_DAYS[month]
+        month = month % 12 + 1
+    end
+    return MONTHS[month] .. " " .. day
+end
+local function nowText()
+    local time = getGameTime()
+    return string.format("%s %d, %02d:%02d, day %d", MONTHS[time:getMonth() + 1], time:getDay() + 1, time:getHour(),
+        time:getMinutes(), math.floor(time:getWorldAgeHours() / 24) + 1)
+end
+
+-- A food's state: rotten, stale, fresh, or keeps (never goes off).
+local function stateOf(item)
+    if item:getOffAgeMax() >= 1000000 then return "keeps" end
+    if item:isRotten() then return "rotten" end
+    if item:isFresh() then return "fresh" end
+    return "stale"
+end
+
+local function hasFood(item)
+    if instanceof(item, "Food") then return true end
+    local fluid = item:getFluidContainer()
+    return fluid ~= nil and not fluid:isEmpty()
+end
+
+-- One item's row: { key, name, state, weight, kcal, hunger, salt (uses) }, or nil for a fluid with no food in it.
+local function rowOf(item)
+    if instanceof(item, "Food") then
+        if item:hasTag(ItemTag.SALT) then
+            return { salt = item:getCurrentUses(), name = item:getDisplayName(), weight = item:getUnequippedWeight() }
+        end
+        -- Food to the game but no food to eat (feathers): left out.
+        if item:getCalories() == 0 and item:getHungChange() == 0 then return nil end
+        local state = stateOf(item)
+        return { key = item:getDisplayName() .. "|" .. state, name = item:getDisplayName(), state = state,
+            weight = item:getUnequippedWeight(), kcal = item:getCalories(), hunger = item:getHungChange() * 100 }
+    end
+    local fluid = item:getFluidContainer()
+    local props, litres = fluid:getProperties(), fluid:getAmount()
+    local kcal, hunger = props:getCalories() * litres, props:getHungerChange() * litres
+    if kcal == 0 and hunger == 0 then return nil end
+    local name = string.format("%s (%.2g L)", item:getDisplayName(), litres)
+    return { key = item:getDisplayName() .. "|fluid", name = name, state = "fluid", weight = item:getUnequippedWeight(),
+        kcal = kcal, hunger = hunger }
+end
+
+-- What is on the player and in every container within radius on their floor (furniture, bags and floor items, and
+-- the bags inside them), each container as { key, label, items }.
+local function foodPlaces(player, radius)
+    local places = {}
+    local function add(key, label, list)
+        local items = {}
+        for i = 0, list:size() - 1 do table.insert(items, list:get(i)) end
+        if #items > 0 then table.insert(places, { key = key, label = label, items = items }) end
+    end
+    add("inventory", "on you", player:getInventory():getAllEvalRecurse(hasFood))
+    local cell, px, py, z = getCell(), math.floor(player:getX()), math.floor(player:getY()), math.floor(player:getZ())
+    for dx = -radius, radius do
+        for dy = -radius, radius do
+            local square = cell:getGridSquare(px + dx, py + dy, z)
+            if square then
+                local where = string.format("%d,%d,%d", px + dx, py + dy, z)
+                local objects = square:getObjects()
+                for i = 0, objects:size() - 1 do
+                    local isoObject = objects:get(i)
+                    for c = 0, isoObject:getContainerCount() - 1 do
+                        local container = isoObject:getContainerByIndex(c)
+                        add(where .. "|" .. tostring(container:getType()) .. "|" .. c, container:getType(), container:getAllEvalRecurse(hasFood))
+                    end
+                end
+                local floor = ArrayList.new()
+                local worldObjects = square:getWorldObjects()
+                for i = 0, worldObjects:size() - 1 do
+                    local item = worldObjects:get(i):getItem()
+                    if item then
+                        if hasFood(item) then floor:add(item) end
+                        if item:IsInventoryContainer() then floor:addAll(item:getInventory():getAllEvalRecurse(hasFood)) end
+                    end
+                end
+                add(where .. "|floor", "floor", floor)
+            end
+        end
+    end
+    return places
+end
+
+-- Rows summed by name and state, and the totals: { rows, kcal, hunger, weight, salt, saltWeight }.
+local function sumRows(itemLists)
+    local byKey, rows = {}, {}
+    local sums = { kcal = 0, hunger = 0, weight = 0, salt = 0, saltWeight = 0, count = 0 }
+    for _, items in ipairs(itemLists) do
+        for _, item in ipairs(items) do
+            local row = rowOf(item)
+            if row and row.salt then
+                sums.salt, sums.saltWeight = sums.salt + row.salt, sums.saltWeight + row.weight
+            elseif row then
+                local sum = byKey[row.key]
+                if not sum then
+                    sum = { name = row.name, state = row.state, count = 0, weight = 0, kcal = 0, hunger = 0 }
+                    byKey[row.key] = sum
+                    table.insert(rows, sum)
+                end
+                sum.count, sum.weight = sum.count + 1, sum.weight + row.weight
+                sum.kcal, sum.hunger = sum.kcal + row.kcal, sum.hunger + row.hunger
+                sums.kcal, sums.hunger, sums.weight, sums.count = sums.kcal + row.kcal, sums.hunger + row.hunger, sums.weight + row.weight, sums.count + 1
+            end
+        end
+    end
+    table.sort(rows, function(a, b) return a.kcal > b.kcal end)
+    sums.rows = rows
+    return sums
+end
+
+local function printFood(title, sums)
+    say(title)
+    say(fit("count", 6) .. fit("food", 48) .. fit("state", 7) .. "  weight     kcal   hunger")
+    for _, row in ipairs(sums.rows) do
+        say(num(row.count, 4) .. "  " .. fit(row.name, 48) .. fit(row.state, 7) .. num(row.weight, 8, 1) .. num(row.kcal, 9) .. num(row.hunger, 9))
+    end
+    say(string.format("TOTAL %d items, %.1f weight, %.0f kcal, %.0f hunger: %.1f days at %d kcal", sums.count, sums.weight,
+        sums.kcal, sums.hunger, sums.kcal / DAY_KCAL, DAY_KCAL))
+    say(string.format("SALT %d uses = %.1f E (5 uses each), %.1f weight", sums.salt, sums.salt / 5, sums.saltWeight))
+end
+
+-- Every container TPC.food() has read, by its place: what it held the last time (the inventory as it is now).
+local seen = {}
+
+function TPC.food(radius)
+    radius = radius or FOOD_RADIUS
+    local player = getPlayer()
+    local lists = {}
+    for _, place in ipairs(foodPlaces(player, radius)) do
+        table.insert(lists, place.items)
+        if place.key ~= "inventory" then seen[place.key] = { label = place.label, items = place.items } end
+    end
+    printFood(string.format("FOOD on you and within %d tile%s, %s", radius, radius == 1 and "" or "s", nowText()), sumRows(lists))
+    local count = 0
+    for _ in pairs(seen) do count = count + 1 end
+    say(string.format("(%d containers remembered for TPC.foodTotal(); TPC.foodReset() forgets them)", count))
+end
+
+function TPC.foodTotal()
+    local carried, lists, count = getPlayer():getInventory():getAllEvalRecurse(hasFood), { {} }, 0
+    for i = 0, carried:size() - 1 do table.insert(lists[1], carried:get(i)) end
+    for _, place in pairs(seen) do
+        table.insert(lists, place.items)
+        count = count + 1
+    end
+    printFood(string.format("FOOD TOTAL: on you plus %d containers read with TPC.food(), %s", count, nowText()), sumRows(lists))
+end
+
+function TPC.foodReset()
+    seen = {}
+    say("Forgot the containers read so far.")
+end
+
+-- The yield vanilla's harvest rolls for a plant (farming_vegetableconf getVegetablesNumber, 42.22), as the expected
+-- number and its range, at its health now. The sandbox's yield multiplier is worked out there but never used.
+local function expectedYield(plant, props, skill)
+    local health = math.floor((plant.health - 50) / 10)
+    local bonus = (plant.bonusYield and not plant.cursed) and 1 or 0
+    local minV = math.min(props.minVeg + health, props.minVegAutorized + bonus)
+    local maxV = math.min(props.maxVeg + health, props.maxVegAutorized + bonus)
+    if maxV < minV then maxV = minV end
+    local n = maxV - minV + 1
+    local mean = (minV + maxV) / 2
+    if bonus == 1 then
+        mean = 0
+        for i = 0, n - 1 do mean = mean + (minV + i) * ((i + 1) ^ 2 - i ^ 2) / n ^ 2 end
+    end
+    local pests = math.floor((plant.aphidLvl or 0) / 10) + math.floor((plant.slugsLvl or 0) / 10)
+    local skillAdd = skill * math.min(skill, 10) / 10
+    return math.max(1, mean - pests + skillAdd), math.max(1, minV - pests), math.max(1, maxV - pests + skill)
+end
+
+function TPC.crops(radius)
+    radius = radius or 60
+    local system = SFarmingSystem and SFarmingSystem.instance
+    if not system then return say("No farming system here (the server's side of it isn't loaded).") end
+    local player = getPlayer()
+    local px, py = player:getX(), player:getY()
+    local skill = player:getPerkLevel(Perks.Farming)
+    local factor = calcNextTimeFactor and calcNextTimeFactor() or 1
+    local kinds, order, dead = {}, {}, 0
+    for i = 0, system.system:getObjectCount() - 1 do
+        local globalObject = system.system:getObjectByIndex(i)
+        local plant = globalObject:getModData()
+        if math.abs(globalObject:getX() - px) <= radius and math.abs(globalObject:getY() - py) <= radius then
+            local props = farming_vegetableconf.props[plant.typeOfSeed]
+            if plant.state == "seeded" and props then
+                local kind = kinds[plant.typeOfSeed]
+                if not kind then
+                    local veg = props.vegetableName and instanceItem(props.vegetableName)
+                    kind = { name = plant.typeOfSeed, count = 0, stages = {}, yield = 0, low = 0, high = 0, ready = {},
+                        kcal = veg and instanceof(veg, "Food") and veg:getCalories() or 0,
+                        hunger = veg and instanceof(veg, "Food") and veg:getHungChange() * 100 or 0,
+                        weight = veg and veg:getActualWeight() or 0 }
+                    kinds[plant.typeOfSeed] = kind
+                    table.insert(order, kind)
+                end
+                kind.count = kind.count + 1
+                kind.stages[plant.nbOfGrow] = (kind.stages[plant.nbOfGrow] or 0) + 1
+                local mean, low, high = expectedYield(plant, props, skill)
+                kind.yield, kind.low, kind.high = kind.yield + mean, kind.low + low, kind.high + high
+                local hours = 0
+                if plant.nbOfGrow < props.harvestLevel then
+                    hours = math.max(plant.nextGrowing - system.hoursElapsed, 0)
+                        + (props.harvestLevel - plant.nbOfGrow - 1) * props.timeToGrow * factor
+                end
+                table.insert(kind.ready, hours / 24)
+            elseif plant.state == "dead" or plant.state == "rotten" then
+                dead = dead + 1
+            end
+        end
+    end
+    say(string.format("CROPS within %d tiles, %s (Farming %d; yields at each plant's health now)", radius, nowText(), skill))
+    say(fit("crop", 13) .. "plants  " .. fit("stages", 16) .. fit("ready", 15) .. "  yield (range)      kcal   hunger  weight")
+    local total = { kcal = 0, hunger = 0, weight = 0 }
+    table.sort(order, function(a, b) return a.name < b.name end)
+    for _, kind in ipairs(order) do
+        local stages = {}
+        for stage = 0, 10 do
+            if kind.stages[stage] then table.insert(stages, stage .. ":" .. kind.stages[stage]) end
+        end
+        table.sort(kind.ready)
+        local first, last = kind.ready[1], kind.ready[#kind.ready]
+        local ready = first <= 0 and "now" or dateIn(first)
+        if last > 0 and math.floor(last + 0.5) ~= math.floor(first + 0.5) then ready = ready .. "-" .. dateIn(last) end
+        local kcal, hunger, weight = kind.yield * kind.kcal, kind.yield * kind.hunger, kind.yield * kind.weight
+        total.kcal, total.hunger, total.weight = total.kcal + kcal, total.hunger + hunger, total.weight + weight
+        say(fit(kind.name, 13) .. num(kind.count, 6) .. "  " .. fit(table.concat(stages, " "), 16) .. fit(ready, 15)
+            .. num(kind.yield, 7) .. fit(string.format(" (%d-%d)", kind.low, kind.high), 11)
+            .. num(kcal, 8) .. num(hunger, 9) .. num(weight, 8, 1))
+    end
+    say(string.format("TOTAL expected harvest %.0f kcal, %.0f hunger, %.1f weight: %.1f days at %d kcal", total.kcal,
+        total.hunger, total.weight, total.kcal / DAY_KCAL, DAY_KCAL))
+    if dead > 0 then say(string.format("(%d dead or rotten plants left out)", dead)) end
 end
 
 say("Debug commands loaded. Type TPC.help() in the Lua console.")

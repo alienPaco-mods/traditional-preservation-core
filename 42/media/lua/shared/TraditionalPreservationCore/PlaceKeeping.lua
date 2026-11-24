@@ -181,6 +181,9 @@ function PlaceKeeping.new(keepingRules)
         local rate = keeper.rate(place) * speed
         local staleRate = keeper.staleRate(place) * speed
         local age, offAge, offAgeMax = item:getAge(), item:getOffAge(), item:getOffAgeMax()
+        -- Before its first look an item still has its script's days (vanilla Butter's never-ending ones): the keeper's.
+        local days = keepingRules.days and keepingRules.days[item:getFullType()]
+        if days then offAge, offAgeMax = days[1], days[2] end
         local function days(ageDays, at)
             return at > 0 and ageDays / at or math.huge
         end

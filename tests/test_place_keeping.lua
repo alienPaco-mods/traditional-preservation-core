@@ -117,6 +117,10 @@ local stale = food("Base.Butter", 30, 45, 40)
 seen = keeper.forecast(stale, "Fridge")
 check("stale already: only the days to rotten", seen.stale == nil and near(seen.rotten, 12.5))
 check("rotten: neither", keeper.forecast(food("Base.Butter", 30, 45, 50), "Fridge").rotten == nil)
+local churned = food("Base.Butter", 1000000000, 1000000000, 0)
+seen = keeper.forecast(churned, "Fridge")
+check("before its first look (vanilla's never-ending days): the keeper's days, not a billion", near(seen.stale, 75)
+    and near(seen.rotten, 112.5) and churned.offAge == 1000000000)
 check("with no place given, where the item is (nowhere: the default place)", keeper.forecast(fresh).place == Weather.DEFAULT_PLACE)
 
 -- A stale stretch of its own (staleShare): cold buys the fresh days, the stale ones go at a day a day (share 0).

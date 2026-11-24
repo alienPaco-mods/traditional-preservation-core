@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.64
+- **Fixed: a fresh Butter's keeping line read about 821 million days** (user, 2026-11-24: freshly churned). Before
+  an item's first look it still has its script's days (vanilla Butter's never-ending ones), and the tooltip's forecast
+  read those. It now reads the keeper's own days for the item when it has them (`PlaceKeeping` `days`). The item itself
+  got its days at its first look as before. Test in `test_place_keeping.lua`.
+
 ## 0.1.63
 - **Console: `TPC.food(r)`, `TPC.foodTotal()`, `TPC.foodReset()` and `TPC.crops(r)`** (user, 2026-11-23, for the long
   save's winter sums): the food on you and in containers within reach summed by name and state (count, weight, kcal,

@@ -6,3 +6,10 @@ option TraditionalPreservationCore.KeepingTooltips {
     page = TraditionalPreservationCore,
     translation = TraditionalPreservationCore_KeepingTooltips,
 }
+
+option TraditionalPreservationCore.AnimalsKeepTheirDays {
+    type = boolean,
+    default = true,
+    page = TraditionalPreservationCore,
+    translation = TraditionalPreservationCore_AnimalsKeepTheirDays,
+}

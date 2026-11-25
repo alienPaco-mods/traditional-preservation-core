@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.70
+- **Animals keep their days** (user, 2026-11-25: a herd that aged no day in four of coming and going). Vanilla ages an
+  animal, moves its pregnancy on and grows it only after a whole day loaded, and its pen's catch-up drops the part-day.
+  `AnimalDays` keeps each animal's age and pregnancy by the calendar (world mod data by animal id) and moves vanilla's
+  forward when it falls behind, the age through vanilla's own `growUp` (never back); the pregnancy day is set to the
+  calendar day from conception both ways, as vanilla's catch-up can count a midnight twice (user, 2026-11-26: an Angus
+  cow 3 days ahead in 2). Hourly things untouched, wild animals left alone. Run each hour by `server/.../AnimalDaysWorld.lua`. Sandbox **Animals keep their days** (on). The
+  animal report shows the days kept. Tests in `test_animal_days.lua`.
+
 ## 0.1.69
 - **Fixed: the animal report split one pen in two when its joined zones had different names** (user, 2026-11-25: a pen
   redrawn as four quarters). A pen now goes by its most north-west zone, and each zone's line gives its name.

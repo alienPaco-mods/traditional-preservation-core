@@ -1,5 +1,7 @@
 {
   "Sandbox_TraditionalPreservationCore": "Traditional Preservation (Core)",
   "Sandbox_TraditionalPreservationCore_KeepingTooltips": "Keeping in item tooltips",
-  "Sandbox_TraditionalPreservationCore_KeepingTooltips_tooltip": "A food that keeps by where it is (vegetables, Potted Meat, butter, yeast culture) says in its tooltip how long it keeps there, the temperature, and how fast it ages. Off for a harder game: you judge it by the place."
+  "Sandbox_TraditionalPreservationCore_KeepingTooltips_tooltip": "A food that keeps by where it is (vegetables, Potted Meat, butter, yeast culture) says in its tooltip how long it keeps there, the temperature, and how fast it ages. Off for a harder game: you judge it by the place.",
+  "Sandbox_TraditionalPreservationCore_AnimalsKeepTheirDays": "Animals keep their days",
+  "Sandbox_TraditionalPreservationCore_AnimalsKeepTheirDays_tooltip": "Vanilla ages a penned animal, moves its pregnancy on and grows it only after a whole day loaded, and loses the part-day each time the player comes back. On: each animal keeps its days by the calendar, so coming and going costs it nothing. Off: vanilla's count."
 }

@@ -5,6 +5,7 @@ local H = dofile((os.getenv("TPCORE") or ".") .. "/tests/harness.lua")
 local check = H.check
 H.useModPaths()
 H.installEvents()
+H.installModData()
 
 -- A Java list as the engine hands it.
 local function jlist(items)
@@ -107,6 +108,11 @@ local joined = AnimalReport.text(player)
 check("zones joined into one pen report as one, named by its north-west zone", joined:find("== Ranch North: 3 animals", 1, true) ~= nil
     and joined:find("== Ranch:", 1, true) == nil and joined:find("(10 x 10), Ranch North\n", 1, true) ~= nil)
 DesignationZoneAnimal.getAllDZones = function(_, z) return jlist({ z }) end
+ModData.getOrCreate("TraditionalPreservationCoreAnimalDays")[tostring(bull.getAnimalID())] = { kept = 4, keptPregnancy = 0 }
+check("an animal whose days TP kept says so", AnimalReport.text(player):find("days kept by TP: 4 of age, 0 of pregnancy", 1, true) ~= nil)
+ModData.getOrCreate("TraditionalPreservationCoreAnimalDays")[tostring(bull.getAnimalID())] = { kept = 4, keptPregnancy = 1, trimmedPregnancy = 3 }
+check("and the pregnancy days it took back", AnimalReport.text(player):find("days kept by TP: 4 of age, 1 of pregnancy (3 taken back)", 1, true) ~= nil)
+ModData.getOrCreate("TraditionalPreservationCoreAnimalDays")[tostring(bull.getAnimalID())] = nil
 check("a hen in a hutch goes under its pen", has("- Leghorn Hen: female"))
 check("a dry ewe in a trailer", has("== In a Trailer_Livestock at 5700, 5730: 1 animals") and has("milk 0.0 / 10.0 L (dry, up to 33.6)"))
 

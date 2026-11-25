@@ -5,6 +5,8 @@
 -- own numbers as its Info window reads them. Only animals loaded at the save are in it (the squares round the player),
 -- so a pen far off is missing, not empty. For the long save's log: _pzdev/longsave_snapshot.py copies it into the
 -- log's repo as animals.txt.
+local AnimalDays = require "TraditionalPreservationCore/AnimalDays"
+
 local AnimalReport = {}
 
 AnimalReport.FILE = "TraditionalPreservationAnimals_%s.txt"   -- in ~/Zomboid/Lua, by the save's folder name
@@ -80,6 +82,11 @@ local function animalLines(animal, playerObj)
             math.floor(animal:getPlayerAcceptance(playerObj) + 0.5)),
     }
     local more = {}
+    local kept = AnimalDays.recordOf(animal)
+    if kept and ((kept.kept or 0) > 0 or (kept.keptPregnancy or 0) > 0 or (kept.trimmedPregnancy or 0) > 0) then
+        table.insert(more, string.format("days kept by TP: %d of age, %d of pregnancy", kept.kept or 0, kept.keptPregnancy or 0)
+            .. ((kept.trimmedPregnancy or 0) > 0 and string.format(" (%d taken back)", kept.trimmedPregnancy) or ""))
+    end
     if animal:hasUdder() and animal:isFemale() and not animal:isBaby() then
         table.insert(more, string.format("milk %.1f / %.1f L (%s, up to %.1f)", data:getMilkQuantity(),
             data:getMaxMilkActual(), data:canHaveMilk() and "in milk" or "dry", data:getMaxMilk()))

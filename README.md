@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.69)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.70)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -161,9 +161,13 @@ Vanilla fluids never age. A mod can register a kind of fluid that does (`FluidAg
 
 A mod can register a food that is seasoned after it is made, as a stew is (`Season.register`; Fish & Meat's sausage links). Right-click it, **Season**: each kind of seasoning it takes that you have in reach and that isn't in it yet, with the uses you have. Each kind goes in once, as many kinds as you like, takes what a stew would (a use, half an onion), and makes the food a little nicer to eat. Select several and each one that lacks it gets it. The seasoning stays with the food through what the mod does to it next.
 
+## Animals keep their days
+
+Vanilla ages a penned animal a day, moves its pregnancy on a day and grows it only after a whole day of its being loaded, and each time the player comes back the pen's catch-up drops the part-day: someone who works away from the pens and comes back several times a day finds their animals no older, no nearer their birth and no bigger after days of play. TP Core keeps each animal's own count by the calendar and moves vanilla's forward when it falls behind: the age a day at a time through vanilla's own daily step (size, weight, the day's eggs), the pregnancy set to the day from its conception, back as well as forward (vanilla's catch-up can count a midnight twice and run a pregnancy ahead), so births, chicks turning hens and lambs growing up come on time however you come and go. An age is never held back, and hourly things (milk, hunger, thirst) stay vanilla's. Wild animals are left alone, and an animal is only counted while loaded: one far away catches up the hour it next loads. The animal report shows the days kept for each animal. Sandbox **Animals keep their days** (on); off, vanilla's count.
+
 ## What it changes in vanilla
 
-Nothing on its own beyond adding its stations and the cauldron's recipe. It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update. An item only TP's recipes use (a Ceramic Jar) gets vanilla's **Craft** row on its right-click, which vanilla leaves out because it looks recipes up in its own module only.
+Nothing on its own beyond adding its stations and the cauldron's recipe, and keeping animals' days (above). It wraps several vanilla Lua functions on behalf of the mods that use them (slot rules, popups, pick-up and placing checks, fluid pours, item transfers, hand crafts, eating, milking); the full table is in `DEVGUIDE.md`, "Vanilla wraps". Compare them with vanilla after a game update. An item only TP's recipes use (a Ceramic Jar) gets vanilla's **Craft** row on its right-click, which vanilla leaves out because it looks recipes up in its own module only.
 
 ## Compatibility
 

@@ -55,6 +55,7 @@ function zone.getTroughsConnected()
     return jlist({ { getCurrentFeedAmount = function() return 2 end, getWater = function() return 30 end } })
 end
 function zone.getFullZoneSize() return 400 end
+function zone.isFullyStreamed() return zone.streamed ~= false end
 function zone.getFoodOnGroundConnected() return jlist({}) end
 function zone.getHutchsConnected() return jlist({ hutch }) end
 local function zoned(a) a.getDZone = function() return zone end; return a end
@@ -66,7 +67,8 @@ local trailer = { getSquare = function() return square(5700, 5730, 0) end,
 function getCell()
     return { getAnimals = function() return jlist({ bull, cow, bull }) end, getVehicles = function() return jlist({ trailer }) end }
 end
-DesignationZoneAnimal = { getAllZones = function() return jlist({ zone, zone }) end }
+DesignationZoneAnimal = { getAllZones = function() return jlist({ zone, zone }) end,
+    getAllDZones = function(_, z) return jlist({ z }) end }
 function getGameTime()
     return { getWorldAgeHours = function() return 1500.5 end, getYear = function() return 1993 end, getMonth = function() return 8 end,
         getDay = function() return 10 end, getHour = function() return 9 end, getMinutes = function() return 5 end }
@@ -82,6 +84,10 @@ check("the header counts each animal once (one listed twice, one in a hutch, one
 check("a pen with its line", has("== Ranch: 3 animals") and has("400 tiles, 1 troughs (feed 2.0, water 30.0 L), 0 food on the ground, 1 hutches"))
 check("an animal's stats", has("- Angus Bull: male, 400 days, at 5720, 5740, 0") and has("health 100%, hunger 12%, thirst 5%, stress 3, acceptance 34"))
 check("milk and pregnancy", has("milk 4.2 / 10.0 L (in milk, up to 33.6), pregnant, day 12 of 280"))
+zone.streamed = false
+check("a pen partly out of reach: no trough count", AnimalReport.text(player):find(
+    "400 tiles, not all loaded at the save: troughs, feed and water not counted", 1, true) ~= nil)
+zone.streamed = nil
 check("a hen in a hutch goes under its pen", has("- Leghorn Hen: female"))
 check("a dry ewe in a trailer", has("== In a Trailer_Livestock at 5700, 5730: 1 animals") and has("milk 0.0 / 10.0 L (dry, up to 33.6)"))
 

@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.66
+- **Fixed: the animal report read 0 troughs for a pen partly out of reach** (user, 2026-11-25: the pig pen has 6).
+  Vanilla counts a pen's troughs, food and hutches only while all of it is loaded; such a pen now says it wasn't
+  counted.
+
 ## 0.1.65
 - **An animal report beside the station report** (`AnimalReport.lua`), for the long save's log: on each save,
   `~/Zomboid/Lua/TraditionalPreservationAnimals_<save>.txt` lists every loaded animal (walking about, in a hutch, in a

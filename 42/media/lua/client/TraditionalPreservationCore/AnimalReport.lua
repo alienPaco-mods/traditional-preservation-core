@@ -31,8 +31,15 @@ local function collection(javaCollection)
 end
 
 -- The pen's line: its size, troughs, the feed and water in them, food on the ground and hutches, as the zone window
--- counts them (connected zones together).
+-- counts them (connected zones together). Vanilla counts a pen's troughs, food and hutches only while all of it is
+-- loaded, so a pen partly out of reach says so instead of a count of none.
 local function zoneLine(zone)
+    for _, connected in ipairs(list(DesignationZoneAnimal.getAllDZones(nil, zone, nil))) do
+        if not connected:isFullyStreamed() then
+            return string.format("%d tiles, not all loaded at the save: troughs, feed and water not counted",
+                zone:getFullZoneSize())
+        end
+    end
     local feed, water = 0, 0
     local troughs = zone:getTroughsConnected()
     for _, trough in ipairs(list(troughs)) do

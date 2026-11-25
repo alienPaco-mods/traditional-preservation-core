@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.67
+- **Fixed: the animal report put an animal in "No pen" when it hadn't looked up its pen yet** (user, 2026-11-25: a
+  Holstein just brought, and the bull at the edge of the loaded squares). The report now finds the pen where the animal
+  stands, as the animal's own lookup does (`DesignationZoneAnimal.getZoneF`).
+
 ## 0.1.66
 - **Fixed: the animal report read 0 troughs for a pen partly out of reach** (user, 2026-11-25: the pig pen has 6).
   Vanilla counts a pen's troughs, food and hutches only while all of it is loaded; such a pen now says it wasn't

@@ -40,7 +40,8 @@ local function animal(o)
         hasUdder = function() return o.udder or false end, canBeSheared = function() return false end,
         getBabies = function() return jlist({}) end, haveMatingSeason = function() return false end,
         isInMatingSeason = function() return false end, getGeneticDisorder = function() return jlist({}) end,
-        getDZone = function() return o.zone end,
+        getDZone = function() return o.zone end, getX = function() return 5720 end, getY = function() return 5740 end,
+        getZ = function() return 0 end,
     }
 end
 
@@ -59,7 +60,7 @@ function zone.isFullyStreamed() return zone.streamed ~= false end
 function zone.getFoodOnGroundConnected() return jlist({}) end
 function zone.getHutchsConnected() return jlist({ hutch }) end
 local function zoned(a) a.getDZone = function() return zone end; return a end
-zoned(bull); zoned(cow)
+zoned(bull)   -- the cow hasn't looked up its pen yet: found by where it stands
 
 local trailer = { getSquare = function() return square(5700, 5730, 0) end,
     getScript = function() return { getName = function() return "Trailer_Livestock" end } end,
@@ -68,7 +69,8 @@ function getCell()
     return { getAnimals = function() return jlist({ bull, cow, bull }) end, getVehicles = function() return jlist({ trailer }) end }
 end
 DesignationZoneAnimal = { getAllZones = function() return jlist({ zone, zone }) end,
-    getAllDZones = function(_, z) return jlist({ z }) end }
+    getAllDZones = function(_, z) return jlist({ z }) end,
+    getZoneF = function(x, y) return x == 5720 and y == 5740 and zone or nil end }
 function getGameTime()
     return { getWorldAgeHours = function() return 1500.5 end, getYear = function() return 1993 end, getMonth = function() return 8 end,
         getDay = function() return 10 end, getHour = function() return 9 end, getMinutes = function() return 5 end }

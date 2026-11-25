@@ -96,7 +96,9 @@ local function found()
         table.insert(entries, { animal = animal, place = place, zone = zone })
     end
     for _, animal in ipairs(list(getCell():getAnimals())) do
-        local zone = animal:getDZone()
+        -- An animal looks up its pen only now and then (one just brought, or one at the edge of the loaded squares,
+        -- hasn't): the pen where it stands, as its own lookup finds it.
+        local zone = animal:getDZone() or DesignationZoneAnimal.getZoneF(animal:getX(), animal:getY(), animal:getZ())
         add(animal, zone and zone:getName() or AnimalReport.NO_ZONE, zone)
     end
     for _, zone in ipairs(list(DesignationZoneAnimal.getAllZones())) do

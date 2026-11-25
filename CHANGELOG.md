@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.71
+- **Fixed: a kept food's keeping line read far too few days after a while unlooked** (user, 2026-11-26: cured garlic
+  on a pole, 46 days fresh for 114). Between two looks vanilla ages the item at its own speed, and the forecast read
+  that age; it now reads the keeper's clock, as a look writes it (`PlaceKeeping` `forecast`). The item was never
+  affected. Test in `test_place_keeping.lua`.
+
 ## 0.1.70
 - **Animals keep their days** (user, 2026-11-25: a herd that aged no day in four of coming and going). Vanilla ages an
   animal, moves its pregnancy on and grows it only after a whole day loaded, and its pen's catch-up drops the part-day.

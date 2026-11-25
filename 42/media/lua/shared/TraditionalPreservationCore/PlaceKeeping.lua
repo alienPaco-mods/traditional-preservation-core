@@ -164,7 +164,7 @@ function PlaceKeeping.new(keepingRules)
         return clock
     end
 
-    -- What a kept item faces where it is now, read-only (its tooltip's; the age is as at its last look): { place,
+    -- What a kept item faces where it is now, read-only (its tooltip's; the age is its clock's at its last look): { place,
     -- celsius (nil in a freezer), rate (days of age a day now, the stale stretch's once stale; Food Spoilage in, times
     -- factor: a storage's), stale and rotten (days left at the rates there; nil once past, math.huge while it doesn't
     -- age) }. place: where the item is when nil.
@@ -184,6 +184,14 @@ function PlaceKeeping.new(keepingRules)
         -- Before its first look an item still has its script's days (vanilla Butter's never-ending ones): the keeper's.
         local days = keepingRules.days and keepingRules.days[item:getFullType()]
         if days then offAge, offAgeMax = days[1], days[2] end
+        -- Between two looks vanilla ages the item at its own speed (user, 2026-11-26: cured garlic on a pole reading 46
+        -- days for 114): the age is the keeper's clock's, as settle writes it at a look.
+        local clock = item:getModData()[keepingRules.modDataKey]
+        if clock and clock.stale then
+            age = offAge + clock.stale.age / 24
+        elseif clock and clock.fluidAge then
+            age = clock.base + clock.fluidAge.age / 24
+        end
         local function days(ageDays, at)
             return at > 0 and ageDays / at or math.huge
         end

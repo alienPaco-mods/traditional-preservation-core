@@ -1,6 +1,6 @@
 -- Traditional Preservation core: the animal report, a text file written on each save beside the station report, of
 -- every animal loaded at the save: those walking about, those in a hutch and those in a trailer. Each by its pen (the
--- animal zone, with its troughs' feed and water), then its name, sex, age and where it stands, its health, hunger,
+-- animal zone, with its troughs' feed and water, and the corners of each zone it is joined from), then its name, sex, age and where it stands, its health, hunger,
 -- thirst, stress and acceptance of the player, then its milk, pregnancy, wool and young where it has them. Vanilla's
 -- own numbers as its Info window reads them. Only animals loaded at the save are in it (the squares round the player),
 -- so a pen far off is missing, not empty. For the long save's log: _pzdev/longsave_snapshot.py copies it into the
@@ -51,6 +51,22 @@ local function zoneLine(zone)
         zone:getHutchsConnected():size())
 end
 
+-- Each zone the pen is joined from: its corners, size and whether all of it was loaded at the save. Vanilla catches
+-- a zone's animals up for the hours away only when both its corners load at once (DesignationZone.checkStreamed), so
+-- a zone that never does stands still while the player is away.
+local function zoneParts(zone)
+    local parts = {}
+    for _, part in ipairs(list(DesignationZoneAnimal.getAllDZones(nil, zone, nil))) do
+        local x, y, w, h = part:getX(), part:getY(), part:getW(), part:getH()
+        table.insert(parts, { x = x, y = y, text = string.format("zone %d, %d to %d, %d (%d x %d), %s%s", x, y, x + w - 1,
+            y + h - 1, w, h, part:getName(), part:isFullyStreamed() and "" or ": not all loaded") })
+    end
+    table.sort(parts, function(a, b) if a.x ~= b.x then return a.x < b.x end return a.y < b.y end)
+    local lines = {}
+    for _, part in ipairs(parts) do table.insert(lines, part.text) end
+    return lines
+end
+
 -- One animal's lines.
 local function animalLines(animal, playerObj)
     local data = animal:getData()
@@ -86,33 +102,43 @@ local function animalLines(animal, playerObj)
     return lines
 end
 
+-- A pen is every zone joined to a zone: the one most north-west of them stands for it, so the animals of one pen are
+-- reported together whichever of its zones they stand in.
+local function penOf(zone)
+    local first
+    for _, part in ipairs(list(DesignationZoneAnimal.getAllDZones(nil, zone, nil))) do
+        if not first or part:getX() < first:getX() or part:getX() == first:getX() and part:getY() < first:getY() then
+            first = part
+        end
+    end
+    return first or zone
+end
+
 -- Every loaded animal once, with the place it is reported under: { animal, place, zone }.
 local function found()
     local entries, seen = {}, {}
-    local function add(animal, place, zone)
+    local function add(animal, zone, place)
         local id = animal:getAnimalID()
         if seen[id] then return end
         seen[id] = true
-        table.insert(entries, { animal = animal, place = place, zone = zone })
+        local pen = zone and penOf(zone)
+        table.insert(entries, { animal = animal, place = place or pen and pen:getName() or AnimalReport.NO_ZONE, zone = pen })
     end
     for _, animal in ipairs(list(getCell():getAnimals())) do
         -- An animal looks up its pen only now and then (one just brought, or one at the edge of the loaded squares,
         -- hasn't): the pen where it stands, as its own lookup finds it.
-        local zone = animal:getDZone() or DesignationZoneAnimal.getZoneF(animal:getX(), animal:getY(), animal:getZ())
-        add(animal, zone and zone:getName() or AnimalReport.NO_ZONE, zone)
+        add(animal, animal:getDZone() or DesignationZoneAnimal.getZoneF(animal:getX(), animal:getY(), animal:getZ()))
     end
     for _, zone in ipairs(list(DesignationZoneAnimal.getAllZones())) do
         for _, hutch in ipairs(list(zone:getHutchsConnected())) do
-            for _, animal in ipairs(collection(hutch:getAnimalInside():values())) do
-                add(animal, zone:getName(), zone)
-            end
+            for _, animal in ipairs(collection(hutch:getAnimalInside():values())) do add(animal, zone) end
         end
     end
     for _, vehicle in ipairs(collection(getCell():getVehicles())) do
         local square = vehicle:getSquare()
         local place = string.format("In a %s at %d, %d", vehicle:getScript():getName(), square and square:getX() or 0,
             square and square:getY() or 0)
-        for _, animal in ipairs(list(vehicle:getAnimals())) do add(animal, place, nil) end
+        for _, animal in ipairs(list(vehicle:getAnimals())) do add(animal, nil, place) end
     end
     return entries
 end
@@ -142,7 +168,10 @@ function AnimalReport.text(playerObj)
     for _, place in ipairs(order) do
         table.insert(out, "")
         table.insert(out, string.format("== %s: %d animals", place.name, #place.animals))
-        if place.zone then table.insert(out, AnimalReport.INDENT .. zoneLine(place.zone)) end
+        if place.zone then
+            table.insert(out, AnimalReport.INDENT .. zoneLine(place.zone))
+            for _, line in ipairs(zoneParts(place.zone)) do table.insert(out, AnimalReport.INDENT .. line) end
+        end
         table.sort(place.animals, function(a, b) return a:getFullName() < b:getFullName() end)
         for _, animal in ipairs(place.animals) do
             local lines = animalLines(animal, playerObj)

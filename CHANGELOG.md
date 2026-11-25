@@ -1,5 +1,14 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.69
+- **Fixed: the animal report split one pen in two when its joined zones had different names** (user, 2026-11-25: a pen
+  redrawn as four quarters). A pen now goes by its most north-west zone, and each zone's line gives its name.
+
+## 0.1.68
+- **The animal report lists each zone a pen is joined from** (user, 2026-11-25): its corners, size, and whether all of
+  it was loaded at the save. Vanilla catches a zone's animals up for the hours away only when both its corners load at
+  once, so this shows which part of a large pen stands still while the player is away.
+
 ## 0.1.67
 - **Fixed: the animal report put an animal in "No pen" when it hadn't looked up its pen yet** (user, 2026-11-25: a
   Holstein just brought, and the bull at the edge of the loaded squares). The report now finds the pen where the animal

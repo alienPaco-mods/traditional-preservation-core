@@ -57,6 +57,10 @@ function zone.getTroughsConnected()
 end
 function zone.getFullZoneSize() return 400 end
 function zone.isFullyStreamed() return zone.streamed ~= false end
+function zone.getX() return 5700 end
+function zone.getY() return 5720 end
+function zone.getW() return 20 end
+function zone.getH() return 25 end
 function zone.getFoodOnGroundConnected() return jlist({}) end
 function zone.getHutchsConnected() return jlist({ hutch }) end
 local function zoned(a) a.getDZone = function() return zone end; return a end
@@ -90,6 +94,19 @@ zone.streamed = false
 check("a pen partly out of reach: no trough count", AnimalReport.text(player):find(
     "400 tiles, not all loaded at the save: troughs, feed and water not counted", 1, true) ~= nil)
 zone.streamed = nil
+check("each zone's corners and size", has("zone 5700, 5720 to 5719, 5744 (20 x 25), Ranch\n"))
+zone.streamed = false
+check("a zone not all loaded says so", AnimalReport.text(player):find("(20 x 25), Ranch: not all loaded", 1, true) ~= nil)
+zone.streamed = nil
+-- A second zone joined to the first, north-west of it: the pen goes by it, whichever zone an animal stands in.
+local north = setmetatable({ getName = function() return "Ranch North" end, getX = function() return 5690 end,
+    getY = function() return 5700 end, getW = function() return 10 end, getH = function() return 10 end,
+    isFullyStreamed = function() return true end }, { __index = zone })
+DesignationZoneAnimal.getAllDZones = function() return jlist({ zone, north }) end
+local joined = AnimalReport.text(player)
+check("zones joined into one pen report as one, named by its north-west zone", joined:find("== Ranch North: 3 animals", 1, true) ~= nil
+    and joined:find("== Ranch:", 1, true) == nil and joined:find("(10 x 10), Ranch North\n", 1, true) ~= nil)
+DesignationZoneAnimal.getAllDZones = function(_, z) return jlist({ z }) end
 check("a hen in a hutch goes under its pen", has("- Leghorn Hen: female"))
 check("a dry ewe in a trailer", has("== In a Trailer_Livestock at 5700, 5730: 1 animals") and has("milk 0.0 / 10.0 L (dry, up to 33.6)"))
 

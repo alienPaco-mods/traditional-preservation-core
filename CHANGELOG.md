@@ -1,5 +1,12 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.65
+- **An animal report beside the station report** (`AnimalReport.lua`), for the long save's log: on each save,
+  `~/Zomboid/Lua/TraditionalPreservationAnimals_<save>.txt` lists every loaded animal (walking about, in a hutch, in a
+  trailer) by its pen, with the pen's troughs, feed and water, then each animal's sex, age, place, health, hunger,
+  thirst, stress and acceptance, and its milk, pregnancy, wool and young where it has them. Read-only. Test in
+  `test_animal_report.lua`.
+
 ## 0.1.64
 - **Fixed: a fresh Butter's keeping line read about 821 million days** (user, 2026-11-24: freshly churned). Before
   an item's first look it still has its script's days (vanilla Butter's never-ending ones), and the tooltip's forecast

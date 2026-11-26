@@ -510,6 +510,50 @@ local function see(owner, now, place)
     return fluidAge, fluidKind
 end
 
+-- What an owner's fluid faces where it is now, read-only (an item tooltip's): a copy of its age is brought up to now,
+-- the owner is left as it is. { place, celsius (nil in a freezer), rate (days of age at the reference a day here),
+-- turn (days until it turns, nil when it won't or has), spoil (days until it spoils, nil once spoiled; math.huge
+-- while it doesn't age), turned (true once turned) }, { sealed = true } for sealed store milk not yet opened, or nil
+-- for none of a kind's fluid or its ageing off.
+function FluidAgeing.forecast(owner, now, place)
+    local container = owner and owner:getFluidContainer()
+    local fluidKind = FluidAgeing.fluidKindIn(container)
+    if not fluidKind or not isOn(fluidKind) then return nil end
+    now = now or getGameTime():getWorldAgeHours()
+    if not place then place = placeOfOwner(owner) end
+    local saved = owner:getModData()[FluidAgeing.KEY]
+    local ledger = fluidKind.getLedger()
+    local fluidAge
+    if saved and saved.process == fluidKind.process then
+        fluidAge = FluidAgeing.advance(FluidAgeing.copy(saved), fluidKind, ledger, now, place or saved.place)
+    elseif isSealed(owner, fluidKind) then
+        return { sealed = true }
+    else
+        fluidAge = { process = fluidKind.process, age = 0, place = place }
+    end
+    place = place or fluidAge.place or FluidAgeing.DEFAULT_PLACE
+    local celsius
+    if place == FluidAgeing.FRIDGE then
+        celsius = FluidAgeing.FRIDGE_C
+    elseif place ~= FluidAgeing.FREEZER then
+        celsius = Weather.placeTemperature(ledger, place)
+    end
+    local _, rate = agingOf(fluidAge, fluidKind)
+    local perHour = celsius and rate(celsius) * (fluidKind.speed and fluidKind.speed() or 1) or 0
+    local spoilHours = FluidAgeing.spoilHours(fluidAge, fluidKind)
+    local function days(hours) return perHour > 0 and hours / perHour / 24 or math.huge end
+    local forecast = { place = place, celsius = celsius, rate = perHour, turned = false }
+    if fluidAge.age >= spoilHours then return forecast end
+    forecast.spoil = days(spoilHours - fluidAge.age)
+    if neverTurns(fluidAge) or fluidKind.turnHours >= spoilHours then return forecast end
+    if fluidAge.age >= fluidKind.turnHours then
+        forecast.turned = true
+    else
+        forecast.turn = days(fluidKind.turnHours - fluidAge.age)
+    end
+    return forecast
+end
+
 -- Brings the fluid an owner (an item or a world object) holds up to now, swapping it if it turned. A container
 -- with none of a kind's fluid loses its fluidAge; a sealed one with no fluidAge is left alone. Returns the fluidAge and
 -- fluid kind, or nil.

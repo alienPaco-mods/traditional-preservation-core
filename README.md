@@ -1,4 +1,4 @@
-# Traditional Preservation (Core) — Build 42 prototype (v0.1.72)
+# Traditional Preservation (Core) — Build 42 prototype (v0.1.73)
 
 **Status: experimental, not released.** Back up your save before enabling.
 
@@ -145,6 +145,11 @@ Yeast's culture) says in its inventory and loot tooltip how long it keeps there 
 
 > Fresh for about 50 days here, rotten in about 88 days
 > 4°C (Fridge), ages 0.40 days a day
+
+A container of a fluid that goes off (Dairy's milk and kefir, Fish & Meat's blood, Vinegar's wort) gets the same two
+lines from its fluid: *Fresh for about 1.5 days here, rotten in about 3 days* for raw milk (fresh until it sours),
+*Rotten in about 3 days here* once soured, or for scalded milk and blood, which never turn; sealed store milk says
+*Sealed: doesn't age until it is opened*. Read-only, from `FluidAgeing.forecast` (a copy of its age brought up to now).
 
 (Stale already: *Stale: rotten in about 3 days here*; in a freezer or frozen through, *Doesn't age here*.) A mod adds
 its own lines under them: Fruits and Vegetables the storage's factors and the cure. The age is as at the item's last

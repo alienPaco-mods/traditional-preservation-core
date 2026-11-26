@@ -19,6 +19,7 @@ function getTimestampMs() return clock end
 local function item(fullType, own, age)
     local self = { isItem = true, fullType = fullType, tooltip = own, modData = {}, age = age or 0, offAge = 30, offAgeMax = 45 }
     function self:getFullType() return self.fullType end
+    function self:getFluidContainer() return nil end
     function self:getTooltip() return self.modData.Tooltip or self.tooltip end
     function self:setTooltip(text) self.tooltip, self.modData.Tooltip = text, text end
     function self:getModData() return self.modData end

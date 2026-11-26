@@ -505,4 +505,29 @@ SandboxVars = { FoodRotSpeed = 5 }
 check("Very Slow 0.4", FluidAgeing.foodRotSpeed() == 0.4)
 SandboxVars = sandbox
 
+-- The tooltip's forecast: read-only, a copy brought up to now, at the place given.
+getGameTime = function() return { getWorldAgeHours = function() return 100 end } end
+local bottle = item({ CowMilk = 1 })
+local seen = FluidAgeing.forecast(bottle, 100, "Fridge")
+check("new raw milk in a fridge: 4 C, fresh 7.5 days, rotten in 15", seen.celsius == 4 and near(seen.rate, 0.2)
+    and near(seen.turn, 7.5) and near(seen.spoil, 15) and not seen.turned)
+check("the forecast leaves the item alone", bottle.md[FluidAgeing.KEY] == nil)
+bottle.md[FluidAgeing.KEY] = { process = "milk", age = 48, place = "Fridge", hour = 100, marks = {} }
+seen = FluidAgeing.forecast(bottle, 100, "Fridge")
+check("soured milk: only the days to rotten", seen.turned and seen.turn == nil and near(seen.spoil, 5))
+check("and its saved age is untouched", bottle.md[FluidAgeing.KEY].age == 48)
+bottle.md[FluidAgeing.KEY] = { process = "milk", age = 48, place = "Fridge", hour = 100, marks = {}, treated = { Scalded = true } }
+seen = FluidAgeing.forecast(bottle, 100, "Fridge")
+check("scalded milk never turns: days to rotten only", not seen.turned and seen.turn == nil and near(seen.spoil, 5))
+bottle.md[FluidAgeing.KEY] = { process = "milk", age = 0, place = "Fridge", hour = 100, marks = {} }
+bottle.md[FluidAgeing.KEY].hour = 76
+seen = FluidAgeing.forecast(bottle, 100, "Fridge")
+check("a day unlooked in the fridge counts: 24 h at 0.2", near(seen.turn, (36 - 4.8) / 0.2 / 24) and bottle.md[FluidAgeing.KEY].age == 0)
+check("in a freezer it doesn't age", FluidAgeing.forecast(bottle, 100, "Freezer").spoil == math.huge)
+check("sealed store milk: sealed", FluidAgeing.forecast(item({ CowMilk = 1 }, "Base.Milk"), 100, "Fridge").sealed == true)
+check("no milk in it: nothing", FluidAgeing.forecast(item({}), 100, "Fridge") == nil)
+on = false
+check("milk going off switched off: nothing", FluidAgeing.forecast(item({ CowMilk = 1 }), 100, "Fridge") == nil)
+on = true
+
 H.done()

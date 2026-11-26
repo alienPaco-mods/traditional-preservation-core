@@ -178,5 +178,7 @@
   "IGUI_TraditionalPreservationCore_KeepStill": "Doesn't age here",
   "IGUI_TraditionalPreservationCore_KeepAt": "%1, ages %2 days a day",
   "IGUI_TraditionalPreservationCore_PlaceFridge": "Fridge",
-  "IGUI_TraditionalPreservationCore_PlaceFreezer": "Freezer"
+  "IGUI_TraditionalPreservationCore_PlaceFreezer": "Freezer",
+  "IGUI_TraditionalPreservationCore_KeepRots": "Rotten in %1 here",
+  "IGUI_TraditionalPreservationCore_KeepSealed": "Sealed: doesn't age until it is opened"
 }

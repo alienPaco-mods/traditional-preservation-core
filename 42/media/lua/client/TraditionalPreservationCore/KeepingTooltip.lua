@@ -4,7 +4,9 @@
 -- last look (PlaceKeepingUI looks at a container as the inventory windows show it). Sandbox "Keeping in item
 -- tooltips" (TP Core, on) hides it for a harder game. A mod adds the types it keeps and the lines for one:
 --     KeepingTooltip.add(M.BUTTER_DAYS, function(item) return KeepingTooltip.keeperLines(M.BUTTER_KEEPER, item) end)
--- lines(item) returns a list of finished lines, or nil for none.
+-- lines(item) returns a list of finished lines, or nil for none. A container of a fluid that goes off (FluidAgeing)
+-- gets the same lines from its fluid, with no adding: KeepingTooltip.fluidLines.
+local FluidAgeing = require "TraditionalPreservationCore/FluidAgeing"
 local ItemTooltip = require "TraditionalPreservationCore/ItemTooltip"
 local UI = require "TraditionalPreservationCore/UI"
 
@@ -57,10 +59,28 @@ function KeepingTooltip.forecastLines(forecast)
     return { keeps, KeepingTooltip.whereLine(forecast) }
 end
 
+-- The lines for a container of a fluid that goes off (TP Core's FluidAgeing: milk, kefir, blood, wort), or nil.
+function KeepingTooltip.fluidLines(item)
+    local forecast = FluidAgeing.forecast(item)
+    if not forecast then return nil end
+    if forecast.sealed then return { getText("IGUI_TraditionalPreservationCore_KeepSealed") } end
+    if not forecast.spoil then return nil end
+    local keeps
+    if forecast.spoil == math.huge then
+        keeps = getText("IGUI_TraditionalPreservationCore_KeepStill")
+    elseif forecast.turn then
+        keeps = say("IGUI_TraditionalPreservationCore_KeepFresh", KeepingTooltip.days(forecast.turn), KeepingTooltip.days(forecast.spoil))
+    else
+        keeps = say("IGUI_TraditionalPreservationCore_KeepRots", KeepingTooltip.days(forecast.spoil))
+    end
+    return { keeps, KeepingTooltip.whereLine(forecast) }
+end
+
 local cache = setmetatable({}, { __mode = "k" })
 
 local function textOf(item)
     local lines = byType[item:getFullType()]
+    if not lines and item:getFluidContainer() then lines = KeepingTooltip.fluidLines end
     if not lines or not KeepingTooltip.shown() then return nil end
     local now = getTimestampMs()
     local kept = cache[item]

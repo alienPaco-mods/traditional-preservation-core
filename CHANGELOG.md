@@ -1,5 +1,11 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.73
+- **Keeping line for fluids that go off** (user, 2026-11-26: milk, kefir, blood). Any container of a FluidAgeing fluid
+  shows how long it keeps where it is, as kept food does: fresh until it turns and rotten (raw milk, kefir, wort), or
+  rotten only (soured milk, scalded milk, blood), or *Sealed* for store milk not yet opened. `FluidAgeing.forecast`
+  (read-only: a copy of the age brought up to now), `KeepingTooltip.fluidLines`. Tests in `test_fluid_ageing.lua`.
+
 ## 0.1.72
 - **Animals keep their days every ten minutes** instead of each hour (user, 2026-11-26: backups taken just after
   arriving showed vanilla's catch-up before TP's pass). `AnimalDaysWorld.lua` on `EveryTenMinutes`.

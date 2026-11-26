@@ -1,5 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.74
+- **Fixed: the animal report merged two pens of the same name** (user, 2026-11-26: a bull's pen and the rabbits', both
+  "Ranch"). A pen is now keyed by its north-west zone, and two of the same name are listed apart.
+
 ## 0.1.73
 - **Keeping line for fluids that go off** (user, 2026-11-26: milk, kefir, blood). Any container of a FluidAgeing fluid
   shows how long it keeps where it is, as kept food does: fresh until it turns and rotten (raw milk, kefir, wort), or

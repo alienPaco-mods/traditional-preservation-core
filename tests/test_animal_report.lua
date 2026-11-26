@@ -62,6 +62,7 @@ function zone.getX() return 5700 end
 function zone.getY() return 5720 end
 function zone.getW() return 20 end
 function zone.getH() return 25 end
+function zone.getZ() return 0 end
 function zone.getFoodOnGroundConnected() return jlist({}) end
 function zone.getHutchsConnected() return jlist({ hutch }) end
 local function zoned(a) a.getDZone = function() return zone end; return a end
@@ -113,6 +114,23 @@ check("an animal whose days TP kept says so", AnimalReport.text(player):find("da
 ModData.getOrCreate("TraditionalPreservationCoreAnimalDays")[tostring(bull.getAnimalID())] = { kept = 4, keptPregnancy = 1, trimmedPregnancy = 3 }
 check("and the pregnancy days it took back", AnimalReport.text(player):find("days kept by TP: 4 of age, 1 of pregnancy (3 taken back)", 1, true) ~= nil)
 ModData.getOrCreate("TraditionalPreservationCoreAnimalDays")[tostring(bull.getAnimalID())] = nil
+-- Two pens of the same name stay apart: a second "Ranch" pen elsewhere.
+local other = { getName = function() return "Ranch" end, getX = function() return 5600 end, getY = function() return 5600 end,
+    getZ = function() return 0 end, getW = function() return 10 end, getH = function() return 10 end,
+    isFullyStreamed = function() return true end, getTroughsConnected = function() return jlist({}) end,
+    getFullZoneSize = function() return 100 end, getFoodOnGroundConnected = function() return jlist({}) end,
+    getHutchsConnected = function() return jlist({}) end }
+local stray = animal({ name = "Angus Bull" })
+stray.getDZone = function() return other end
+local realAnimals = getCell
+getCell = function()
+    local cell = realAnimals()
+    return { getAnimals = function() return jlist({ bull, cow, stray }) end, getVehicles = cell.getVehicles }
+end
+local split = AnimalReport.text(player)
+local _, ranches = split:gsub("== Ranch: ", "")
+check("two pens of the same name are two pens", ranches == 2 and split:find("== Ranch: 1 animals", 1, true) ~= nil)
+getCell = realAnimals
 check("a hen in a hutch goes under its pen", has("- Leghorn Hen: female"))
 check("a dry ewe in a trailer", has("== In a Trailer_Livestock at 5700, 5730: 1 animals") and has("milk 0.0 / 10.0 L (dry, up to 33.6)"))
 

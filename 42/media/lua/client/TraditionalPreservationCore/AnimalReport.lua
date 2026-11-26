@@ -156,15 +156,21 @@ function AnimalReport.text(playerObj)
     local places, order = {}, {}
     local entries = found()
     for _, entry in ipairs(entries) do
-        local place = places[entry.place]
+        -- A pen by its north-west zone, so two pens of the same name stay apart; a trailer or no pen by its words.
+        local zone = entry.zone
+        local key = zone and string.format("%d,%d,%d", zone:getX(), zone:getY(), zone:getZ()) or entry.place
+        local place = places[key]
         if not place then
-            place = { name = entry.place, zone = entry.zone, animals = {} }
-            places[entry.place] = place
+            place = { name = entry.place, zone = zone, x = zone and zone:getX() or 0, animals = {} }
+            places[key] = place
             table.insert(order, place)
         end
         table.insert(place.animals, entry.animal)
     end
-    table.sort(order, function(a, b) return a.name < b.name end)
+    table.sort(order, function(a, b)
+        if a.name ~= b.name then return a.name < b.name end
+        return a.x < b.x
+    end)
     local out = {
         "Traditional Preservation animals, save " .. tostring(getWorld():getWorld()),
         string.format("In game: %04d-%02d-%02d %02d:%02d, day %d (hours=%.2f)", gameTime:getYear(), gameTime:getMonth() + 1,

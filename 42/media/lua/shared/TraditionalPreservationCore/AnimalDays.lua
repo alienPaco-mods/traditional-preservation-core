@@ -10,7 +10,7 @@
 -- animal's own last-update clock, often stale, and moves a pregnancy on at each midnight it passes, so the same
 -- midnight can count twice (user's long save, 2026-11-26: an Angus cow 3 days ahead in 2). Hourly things (milk,
 -- hunger, thirst) are vanilla's catch-up as ever. Wild animals are left alone.
--- Sandbox Animals keep their days (on). Called each hour by AnimalDaysWorld.lua.
+-- Sandbox Animals keep their days (on). Called every ten minutes by AnimalDaysWorld.lua.
 local AnimalDays = {}
 
 AnimalDays.KEY = "TraditionalPreservationCoreAnimalDays"

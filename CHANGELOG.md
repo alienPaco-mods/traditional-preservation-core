@@ -1,5 +1,9 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.72
+- **Animals keep their days every ten minutes** instead of each hour (user, 2026-11-26: backups taken just after
+  arriving showed vanilla's catch-up before TP's pass). `AnimalDaysWorld.lua` on `EveryTenMinutes`.
+
 ## 0.1.71
 - **Fixed: a kept food's keeping line read far too few days after a while unlooked** (user, 2026-11-26: cured garlic
   on a pole, 46 days fresh for 114). Between two looks vanilla ages the item at its own speed, and the forecast read

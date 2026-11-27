@@ -28,7 +28,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 
 **Forge Cauldron** (a vanilla forge; Blacksmith 4; 35 Blacksmithing XP): 2 Steel Sheets, 3 Charcoal, 1 Wire, with a ball-peen hammer, metalworking pliers or tongs and a metalworking chisel kept. Learned from *Everyday Smithing - May 1993* (`SmithingMag2`, added at load by `Recipes.teach`; magazines already in the world teach it too), at Blacksmith 5 with Cooking 2, or by research from the cauldron.
 
-**Fit Cauldron** (the Stone Hearth's menu, fire out; generic `TPFireFit`): the cauldron, 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook, pliers kept; 5 Blacksmithing XP. It is then the **Stone Hearth (Cauldron)**: two iron pipes in the stone, the chain slung between them, the cauldron on the hook in its middle. **Remove Cauldron** takes half as long and gives every piece back; not while the fire burns or the cauldron holds anything. A joined Smokehouse stays joined.
+**Fit Cauldron** (the Stone Hearth's menu, fire out; generic `TPFireFit`): the cauldron, 2 crossbars (Iron Pipe, Steel Rod, Steel Bar or Iron Bar, any two) (Remove gives back the ones used), 1 Heavy Chain, 1 Large Hook, pliers kept; 5 Blacksmithing XP. It is then the **Stone Hearth (Cauldron)**: two iron pipes in the stone, the chain slung between them, the cauldron on the hook in its middle. **Remove Cauldron** takes half as long and gives every piece back; not while the fire burns or the cauldron holds anything. A joined Smokehouse stays joined.
 
 **Right-click the Stone Hearth (Cauldron).** Its submenu also has:
 

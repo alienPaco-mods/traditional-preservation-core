@@ -16,6 +16,7 @@ require "TimedActions/TPFireFit"
 require "TimedActions/TPFireConnect"
 local UI = require "TraditionalPreservationCore/UI"
 local Fire = require "TraditionalPreservationCore/Fire"
+local Action = require "TraditionalPreservationCore/Action"
 local Weather = require "TraditionalPreservationCore/Weather"
 local CauldronFluid = require "TraditionalPreservationCore/CauldronFluid"
 local InfoWindow = require "TraditionalPreservationCore/InfoWindow"
@@ -103,12 +104,16 @@ end)
 
 local FireWindow -- below
 
--- Kits: an attachment's fit and a connection's kits are both { items = { {full type, count} }, tool (an ItemTag's
--- name, kept), toolText (its text key, else TOOL_NAMES) }.
+-- Kits: an attachment's fit and a connection's kits are both { items = { {full type or a list of any, count} }, tool
+-- (an ItemTag's name, kept), toolText (its text key, else TOOL_NAMES) }.
 
 local function itemList(items)
     local names = {}
-    for _, need in ipairs(items) do table.insert(names, need[2] .. " " .. getItemNameFromFullType(need[1])) end
+    for _, need in ipairs(items) do
+        local alternatives = {}
+        for _, fullType in ipairs(Action.needTypes(need)) do table.insert(alternatives, getItemNameFromFullType(fullType)) end
+        table.insert(names, need[2] .. " " .. table.concat(alternatives, getText("IGUI_TraditionalPreservationCore_KitOr")))
+    end
     return table.concat(names, ", ")
 end
 
@@ -120,7 +125,9 @@ end
 -- used up), and an unbroken tool (a favourite too: it is kept).
 local function kitInReach(playerObj, kit)
     local found, tool, tag = {}, nil, ItemTag[kit.tool]
-    for _, need in ipairs(kit.items) do found[need[1]] = {} end
+    for _, need in ipairs(kit.items) do
+        for _, fullType in ipairs(Action.needTypes(need)) do found[fullType] = {} end
+    end
     UI.findItems(playerObj, function(item)
         local items = found[item:getFullType()]
         if items and not item:isFavorite() then table.insert(items, item) end
@@ -135,7 +142,14 @@ local function bringKit(playerObj, kit, withItems)
     local found, tool = kitInReach(playerObj, kit)
     if withItems then
         for _, need in ipairs(kit.items) do
-            for i = 1, need[2] do ISInventoryPaneContextMenu.transferIfNeeded(playerObj, found[need[1]][i]) end
+            local owed = need[2]
+            for _, fullType in ipairs(Action.needTypes(need)) do
+                for _, item in ipairs(found[fullType]) do
+                    if owed <= 0 then break end
+                    ISInventoryPaneContextMenu.transferIfNeeded(playerObj, item)
+                    owed = owed - 1
+                end
+            end
         end
     end
     ISInventoryPaneContextMenu.transferIfNeeded(playerObj, tool)
@@ -188,7 +202,7 @@ end
 local function addRemoveOption(menu, playerObj, fire, attachment)
     local option = menu:addOption(say("ContextMenu_TraditionalPreservationCore_Remove", getText(attachment.name)), playerObj, onFit, fire, attachment, false)
     option.iconTexture = getTexture(attachment.fitIcon or FIT_ICON)
-    local lines = { say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Fire.fitBack(attachment)), kitToolName(attachment.fit)) }
+    local lines = { say("IGUI_TraditionalPreservationCore_RemoveHelp", itemList(Fire.fitBack(attachment, fire)), kitToolName(attachment.fit)) }
     local ok, why = Fire.canRemove(fire)
     if not ok then
         table.insert(lines, getText(why == "Burning" and "IGUI_TraditionalPreservationCore_FireBurning"

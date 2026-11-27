@@ -46,7 +46,7 @@ On its own it adds only those, and the cauldron's recipe; it changes no vanilla 
 | Build a **Stone Hearth** (Build menu, Masonry) | 12 Stone Blocks, 12 Clay, a mason's trowel (kept). Masonry 2 | A fireplace that cooks and warms. 8 Masonry XP |
 | **Add Fuel** and **Light** it | Firewood and a lighter, as any fireplace | Fire, room heat, an oven, a hob over the hole |
 | **Forge Cauldron** at a forge | 2 Steel Sheets, 3 Charcoal, 1 Wire; a ball-peen hammer, pliers or tongs and a metalworking chisel (kept). Blacksmith 4, and the recipe (chapter 4) | A **Forged Cauldron**. 35 Blacksmithing XP |
-| **Fit Cauldron** (the Stone Hearth's menu, fire out) | The Forged Cauldron, 2 Iron Pipes, 1 Heavy Chain, 1 Large Hook; pliers (kept) | The **Stone Hearth (Cauldron)**: 60 L over the fire. 5 Blacksmithing XP |
+| **Fit Cauldron** (the Stone Hearth's menu, fire out) | The Forged Cauldron, 2 crossbars (Iron Pipe, Steel Rod, Steel Bar or Iron Bar, any two), 1 Heavy Chain, 1 Large Hook; pliers (kept) | The **Stone Hearth (Cauldron)**: 60 L over the fire. 5 Blacksmithing XP |
 | **Pour into the Cauldron** | Any one fluid, up to 60 L | The cauldron heating towards 95 C |
 | Wait | About 1.5 hours for 10 L | The cauldron **steaming** at 85 C |
 | **Fill from the Cauldron** | Empty containers | Your fluid back, hot |
@@ -95,7 +95,7 @@ A round-bellied kettle of dark forged iron, greased and blacked, sooted below it
 
 **Forging it.** At a vanilla forge, as the forged cooking pot is made, scaled up: **Forge Cauldron** takes 2 Steel Sheets, 3 Charcoal and 1 Wire, with a ball-peen hammer, metalworking pliers or tongs and a metalworking chisel kept; Blacksmith 4. You learn it from the magazine *Everyday Smithing - May 1993* (the one that teaches the forged cooking pot), or at Blacksmith 5 with Cooking 2, or by researching a cauldron you've found.
 
-**Fit and Remove.** With the fire out, the Stone Hearth's menu has **Fit Cauldron**: the Forged Cauldron, 2 Iron Pipes, 1 Heavy Chain and 1 Large Hook, with pliers kept; about three quarters of a minute, 5 Blacksmithing XP. It becomes the **Stone Hearth (Cauldron)**. **Remove Cauldron** takes it down again in half the time and gives every piece back; not while the fire burns, and not while the cauldron holds anything. A Smokehouse joined to the Stone Hearth stays joined: the two go together.
+**Fit and Remove.** With the fire out, the Stone Hearth's menu has **Fit Cauldron**: the Forged Cauldron, 2 crossbars (Iron Pipe, Steel Rod, Steel Bar or Iron Bar, any two), 1 Heavy Chain and 1 Large Hook, with pliers kept; about three quarters of a minute, 5 Blacksmithing XP. It becomes the **Stone Hearth (Cauldron)**. **Remove Cauldron** takes it down again in half the time and gives every piece back; not while the fire burns, and not while the cauldron holds anything. A Smokehouse joined to the Stone Hearth stays joined: the two go together.
 
 Fitted, the Stone Hearth still cooks and warms as before. Its submenu, now **Stone Hearth (Cauldron)**, adds:
 

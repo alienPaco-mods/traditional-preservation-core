@@ -1,5 +1,13 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.76
+- **The cauldron's crossbars: any full-length iron or steel bar or pipe** (user, 2026-11-27): Fit Cauldron takes any two
+  of Iron Pipe, Steel Rod, Steel Bar and Iron Bar, mixed; Remove gives back the ones that went in (the fitting keeps
+  them in `fittedKit`). A kit need may list alternatives (`Action.needTypes`), and the hover reads "2 Iron Pipe or
+  Steel Rod or ...". Not a Lead Pipe (it melts near 330 C), nor half or quarter bars (too short to span).
+- **The animal report gives each animal's size and meat gene** (user, 2026-11-27): butchering scales vanilla's count of
+  each cut by both, so the report shows what a slaughter will give.
+
 ## 0.1.75
 - **A turned fluid can go off after its own hours, and can shrink** (`ItemFluid.turnsHot` and `CauldronFluid.turnsHot`
   take optional `keepsHours` and `shrink`: the fluid it became goes off that long after it turned, by its own

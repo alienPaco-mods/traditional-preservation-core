@@ -1,7 +1,7 @@
 -- Traditional Preservation core: the animal report, a text file written on each save beside the station report, of
 -- every animal loaded at the save: those walking about, those in a hutch and those in a trailer. Each by its pen (the
 -- animal zone, with its troughs' feed and water, and the corners of each zone it is joined from), then its name, sex, age and where it stands, its health, hunger,
--- thirst, stress and acceptance of the player, then its milk, pregnancy, wool and young where it has them. Vanilla's
+-- thirst, stress and acceptance of the player, its size and meat gene (butchering scales by both), then its milk, pregnancy, wool and young where it has them. Vanilla's
 -- own numbers as its Info window reads them. Only animals loaded at the save are in it (the squares round the player),
 -- so a pen far off is missing, not empty. For the long save's log: _pzdev/longsave_snapshot.py copies it into the
 -- log's repo as animals.txt.
@@ -80,6 +80,8 @@ local function animalLines(animal, playerObj)
         string.format("health %s, hunger %s, thirst %s, stress %d, acceptance %d", percent(animal:getHealth()),
             percent(animal:getHunger()), percent(animal:getThirst()), math.floor(animal:getStress() + 0.5),
             math.floor(animal:getPlayerAcceptance(playerObj) + 0.5)),
+        -- What butchering scales its meat by: vanilla's count of each cut times size times the meat gene.
+        string.format("size %.2f, meat gene %.2f", animal:getAnimalSize(), animal:getMeatRatio()),
     }
     local more = {}
     local kept = AnimalDays.recordOf(animal)

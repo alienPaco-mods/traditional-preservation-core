@@ -29,13 +29,17 @@ function Cauldron.of(fire)
     return Cauldron.cauldronModData(fire:getModData())
 end
 
+Cauldron.CROSSBARS = { "Base.MetalPipe", "Base.MetalBar", "Base.SteelBar", "Base.IronBar" }
+
 Cauldron.attachment = Fire.attach({
     id = Cauldron.ID,
     name = "IGUI_TraditionalPreservationCore_InfoCauldron",
     fitHelp = "IGUI_TraditionalPreservationCore_FitCauldronHelp",
-    -- About an hour's work: the pipes set in the stone, the chain hung, the cauldron on the hook.
+    -- About an hour's work: two crossbars set in the stone, the chain hung, the cauldron on the hook. A crossbar is
+    -- any full-length iron or steel bar or pipe (user, 2026-11-27): an Iron Pipe, Steel Rod, Steel Bar or Iron Bar,
+    -- mixed as they come; not a Lead Pipe (soft, it melts near 330 C) nor a half or quarter bar (too short to span).
     fit = {
-        items = { { Cauldron.ITEM, 1 }, { "Base.MetalPipe", 2 }, { "Base.HeavyChain", 1 }, { "Base.LargeHook", 1 } },
+        items = { { Cauldron.ITEM, 1 }, { Cauldron.CROSSBARS, 2 }, { "Base.HeavyChain", 1 }, { "Base.LargeHook", 1 } },
         tool = "PLIERS",
         ticks = 600,
         removeTicks = 300,

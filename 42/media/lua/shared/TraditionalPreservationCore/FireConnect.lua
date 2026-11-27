@@ -6,6 +6,7 @@
 -- the flue, Smokehouse.entrySprite); the stone only puts its lid on when the connection takes the smoke (connection.smoke).
 -- Fire passes every function here on (Fire.connect, Fire.join, ...), so callers name Fire only.
 local Fire = require "TraditionalPreservationCore/Fire"
+local Action = require "TraditionalPreservationCore/Action"
 
 local FireConnect = {}
 
@@ -137,7 +138,9 @@ end
 function FireConnect.kitMissing(kit, counts, hasTool)
     local missing = {}
     for _, need in ipairs(kit.items) do
-        local short = need[2] - (counts[need[1]] or 0)
+        local have = 0
+        for _, fullType in ipairs(Action.needTypes(need)) do have = have + (counts[fullType] or 0) end
+        local short = need[2] - have
         if short > 0 then table.insert(missing, { need[1], short }) end
     end
     return missing, not hasTool

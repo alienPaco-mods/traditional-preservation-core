@@ -346,10 +346,12 @@ function Fire.fitRefusal(fire, attachment)
 end
 
 -- Fits the attachment id on a fire: its state starts empty.
-function Fire.fit(fire, id)
+-- kit (optional): what went in, { {full type, count} } (Action.asNeeds), for Remove to give back the same.
+function Fire.fit(fire, id, kit)
     local fireModData = Fire.fireModData(fire:getModData())
     fireModData[id] = {}
     fireModData.attached = id
+    fireModData.fittedKit = kit
 end
 
 -- Takes what is fitted off a fire, its state with it. Returns its id.
@@ -358,13 +360,22 @@ function Fire.unfit(fire)
     local fireModData = Fire.fireModData(fire:getModData())
     if id then fireModData[id] = nil end
     fireModData.attached = false
+    fireModData.fittedKit = nil
     return id
 end
 
--- What Remove gives back of an attachment's fit: { {full type, count} }, lost items left out.
-function Fire.fitBack(attachment)
+-- What Remove gives back of an attachment's fit: { {full type, count} }, lost items left out. With fire, what was
+-- fitted on it (its fittedKit); a fire fitted before that was kept, or a need with alternatives, gives the first.
+function Fire.fitBack(attachment, fire)
     local back, lost = {}, attachment.fit.lost or {}
-    for _, need in ipairs(attachment.fit.items) do
+    local kit = fire and Fire.fireModData(fire:getModData()).fittedKit
+    if not kit then
+        kit = {}
+        for _, need in ipairs(attachment.fit.items) do
+            table.insert(kit, { type(need[1]) == "table" and need[1][1] or need[1], need[2] })
+        end
+    end
+    for _, need in ipairs(kit) do
         if not lost[need[1]] then table.insert(back, need) end
     end
     return back

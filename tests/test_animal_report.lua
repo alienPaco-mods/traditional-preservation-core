@@ -38,6 +38,7 @@ local function animal(o)
         isBaby = function() return false end, getCurrentSquare = function() return square(5720, 5740, 0) end,
         getHealth = function() return 1 end, getHunger = function() return 0.12 end, getThirst = function() return 0.05 end,
         getStress = function() return 3.4 end, getPlayerAcceptance = function() return 34 end,
+        getAnimalSize = function() return 1.04 end, getMeatRatio = function() return 0.87 end,
         hasUdder = function() return o.udder or false end, canBeSheared = function() return false end,
         getBabies = function() return jlist({}) end, haveMatingSeason = function() return false end,
         isInMatingSeason = function() return false end, getGeneticDisorder = function() return jlist({}) end,
@@ -90,6 +91,7 @@ local text = AnimalReport.text(player)
 local function has(s) return text:find(s, 1, true) ~= nil end
 check("the header counts each animal once (one listed twice, one in a hutch, one in a trailer)", has("Animals loaded: 4"))
 check("a pen with its line", has("== Ranch: 3 animals") and has("400 tiles, 1 troughs (feed 2.0, water 30.0 L), 0 food on the ground, 1 hutches"))
+check("its size and meat gene", has("size 1.04, meat gene 0.87"))
 check("an animal's stats", has("- Angus Bull: male, 400 days, at 5720, 5740, 0") and has("health 100%, hunger 12%, thirst 5%, stress 3, acceptance 34"))
 check("milk and pregnancy", has("milk 4.2 / 10.0 L (in milk, up to 33.6), pregnant, day 12 of 280"))
 zone.streamed = false

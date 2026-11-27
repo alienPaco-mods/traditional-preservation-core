@@ -230,6 +230,17 @@ check("fitted, a second fit is refused", Fire.fitRefusal(fire, cauldronAttachmen
 Fire.join(modData[Fire.KEY], Smokehouse.ID, "Pipe", "Back")
 check("a fitted Stone Hearth's flue can be joined, the cauldron kept", Smokehouse.flueOf(fire) == "Pipe" and Fire.isFitted(fire, Cauldron.ID))
 check("Remove gives the whole kit back", #Fire.fitBack(cauldronAttachment) == 4)
+local Action = require "TraditionalPreservationCore/Action"
+local fittedFire = { modData = {} }
+function fittedFire:getModData() return self.modData end
+local function stock(fullType) return { getFullType = function() return fullType end } end
+Fire.fit(fittedFire, cauldronAttachment.id, Action.asNeeds({ stock("X.Cauldron"), stock("Base.SteelBar"), stock("Base.MetalPipe"),
+    stock("Base.HeavyChain"), stock("Base.LargeHook") }))
+local back = {}
+for _, need in ipairs(Fire.fitBack(cauldronAttachment, fittedFire)) do back[need[1]] = need[2] end
+check("a cauldron fitted with a Steel Bar and an Iron Pipe gives those back", back["Base.SteelBar"] == 1
+    and back["Base.MetalPipe"] == 1 and back["Base.MetalBar"] == nil)
+check("a crossbar need takes any of the four", #Action.needTypes(cauldronAttachment.fit.items[2]) == 4)
 check("taken off, the cauldron's state goes and nothing is fitted", Fire.unfit(fire) == Cauldron.ID
     and modData[Fire.KEY].cauldron == nil and modData[Fire.KEY].attached == false and Fire.attachmentOf(fire) == nil)
 World.update(fire, 121)

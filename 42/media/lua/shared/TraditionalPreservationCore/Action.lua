@@ -47,16 +47,41 @@ function Action.playKit(action, kit)
     action:setOverrideHandModels(tool, script and script:getStaticModel() or nil)
 end
 
+-- A kit need's full types: need[1] is one full type, or a list of any of which will do (the cauldron's crossbars).
+function Action.needTypes(need)
+    if type(need[1]) == "table" then return need[1] end
+    return { need[1] }
+end
+
 -- The items a kit needs, all from the main inventory (a menu brings them there first), or nil if any are missing.
+-- A need with alternatives takes them in the order listed.
 function Action.kitItems(character, needs)
     local inventory = character:getInventory()
     local items = {}
     for _, need in ipairs(needs) do
-        local found = inventory:getSomeType(need[1], need[2], ArrayList.new())
-        if found:size() < need[2] then return nil end
-        for i = 0, need[2] - 1 do table.insert(items, found:get(i)) end
+        local owed = need[2]
+        for _, fullType in ipairs(Action.needTypes(need)) do
+            if owed <= 0 then break end
+            local found = inventory:getSomeType(fullType, owed, ArrayList.new())
+            for i = 0, found:size() - 1 do table.insert(items, found:get(i)) end
+            owed = owed - found:size()
+        end
+        if owed > 0 then return nil end
     end
     return items
+end
+
+-- What items are as kit needs: { {full type, count} }, one entry per full type (what a fitting gives back).
+function Action.asNeeds(items)
+    local counts, order = {}, {}
+    for _, item in ipairs(items) do
+        local fullType = item:getFullType()
+        if not counts[fullType] then table.insert(order, fullType) end
+        counts[fullType] = (counts[fullType] or 0) + 1
+    end
+    local needs = {}
+    for _, fullType in ipairs(order) do table.insert(needs, { fullType, counts[fullType] }) end
+    return needs
 end
 
 function Action.takeItems(character, items)

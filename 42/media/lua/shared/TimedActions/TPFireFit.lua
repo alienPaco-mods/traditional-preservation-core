@@ -34,9 +34,9 @@ function TPFireFit:complete()
         local items = Action.kitItems(self.character, self.attachment.fit.items)
         if not items then return false end
         Action.takeItems(self.character, items)
-        Fire.fit(self.fire, self.attachment.id)
+        Fire.fit(self.fire, self.attachment.id, Action.asNeeds(items))
     else
-        Action.giveItems(self.character, Fire.fitBack(self.attachment))
+        Action.giveItems(self.character, Fire.fitBack(self.attachment, self.fire))
         Fire.unfit(self.fire)
     end
     Action.addXp(self.character, self.attachment.fit.xp)

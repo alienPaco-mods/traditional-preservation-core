@@ -97,7 +97,7 @@
   "IGUI_TraditionalPreservationCore_ToolPliers": "Pliers",
   "IGUI_TraditionalPreservationCore_RemoveHelp": "Takes it down: %1 back. Tool kept: %2",
   "IGUI_TraditionalPreservationCore_RemoveFull": "Empty it first",
-  "IGUI_TraditionalPreservationCore_FitCauldronHelp": "Two metal pipes set in the stone either side of the hole, a heavy chain between them, the cauldron on a large hook in its middle. It holds 60 L of one fluid and brings it to the steam, or water to the boil. Fits whether or not a Smokehouse is joined.",
+  "IGUI_TraditionalPreservationCore_FitCauldronHelp": "Two crossbars set in the stone either side of the hole (Iron Pipe, Steel Rod, Steel Bar or Iron Bar, any two), a heavy chain between them, the cauldron on a large hook in its middle. It holds 60 L of one fluid and brings it to the steam, or water to the boil. Fits whether or not a Smokehouse is joined.",
   "IGUI_CraftingWindow_TP_DryingCloth": "Drying Cloth",
   "IGUI_TraditionalPreservationCore_ClothInfo": "Drying Cloth",
   "IGUI_TraditionalPreservationCore_ClothLot": "%1 (%2)",
@@ -180,5 +180,6 @@
   "IGUI_TraditionalPreservationCore_PlaceFridge": "Fridge",
   "IGUI_TraditionalPreservationCore_PlaceFreezer": "Freezer",
   "IGUI_TraditionalPreservationCore_KeepRots": "Rotten in %1 here",
-  "IGUI_TraditionalPreservationCore_KeepSealed": "Sealed: doesn't age until it is opened"
+  "IGUI_TraditionalPreservationCore_KeepSealed": "Sealed: doesn't age until it is opened",
+  "IGUI_TraditionalPreservationCore_KitOr": " or "
 }

@@ -217,3 +217,6 @@ In debug mode, `TPC.help()` in the Lua console lists the Stone Hearth's, the cau
 ## Credits
 
 Cooking sounds (`TPBoiling`, `TPSimmering`): "boiling water loops" by TinyWorlds, OpenGameArt.org, CC0.
+
+**Look for Clay** (the shovel menu, with a shovel and an empty sack): vanilla's clay cursor at once, green on a tile within 10
+tiles where clay can be dug, red where not, grey further out; click a green tile to dig. Clay lies only on some lake and river shores.

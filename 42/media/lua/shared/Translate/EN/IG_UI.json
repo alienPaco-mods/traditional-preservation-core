@@ -181,5 +181,6 @@
   "IGUI_TraditionalPreservationCore_PlaceFreezer": "Freezer",
   "IGUI_TraditionalPreservationCore_KeepRots": "Rotten in %1 here",
   "IGUI_TraditionalPreservationCore_KeepSealed": "Sealed: doesn't age until it is opened",
-  "IGUI_TraditionalPreservationCore_KitOr": " or "
+  "IGUI_TraditionalPreservationCore_KitOr": " or ",
+  "IGUI_TraditionalPreservationCore_LookForClayHelp": "Shows where clay can be dug within 10 tiles of you: green tiles are clay, red are not, grey are too far to tell. Click a green tile to dig it into an empty sack. Clay lies only on some lake and river shores."
 }

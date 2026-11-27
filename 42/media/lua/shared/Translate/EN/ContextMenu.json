@@ -25,5 +25,6 @@
   "ContextMenu_TraditionalPreservationCore_LightFire": "Light the Fire",
   "ContextMenu_TraditionalPreservationCore_PutOutFire": "Put Out the Fire",
   "ContextMenu_TraditionalPreservationCore_SpreadCloth": "Spread Drying Cloth",
-  "ContextMenu_TraditionalPreservationCore_PickUpCloth": "Pick Up Drying Cloth"
+  "ContextMenu_TraditionalPreservationCore_PickUpCloth": "Pick Up Drying Cloth",
+  "ContextMenu_TraditionalPreservationCore_LookForClay": "Look for Clay"
 }

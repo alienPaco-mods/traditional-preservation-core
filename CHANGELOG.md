@@ -1,5 +1,10 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.77
+- **Look for Clay** on the shovel menu (user, 2026-11-27): with a shovel and an empty sack, opens vanilla's ground
+  cursor for clay at once (green where clay can be dug within 10 tiles of the character, red where not, grey further out; a click digs), where vanilla's Take some Clay
+  shows only once a clay tile has been right-clicked. `LookForClay.lua`.
+
 ## 0.1.76
 - **The cauldron's crossbars: any full-length iron or steel bar or pipe** (user, 2026-11-27): Fit Cauldron takes any two
   of Iron Pipe, Steel Rod, Steel Bar and Iron Bar, mixed; Remove gives back the ones that went in (the fitting keeps

@@ -170,6 +170,25 @@ local banked = { ml = 1500, fluid = "RawFat", tempC = 20, lastHour = 0, fireUnti
 CauldronFluid.advance(banked, 24, 20, banked)
 check("banked embers are too cool to turn it", banked.fluid == "RawFat")
 
+-- A fluid that keeps only so long once turned: it goes off counted from the look it turned in.
+CauldronFluid.turnsHot("TestPulp", "TestPaste", 1, 168)
+CauldronFluid.goesOff("TestPaste", "TestSpoilt")
+local pulp = {}
+CauldronFluid.pourInto(pulp, "TestPulp", 1500, 20, 0)
+pulp.fireUntil = 100
+CauldronFluid.advance(pulp, 3, 20, pulp)
+check("turned with keepsHours: off a week from that look", pulp.fluid == "TestPaste" and near(pulp.offAt, 3 + 168) and pulp.turnedKeeps == nil)
+pulp.fireUntil = 3
+CauldronFluid.advance(pulp, 200, 20, pulp)
+check("and goes off then", pulp.fluid == "TestSpoilt")
+check("a fluid with no keepsHours turned keeps for good", fat.offAt == nil)
+CauldronFluid.turnsHot("TestRawSauce", "TestSauce", 1, nil, 0.2)
+local sauce = {}
+CauldronFluid.pourInto(sauce, "TestRawSauce", 10000, 20, 0)
+sauce.fireUntil = 100
+CauldronFluid.advance(sauce, 3, 20, sauce)
+check("turned with shrink: cooked down to a fifth", sauce.fluid == "TestSauce" and near(sauce.ml, 2000))
+
 -- Going off
 local old = {}
 CauldronFluid.pourInto(old, "RawFat", 1000, 20, 0)

@@ -2,8 +2,11 @@
 -- goesOff), and fluid that burns there. A pot or a saucepan on any stove or fire: a mod names what turns, what goes
 -- off and what burns, and the core keeps a record in the item's modData under KEY. A fluid only changes while it is
 -- all the item holds.
--- turnsHot(from, to, hours): from, kept steaming (the item's heat at CauldronFluid.HOT_C or more) for hours in all,
---   becomes to. The hours start over when more pieces go in (putPieces).
+-- turnsHot(from, to, hours, keepsHours, shrink): from, kept steaming (the item's heat at CauldronFluid.HOT_C or more)
+--   for hours in all, becomes to. The hours start over when more pieces go in (putPieces). With keepsHours, what it
+--   became goes off that many hours after it turned (to's own goesOff): cooked tomato paste left in its pot, where
+--   clarified butter, with none, never does. With shrink, what it became is that share of what it was (cooked down:
+--   tomato pulp to paste, 0.2).
 -- goesOff(from, to): from becomes to at the itemFluid's offAt, unless it turned first. Pieces put in set it by the
 --   oldest (putPieces); counted by the clock, at any place.
 -- burns(fluid, hours, mapper): fluid kept steaming hours more burns: the item is emptied and swapped where it lies for
@@ -29,11 +32,13 @@ ItemFluid.AMOUNT_TOLERANCE_L = CauldronFluid.AMOUNT_TOLERANCE_L
 local TURNS, OFF, BURNS, STAYS = {}, {}, {}, {}
 local watchesHeat = false   -- anything turns or burns: the stoves near players are looked at
 
-function ItemFluid.turnsHot(from, to, hours)
+function ItemFluid.turnsHot(from, to, hours, keepsHours, shrink)
     assert(type(from) == "string" and type(to) == "string", "ItemFluid.turnsHot: from and to must be fluid names")
     assert(TURNS[from] == nil, "ItemFluid.turnsHot: fluid " .. from .. " already turns")
     assert(type(hours) == "number" and hours > 0, "ItemFluid.turnsHot: " .. from .. " needs hours")
-    TURNS[from] = { to = to, hours = hours }
+    assert(keepsHours == nil or (type(keepsHours) == "number" and keepsHours > 0), "ItemFluid.turnsHot: " .. from .. "'s keepsHours")
+    assert(shrink == nil or (type(shrink) == "number" and shrink > 0 and shrink <= 1), "ItemFluid.turnsHot: " .. from .. "'s shrink")
+    TURNS[from] = { to = to, hours = hours, keepsHours = keepsHours, shrink = shrink }
     watchesHeat = true
 end
 
@@ -100,8 +105,9 @@ function ItemFluid.advance(itemFluid, fluid, now, hot, vesselType)
     itemFluid.at = now
     local turn = TURNS[fluid]
     if turn and (itemFluid.steamedHours or 0) >= turn.hours then
-        -- What has turned no longer goes off, and its steaming from here on counts towards burning.
-        itemFluid.steamedHours, itemFluid.offAt = itemFluid.steamedHours - turn.hours, nil
+        -- What has turned no longer goes off (unless it keeps only keepsHours), and its steaming from here on counts
+        -- towards burning.
+        itemFluid.steamedHours, itemFluid.offAt = itemFluid.steamedHours - turn.hours, turn.keepsHours and now + turn.keepsHours
         fluid = turn.to
     end
     local burn = BURNS[fluid]
@@ -188,7 +194,10 @@ function ItemFluid.look(item, now)
     modData[ItemFluid.KEY] = itemFluid
     local became, burnt = ItemFluid.advance(itemFluid, fluid, now, item:getItemHeat() >= ItemFluid.HOT_HEAT, item:getFullType())
     if burnt then return burn(item, BURNS[became].mapper[item:getFullType()]) or item end
-    if became ~= fluid then swap(container, fluid, became, litres) end
+    if became ~= fluid then
+        local turn = TURNS[fluid]
+        swap(container, fluid, became, litres * (turn and turn.to == became and turn.shrink or 1))
+    end
     container:setCanPlayerEmpty(ItemFluid.canEmpty(became))
     return item
 end

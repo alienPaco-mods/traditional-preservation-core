@@ -153,6 +153,20 @@ function PlaceKeeping.new(keepingRules)
         return clock
     end
 
+    -- Sets a kept item's age (days), brought up to now first: its clock starts again from that age at its place (a
+    -- stale stretch again if past fresh). For a mix of old and new, as FV's crock topped up with fresh paste.
+    function keeper.setAge(item, age, now)
+        local clock = keeper.keep(item, now)
+        if not clock then
+            item:setAge(age)
+            return nil
+        end
+        clock.stale = nil
+        clock.base = age - clock.fluidAge.age / 24
+        keeper.settle(item, clock, nil, now or clock.fluidAge.hour)
+        return clock
+    end
+
     -- Ages a kept item by days at its place now (the console's test helper). Returns its clock, or nil.
     function keeper.age(item, days)
         local clock = keeper.keep(item)

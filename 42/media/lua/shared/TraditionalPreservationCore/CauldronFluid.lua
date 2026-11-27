@@ -174,15 +174,17 @@ end
 CauldronFluid.taints("TaintedWater", "Water")
 
 -- Fluids the cauldron changes, as a mod names them (Fish & Meat's fat), each named once.
--- turnsHot(from, to, hours): from, on its own and kept steaming (HOT_C or more) for hours in all, becomes to:
--- raw fat renders. The hours are kept in the cauldron's hot, and start over when more is put in.
+-- turnsHot(from, to, hours, keepsHours, shrink): from, on its own and kept steaming (HOT_C or more) for hours in all,
+-- becomes to: raw fat renders. The hours are kept in the cauldron's hot, and start over when more is put in. With
+-- keepsHours, what it became goes off that many hours after the look it turned in (to's own goesOff); with shrink, it
+-- is that share of what it was (cooked down).
 -- goesOff(from, to): from becomes to at the cauldron's offAt (offBy sets it), unless it turned first.
 -- staysIn(name): the cauldron holds it, but no container can be filled with it.
 local TURNS, OFF, STAYS = {}, {}, {}
 
-function CauldronFluid.turnsHot(from, to, hours)
+function CauldronFluid.turnsHot(from, to, hours, keepsHours, shrink)
     assert(TURNS[from] == nil, "CauldronFluid.turnsHot: fluid " .. tostring(from) .. " already turns")
-    TURNS[from] = { to = to, hours = hours }
+    TURNS[from] = { to = to, hours = hours, keepsHours = keepsHours, shrink = shrink }
 end
 
 function CauldronFluid.goesOff(from, to)
@@ -292,6 +294,8 @@ local function countHot(cauldron, target, hours, tau)
     cauldron.steamedHours = (cauldron.steamedHours or 0) + hot
     if cauldron.steamedHours >= turn.hours then
         cauldron.fluid, cauldron.steamedHours, cauldron.offAt = turn.to, nil, nil
+        cauldron.turnedKeeps = turn.keepsHours
+        if turn.shrink then cauldron.ml = cauldron.ml * turn.shrink end
     end
 end
 
@@ -355,6 +359,10 @@ function CauldronFluid.advance(cauldron, now, roomC, fire)
             cauldron.tempC = CauldronFluid.cool(cauldron.tempC, roomC, hours, tau)
         end)
         cauldron.boiled = nil
+    end
+    -- Turned in this look and keeping only so long: it goes off counted from now.
+    if cauldron.turnedKeeps then
+        cauldron.offAt, cauldron.turnedKeeps = now + cauldron.turnedKeeps, nil
     end
     goOff(cauldron, now)
     cauldron.lastHour = now

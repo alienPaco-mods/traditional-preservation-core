@@ -1,5 +1,17 @@
 # Changelog: Traditional Preservation (Core)
 
+## 0.1.75
+- **A turned fluid can go off after its own hours, and can shrink** (`ItemFluid.turnsHot` and `CauldronFluid.turnsHot`
+  take optional `keepsHours` and `shrink`: the fluid it became goes off that long after it turned, by its own
+  `goesOff`, and is that share of what it was, cooked down). FV's tomato paste uses `shrink` (0.2); its unpacked
+  week is on FluidAgeing instead, so it travels when poured.
+- **`ItemFluidUI.addPieces` takes `vesselTitle`** (and `vesselIcon`): the pot's own menu gets a row too, its pieces going
+  into it (FV's Pulp Tomatoes on a pot or saucepan).
+- **`keeper.setAge(item, age)`** on a PlaceKeeping keeper: sets a kept item's age, its clock going on from it (FV's
+  crock topped up with fresh paste). For FV's cooked
+  tomato paste left in its pot (a week); clarified butter, with none, still never goes off. Tests in
+  `test_item_fluid.lua` and `test_fire.lua`.
+
 ## 0.1.74
 - **Fixed: the animal report merged two pens of the same name** (user, 2026-11-26: a bull's pen and the rabbits', both
   "Ranch"). A pen is now keyed by its north-west zone, and two of the same name are listed apart.

@@ -282,7 +282,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
    - `CauldronFluid.blend("A", "B")`: fluids that may share the cauldron. `CauldronFluid.partsIn(fluidContainer)` is then what a
      container holds by fluid (one fluid or such a blend, nil for any other mixture); a store's own blend is `fluid`
      (the largest share) plus `parts`, kept with `CauldronFluid.addParts` and read with `CauldronFluid.partsOf`.
-   - `CauldronFluid.turnsHot(from, to, hours)`, `CauldronFluid.goesOff(from, to)` + `CauldronFluid.offBy(cauldron, hour)` and
+   - `CauldronFluid.turnsHot(from, to, hours, keepsHours, shrink)` (both optional: what it became goes off keepsHours after it turned, by its own goesOff, and is shrink of what it was, cooked down; `ItemFluid.turnsHot` takes them too), `CauldronFluid.goesOff(from, to)` + `CauldronFluid.offBy(cauldron, hour)` and
      `CauldronFluid.staysIn(name)`: a fluid the cauldron changes when kept steaming, one that goes off at an hour, and one
      that can't be filled out (Fish & Meat's raw fat is all three). `CauldronUI.addMenu(fn)` and `CauldronUI.addNotes(fn)`
      put a mod's rows on the Stone Hearth (Cauldron)'s menu and its lines in the Stone Hearth window (`fireView.part` is the
@@ -381,7 +381,7 @@ local Weather = require "TraditionalPreservationCore/Weather"
      row, **`PiecesUI.row`**: with more than one fitting it opens One (the piece nearest to going off,
      `PiecesUI.oldestFirst`) and All (n). The cauldron's rules are `CauldronFluid.pieceRoom`, `putPieces`, its menu
      `CauldronUI.addPieces({ title, icon, pieceMl, hoursLeft, fluidRows, help, noRoom, refusal })`; a pot's are
-     `ItemFluid`'s, its menu `ItemFluidUI.addPieces`. The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
+     `ItemFluid`'s, its menu `ItemFluidUI.addPieces` (with `vesselTitle`, a row on the pot's own menu too). The mod registers its fluids (`turnsHot`, `goesOff`, `staysIn`) and adds its notes.
    - A recipe made several times from one vessel (Yeast's cultures from a pot of Potato Water or Hop Tea):
      **`RecipeUI.oneOrAll({ recipe, fluid, litres })`** turns vanilla's Craft row on the vessel's right-click menu
      into One and All (n), n what the vessel's fluid covers and the rest in reach allows (every item type in reach:

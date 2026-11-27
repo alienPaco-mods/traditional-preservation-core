@@ -395,8 +395,27 @@ def wrap_lint(root):
     return found
 
 
+# Item parameters the game reads as whole numbers (Item.DoParam's Integer.parseInt): "5.0" fails, and the game
+# drops the item and stops the save loading ("UnhappyChange is not a valid parameter", FV 0.0.22, 2026-11-27).
+INTEGER_ITEM_PARAMS = ("UnhappyChange", "BoredomChange", "StressChange", "EatTime")
+
+
+def script_lint(root):
+    """Item script values the game can't parse, as 'path:line: reason' lines."""
+    found = []
+    pattern = re.compile(r"^\s*(" + "|".join(INTEGER_ITEM_PARAMS) + r")\s*=\s*(-?\d+\.\d*)\s*,")
+    for path in sorted(root.glob("*/media/scripts/**/*.txt")):
+        if "fluid" in path.name.lower():
+            continue  # a fluid's Properties take decimals
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            match = pattern.match(line)
+            if match:
+                found.append(f"{path.relative_to(root)}:{number}: {match.group(1)} = {match.group(2)} must be a whole number")
+    return found
+
+
 def lint_failed(root):
-    found = kahlua_lint(root) + translation_lint(root) + key_lint(root) + wrap_lint(root)
+    found = kahlua_lint(root) + translation_lint(root) + key_lint(root) + wrap_lint(root) + script_lint(root)
     for entry in found:
         print(f"  FAIL {root.name}/{entry}")
     return bool(found)

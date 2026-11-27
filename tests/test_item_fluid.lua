@@ -55,6 +55,15 @@ check("only a fluid that goes off does", ItemFluid.advance({ offAt = 0 }, "Clear
 check("hours left to turn and to burn", near(ItemFluid.hoursToTurn({ steamedHours = 0.25 }, "Raw"), 0.75)
     and near(ItemFluid.hoursToBurn({ steamedHours = 0.5 }, "Clear"), 0.5) and ItemFluid.hoursToTurn({}, "Clear") == nil)
 
+-- A fluid that keeps only so long once turned (cooked tomato paste in its pot).
+ItemFluid.turnsHot("Pulp", "Paste", 1, 168)
+ItemFluid.goesOff("Paste", "Spoilt")
+local paste = {}
+ItemFluid.putPieces(paste, { 50 }, 0)
+local became = steam(paste, "Pulp", 0, 60)
+check("turned with keepsHours: it goes off a week after it turned", became == "Paste" and near(paste.offAt, 1 + 168))
+check("and does, off the heat", ItemFluid.advance(paste, "Paste", 170, false) == "Spoilt")
+check("keepsHours must be positive", not pcall(ItemFluid.turnsHot, "Other", "X", 1, 0))
 check("room: a 1.5 L pot takes 6 quarter litres, a 0.6 L saucepan 2",
     ItemFluid.pieceRoom(1.5, 0, false, 250) == 6 and ItemFluid.pieceRoom(0.6, 0, false, 250) == 2)
 check("a pot holding a litre of the fluid 2 more, of anything else none",
@@ -139,6 +148,12 @@ cold.fluids.Spoilt = nil
 cold.fluids.Water = 1
 ItemFluid.look(cold, 7)
 check("a pot of anything not named forgets its itemFluid", cold.modData.tpItemFluid == nil)
+
+ItemFluid.turnsHot("RawSauce", "Sauce", 1, nil, 0.2)
+local sauce = pot("Base.Pot", ItemFluid.HOT_HEAT)
+ItemFluid.addPieces(sauce, "RawSauce", 150, { 50, 50, 50, 50, 50, 50, 50, 50, 50, 50 }, 0)
+for minute = 1, 62 do ItemFluid.look(sauce, minute / 60) end
+check("turned with shrink: 1.5 L of raw cooks down to 0.3", sauce.fluids.RawSauce == nil and near(sauce.fluids.Sauce, 0.3))
 local sealed = pot("Base.Pot")
 sealed:getFluidContainer().canEmpty = false
 sealed.fluids.Milk = 1
